@@ -38,3 +38,9 @@ every owner setting with an API, guided settings with structured steps and read-
 full dashboard map. The playbook adds research steps 9–10 (owner side, coverage matrix) and a standard batch O; the hub
 adds L-4, a guided settings runner that walks dashboard-only settings in a visible browser with Chris approving each step
 (never typing passwords). The old toolkit's audits had found account, team, billing and security tools "broadly absent".
+
+**2026-10-10 — Two rules from the Workspace server's review (RTC 1 clarification).** An automated review of the Google
+Workspace MCP plan (its PR #28) found that (1) an OAuth refresh could drop a connection's settings (a read-only
+connection becoming full access) and (2) an in-memory rate limit does nothing on serverless hosts. Contract §2 now
+requires both (settings copied on refresh; limits counted in the database), conformance checks both, and the hub, relay
+and Stripe plans follow. RTC 1 is not final until K-1, so this is a clarification of version 1, not a new version.

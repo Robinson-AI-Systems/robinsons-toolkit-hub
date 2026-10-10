@@ -38,7 +38,8 @@ Files: `docs/CONTRACT.md` (review wording against both server plans), `docs/kit/
 `docs/kit/SERVER-ROADMAP.md`. Done when: both server plans and this file agree; validator green.
 ### K-2 — Conformance package and reference fake server (L, medium effort)
 Tests: the fake server passes; deliberately broken fakes (missing manifest, write without dryRun, read-only pass that can
-write, key-shaped string in a result, oversize result without handle) each fail with a plain message.
+write, key-shaped string in a result, oversize result without handle, a refresh that drops connection settings, a rate
+limit kept in memory so two instances each allow the full limit) each fail with a plain message.
 ### K-3 — Extract `robinson-mcp-core` (L, medium effort) — after Stripe C
 Done when: Stripe's `src/core/` tests pass unchanged inside `packages/core`; a Release tarball exists; an adoption card
 text is handed to the Stripe and Workspace repos (not executed here).

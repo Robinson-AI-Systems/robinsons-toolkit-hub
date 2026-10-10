@@ -24,13 +24,18 @@ The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built o
 ## 2. Authentication
 
 - **Connector tokens** come from the server's OAuth login (passphrase page with lockout: 5 wrong tries in 15 minutes per
-  address). Stored hashed.
+  address). Stored hashed. **A refresh keeps every connection setting** (account, mode, profile, listing, areas): the
+  settings are stored on the authorization code and the token row, and the refresh copies them from the issuing row —
+  it never falls back to defaults, so a read-only or test connection stays read-only or test.
 - **Passes** (`kind = 'pass'`) are created only by a person — through a confirmed server tool
   (`<prefix>_create_pass`) or the server's setup page — and shown **once** on the server's one-time-secret page, never in
   chat. Each pass carries: profile, allowed areas, `allow_writes` (default false), live/production access where the server
   has such a concept (default off), money limit where money exists (default $0), expiry (default 24 h, max 30 days; the
   hub's own pass may be longer, see §8). Listed with the server's connections tool and revocable instantly.
 - The HTTPS tool API accepts passes only (`Authorization: Bearer <pass>`); the MCP door accepts connector tokens.
+- **Rate limits are shared across instances.** Servers run on serverless hosts where each instance has its own memory, so
+  a per-pass or per-address limit (including the login lockout) is counted in the server's database with one atomic
+  update, never in memory. Over the limit → HTTP 429 with `Retry-After` and code `rate_limited` (§7).
 - No server ever accepts a service credential (API key, OAuth secret) as a tool argument, and never returns one.
 
 ## 3. Tool shape
@@ -99,7 +104,8 @@ writes need `confirm`.)
 A server is "RTC 1" when `packages/conformance` (run against its URL with a test pass in its test/sandbox mode) passes:
 manifest; search/describe/call/batch/result; a read tool's `fields`/`detail`/handle behavior; a write tool's dryRun /
 needs-confirmation / confirm / read-back / change-log behavior; refusal of writes by a read-only pass; expired and
-revoked passes refused; no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
+revoked passes refused; a refreshed connector token keeps its settings; rate limits hold across two server instances
+(two conformance clients hitting the limit together); no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
 
 ## 10. Developer conventions (SHOULD for every server; MUST once a server offers `devTools`)
 

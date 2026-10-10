@@ -94,7 +94,8 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 - `npm run check` and the card's targeted tests before pushing; never `--no-verify`. One push per CI cycle.
 - `ci` is the single merge gate, green at the exact head.
 - **No automated review** (same choice as the Stripe MCP): inspect the whole diff against `docs/AI-PR-READ-FIRST.md` and
-  write "Self-review: <findings and dispositions>" in the PR. Never claim a review that didn't run.
+  write "Self-review: <findings and dispositions>" in the PR. If an organization-wide automated reviewer posts anyway,
+  fix or answer each of its threads and resolve them (never wait for one). Never claim a review that didn't run.
 - Merging (authorized by Chris): `ci` green, acceptance met with evidence, self-review written; merge with the
   expected-head SHA. Stacks merge bottom-up.
 
