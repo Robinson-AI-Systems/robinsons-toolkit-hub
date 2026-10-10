@@ -1,0 +1,462 @@
+{
+  "version": 1,
+  "updated": "2026-10-10",
+  "order": [
+    "K",
+    "D",
+    "M",
+    "H",
+    "C",
+    "L",
+    "S"
+  ],
+  "process": "Just-in-time cards from approved designs; S cards only on Chris's request.",
+  "cards": [
+    {
+      "id": "K-1",
+      "title": "Contract final, playbook and roadmap",
+      "batch": "K",
+      "design": "docs/designs/BATCH-K.md",
+      "dependencies": [],
+      "card": "docs/pr-cards/K-1.md",
+      "status": "READY",
+      "units": [
+        "K-1"
+      ],
+      "readiness": "READY",
+      "externalGates": []
+    },
+    {
+      "id": "K-2",
+      "title": "Conformance package and reference fake server",
+      "batch": "K",
+      "design": "docs/designs/BATCH-K.md",
+      "dependencies": [
+        "K-1"
+      ],
+      "card": "docs/pr-cards/K-2.md",
+      "status": "APPROVED",
+      "units": [
+        "K-2"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "K-3",
+      "title": "Extract robinson-mcp-core from the Stripe MCP",
+      "batch": "K",
+      "design": "docs/designs/BATCH-K.md",
+      "dependencies": [
+        "K-2"
+      ],
+      "card": "docs/pr-cards/K-3.md",
+      "status": "APPROVED",
+      "units": [
+        "K-3"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": [
+        "stripe-mcp Batches A-C merged"
+      ]
+    },
+    {
+      "id": "K-4",
+      "title": "Server scaffold rtool new-server",
+      "batch": "K",
+      "design": "docs/designs/BATCH-K.md",
+      "dependencies": [
+        "K-3",
+        "D-1"
+      ],
+      "card": "docs/pr-cards/K-4.md",
+      "status": "APPROVED",
+      "units": [
+        "K-4"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "D-1",
+      "title": "rtool CLI, multi-server config, SDK, skill, init",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "K-2"
+      ],
+      "card": "docs/pr-cards/D-1.md",
+      "status": "APPROVED",
+      "units": [
+        "D-1"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "D-2",
+      "title": "rtool mcp local MCP",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-1"
+      ],
+      "card": "docs/pr-cards/D-2.md",
+      "status": "APPROVED",
+      "units": [
+        "D-2"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "D-3",
+      "title": "GitHub relay",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-1"
+      ],
+      "card": "docs/pr-cards/D-3.md",
+      "status": "APPROVED",
+      "units": [
+        "D-3"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "D-4",
+      "title": "Agent setup recipes and real runs",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-2",
+        "D-3"
+      ],
+      "card": "docs/pr-cards/D-4.md",
+      "status": "APPROVED",
+      "units": [
+        "D-4"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": [
+        "a server with its HTTPS tool API"
+      ]
+    },
+    {
+      "id": "M-1",
+      "title": "Freeze note and read-only smoke test",
+      "batch": "M",
+      "design": "docs/designs/BATCH-M.md",
+      "dependencies": [
+        "K-1"
+      ],
+      "card": "docs/pr-cards/M-1.md",
+      "status": "APPROVED",
+      "units": [
+        "M-1"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "M-2",
+      "title": "Namespace map and pass rates",
+      "batch": "M",
+      "design": "docs/designs/BATCH-M.md",
+      "dependencies": [
+        "M-1"
+      ],
+      "card": "docs/pr-cards/M-2.md",
+      "status": "APPROVED",
+      "units": [
+        "M-2"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "M-3",
+      "title": "Legacy bridge in rtool mcp",
+      "batch": "M",
+      "design": "docs/designs/BATCH-M.md",
+      "dependencies": [
+        "D-2",
+        "M-2"
+      ],
+      "card": "docs/pr-cards/M-3.md",
+      "status": "APPROVED",
+      "units": [
+        "M-3"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "M-4",
+      "title": "Retirement checklist",
+      "batch": "M",
+      "design": "docs/designs/BATCH-M.md",
+      "dependencies": [
+        "M-3"
+      ],
+      "card": "docs/pr-cards/M-4.md",
+      "status": "APPROVED",
+      "units": [
+        "M-4"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "H-1",
+      "title": "Hub foundation on robinson-mcp-core",
+      "batch": "H",
+      "design": "docs/designs/BATCH-H.md",
+      "dependencies": [
+        "K-3",
+        "D-2"
+      ],
+      "card": "docs/pr-cards/H-1.md",
+      "status": "APPROVED",
+      "units": [
+        "H-1"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "H-2",
+      "title": "Server registry, setup page, health",
+      "batch": "H",
+      "design": "docs/designs/BATCH-H.md",
+      "dependencies": [
+        "H-1"
+      ],
+      "card": "docs/pr-cards/H-2.md",
+      "status": "APPROVED",
+      "units": [
+        "H-2"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "H-3",
+      "title": "Federated search, describe, call, batch",
+      "batch": "H",
+      "design": "docs/designs/BATCH-H.md",
+      "dependencies": [
+        "H-2"
+      ],
+      "card": "docs/pr-cards/H-3.md",
+      "status": "APPROVED",
+      "units": [
+        "H-3"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "H-4",
+      "title": "Hub profiles and narrowing passes",
+      "batch": "H",
+      "design": "docs/designs/BATCH-H.md",
+      "dependencies": [
+        "H-3"
+      ],
+      "card": "docs/pr-cards/H-4.md",
+      "status": "APPROVED",
+      "units": [
+        "H-4"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "H-5",
+      "title": "Hub change log",
+      "batch": "H",
+      "design": "docs/designs/BATCH-H.md",
+      "dependencies": [
+        "H-4"
+      ],
+      "card": "docs/pr-cards/H-5.md",
+      "status": "APPROVED",
+      "units": [
+        "H-5"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "C-1",
+      "title": "Workflow engine",
+      "batch": "C",
+      "design": "docs/designs/BATCH-C.md",
+      "dependencies": [
+        "H-5"
+      ],
+      "card": "docs/pr-cards/C-1.md",
+      "status": "APPROVED",
+      "units": [
+        "C-1"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "C-2",
+      "title": "First ported workflows",
+      "batch": "C",
+      "design": "docs/designs/BATCH-C.md",
+      "dependencies": [
+        "C-1"
+      ],
+      "card": "docs/pr-cards/C-2.md",
+      "status": "APPROVED",
+      "units": [
+        "C-2"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "C-3",
+      "title": "Weekly digest",
+      "batch": "C",
+      "design": "docs/designs/BATCH-C.md",
+      "dependencies": [
+        "C-2"
+      ],
+      "card": "docs/pr-cards/C-3.md",
+      "status": "APPROVED",
+      "units": [
+        "C-3"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "L-1",
+      "title": "Files, shell, git",
+      "batch": "L",
+      "design": "docs/designs/BATCH-L.md",
+      "dependencies": [
+        "D-2"
+      ],
+      "card": "docs/pr-cards/L-1.md",
+      "status": "APPROVED",
+      "units": [
+        "L-1"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "L-2",
+      "title": "Ollama",
+      "batch": "L",
+      "design": "docs/designs/BATCH-L.md",
+      "dependencies": [
+        "L-1"
+      ],
+      "card": "docs/pr-cards/L-2.md",
+      "status": "APPROVED",
+      "units": [
+        "L-2"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "L-3",
+      "title": "Browser",
+      "batch": "L",
+      "design": "docs/designs/BATCH-L.md",
+      "dependencies": [
+        "L-2"
+      ],
+      "card": "docs/pr-cards/L-3.md",
+      "status": "APPROVED",
+      "units": [
+        "L-3"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
+      "id": "S-vercel",
+      "title": "Start the Vercel server",
+      "batch": "S",
+      "design": "docs/designs/BATCH-S.md",
+      "dependencies": [
+        "K-1"
+      ],
+      "card": "docs/pr-cards/S-vercel.md",
+      "status": "ON_REQUEST",
+      "units": [
+        "S-vercel"
+      ],
+      "readiness": "WAITING_ON_OWNER",
+      "externalGates": [
+        "Chris requests this server"
+      ]
+    },
+    {
+      "id": "S-neon",
+      "title": "Start the Neon server",
+      "batch": "S",
+      "design": "docs/designs/BATCH-S.md",
+      "dependencies": [
+        "K-1"
+      ],
+      "card": "docs/pr-cards/S-neon.md",
+      "status": "ON_REQUEST",
+      "units": [
+        "S-neon"
+      ],
+      "readiness": "WAITING_ON_OWNER",
+      "externalGates": [
+        "Chris requests this server"
+      ]
+    },
+    {
+      "id": "S-github",
+      "title": "Start the GitHub server",
+      "batch": "S",
+      "design": "docs/designs/BATCH-S.md",
+      "dependencies": [
+        "K-1"
+      ],
+      "card": "docs/pr-cards/S-github.md",
+      "status": "ON_REQUEST",
+      "units": [
+        "S-github"
+      ],
+      "readiness": "WAITING_ON_OWNER",
+      "externalGates": [
+        "Chris requests this server"
+      ]
+    },
+    {
+      "id": "S-messaging",
+      "title": "Start the messaging server (Resend, Twilio)",
+      "batch": "S",
+      "design": "docs/designs/BATCH-S.md",
+      "dependencies": [
+        "K-1"
+      ],
+      "card": "docs/pr-cards/S-messaging.md",
+      "status": "ON_REQUEST",
+      "units": [
+        "S-messaging"
+      ],
+      "readiness": "WAITING_ON_OWNER",
+      "externalGates": [
+        "Chris requests this server"
+      ]
+    }
+  ]
+}
