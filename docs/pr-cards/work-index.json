@@ -407,51 +407,51 @@
       "title": "Start the Vercel server",
       "batch": "S",
       "design": "docs/designs/BATCH-S.md",
-      "dependencies": [
-        "K-1"
-      ],
+      "dependencies": [],
       "card": "docs/pr-cards/S-vercel.md",
       "status": "MERGED",
       "units": [
         "S-vercel"
       ],
-      "readiness": "WAITING_ON_OWNER",
+      "readiness": "READY",
       "externalGates": [],
-      "note": "Done in its own repo 2026-10-10 (plan, gap check, A-1 foundation with proven CI); no card file in this repo."
+      "pr": [
+        "done in its own repo"
+      ]
     },
     {
       "id": "S-neon",
       "title": "Start the Neon server",
       "batch": "S",
       "design": "docs/designs/BATCH-S.md",
-      "dependencies": [
-        "K-1"
-      ],
+      "dependencies": [],
       "card": "docs/pr-cards/S-neon.md",
       "status": "MERGED",
       "units": [
         "S-neon"
       ],
-      "readiness": "WAITING_ON_OWNER",
+      "readiness": "READY",
       "externalGates": [],
-      "note": "Done in its own repo 2026-10-10 (plan, gap check, A-1 foundation with proven CI); no card file in this repo."
+      "pr": [
+        "done in its own repo"
+      ]
     },
     {
       "id": "S-github",
       "title": "Start the GitHub server",
       "batch": "S",
       "design": "docs/designs/BATCH-S.md",
-      "dependencies": [
-        "K-1"
-      ],
+      "dependencies": [],
       "card": "docs/pr-cards/S-github.md",
       "status": "MERGED",
       "units": [
         "S-github"
       ],
-      "readiness": "WAITING_ON_OWNER",
+      "readiness": "READY",
       "externalGates": [],
-      "note": "Done in its own repo 2026-10-10 (plan, gap check, A-1 foundation with proven CI); no card file in this repo."
+      "pr": [
+        "done in its own repo"
+      ]
     },
     {
       "id": "S-messaging",

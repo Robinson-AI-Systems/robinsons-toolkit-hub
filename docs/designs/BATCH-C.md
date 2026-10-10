@@ -20,7 +20,7 @@ be undone (money movement, sent email). Nothing is undone automatically.
 `hub_dev_environment_up(project, runId?)` — one preview, one confirm — creates a scratch GitHub branch or repo, a Neon
 branch, a Vercel preview with environment variables wired to it, Stripe test data and a forwarder pointing at the preview,
 and Workspace fixtures, all under one `runId` (contract §10); `hub_dev_environment_down(runId)` calls each server's
-`_dev_cleanup` for that run and reports per server. Each step only runs on servers that exist; missing ones are listed,
+`<prefix>_dev_cleanup` for that run and reports per server. Each step only runs on servers that exist; missing ones are listed,
 not faked.
 
 **C4. Port only what is used.** The old compound tools are inventoried (Batch M-2); each is ported only when its servers

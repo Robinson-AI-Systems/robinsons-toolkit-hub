@@ -18,3 +18,8 @@ ready first card. This repo records the card and updates the roadmap.
 plans (Workspace Phase 8, Stripe Batch R).
 
 ## Amendments
+
+**2026-10-10 — S-github, S-vercel and S-neon ran before K-1 (Chris: "these are extremely high priority … the stack I
+currently use for everything").** Each followed the playbook and the RTC 1 draft as it stood that day; K-1 now compares
+the contract with all five server plans (Workspace, Stripe, GitHub, Vercel, Neon), not two. Their cards record what was
+produced (`docs/pr-cards/S-*.md`).

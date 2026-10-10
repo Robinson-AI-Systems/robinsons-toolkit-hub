@@ -8,7 +8,7 @@ Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADM
 - Every door passes the conformance and write-contract checks against the reference fake server.
 - No secret in code, docs, tests, logs, PR text or results; passes shown once; relay sees only ciphertext on GitHub.
 - No real pass or production/live account used from tests or scripts.
-- Database changes additive; Node 20; plain English for Chris.
+- Database changes additive; Node 24.x; plain English for Chris.
 
 ## Batch K — Contract, conformance, core, scaffold (`designs/BATCH-K.md`)
 - [ ] CONTRACT RTC 1 final and agreed by both existing server plans; kit docs complete.

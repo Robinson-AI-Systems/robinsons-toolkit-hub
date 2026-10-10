@@ -31,8 +31,10 @@ tool worked there.
 
 **D1. `rtool` knows several servers.** Config (`~/.config/rtool/servers.json` locally; environment variables in sandboxes:
 `RTOOL_SERVERS='stripe=https://…,workspace=https://…'` and `RTOOL_PASS_<NAME>`) maps a short name to a server URL and pass.
-Local machines keep passes in the OS keychain (`rtool login <name>`). Tools are addressed `<server>.<tool>`
-(`rtool call stripe.customer_find --args '{…}'`).
+Local machines keep passes in the OS keychain (`rtool login <name>`). Tools are addressed by their full name, which
+always starts with the server's prefix (contract §3), so the prefix picks the server (`rtool call stripe_customer_find
+--args '{…}'`); `<server>.<tool>` (`stripe.stripe_customer_find`) is also accepted when two configured servers share a
+prefix (for example a test and a production deployment of the same server).
 
 **D2. Commands:** `init` (detect environment, write the agent's skill / `AGENTS.md` section, report the route per server),
 `login`, `servers`, `whoami [server]`, `tools [server] [words]`, `describe <server.tool>`, `call <server.tool>`
@@ -40,7 +42,7 @@ Local machines keep passes in the OS keychain (`rtool login <name>`). Tools are 
 `--dry-run`, `--confirm`), `batch`, `result <server> <handle>`, `sdk [server]` (typed functions per area for code mode),
 `mcp` (local stdio MCP over all configured servers, compact listing, names prefixed by server), `skill`,
 `new-server` (K-4). Exit codes: 0 ok, 2 needs confirm, 3 refused by a guard, 4 service error, 5 pass expired/revoked,
-6 no route. Plain JS, Node 20+, no build step; installed with `npm install -g github:Robinson-AI-Systems/robinsons-toolkit-hub#cli-v1`
+6 no route. Plain JS, Node 24.x, no build step; installed with `npm install -g github:Robinson-AI-Systems/robinsons-toolkit-hub#cli-v1`
 or `npx -y github:…#cli-v1 <cmd>`.
 
 **D3. Route finding per server:** direct HTTPS first; on proxy refusal or connection failure, the GitHub relay; say which
