@@ -129,7 +129,7 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 - **No secret leaves its home:** service keys stay in their server; passes are shown once and stored hashed (servers) or
   encrypted (the hub's stored passes for servers); the relay sees ciphertext on GitHub and plaintext only in memory.
 - **Small results** (contract §7) through every door; the CLI's `--out` keeps big results out of an agent's context.
-- **Additive database changes.** Node 20, plain ES modules, no build step for the CLI.
+- **Additive database changes.** Node 24.x (Vercel stopped deploying Node 20 on 2026-10-01), plain ES modules, no build step for the CLI.
 
 ## How to run things
 

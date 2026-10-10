@@ -5,7 +5,13 @@ Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk plan
 ## Next
 
 - **Ready now:** K-1 — contract final and kit docs ([card](pr-cards/K-1.md)). Then K-2 (JIT).
-- **Elsewhere in the program:** Stripe MCP card A-1 is ready; Google Workspace MCP Phase 8 plan is in PR #28 for Chris.
+- **Elsewhere in the program:** Stripe MCP is being built (A-1 … A-5a merged by Sol); Google Workspace MCP Phase 8 plan
+  merged (its PR #28/#29). **GitHub, Vercel and Neon servers:** plans, gap checks against every older toolkit, and a
+  proven A-1 foundation merged in each repo (2026-10-10); next card A-2 in each.
+- **Adoption proposals for the existing servers** (executed through their own cards, never from here): Stripe and
+  Workspace move to Node 24.x, and Stripe prefixes every tool name with `stripe_` before its first tools are built
+  (contract §3); Workspace renames generic areas (`admin_`, `chat_`, `contacts_`, `workflow_` …) with old names kept as
+  aliases during its Phase 8.
 
 ## Environment
 
@@ -15,6 +21,10 @@ Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk plan
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: still Chris's local tool; freeze proposed in M-1.
 
 ## Recent merges (newest first)
+
+**2026-10-10 — Three new servers started (docs PR):** S-github, S-vercel, S-neon done in their own repos; contract §3:
+every tool name starts with the server prefix; Node 24.x; server playbook §3b lessons (gap check against old toolkits,
+proven A-1 foundation, REST PRs, bounded CI waits, org-wide Codex reviewer).
 
 **2026-10-10 — Review fixes (docs PR #3):** contract §2 now requires that a login refresh keeps its settings and that
 rate limits and lockouts are counted in the database; §9 checks both, the rate limit with two server processes and

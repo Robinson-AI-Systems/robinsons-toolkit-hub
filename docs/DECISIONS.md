@@ -44,3 +44,9 @@ Workspace MCP plan (its PR #28) found that (1) an OAuth refresh could drop a con
 connection becoming full access) and (2) an in-memory rate limit does nothing on serverless hosts. Contract §2 now
 requires both (settings copied on refresh; limits counted in the database), conformance checks both, and the hub, relay
 and Stripe plans follow. RTC 1 is not final until K-1, so this is a clarification of version 1, not a new version.
+
+**2026-10-10 — Tool names always start with the server prefix; Node 24.x (RTC 1 clarification).** Planning GitHub,
+Vercel and Neon together showed shared nouns (project, branch, member, workflow, webhook, admin) across servers that are
+loaded into one chat; some clients don't namespace tools by server. Contract §3 now requires `<prefix>_…` on every tool
+name. Vercel stopped deploying Node 20 on 2026-10-01, so every server and the hub use Node 24.x. Still a draft
+clarification of RTC 1 (before K-1). Stripe and Workspace adopt through their own cards (STATUS).

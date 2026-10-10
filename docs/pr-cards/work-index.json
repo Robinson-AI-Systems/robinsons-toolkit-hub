@@ -407,17 +407,16 @@
       "title": "Start the Vercel server",
       "batch": "S",
       "design": "docs/designs/BATCH-S.md",
-      "dependencies": [
-        "K-1"
-      ],
+      "dependencies": [],
       "card": "docs/pr-cards/S-vercel.md",
-      "status": "ON_REQUEST",
+      "status": "MERGED",
       "units": [
         "S-vercel"
       ],
-      "readiness": "WAITING_ON_OWNER",
-      "externalGates": [
-        "Chris requests this server"
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "done in its own repo"
       ]
     },
     {
@@ -425,17 +424,16 @@
       "title": "Start the Neon server",
       "batch": "S",
       "design": "docs/designs/BATCH-S.md",
-      "dependencies": [
-        "K-1"
-      ],
+      "dependencies": [],
       "card": "docs/pr-cards/S-neon.md",
-      "status": "ON_REQUEST",
+      "status": "MERGED",
       "units": [
         "S-neon"
       ],
-      "readiness": "WAITING_ON_OWNER",
-      "externalGates": [
-        "Chris requests this server"
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "done in its own repo"
       ]
     },
     {
@@ -443,17 +441,16 @@
       "title": "Start the GitHub server",
       "batch": "S",
       "design": "docs/designs/BATCH-S.md",
-      "dependencies": [
-        "K-1"
-      ],
+      "dependencies": [],
       "card": "docs/pr-cards/S-github.md",
-      "status": "ON_REQUEST",
+      "status": "MERGED",
       "units": [
         "S-github"
       ],
-      "readiness": "WAITING_ON_OWNER",
-      "externalGates": [
-        "Chris requests this server"
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "done in its own repo"
       ]
     },
     {

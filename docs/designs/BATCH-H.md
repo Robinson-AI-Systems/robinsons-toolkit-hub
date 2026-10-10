@@ -22,7 +22,8 @@ hub's setup page (never in chat). A server pass for the hub is created by Chris 
 Toolkit".
 
 **H3. Federated tools.** `hub_search_tools(query, server?)` fans out to each server's search and merges results (ranked,
-server-labelled); `hub_describe_tool(server.tool)`, `hub_call(server.tool, args)`, `hub_batch` route to the server's
+server-labelled); `hub_describe_tool(name)`, `hub_call(name, args)` (full prefixed tool names are unique across servers, contract §3;
+`server.name` also accepted), `hub_batch` route to the server's
 HTTPS API. The hub never duplicates a server's guards; it passes through `dryRun`/`confirm` and returns the server's
 result as-is, plus its own `server` label.
 

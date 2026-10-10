@@ -17,7 +17,7 @@ Words: **server** = one service server (e.g. `stripe-mcp`). **Hub** = Robinson's
 |---|---|---|
 | MCP connector | `POST /api/mcp` (Streamable HTTP), OAuth 2.1 + PKCE login at `/api/oauth/*` with discovery at `/.well-known/*` | claude.ai and other MCP clients |
 | HTTPS tool API | `GET /api/tools?q&area&limit`, `GET /api/tools/{name}`, `POST /api/tools/{name}`, `POST /api/tools/_batch`, `GET /api/results/{handle}`, `GET /api/whoami` | The hub, HTTP-only agents, the `rtool` CLI |
-| Contract manifest | `GET /api/contract` → `{ rtc: 1, server, version, apiVersion?, areas[], counts: { tools, writes, money }, profiles[], listingModes[], modes[] (e.g. `test`, `live` or `preview`, `production`), devTools: boolean }` (no auth) | The hub, the conformance test |
+| Contract manifest | `GET /api/contract` → `{ rtc: 1, server, prefix, version, apiVersion?, areas[], counts: { tools, writes, money }, profiles[], listingModes[], modes[] (e.g. `test`, `live` or `preview`, `production`), devTools: boolean }` (no auth) | The hub, the conformance test |
 
 The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built once in this repo), not server doors.
 
@@ -40,8 +40,10 @@ The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built o
 
 ## 3. Tool shape
 
-Every tool has: `name` (`<area>_<verb>_<object>`, snake_case; workflows `workflow_*`; server-about-itself
-`<prefix>_*`), `description` (listing text ≤160 characters, starting with the action; `MOVES MONEY:` first when it
+Every tool has: `name` (`<prefix>_<area>_<verb>_<object>`, snake_case, **always starting with the server's prefix** —
+`github_`, `vercel_`, `neon_`, `stripe_` … — because several servers are loaded in one chat, they share nouns such as
+project, branch, member and workflow, and some clients do not namespace tools by server; workflows `<prefix>_workflow_*`,
+server-about-itself `<prefix>_*`; tool names are unique across all Robinson servers), `description` (listing text ≤160 characters, starting with the action; `MOVES MONEY:` first when it
 does), `inputSchema`, and metadata: `area`, `profiles` (`read_only` | `everyday` | `full`), `writes` (boolean),
 `money` (boolean), `destructive` (boolean), `audience` (one or more of `builder` — building or testing something with
 the service; `owner` — setting up and administering an account; `operator` — day-to-day use), and MCP `annotations`
@@ -86,7 +88,8 @@ server's universal tools if any; under 5,000 tokens). Chosen per connection or p
 
 ## 8. What the hub may assume
 
-- `GET /api/contract` tells it the server's areas, counts and RTC version; it refuses servers with an unknown version.
+- `GET /api/contract` tells it the server's prefix, areas, counts and RTC version (two servers with the same prefix are
+  refused unless they are deployments of the same server); it refuses servers with an unknown version.
 - It can search, describe and call with a pass whose profile and areas the person chose; it never sees service keys.
 - It records its own change-log entry for every call it routes, pointing at the server's change-log row (returned as
   `logged.id` in write results).
@@ -98,13 +101,13 @@ server's universal tools if any; under 5,000 tokens). Chosen per connection or p
 (§10 is checked only for servers whose manifest says `devTools: true`: a dev tool refuses live/production; cleanup
 touches only recorded objects.)
 
-(§11 is checked by: `_admin_overview` present and well-formed; `_where_is_setting` returns structured steps; account-wide
+(§11 is checked by: `<prefix>_admin_overview` present and well-formed; `<prefix>_where_is_setting` returns structured steps; account-wide
 writes need `confirm`.)
 
 A server is "RTC 1" when `packages/conformance` (run against its URL with a test pass in its test/sandbox mode) passes:
 manifest; search/describe/call/batch/result; a read tool's `fields`/`detail`/handle behavior; a write tool's dryRun /
 needs-confirmation / confirm / read-back / change-log behavior; refusal of writes by a read-only pass; expired and
-revoked passes refused; a refreshed connector token keeps its settings; rate limits hold across two server instances
+revoked passes refused; a refreshed connector token keeps its settings; every tool name starts with the manifest's `prefix`; rate limits hold across two server instances
 (in a server's CI the conformance runner starts **two separate server processes sharing one throwaway database** and
 sends **overlapping** calls split between them (more than the limit, all at once), expecting exactly the limit to
 succeed and the rest `rate_limited` — so neither one warm process nor a read-then-update counter can pass; against a single
