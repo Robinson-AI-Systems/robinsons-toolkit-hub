@@ -14,6 +14,9 @@ Write fresh for the service: `docs/TOOL-CATALOG.md`, `docs/designs/BATCH-*.md` (
 `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/OWNER-GUIDE.md`, `docs/pr-cards/work-index.json`, the first card,
 `docs/audits/<date>-research.md` (playbook §2), and `docs/APP-NEEDS-<APP>.md` for each project profile.
 
-Replace checklist: service name and prefix; hard limits (production/live, money, messages, access); credential type and
+Also copy the proven foundation of the newest server (`.github/workflows/ci.yml`, `scripts/check-*.mjs`,
+`scripts/local-postgres-test.sh`, `eslint.config.js`, `vitest*.config.js`) when building its A-1.
+
+Replace checklist: service name and prefix (every tool name starts with it); hard limits (production/live, money, messages, access); credential type and
 setup page wording; mock/test strategy; API version pinning; danger list → guards; project profiles; the contract
 version (RTC 1).

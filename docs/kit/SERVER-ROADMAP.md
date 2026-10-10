@@ -10,9 +10,9 @@ current work touches most (any project); it is not a limit — unplanned service
 |---|---|---|---|---|
 | 1 | Google Workspace MCP (`google-workspace-mcp`) | `google` (158) | Mail, calendar, Drive, Docs/Sheets, admin; build-time: test fixtures, app integration checks (its P8-7) | **Live** (360 tools); contract upgrade = its Phase 8 |
 | 2 | Stripe MCP (`stripe-mcp`) | `stripe` (202) | Payments and billing for anything; build-time: test data, cleanup, test events, signed forwarding, time travel (its Batch V) | **Planned, approved**; contract = its Batch R |
-| 3 | Vercel MCP (`vercel-mcp`) | `vercel` (181) | Projects, deployments, env vars, domains, DNS, logs; build-time: preview deploys per branch, env wiring, rollback, log tail for a feature | Not started |
-| 4 | Neon MCP (`neon-mcp`) | `neon` (204) | Projects, branches, SQL with production guard, restores; build-time: a throwaway branch per feature or test run, schema diff, seed and reset | Not started |
-| 5 | GitHub MCP (`github-mcp`) | `github` (311) | Repos, branches, PRs, reviews, CI, releases, issues; build-time: scratch repos, CI reruns and logs, release cutting | Not started |
+| 3 | Vercel MCP (`vercel-mcp`) | `vercel` (181) | Projects, deployments, env vars, domains, DNS, logs; build-time: preview deploys per branch, env wiring, rollback, log tail for a feature | **Planned + foundation merged** (236 tools; repo `Robinson-AI-Systems/vercel-mcp`, next card A-2) |
+| 4 | Neon MCP (`neon-mcp`) | `neon` (204) | Projects, branches, SQL with production guard, restores; build-time: a throwaway branch per feature or test run, schema diff, seed and reset | **Planned + foundation merged** (177 tools; repo `Robinson-AI-Systems/neon-mcp`, next card A-2) |
+| 5 | GitHub MCP (`github-mcp`) | `github` (311) | Repos, branches, PRs, reviews, CI, releases, issues; build-time: scratch repos, CI reruns and logs, release cutting | **Planned + foundation merged** (305 tools; repo `Robinson-AI-Systems/github-mcp`, next card A-2) |
 | 6 | Messaging MCP (`messaging-mcp`) | `resend` (52), `twilio` (115) | Email and SMS for any app; one server, two areas, strict "messages to people" guard; build-time: test-mode sends to Chris only, inbound simulation, domain/number setup checks | Not started |
 | 7 | Sentry MCP (`sentry-mcp`) | `sentry` (104) | Errors, performance, releases; build-time: "what broke in this preview", issue triage | Not started |
 | 8 | Cloudflare MCP (`cloudflare-mcp`) | `cloudflare` (187) | DNS, CDN, Workers, R2, Zero Trust; when a project uses Cloudflare | Not started |

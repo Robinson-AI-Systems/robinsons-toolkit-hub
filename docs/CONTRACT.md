@@ -40,8 +40,10 @@ The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built o
 
 ## 3. Tool shape
 
-Every tool has: `name` (`<area>_<verb>_<object>`, snake_case; workflows `workflow_*`; server-about-itself
-`<prefix>_*`), `description` (listing text ≤160 characters, starting with the action; `MOVES MONEY:` first when it
+Every tool has: `name` (`<prefix>_<area>_<verb>_<object>`, snake_case, **always starting with the server's prefix** —
+`github_`, `vercel_`, `neon_`, `stripe_` … — because several servers are loaded in one chat, they share nouns such as
+project, branch, member and workflow, and some clients do not namespace tools by server; workflows `<prefix>_workflow_*`,
+server-about-itself `<prefix>_*`; tool names are unique across all Robinson servers), `description` (listing text ≤160 characters, starting with the action; `MOVES MONEY:` first when it
 does), `inputSchema`, and metadata: `area`, `profiles` (`read_only` | `everyday` | `full`), `writes` (boolean),
 `money` (boolean), `destructive` (boolean), `audience` (one or more of `builder` — building or testing something with
 the service; `owner` — setting up and administering an account; `operator` — day-to-day use), and MCP `annotations`

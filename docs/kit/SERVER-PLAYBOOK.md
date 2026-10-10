@@ -59,7 +59,7 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 
 | Batch | Contents | Source |
 |---|---|---|
-| A Foundation | repo, CI, checks, login, credential store + setup page, service client wrapper (pinned API version where the service has versions; retries; idempotency where supported) | `robinson-mcp-core` + Stripe Batch A pattern |
+| A Foundation | **A-1 makes the repo implementation-ready and proves it**: package (Node 24.x, exact versions, committed lockfile), the service fake validated against the vendored API description, throwaway-Postgres tests, check scripts that really check, CI with independent jobs and one aggregate `ci` gate — shown red by a temporary failing test, then green, before merge; cards A-2/A-3 written. Then login, credential store + setup page, service client wrapper (pinned API version where the service has versions; retries; idempotency where supported) | `robinson-mcp-core` + Stripe Batch A pattern |
 | B Trust layer | `defineWrite` with service-specific guards (§4), plain-English errors for this service, result shaping, profiles | core + Stripe Batch B pattern |
 | C Context | summaries, fields/detail, handles, compact listing, budgets | core (mostly free) |
 | D… Area batches | the hand-built tools, one batch per area group (each card one area) | the tool catalog |
@@ -70,6 +70,22 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 | U Universal | `api_search` / `api_describe` / `api_read` / `api_write` (or a schema-checked GraphQL pair) for everything not hand-built | Stripe Batch U pattern |
 | R Contract doors | passes, HTTPS tool API, manifest, conformance | core + Stripe Batch R |
 | X Close-out | undo, real-account read-only smoke test | Stripe Batch X |
+
+## 3b. Lessons from the first four servers (2026-10-10)
+
+- **Every tool name starts with the server prefix** (contract §3). A name that looks like a credential prefix (for
+  example `github_pat_…`) is renamed, or every secret scanner flags the catalog.
+- **Node 24.x**; GitHub Actions on current major versions (Node 24 runtimes).
+- **Gap check before publishing the plan:** map every tool the old toolkits built or planned for the service
+  (`robinsons-toolkit-mcp`, `robinsonai-mcp-servers`, `robinsons-toolkit-api`) to the new catalog in
+  `docs/audits/<date>-prior-tools.md` — covered, universal, dropped with a reason, or added. Earlier "all tests pass"
+  reports in those repos only checked definitions or environment variables; never count them as evidence.
+- **The workspace proxy blocks many vendor sites** (OpenAPI downloads answered 403): plan a documented fallback source
+  (the vendor's npm package) with a hash, and retry the live file in the card that pins it.
+- **PRs through the REST API** (`gh api …/pulls`); `gh pr` GraphQL commands are blocked. CI waits are bounded
+  (check once a minute, ~15 minutes); job logs may not download through the proxy — read check-run annotations.
+- **An organization-wide Codex reviewer posts on every new repo** even when a repo says "no automated review": handle and
+  resolve its threads, never wait for one.
 
 ## 4. Guards every server decides up front
 

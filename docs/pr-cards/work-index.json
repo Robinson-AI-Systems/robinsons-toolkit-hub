@@ -411,14 +411,13 @@
         "K-1"
       ],
       "card": "docs/pr-cards/S-vercel.md",
-      "status": "ON_REQUEST",
+      "status": "MERGED",
       "units": [
         "S-vercel"
       ],
       "readiness": "WAITING_ON_OWNER",
-      "externalGates": [
-        "Chris requests this server"
-      ]
+      "externalGates": [],
+      "note": "Done in its own repo 2026-10-10 (plan, gap check, A-1 foundation with proven CI); no card file in this repo."
     },
     {
       "id": "S-neon",
@@ -429,14 +428,13 @@
         "K-1"
       ],
       "card": "docs/pr-cards/S-neon.md",
-      "status": "ON_REQUEST",
+      "status": "MERGED",
       "units": [
         "S-neon"
       ],
       "readiness": "WAITING_ON_OWNER",
-      "externalGates": [
-        "Chris requests this server"
-      ]
+      "externalGates": [],
+      "note": "Done in its own repo 2026-10-10 (plan, gap check, A-1 foundation with proven CI); no card file in this repo."
     },
     {
       "id": "S-github",
@@ -447,14 +445,13 @@
         "K-1"
       ],
       "card": "docs/pr-cards/S-github.md",
-      "status": "ON_REQUEST",
+      "status": "MERGED",
       "units": [
         "S-github"
       ],
       "readiness": "WAITING_ON_OWNER",
-      "externalGates": [
-        "Chris requests this server"
-      ]
+      "externalGates": [],
+      "note": "Done in its own repo 2026-10-10 (plan, gap check, A-1 foundation with proven CI); no card file in this repo."
     },
     {
       "id": "S-messaging",
