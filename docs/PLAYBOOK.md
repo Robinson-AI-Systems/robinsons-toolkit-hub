@@ -33,7 +33,7 @@ One work unit = one local commit. Inside it: (1) additive SQL + `docs/ARCHITECTU
 (2) the code with its unit tests in the same commit; (3) conformance or door tests when a door is involved.
 
 While implementing:
-- The hub never calls a service directly: always a server's RTC doors (or the old toolkit as a legacy backend, Batch M).
+- The hub never calls a service directly: always a server's RTC doors.
 - No mock data, stubs returning success, or TODO-as-implementation.
 - **Ripple check:** `grep -rn "<changed export>" packages api tests | head -50` and update every affected fake and test
   in the same commit.

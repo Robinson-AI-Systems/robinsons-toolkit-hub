@@ -41,12 +41,11 @@ authority). This repo holds:
    its code SDK, a local MCP, and the GitHub relay for locked-down agent workspaces.
 3. **`robinson-mcp-core`**, the shared package of contract code every server uses (extracted from the Stripe MCP).
 4. **The hub server**: one MCP, CLI and HTTPS API that searches, describes and calls tools across all servers, plus
-   cross-server workflows (from the old toolkit's compound tools) and local tools (files, shell, Ollama, browser).
+   cross-server workflows and local tools (files, shell, Ollama, browser).
 5. **The server kit**: the playbook and roadmap for building each individual service server.
-6. **The migration** of the old local `robinsons-toolkit-mcp` (3,049 tools) into this architecture.
-
-The old repo `Robinson-AI-Systems/robinsons-toolkit-mcp` keeps running locally, frozen (no new tools), until Batch M
-retires it. **Chris is not a developer:** every update and PR summary for him is plain English.
+The old toolkits (`robinsons-toolkit-mcp`, `robinsonai-mcp-servers`, `robinsons-toolkit-api`) are **reference only** — a
+checklist of what the new servers must be able to do. Nothing here keeps compatibility with them (no old names, no bridge,
+no migration; Chris, 2026-10-10). **Chris is not a developer:** every update and PR summary for him is plain English.
 
 ## Priorities (higher wins)
 
@@ -72,7 +71,7 @@ Never present partial work as done — Chris has been burned by overclaiming.
 - Making any server depend on the hub. A server must stay fully usable on its own.
 - Widening default pass permissions or the relay's reach.
 - Buying anything. Committing directly to `main`.
-- Modifying or deleting the old `robinsons-toolkit-mcp` repo before Batch M's card says so.
+- Modifying or deleting the old toolkit repos (they are Chris's to archive).
 
 ## Scope and owner decisions
 
@@ -122,8 +121,7 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 
 ## Engineering rules
 
-- **The hub never calls a service directly.** It talks only to servers' contract doors (and, during migration, to the old
-  toolkit as a clearly labelled legacy backend).
+- **The hub never calls a service directly.** It talks only to servers' contract doors.
 - **Every door enforces the same guards** because guards live in the servers; the hub adds its own pass checks and change
   log on top, never instead.
 - **No secret leaves its home:** service keys stay in their server; passes are shown once and stored hashed (servers) or

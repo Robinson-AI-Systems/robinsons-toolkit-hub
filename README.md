@@ -8,4 +8,4 @@ command-line tool and GitHub relay that let any AI agent use any server from any
 package, the hub server that combines them, and the playbook for building each new server.
 
 **Status:** plan plus the repository foundation (checks, test harnesses, CI); no product code yet. Start at [`docs/START-HERE.md`](docs/START-HERE.md). AI agents: read
-[`AGENTS.md`](AGENTS.md) first. The previous, local toolkit lives on (frozen) in `Robinson-AI-Systems/robinsons-toolkit-mcp`.
+[`AGENTS.md`](AGENTS.md) first. The previous toolkits are reference material only; nothing keeps compatibility with them.

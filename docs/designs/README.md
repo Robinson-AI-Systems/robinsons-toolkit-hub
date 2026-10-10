@@ -4,7 +4,6 @@
 |---|---|---|
 | K Contract, conformance, core, scaffold | [BATCH-K](BATCH-K.md) | Approved 2026-10-10 (IN-00) |
 | D Direct doors: rtool, local MCP, relay | [BATCH-D](BATCH-D.md) | Approved 2026-10-10 (IN-00) |
-| M Old toolkit migration | [BATCH-M](BATCH-M.md) | Approved 2026-10-10 (IN-00) |
 | H Hub server | [BATCH-H](BATCH-H.md) | Approved 2026-10-10 (IN-00) |
 | C Cross-server workflows | [BATCH-C](BATCH-C.md) | Approved 2026-10-10 (IN-00) |
 | L Local tools | [BATCH-L](BATCH-L.md) | Approved 2026-10-10 (IN-00) |

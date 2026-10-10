@@ -5,7 +5,6 @@
 | "Set up Codex to use my Stripe server." | A pass is made on the Stripe server (shown once), and Codex gets the one-paragraph setup to install `rtool` | D |
 | "Use my Workspace and Stripe tools from this cloud workspace." | `rtool` reaches them directly, or through the GitHub relay if the workspace only allows GitHub | D |
 | "Start a server for Vercel." | A full plan for a new Vercel server, in its own repo, ready for Sol to build | S |
-| "Which of my old toolkit tools still work?" | The smoke-test report, namespace by namespace | M |
 | "Search all my tools for 'refund'." | One search across every server (hub) | H |
 | "Review my Vercel (or Stripe, or GitHub) account setup." | Everything owner-side in one view: business details, team and roles, security, plan and bill, settings — ok or needs attention | O (each server) |
 | "Add Sam to the team as a developer." / "Turn on two-step login." | Done by the server where the service allows it; otherwise a guided walk-through in a browser you watch, then checked | O, L-4 |
