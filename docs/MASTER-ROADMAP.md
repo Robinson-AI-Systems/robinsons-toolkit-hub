@@ -19,7 +19,7 @@ Each server is usable on its own the moment it is built; the hub adds a single f
 
 ## Order inside this repo
 
-K (K-0 done; K-1 and K-2 ready) → D → M → H → C → L, with S cards whenever Chris asks for a server.
+K (K-0 done; K-1 and K-2 ready) → D → H → C → L, with S cards whenever Chris asks for a server.
 
 ## Implementing agent — paste this
 
