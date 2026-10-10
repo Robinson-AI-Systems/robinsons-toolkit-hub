@@ -87,14 +87,17 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 - **Model:** Sol 5.6 is the routine implementer (light for docs and patterned CLI commands; medium for passes, relay,
   federation, workflows, local shell tools, SQL). A missing decision is never solved by guessing.
 - **Branches:** `ai/<tool>/<topic>`.
-- **Contract changes** are a new contract version with a dated DECISIONS entry and a card in each server that adopts it.
+- **Contract changes** are a new contract version with a dated DECISIONS entry and a card in each server that adopts it —
+  once K-1 has frozen a version. Before K-1, RTC 1 is a draft that no server implements yet, so it is clarified in place
+  with a DECISIONS entry; K-1 checks that no server advertises `rtc: 1` before then.
 
 ## Verify, push, review, merge (PLAYBOOK Steps 4–9)
 
 - `npm run check` and the card's targeted tests before pushing; never `--no-verify`. One push per CI cycle.
 - `ci` is the single merge gate, green at the exact head.
 - **No automated review** (same choice as the Stripe MCP): inspect the whole diff against `docs/AI-PR-READ-FIRST.md` and
-  write "Self-review: <findings and dispositions>" in the PR. Never claim a review that didn't run.
+  write "Self-review: <findings and dispositions>" in the PR. If an organization-wide automated reviewer posts anyway,
+  fix or answer each of its threads and resolve them (never wait for one). Never claim a review that didn't run.
 - Merging (authorized by Chris): `ci` green, acceptance met with evidence, self-review written; merge with the
   expected-head SHA. Stacks merge bottom-up.
 

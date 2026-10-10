@@ -12,7 +12,8 @@ Depends on K-3 (`robinson-mcp-core`) and D-1. Long-term: built after at least tw
 
 ## 1. Decisions
 
-**H1. The hub is itself an RTC 1 server** (built on `robinson-mcp-core`): its own connector login, passes, HTTPS API,
+**H1. The hub is itself an RTC 1 server** (built on `robinson-mcp-core`): its own connector login (settings survive
+refresh and rate limits live in its database, contract §2), passes, HTTPS API,
 manifest and meta-tools. So every agent door (connector, HTTPS, `rtool`, local MCP, relay) works with it unchanged.
 
 **H2. Backends are registered, not built in.** `hub_servers` holds each server's name, URL, RTC version (from

@@ -10,4 +10,6 @@ Write one line per applicable item in the PR saying how it is honored.
 6. Local tools act only inside allowed folders; shell commands outside the read-only allow-list need `confirm`.
 7. Cross-server workflows preview every step first and never undo automatically.
 8. Contract changes are a new RTC version with a DECISIONS entry; conformance stays green.
-9. Results stay small (contract §7); the CLI's `--out` keeps big results out of an agent's context.
+9. A token refresh copies every connection setting from the issuing row; rate limits and lockouts are counted in the
+   database (shared across serverless instances), never in memory — in the hub, the relay and every server (contract §2).
+10. Results stay small (contract §7); the CLI's `--out` keeps big results out of an agent's context.
