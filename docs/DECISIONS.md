@@ -24,3 +24,9 @@ this repo extracts it into `robinson-mcp-core` once proven (K-3), and other serv
 relay's public key, so GitHub sees only ciphertext and servers never need to know about the relay.
 
 **2026-10-10 — Public repository, no automated review**, as for the Stripe MCP.
+
+**2026-10-10 — A general development tool (Chris).** "This should be general, able to work freely on any project … It
+is supposed to be a powerful development tool." Real projects are completeness checks only. Added contract §10
+(developer conventions: safe modes, runs tagged `rtc_run`, cleanup by run, scenarios, integration checks), a Developer
+tools batch (V) to the server playbook, generic purposes in the server roadmap, and development-environment up/down as
+the hub's flagship cross-server workflows. Stripe gained its Batch V; Workspace gained P8-7.

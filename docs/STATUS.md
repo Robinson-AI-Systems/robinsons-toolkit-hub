@@ -16,6 +16,9 @@ Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk plan
 
 ## Recent merges (newest first)
 
+**2026-10-10 — General development tool (docs PR):** contract §10 developer conventions; playbook Batch V; roadmap
+purposes made generic; hub workflows lead with dev environment up/down.
+
 **2026-10-10 — Plan written (initial commit):** AGENTS, START-HERE, SESSION-START, PLAYBOOK, drift protocol, CONTRACT
 (RTC 1), PLAN, MASTER-ROADMAP, 7 batch designs, server playbook and roadmap, old-toolkit audit, owner inputs,
 decisions, work index with validator, first card K-1.
