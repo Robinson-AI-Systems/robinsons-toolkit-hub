@@ -30,3 +30,11 @@ is supposed to be a powerful development tool." Real projects are completeness c
 (developer conventions: safe modes, runs tagged `rtc_run`, cleanup by run, scenarios, integration checks), a Developer
 tools batch (V) to the server playbook, generic purposes in the server roadmap, and development-environment up/down as
 the hub's flagship cross-server workflows. Stripe gained its Batch V; Workspace gained P8-7.
+
+**2026-10-10 — Owners and end users too, not only developers (Chris).** "These toolsets should be great for both
+developers and end users of each service, account management tools … everything." Contract §3 adds an `audience` tag
+(builder / owner / operator); new §11 requires every server to cover the owner side: an admin overview, real tools for
+every owner setting with an API, guided settings with structured steps and read-back for everything without one, and a
+full dashboard map. The playbook adds research steps 9–10 (owner side, coverage matrix) and a standard batch O; the hub
+adds L-4, a guided settings runner that walks dashboard-only settings in a visible browser with Chris approving each step
+(never typing passwords). The old toolkit's audits had found account, team, billing and security tools "broadly absent".

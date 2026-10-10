@@ -39,6 +39,14 @@ in this repo (`S-<server>`), which produces the new repo's whole plan. Chris cre
    (scenarios), throwaway environments (a database branch, a preview deployment, a scratch repo, a test account),
    simulation (events, time, failures), precise cleanup by run, and an integration check for an app under development.
    These become the server's **Batch V** and follow contract §10.
+9. **The owner and administrator side.** Everything an account owner sets up and runs in the service's dashboard:
+   account and business details, verification, team members and roles, security (two-step login, keys and tokens, SSO,
+   audit logs), the service's own plan, usage and billing, notifications and emails, integrations and connected apps,
+   compliance settings. For each: API or dashboard-only. API → real tools; dashboard-only → guided settings with
+   structured steps and read-back (contract §11). Walk every settings page of the dashboard to build the map; the old
+   toolkit's audits found this side "broadly absent" across its namespaces, so it is checked explicitly.
+10. **Coverage matrix.** One table in the research file: each area × audience (builder / owner / operator) → covered by
+   which tools. Gaps are decisions, written down, never silent.
 
 ## 3. The plan (copy the system)
 
@@ -55,6 +63,7 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 | B Trust layer | `defineWrite` with service-specific guards (§4), plain-English errors for this service, result shaping, profiles | core + Stripe Batch B pattern |
 | C Context | summaries, fields/detail, handles, compact listing, budgets | core (mostly free) |
 | D… Area batches | the hand-built tools, one batch per area group (each card one area) | the tool catalog |
+| O Owner and administration | admin overview, account and team, security, the service's own billing and plan, notifications, integrations; guided settings with structured steps and read-back; full dashboard map (contract §11) | Stripe Batch G-6 pattern |
 | V Developer tools | test data scenarios, runs and cleanup, throwaway environments, simulation, integration check — test/preview modes only (contract §10) | Stripe Batch V pattern |
 | P Project profiles | optional, when an app manages its own resources in this service | Stripe Batch P pattern |
 | W Workflows | the jobs Chris actually does, in one sentence | his requests and the old compound tools |
@@ -90,6 +99,8 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 2. RTC conformance green in CI (`packages/conformance`).
 3. A read-only smoke test against Chris's real account in its safest mode, report committed.
 4. Deployed on Vercel with its own Neon database; DEPLOY.md followed by Chris; connector added in Claude.
-5. Developer tools (Batch V) follow contract §10: refuse production, record runs, clean up only what they created.
+5. The coverage matrix shows every area served for builders, owners and operators; owner-side settings are tools or
+   guided settings (contract §11), and `_admin_overview` works against the real account.
+5b. Developer tools (Batch V) follow contract §10: refuse production, record runs, clean up only what they created.
 6. Usable through `rtool` directly (and the relay) with a pass, proven by `scripts/agent-check.mjs`.
 7. Registered in the hub (once the hub exists) and listed as "live" in `docs/kit/SERVER-ROADMAP.md`.

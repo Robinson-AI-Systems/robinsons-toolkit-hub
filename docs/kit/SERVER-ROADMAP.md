@@ -6,7 +6,7 @@ current work touches most (any project); it is not a limit — unplanned service
 
 ## Service servers
 
-| Suggested order | Server (repo) | Covers old namespaces (old tools) | What it's for (operate and build) | Status |
+| Suggested order | Server (repo) | Covers old namespaces (old tools) | What it's for (build, own and operate) | Status |
 |---|---|---|---|---|
 | 1 | Google Workspace MCP (`google-workspace-mcp`) | `google` (158) | Mail, calendar, Drive, Docs/Sheets, admin; build-time: test fixtures, app integration checks (its P8-7) | **Live** (360 tools); contract upgrade = its Phase 8 |
 | 2 | Stripe MCP (`stripe-mcp`) | `stripe` (202) | Payments and billing for anything; build-time: test data, cleanup, test events, signed forwarding, time travel (its Batch V) | **Planned, approved**; contract = its Batch R |
@@ -24,6 +24,11 @@ current work touches most (any project); it is not a limit — unplanned service
 | 14 | Mapbox MCP (`mapbox-mcp`) | `mapbox` (51) | Maps, routing, geocoding for any app | Not started |
 | 15 | Research MCP (`research-mcp`) | `search` (30), `context7` (45), `sam` (21) | Web search, current library docs, SAM.gov federal contracts — research while building | Not started |
 | 16 | Fly MCP (`fly-mcp`) | `fly` (116) | Only if a project runs on Fly.io | Not started |
+
+Every server covers all three audiences (contract §11, playbook §2): builders, account owners/administrators and day-to-day
+operators — e.g. Vercel's team members, billing and usage, domains and security as well as deployments; Neon's
+organization, members, plan, usage and project settings as well as branches; GitHub's organization, members, teams,
+security settings, billing and apps as well as repositories.
 
 Grouping rule: one server per large service; small services that share a purpose and a risk type share a server (each
 keeps its own credentials and area). Any group can be split later without changing tool names (they are prefixed by area).

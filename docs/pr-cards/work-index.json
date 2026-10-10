@@ -387,6 +387,22 @@
       "externalGates": []
     },
     {
+      "id": "L-4",
+      "title": "Guided settings runner (visible browser, owner approves each step)",
+      "batch": "L",
+      "design": "docs/designs/BATCH-L.md",
+      "dependencies": [
+        "L-3"
+      ],
+      "card": "docs/pr-cards/L-4.md",
+      "status": "APPROVED",
+      "units": [
+        "L-4"
+      ],
+      "readiness": "WRITE_CARD_AT_START",
+      "externalGates": []
+    },
+    {
       "id": "S-vercel",
       "title": "Start the Vercel server",
       "batch": "S",

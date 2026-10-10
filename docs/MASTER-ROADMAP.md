@@ -39,5 +39,5 @@ K → D → M → H → C → L, with S cards whenever Chris asks for a server.
 | M Migration | M-1 freeze + smoke test · M-2 namespace map · M-3 legacy bridge · M-4 retirement checklist | JIT |
 | H Hub | H-1 foundation · H-2 registry · H-3 federation · H-4 narrowing passes · H-5 change log | JIT |
 | C Workflows | C-1 engine · C-2 dev environment up/down (then ported workflows) · C-3 weekly digest | JIT |
-| L Local | L-1 files/shell/git · L-2 Ollama · L-3 browser | JIT |
+| L Local | L-1 files/shell/git · L-2 Ollama · L-3 browser · L-4 guided settings runner | JIT |
 | S Servers | S-vercel · S-neon · S-github · S-messaging (more in `kit/SERVER-ROADMAP.md`) | written when Chris asks |

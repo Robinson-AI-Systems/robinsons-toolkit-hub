@@ -34,6 +34,7 @@ Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADM
 
 ## Batch L — Local tools (`designs/BATCH-L.md`)
 - [ ] Files/shell/git with folder allow-list and confirm; Ollama; browser.
+- [ ] Guided settings runner: structured steps in a visible browser, each approved, never typing credentials, verified by read-back.
 
 ## Batch S — Service servers (`designs/BATCH-S.md`)
 - [ ] Each started server has its full plan in its own repo and appears in the roadmap; started only on Chris's request.
