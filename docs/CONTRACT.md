@@ -17,7 +17,7 @@ Words: **server** = one service server (e.g. `stripe-mcp`). **Hub** = Robinson's
 |---|---|---|
 | MCP connector | `POST /api/mcp` (Streamable HTTP), OAuth 2.1 + PKCE login at `/api/oauth/*` with discovery at `/.well-known/*` | claude.ai and other MCP clients |
 | HTTPS tool API | `GET /api/tools?q&area&limit`, `GET /api/tools/{name}`, `POST /api/tools/{name}`, `POST /api/tools/_batch`, `GET /api/results/{handle}`, `GET /api/whoami` | The hub, HTTP-only agents, the `rtool` CLI |
-| Contract manifest | `GET /api/contract` → `{ rtc: 1, server, version, apiVersion?, areas[], counts: { tools, writes, money }, profiles[], listingModes[] }` (no auth) | The hub, the conformance test |
+| Contract manifest | `GET /api/contract` → `{ rtc: 1, server, version, apiVersion?, areas[], counts: { tools, writes, money }, profiles[], listingModes[], modes[] (e.g. `test`, `live` or `preview`, `production`), devTools: boolean }` (no auth) | The hub, the conformance test |
 
 The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built once in this repo), not server doors.
 
@@ -88,7 +88,28 @@ server's universal tools if any; under 5,000 tokens). Chosen per connection or p
 
 ## 9. Conformance
 
+(§10 is checked only for servers whose manifest says `devTools: true`: a dev tool refuses live/production; cleanup
+touches only recorded objects.)
+
 A server is "RTC 1" when `packages/conformance` (run against its URL with a test pass in its test/sandbox mode) passes:
 manifest; search/describe/call/batch/result; a read tool's `fields`/`detail`/handle behavior; a write tool's dryRun /
 needs-confirmation / confirm / read-back / change-log behavior; refusal of writes by a read-only pass; expired and
 revoked passes refused; no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
+
+## 10. Developer conventions (SHOULD for every server; MUST once a server offers `devTools`)
+
+These servers are general development tools. So that agents can build and test against any of them the same way —
+and the hub can set up and tear down a whole development environment across servers — servers that offer developer
+tools follow these conventions:
+
+- **Safe modes.** Developer tools (`<prefix>_dev_*`) act only in the service's test, sandbox, preview or
+  non-production mode, and refuse in live/production mode before reading anything. The manifest lists the modes.
+- **Runs.** Anything a developer tool creates belongs to a **run**: the server records every created object's ID, and
+  tags the object with `rtc_run=<runId>` where the service allows metadata, labels or properties. A caller may pass its
+  own `runId` (the hub does, to tie one environment together across servers).
+- **Cleanup.** `<prefix>_dev_cleanup(runId)` removes or archives exactly the recorded objects (preview first; `confirm`
+  to act; trash rather than delete where the service has a trash) and reports per object.
+- **Fixtures and scenarios.** `<prefix>_dev_seed(scenario | description)` creates realistic test material from named
+  scenarios; previews list exactly what will be created.
+- **Integration check.** `<prefix>_dev_check_integration(spec)` reports, without changing anything, whether the service
+  is set up for an app being built (events, permissions, settings), with exact console steps for anything with no API.

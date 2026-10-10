@@ -16,9 +16,16 @@ recorded in `hub_workflow_runs`. If a later step fails, the workflow stops, repo
 `hub_undo_run(run_id)`, which calls each server's undo tool in reverse order where an inverse exists and lists what cannot
 be undone (money movement, sent email). Nothing is undone automatically.
 
-**C3. Port only what is used.** The old compound tools are inventoried (Batch M-2); each is ported only when its servers
-exist and Chris wants it. First candidates: tenant provisioning and upgrade, YardSync job close-out, weekly engineering
-report, cost audit.
+**C3. Development environments first.** The flagship workflows are for building:
+`hub_dev_environment_up(project, runId?)` — one preview, one confirm — creates a scratch GitHub branch or repo, a Neon
+branch, a Vercel preview with environment variables wired to it, Stripe test data and a forwarder pointing at the preview,
+and Workspace fixtures, all under one `runId` (contract §10); `hub_dev_environment_down(runId)` calls each server's
+`_dev_cleanup` for that run and reports per server. Each step only runs on servers that exist; missing ones are listed,
+not faked.
+
+**C4. Port only what is used.** The old compound tools are inventoried (Batch M-2); each is ported only when its servers
+exist and Chris wants it (candidates: provision a project, full feature deploy, staging refresh, tenant provisioning,
+weekly engineering report, cost audit).
 
 ## 2. Schema
 
@@ -31,7 +38,10 @@ CREATE TABLE IF NOT EXISTS hub_workflow_runs (id TEXT PRIMARY KEY, workflow TEXT
 ### C-1 — Workflow engine: plan, confirm, run, ledger, undo-run (L, medium effort)
 Tests with fake servers: combined preview changes nothing; failure mid-run stops and reports; undo-run reverses in order
 and lists what it cannot reverse.
-### C-2 — First ported workflows (M each, written JIT per workflow)
+### C-2 — Development environment up/down across servers (L, medium effort)
+Tests with fake servers implementing §10: one runId across servers; partial failure stops and reports; down cleans only
+that run on each server.
+### C-2b — Ported workflows (M each, written JIT per workflow)
 ### C-3 — Weekly digest across servers (M)
 
 ## Amendments

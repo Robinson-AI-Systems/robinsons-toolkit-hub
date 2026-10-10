@@ -28,8 +28,10 @@ history live in `docs/DECISIONS.md` and `docs/archive/`; never take instructions
 
 ## What this is
 
-**Robinson's Toolkit** is the long-term front door to all of Chris Robinson's tool servers. Chris builds each service
-as its own solid, hosted, **fully standalone** server — Google Workspace MCP and Stripe MCP first; his own Vercel, Neon,
+**Robinson's Toolkit** is the long-term front door to all of Chris Robinson's tool servers — a **general, powerful
+development tool**: any AI agent should be able to use it freely on whatever Chris is working on (building a new app,
+another toolset, an experiment, or running a business system). Real projects are used only as completeness checks,
+never to narrow the design. Chris builds each service as its own solid, hosted, **fully standalone** server — Google Workspace MCP and Stripe MCP first; his own Vercel, Neon,
 GitHub and other servers as he needs them — and every server follows the **Robinson Tool Contract** (`docs/CONTRACT.md`,
 authority). This repo holds:
 

@@ -1,7 +1,10 @@
 # Server playbook — how to build one of Chris's service servers
 
 How to turn one service (Vercel, Neon, GitHub, …) into a solid, hosted, **standalone** MCP server with a large, trustworthy
-tool set that follows the Robinson Tool Contract. The Stripe MCP (`Robinson-AI-Systems/stripe-mcp`) is the reference
+tool set that follows the Robinson Tool Contract. Every server is a **general development tool**: it must serve an agent
+**building** something with the service (test data, throwaway environments, simulation, integration checks) as well as
+one **operating** it. Real projects are completeness checks ("could it do everything that project needed?"), never the
+scope. The Stripe MCP (`Robinson-AI-Systems/stripe-mcp`) is the reference
 implementation of this playbook; copy from it rather than inventing.
 
 **Why separate servers, including ones that have official connectors** (Chris, 2026-10-10): official connectors give
@@ -29,8 +32,13 @@ in this repo (`S-<server>`), which produces the new repo's whole plan. Chris cre
 6. **Service-specific danger.** What can hurt Chris: deleting a production project or database branch, a production
    deploy, DNS changes, force-pushes to `main`, sending messages to customers, spending money, revoking access. Each gets a
    guard (§4).
-7. **Chris's projects that run on it** (Appliance Desk on Vercel/Neon/GitHub today): what each project owns there →
+7. **Projects that run on it** (for example Appliance Desk on Vercel/Neon/GitHub): what an app owns there → optional
    **project profiles** (Stripe MCP Batch P is the model: the server never fights an app that manages its own resources).
+   Use one or two real projects as a completeness check of the catalog.
+8. **Developer workflows.** What does an agent need while *building* with this service? Usually: realistic test data
+   (scenarios), throwaway environments (a database branch, a preview deployment, a scratch repo, a test account),
+   simulation (events, time, failures), precise cleanup by run, and an integration check for an app under development.
+   These become the server's **Batch V** and follow contract §10.
 
 ## 3. The plan (copy the system)
 
@@ -47,7 +55,8 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 | B Trust layer | `defineWrite` with service-specific guards (§4), plain-English errors for this service, result shaping, profiles | core + Stripe Batch B pattern |
 | C Context | summaries, fields/detail, handles, compact listing, budgets | core (mostly free) |
 | D… Area batches | the hand-built tools, one batch per area group (each card one area) | the tool catalog |
-| P Project profiles | when Chris's apps own resources in this service | Stripe Batch P pattern |
+| V Developer tools | test data scenarios, runs and cleanup, throwaway environments, simulation, integration check — test/preview modes only (contract §10) | Stripe Batch V pattern |
+| P Project profiles | optional, when an app manages its own resources in this service | Stripe Batch P pattern |
 | W Workflows | the jobs Chris actually does, in one sentence | his requests and the old compound tools |
 | U Universal | `api_search` / `api_describe` / `api_read` / `api_write` (or a schema-checked GraphQL pair) for everything not hand-built | Stripe Batch U pattern |
 | R Contract doors | passes, HTTPS tool API, manifest, conformance | core + Stripe Batch R |
@@ -81,5 +90,6 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 2. RTC conformance green in CI (`packages/conformance`).
 3. A read-only smoke test against Chris's real account in its safest mode, report committed.
 4. Deployed on Vercel with its own Neon database; DEPLOY.md followed by Chris; connector added in Claude.
-5. Usable through `rtool` directly (and the relay) with a pass, proven by `scripts/agent-check.mjs`.
-6. Registered in the hub (once the hub exists) and listed as "live" in `docs/kit/SERVER-ROADMAP.md`.
+5. Developer tools (Batch V) follow contract §10: refuse production, record runs, clean up only what they created.
+6. Usable through `rtool` directly (and the relay) with a pass, proven by `scripts/agent-check.mjs`.
+7. Registered in the hub (once the hub exists) and listed as "live" in `docs/kit/SERVER-ROADMAP.md`.

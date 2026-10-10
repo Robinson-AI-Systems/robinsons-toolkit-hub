@@ -308,7 +308,7 @@
     },
     {
       "id": "C-2",
-      "title": "First ported workflows",
+      "title": "Development environment up/down across servers (then ported workflows, JIT)",
       "batch": "C",
       "design": "docs/designs/BATCH-C.md",
       "dependencies": [
