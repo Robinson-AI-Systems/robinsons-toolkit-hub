@@ -16,6 +16,10 @@ Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk plan
 
 ## Recent merges (newest first)
 
+**2026-10-10 — Review fixes (docs PR #3):** contract §2 now requires that a login refresh keeps its settings and that
+rate limits and lockouts are counted in the database; §9 checks both, the rate limit with two server processes and
+overlapping calls. RTC 1 stays a draft, clarified in place, until K-1 freezes it. Next action unchanged.
+
 **2026-10-10 — Owners and end users too (docs PR):** contract §3 audience tag and §11 owner/admin conventions; playbook
 owner side and coverage matrix; L-4 guided settings runner.
 

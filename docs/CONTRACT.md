@@ -106,7 +106,8 @@ manifest; search/describe/call/batch/result; a read tool's `fields`/`detail`/han
 needs-confirmation / confirm / read-back / change-log behavior; refusal of writes by a read-only pass; expired and
 revoked passes refused; a refreshed connector token keeps its settings; rate limits hold across two server instances
 (in a server's CI the conformance runner starts **two separate server processes sharing one throwaway database** and
-splits the calls between them, so the check cannot pass by both calls reaching one warm process; against a single
+sends **overlapping** calls split between them (more than the limit, all at once), expecting exactly the limit to
+succeed and the rest `rate_limited` — so neither one warm process nor a read-then-update counter can pass; against a single
 deployed URL this check is skipped and reported as such, and each server also keeps its own two-instance database test); no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
 
 ## 10. Developer conventions (SHOULD for every server; MUST once a server offers `devTools`)
