@@ -23,7 +23,7 @@ and Workspace fixtures, all under one `runId` (contract §10); `hub_dev_environm
 `<prefix>_dev_cleanup` for that run and reports per server. Each step only runs on servers that exist; missing ones are listed,
 not faked.
 
-**C4. Port only what is used.** The old compound tools are inventoried (Batch M-2); each is ported only when its servers
+**C4. Port only what is used.** The old toolkit's compound tools are a list of ideas; each is ported only when its servers
 exist and Chris wants it (candidates: provision a project, full feature deploy, staging refresh, tenant provisioning,
 weekly engineering report, cost audit).
 

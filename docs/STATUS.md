@@ -16,15 +16,14 @@ or server).
   proven A-1 foundation merged in each repo (2026-10-10); next card A-2 in each.
 - **Adoption proposals for the existing servers** (executed through their own cards, never from here): Stripe and
   Workspace move to Node 24.x, and Stripe prefixes every tool name with `stripe_` before its first tools are built
-  (contract §3); Workspace renames generic areas (`admin_`, `chat_`, `contacts_`, `workflow_` …) with old names kept as
-  aliases during its Phase 8.
+  (contract §3); Workspace renames generic areas (`admin_`, `chat_`, `contacts_`, `workflow_` …) during its Phase 8 (no old-name aliases).
 
 ## Environment
 
 - Repo `Robinson-AI-Systems/robinsons-toolkit-hub` (created by Chris 2026-10-10; public, no automated review). First commit straight to `main` because the
   repository was empty; every later change goes through an `ai/*` branch and a PR.
 - Relay repository, Vercel project and Neon database: not created (IN-03, IN-02).
-- Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: still Chris's local tool; freeze proposed in M-1.
+- Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
 

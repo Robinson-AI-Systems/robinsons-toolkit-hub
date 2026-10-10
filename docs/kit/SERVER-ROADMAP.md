@@ -1,8 +1,8 @@
 # Server roadmap — every service, its future home, and the order
 
-Updated 2026-10-10. Every namespace of the old `robinsons-toolkit-mcp` (3,049 tools) has a home below. Servers are started
+Updated 2026-10-10. Every service the old toolkits covered has a planned server below (as a completeness checklist only). Servers are started
 **when Chris needs them** (Batch S card), not in a fixed schedule; the "Suggested order" follows the services his
-current work touches most (any project); it is not a limit — unplanned services are added the same way. "Old tools" are the old toolkit's counts; "pass rate" fills in from the Batch M smoke test.
+current work touches most (any project); it is not a limit — unplanned services are added the same way. "Old tools" are the old toolkit's counts, for the gap check.
 
 ## Service servers
 
@@ -42,7 +42,7 @@ keeps its own credentials and area). Any group can be split later without changi
 | `ollama` (16) | `rtool mcp` local tools (L-2) |
 | `playwright` (47) | `rtool mcp` local browser (L-3) |
 
-## Until a server exists
+## The old toolkits
 
-The old toolkit keeps working locally (frozen), and `rtool mcp --legacy` (Batch M-3) can expose it under `legacy.*` so
-agents can still reach a namespace with no new server yet.
+Reference only: the "covers old namespaces" column says which old tool lists each server's gap check must cover. No
+compatibility, bridge or migration (Chris, 2026-10-10).

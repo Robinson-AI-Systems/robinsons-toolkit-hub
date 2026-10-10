@@ -22,8 +22,8 @@ in this repo (`S-<server>`), which produces the new repo's whole plan. Chris cre
 1. **The service's API surface.** Prefer its published OpenAPI or GraphQL schema (vendored into `vendor/`, version
    recorded); otherwise its REST reference. List every resource and operation, and mark each: read / write / destructive /
    money / production-affecting.
-2. **What the old toolkit had** for this service (`robinsons-toolkit-mcp` `registry/<ns>.json`, `handlers/<ns>.js`) and its
-   pass rate from the Batch M smoke test. Old code is a reminder of *what* existed, never copied.
+2. **What the old toolkit had** for this service (`robinsons-toolkit-mcp` `registry/<ns>.json`, `handlers/<ns>.js`) — and the other
+   old toolkits (playbook §3b). A completeness checklist only: no old names, aliases or compatibility. Old code is a reminder of *what* existed, never copied.
 3. **What the official connector offers** (if any), so the new server is a clear superset for Chris's needs.
 4. **Credentials.** The narrowest token type the service offers (scoped/restricted tokens, per-project tokens); which
    scopes each profile needs.

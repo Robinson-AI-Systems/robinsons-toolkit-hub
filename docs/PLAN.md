@@ -21,10 +21,6 @@ Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADM
 - [ ] GitHub relay: ciphertext only on GitHub, replay-safe, comments deleted.
 - [ ] Real runs: a real server used from a local machine, a GitHub-only cloud workspace and a Vercel Sandbox, without the hub.
 
-## Batch M — Old toolkit migration (`designs/BATCH-M.md`)
-- [ ] Old toolkit frozen; read-only smoke test report with pass rates per namespace.
-- [ ] Every namespace mapped in the server roadmap; `--legacy` bridge works; retirement checklist written.
-
 ## Batch H — Hub server (`designs/BATCH-H.md`)
 - [ ] Hub is itself RTC 1 conformant; registered servers; federated search/describe/call/batch.
 - [ ] Hub passes can only narrow server passes; hub change log; compact listing stays small with many servers.

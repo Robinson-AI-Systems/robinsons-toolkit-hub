@@ -57,3 +57,9 @@ copies the newest proven foundation (`neon-mcp`) and adds hub-specific secret ru
 (`test:conformance`, `test:doors`) are left to the cards that first have real tests. K-2 is split (K-2b) to keep PRs
 under the 500-line budget. A contract change now always needs a DECISIONS entry in the same PR (enforced by the docs
 check).
+
+**2026-10-10 — No compatibility with the old toolkits; Batch M dropped (Chris).** "The reference to the older toolkits
+was to help make sure you designed this custom MCP with as much functionality as possible … I don't need legacy
+compatibility." Batch M (freeze, smoke test, namespace map, `--legacy` bridge, retirement checklist) is dropped and its
+design moved to `docs/archive/`; IN-05 answered "not needed". The old toolkits stay what they were meant to be: a
+checklist each server's gap check covers. Servers drop their old-name maps and toolkit decision notes the same way.
