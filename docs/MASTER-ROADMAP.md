@@ -10,7 +10,7 @@ Each server is usable on its own the moment it is built; the hub adds a single f
 |---|---|---|---|
 | 1 | `stripe-mcp` | Batches A–C (contract code in `src/core/`) | — (ready now: card A-1) |
 | 2 | `google-workspace-mcp` | Phase 8 P8-1 … P8-4 (small results, profiles, passes, HTTPS API) | Chris merging its plan PR |
-| 3 | this repo | K-1, K-2 (contract final, conformance + fake server) | — |
+| 3 | this repo | K-0 (foundation, **done**), K-1, K-2, K-2b (contract final, conformance + fake server) | — |
 | 4 | this repo | D-1 … D-4 (`rtool`, local MCP, relay, real runs) | a server with its HTTPS API for D-4's real runs |
 | 5 | this repo | M-1, M-2 (freeze + smoke test of the old toolkit) | Chris running the smoke test on his machine |
 | 6 | `stripe-mcp` | D, G, H, P, W, U, R … | — |
@@ -20,7 +20,7 @@ Each server is usable on its own the moment it is built; the hub adds a single f
 
 ## Order inside this repo
 
-K → D → M → H → C → L, with S cards whenever Chris asks for a server.
+K (K-0 done; K-1 and K-2 ready) → D → M → H → C → L, with S cards whenever Chris asks for a server.
 
 ## Implementing agent — paste this
 
@@ -34,7 +34,7 @@ K → D → M → H → C → L, with S cards whenever Chris asks for a server.
 
 | Batch | Cards | Card status |
 |---|---|---|
-| K Contract & core | K-1 contract final + kit docs · K-2 conformance + fake server · K-3 extract core (after Stripe C) · K-4 scaffold | K-1 [card](pr-cards/K-1.md); rest JIT |
+| K Contract & core | K-0 foundation + proven CI (**merged**) · K-1 contract final + kit docs · K-2 conformance + fake server · K-2b refresh + two-instance checks · K-3 extract core (after Stripe C) · K-4 scaffold | K-0 [card](pr-cards/K-0.md); K-1 [card](pr-cards/K-1.md) and K-2 [card](pr-cards/K-2.md) READY; rest JIT |
 | D Direct doors | D-1 `rtool` CLI · D-2 local MCP · D-3 GitHub relay · D-4 recipes + real runs | JIT |
 | M Migration | M-1 freeze + smoke test · M-2 namespace map · M-3 legacy bridge · M-4 retirement checklist | JIT |
 | H Hub | H-1 foundation · H-2 registry · H-3 federation · H-4 narrowing passes · H-5 change log | JIT |

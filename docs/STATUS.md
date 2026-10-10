@@ -1,10 +1,16 @@
 # STATUS — current work, blockers and next action
 
-Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk planning system. **No code exists yet.**
+Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk planning system. **Repository foundation
+built (K-0):** checks, unit and database test harnesses, CI with the `ci` gate. No product code yet (no package, door
+or server).
 
 ## Next
 
-- **Ready now:** K-1 — contract final and kit docs ([card](pr-cards/K-1.md)). Then K-2 (JIT).
+- **Ready now (either order, may run in parallel):**
+  - **K-2 — conformance package and reference fake server** ([card](pr-cards/K-2.md), code, medium effort). Branch
+    `ai/<tool>/k-2-conformance` from `main`.
+  - **K-1 — contract final and kit docs** ([card](pr-cards/K-1.md), docs only, medium effort).
+- **Then:** K-2b (refresh keeps settings, two-instance rate limit; write its card at start), then D-1.
 - **Elsewhere in the program:** Stripe MCP is being built (A-1 … A-5a merged by Sol); Google Workspace MCP Phase 8 plan
   merged (its PR #28/#29). **GitHub, Vercel and Neon servers:** plans, gap checks against every older toolkit, and a
   proven A-1 foundation merged in each repo (2026-10-10); next card A-2 in each.
@@ -21,6 +27,15 @@ Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk plan
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: still Chris's local tool; freeze proposed in M-1.
 
 ## Recent merges (newest first)
+
+**2026-10-10 — K-0 repository foundation and proven CI (PR #5):** `package.json` (Node 24.x, npm workspaces
+`packages/*`, exact versions, committed lockfile); `npm run check` = secret scan with hub rules (passes, relay keys,
+GitHub tokens, every server's service keys), docs check (code needs STATUS + card; CONTRACT needs DECISIONS), index
+validation, lint; `npm test` (unit) and `npm run test:db` (throwaway Postgres, isolated schema per file, two-pool
+helper); CI jobs `check`, `unit`, `db` and the aggregate `ci`. Red proof: a deliberately failing test turned `unit` and
+`ci` red (RED_RUN_URL); removed; green at the merged head. Copied from `neon-mcp` @ `d396fb4`. New card K-0 and a K-2b
+split (BATCH-K amendment); K-2 card written READY; K-1 card gained two questions (how conformance gets its test passes;
+a recognisable pass prefix for secret scans).
 
 **2026-10-10 — Three new servers started (docs PR):** S-github, S-vercel, S-neon done in their own repos; contract §3:
 every tool name starts with the server prefix; Node 24.x; server playbook §3b lessons (gap check against old toolkits,

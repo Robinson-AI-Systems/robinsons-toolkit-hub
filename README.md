@@ -7,5 +7,5 @@ Vercel, Neon, GitHub and more) is its own solid, standalone server following the
 command-line tool and GitHub relay that let any AI agent use any server from anywhere, the shared `robinson-mcp-core`
 package, the hub server that combines them, and the playbook for building each new server.
 
-**Status:** plan only; no code yet. Start at [`docs/START-HERE.md`](docs/START-HERE.md). AI agents: read
+**Status:** plan plus the repository foundation (checks, test harnesses, CI); no product code yet. Start at [`docs/START-HERE.md`](docs/START-HERE.md). AI agents: read
 [`AGENTS.md`](AGENTS.md) first. The previous, local toolkit lives on (frozen) in `Robinson-AI-Systems/robinsons-toolkit-mcp`.

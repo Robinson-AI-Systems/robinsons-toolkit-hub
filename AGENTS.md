@@ -136,12 +136,15 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 ```bash
 npm ci
 npm run check                     # secrets, docs, index, lint
+npm test                          # unit: tests/unit and every packages/<pkg>/test
 npx vitest run packages/<pkg>/test
-npm run test:conformance          # contract checks against the reference fake server
-npm run test:doors                # CLI, local MCP, relay, hub HTTPS against fake servers
-npm run test:db -- <file>         # throwaway localhost Postgres
+npm run test:db -- <file>         # throwaway localhost Postgres (CI's service, or a local cluster)
 python3 docs/pr-cards/validate-index.py
 ```
+
+Added by the card that first has real tests for them (no script before then): `npm run test:conformance` (K-2,
+contract checks against the reference fake server) and `npm run test:doors` (D-1, CLI, local MCP, relay and hub HTTPS
+against fake servers).
 
 ## Ending a session
 

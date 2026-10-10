@@ -13,6 +13,23 @@
   "process": "Just-in-time cards from approved designs; S cards only on Chris's request.",
   "cards": [
     {
+      "id": "K-0",
+      "title": "Repository foundation and proven CI",
+      "batch": "K",
+      "design": "docs/designs/BATCH-K.md",
+      "dependencies": [],
+      "card": "docs/pr-cards/K-0.md",
+      "status": "MERGED",
+      "units": [
+        "K-0"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#5"
+      ]
+    },
+    {
       "id": "K-1",
       "title": "Contract final, playbook and roadmap",
       "batch": "K",
@@ -32,12 +49,29 @@
       "batch": "K",
       "design": "docs/designs/BATCH-K.md",
       "dependencies": [
+        "K-0",
         "K-1"
       ],
       "card": "docs/pr-cards/K-2.md",
-      "status": "APPROVED",
+      "status": "READY",
       "units": [
         "K-2"
+      ],
+      "readiness": "READY",
+      "externalGates": []
+    },
+    {
+      "id": "K-2b",
+      "title": "Conformance: refresh keeps settings, two-instance rate limit",
+      "batch": "K",
+      "design": "docs/designs/BATCH-K.md",
+      "dependencies": [
+        "K-2"
+      ],
+      "card": "docs/pr-cards/K-2b.md",
+      "status": "APPROVED",
+      "units": [
+        "K-2b"
       ],
       "readiness": "WRITE_CARD_AT_START",
       "externalGates": []
@@ -66,6 +100,7 @@
       "batch": "K",
       "design": "docs/designs/BATCH-K.md",
       "dependencies": [
+        "K-2b",
         "K-3",
         "D-1"
       ],
