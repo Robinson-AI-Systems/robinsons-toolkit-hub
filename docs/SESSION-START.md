@@ -8,7 +8,8 @@ only when a step below names them, a section at a time. `AGENTS.md` still govern
 Work happens in whatever workspace you were given (a cloud agent workspace, a Vercel Sandbox, a laptop). Code reaches
 GitHub only as git commits pushed to an `ai/*` branch. Never copy source files through tool output.
 
-1. `git fetch origin && git status -sb && git log --oneline -5`; `npm ci` once per checkout.
+1. `git fetch origin main:refs/remotes/origin/main && git status -sb && git log --oneline -5`; `npm ci` once per
+   checkout (Node 24.x; an older local Node only warns).
 2. `sed -n '1,40p' docs/STATUS.md` → the **Next** section names the card.
 3. Resume note? `ls docs/pr-cards/*.progress.md 2>/dev/null` — if your card has one, continue from its "Next step".
    Do not restart work it lists as done.
@@ -27,12 +28,15 @@ widening default pass permissions; committing to `main`; skipping, disabling or 
 2. Drift check: `docs/implementation-contracts/DRIFT-PROTOCOL.md` **checklist A** (table in the PR, card corrected
    first).
 3. Build one work unit → its tests → run them (`npx vitest run <files>`; `npm run test:db -- <file>` when it touches
-   SQL; `npm run test:conformance` when it touches a door or the contract) → `npm run check` → **commit locally** →
-   update the resume note (§4). Repeat. Red → fix one failing file at a time, then the full check once.
+   SQL; `npm run test:conformance` once K-2 has added it, when it touches a door or the contract) → `npm run check` and
+   `npm test` → **commit locally** → update the resume note (§4). Repeat. Red → fix one failing file at a time, then
+   the full check once.
 4. **Code first, then docs.** In an implementation PR, edit only the docs checklist B names.
 5. When the card is complete: update the docs **as if this PR had already merged** (card `MERGED (#n)`, STATUS,
-   `work-index.json`, ARCHITECTURE when infra changed, CONTRACT when the contract changed — checklist B), push once, open the PR,
-   then follow PLAYBOOK Steps 5–9.
+   `work-index.json`, ARCHITECTURE when infra changed, CONTRACT when the contract changed — checklist B), push once, open the PR
+   **through the REST API** (PLAYBOOK Step 6 has the exact command; `gh pr` is often blocked), wait for CI with the
+   bounded wait in PLAYBOOK Step 10 (the merge gate is the check named `ci`; failed jobs' annotations show the errors),
+   write the self-review, then merge with the exact head SHA (Steps 7–9).
 
 ## 4. Resume note — so stopping never loses your place
 

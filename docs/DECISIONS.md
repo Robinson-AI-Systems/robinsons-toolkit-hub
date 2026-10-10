@@ -50,3 +50,10 @@ Vercel and Neon together showed shared nouns (project, branch, member, workflow,
 loaded into one chat; some clients don't namespace tools by server. Contract §3 now requires `<prefix>_…` on every tool
 name. Vercel stopped deploying Node 20 on 2026-10-01, so every server and the hub use Node 24.x. Still a draft
 clarification of RTC 1 (before K-1). Stripe and Workspace adopt through their own cards (STATUS).
+
+**2026-10-10 — K-0: the hub gets a code foundation card before K-2.** The plan went straight from docs (K-1) to the
+conformance package (K-2) with no card creating the repository's checks and CI; every server has A-1 for that. K-0
+copies the newest proven foundation (`neon-mcp`) and adds hub-specific secret rules. Scripts that would only pretend
+(`test:conformance`, `test:doors`) are left to the cards that first have real tests. K-2 is split (K-2b) to keep PRs
+under the 500-line budget. A contract change now always needs a DECISIONS entry in the same PR (enforced by the docs
+check).

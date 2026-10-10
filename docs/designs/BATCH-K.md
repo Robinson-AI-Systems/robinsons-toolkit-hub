@@ -61,3 +61,18 @@ Done when: a scaffolded repo passes its own `npm run check` and conformance agai
 | Scaffold produces a conforming empty server | K-4 PR output |
 
 ## Amendments
+
+**2026-10-10 — K-0 and the K-2 split (Claude, drift check A for the first code card).**
+1. *K-0 Repository foundation and proven CI* is added before K-2. The plan had no card that creates the repository's
+   code foundation (the servers have A-1 for this). K-0 adds `package.json` (Node 24.x, npm workspaces `packages/*`,
+   exact versions, committed lockfile), the checks (`npm run check`: secret scan with hub rules, docs check, index
+   validation, lint), the unit and throwaway-Postgres harnesses, and CI with one aggregate `ci` gate, copied from the
+   newest proven server foundation (`neon-mcp` @ `d396fb4`). K-1 (docs only) does not depend on it; K-2 does.
+2. *K-2 is split in two* to respect the 500-line PR budget: **K-2** builds the package, the reference fake server and
+   every HTTPS-tool-API check with its deliberately broken fakes; **K-2b** adds the two checks that need extra
+   machinery — a refreshed connector token keeps its settings (the fake gains a minimal OAuth door) and the
+   `--instances 2` rate-limit check (two server processes on one throwaway database; the in-memory fake must fail it
+   every run and a database-backed fake mode must pass it, so the check is proven both ways). K-2b also tags
+   `conformance-v1`. K-4 depends on K-2b. Acceptance mapping unchanged (`negative.test.js` spans both).
+3. The conformance runner receives the read-only, expired and revoked passes it needs from environment variables named
+   on its command line; a check whose pass was not supplied is reported `skipped`, never ok (K-1 confirms in CONTRACT §9).
