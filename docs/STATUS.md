@@ -16,6 +16,9 @@ Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk plan
 
 ## Recent merges (newest first)
 
+**2026-10-10 — Owners and end users too (docs PR):** contract §3 audience tag and §11 owner/admin conventions; playbook
+owner side and coverage matrix; L-4 guided settings runner.
+
 **2026-10-10 — General development tool (docs PR):** contract §10 developer conventions; playbook Batch V; roadmap
 purposes made generic; hub workflows lead with dev environment up/down.
 

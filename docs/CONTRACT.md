@@ -38,8 +38,10 @@ The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built o
 Every tool has: `name` (`<area>_<verb>_<object>`, snake_case; workflows `workflow_*`; server-about-itself
 `<prefix>_*`), `description` (listing text ≤160 characters, starting with the action; `MOVES MONEY:` first when it
 does), `inputSchema`, and metadata: `area`, `profiles` (`read_only` | `everyday` | `full`), `writes` (boolean),
-`money` (boolean), `destructive` (boolean), and MCP `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`,
-`openWorldHint`) consistent with that metadata.
+`money` (boolean), `destructive` (boolean), `audience` (one or more of `builder` — building or testing something with
+the service; `owner` — setting up and administering an account; `operator` — day-to-day use), and MCP `annotations`
+(`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) consistent with that metadata. Search accepts an
+`audience` filter.
 
 ## 4. Meta-tools every server provides
 
@@ -91,6 +93,9 @@ server's universal tools if any; under 5,000 tokens). Chosen per connection or p
 (§10 is checked only for servers whose manifest says `devTools: true`: a dev tool refuses live/production; cleanup
 touches only recorded objects.)
 
+(§11 is checked by: `_admin_overview` present and well-formed; `_where_is_setting` returns structured steps; account-wide
+writes need `confirm`.)
+
 A server is "RTC 1" when `packages/conformance` (run against its URL with a test pass in its test/sandbox mode) passes:
 manifest; search/describe/call/batch/result; a read tool's `fields`/`detail`/handle behavior; a write tool's dryRun /
 needs-confirmation / confirm / read-back / change-log behavior; refusal of writes by a read-only pass; expired and
@@ -113,3 +118,25 @@ tools follow these conventions:
   scenarios; previews list exactly what will be created.
 - **Integration check.** `<prefix>_dev_check_integration(spec)` reports, without changing anything, whether the service
   is set up for an app being built (events, permissions, settings), with exact console steps for anything with no API.
+
+## 11. Owner and administration conventions (MUST for every server)
+
+These servers serve three audiences equally: a developer building for others, a developer building for themselves, and
+the account owner or end user who needs their account set up and run. So every server covers the **owner side** of its
+service, not only its developer API:
+
+- **Admin overview.** `<prefix>_admin_overview` reads, in one call, the account's whole owner-side state: account and
+  business details, verification or requirements due, team members and roles, security (two-step login, keys or tokens,
+  SSO, audit log where available), the service's own plan, usage and bill, notification and email settings,
+  integrations, and anything the service flags. Each item: `ok` / `needs_attention` (why) / `not_readable` (no API; see
+  below).
+- **Every owner setting is reachable.** Settings with an API get real tools (same write rules as §6). Settings with no
+  API get a **guided setting**: `<prefix>_where_is_setting(query)` returns structured steps —
+  `{ setting, url, steps: [{ n, action, target, value? }], expected, verifyWith?: { tool, args, field, equals } }` — so
+  a person or an agent with a browser can do it, and the server then confirms it by reading back (`verifyWith`) when the
+  service exposes the value. A guided setting is never reported as done unless verified or the person says so.
+- **Dashboard map coverage.** Each server keeps a dashboard map (`src/data/dashboard-map.js`) covering every settings page
+  of its service, checked against the service's current dashboard when the server's API version moves.
+- **Account-wide changes are owner actions:** changing team roles, keys, security, plan or billing settings always needs
+  `confirm` and appears in the change log, through any door.
+

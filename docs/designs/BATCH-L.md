@@ -20,5 +20,11 @@ allowed hosts configurable, screenshots saved to files (paths returned, not byte
 Tests: path escape refused; command outside allow-list needs confirm; timeout and output cap.
 ### L-2 — Ollama (S)
 ### L-3 — Browser (M)
+### L-4 — Guided settings runner (M, medium effort)
+`rtool guide <server> "<setting>"` fetches the server's structured steps (contract §11) and walks them in a **visible**
+browser window on Chris's machine: Chris signs in himself (passwords and two-step codes are never typed or stored by the
+tool), each step is shown and needs his OK, and at the end the server's `verifyWith` read-back confirms the result.
+Agents that have their own browser control (Claude in Chrome, Claude's built-in browser) use the same structured steps.
+Tests: steps rendered and paused for approval; no credential fields filled; verification result reported.
 
 ## Amendments

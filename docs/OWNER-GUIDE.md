@@ -7,5 +7,7 @@
 | "Start a server for Vercel." | A full plan for a new Vercel server, in its own repo, ready for Sol to build | S |
 | "Which of my old toolkit tools still work?" | The smoke-test report, namespace by namespace | M |
 | "Search all my tools for 'refund'." | One search across every server (hub) | H |
+| "Review my Vercel (or Stripe, or GitHub) account setup." | Everything owner-side in one view: business details, team and roles, security, plan and bill, settings — ok or needs attention | O (each server) |
+| "Add Sam to the team as a developer." / "Turn on two-step login." | Done by the server where the service allows it; otherwise a guided walk-through in a browser you watch, then checked | O, L-4 |
 | "Spin up a dev environment for this feature." | One preview: a branch, a database branch, a preview deploy with its settings wired, Stripe test data and event forwarding; one confirmation; one command tears it all down | C |
 | "Provision a new tenant." | One preview across the servers involved; one confirmation; a record you can undo where possible | C |
