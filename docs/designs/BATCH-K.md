@@ -34,12 +34,15 @@ following `docs/kit/SERVER-PLAYBOOK.md`.
 ## 4. Work units
 
 ### K-1 — Contract v1 final, kit docs (S, docs)
-Files: `docs/CONTRACT.md` (review wording against both server plans), `docs/kit/SERVER-PLAYBOOK.md`,
+Files: `docs/CONTRACT.md` (review wording against both server plans; confirm no server serves `GET /api/contract` with
+`rtc: 1` before the freeze — after it, every change is a new version), `docs/kit/SERVER-PLAYBOOK.md`,
 `docs/kit/SERVER-ROADMAP.md`. Done when: both server plans and this file agree; validator green.
 ### K-2 — Conformance package and reference fake server (L, medium effort)
 Tests: the fake server passes; deliberately broken fakes (missing manifest, write without dryRun, read-only pass that can
 write, key-shaped string in a result, oversize result without handle, a refresh that drops connection settings, a rate
-limit kept in memory so two instances each allow the full limit) each fail with a plain message.
+limit kept in memory so two instances each allow the full limit) each fail with a plain message. The runner can start a
+server command twice against one throwaway database and split calls between the two processes (`--instances 2`); the
+in-memory fake must fail that check every run, not by chance.
 ### K-3 — Extract `robinson-mcp-core` (L, medium effort) — after Stripe C
 Done when: Stripe's `src/core/` tests pass unchanged inside `packages/core`; a Release tarball exists; an adoption card
 text is handed to the Stripe and Workspace repos (not executed here).

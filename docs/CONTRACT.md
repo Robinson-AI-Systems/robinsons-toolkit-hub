@@ -105,7 +105,9 @@ A server is "RTC 1" when `packages/conformance` (run against its URL with a test
 manifest; search/describe/call/batch/result; a read tool's `fields`/`detail`/handle behavior; a write tool's dryRun /
 needs-confirmation / confirm / read-back / change-log behavior; refusal of writes by a read-only pass; expired and
 revoked passes refused; a refreshed connector token keeps its settings; rate limits hold across two server instances
-(two conformance clients hitting the limit together); no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
+(in a server's CI the conformance runner starts **two separate server processes sharing one throwaway database** and
+splits the calls between them, so the check cannot pass by both calls reaching one warm process; against a single
+deployed URL this check is skipped and reported as such, and each server also keeps its own two-instance database test); no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
 
 ## 10. Developer conventions (SHOULD for every server; MUST once a server offers `devTools`)
 
