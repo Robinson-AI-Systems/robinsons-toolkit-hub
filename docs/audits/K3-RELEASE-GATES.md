@@ -64,6 +64,8 @@ K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OA
    money guards, startup and CI before opting into a pinned, immutable asset.
    Do not modify those repositories here.
 
+The read-only `node scripts/verify-k3-remote-release.mjs <approved-final-candidate.json>` tool independently verifies an actual published GitHub Release: immutable tag points to candidate commit, asset identity/size/uploaded digest matches the manifest, and the downloaded archive's SHA256/byte size matches. CI uses fake HTTP responses only to prove rejection behavior; no candidate JSON or GitHub Release is manufactured. The actual release is still **absent**, so this verifier is capability, not completed evidence.
+
 ## Failure rules
 
 Missing any assertion, missing durable multi-instance proof, unknown
