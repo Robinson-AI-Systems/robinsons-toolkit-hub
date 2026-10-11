@@ -14,13 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
       - name: Clean aged ciphertext at the configured private relay
         env:
           RELAY_CLEANUP_URL: ${{ vars.RELAY_CLEANUP_URL }}
           RELAY_CLEANUP_SECRET: ${{ secrets.RELAY_CLEANUP_SECRET }}
         run: |
           set -euo pipefail
-          node - <<'NODE'
+          node --input-type=module - <<'NODE'
           const target = new URL(process.env.RELAY_CLEANUP_URL);
           if (target.protocol !== 'https:' || target.username || target.password || target.search ||
               target.hash || target.pathname !== '/api/relay/cleanup') throw new Error('Invalid cleanup endpoint');

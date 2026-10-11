@@ -43,3 +43,6 @@ Local fake RTC tests prove read-only identity/metadata/read, full-pass and write
 refusal, missing credential and external-default gates, error-safe output.
 Signed fake GitHub relay integration proves expected relay route for all probes.
 D-4 remains WAITING with explicit evidence/revocation checklist; no real pass used.
+
+Final review also pins the inherited cleanup scheduler to Node 24 and explicit
+ES module stdin; its actual embedded script passes Node syntax validation.
