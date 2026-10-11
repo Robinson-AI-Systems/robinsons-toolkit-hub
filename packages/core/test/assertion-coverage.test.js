@@ -25,7 +25,7 @@ function fixture(run){
 describe('offline original source assertion inventory',()=>{
   it('covers five verbatim exports without claiming server adoption or release',()=>{
     expect(verifyCoreAssertionCoverage(repo)).toMatchObject({
-      modules:5,portable:20,serverOwned:6,releaseReady:false
+      modules:5,portable:21,serverOwned:4,releaseReady:false
     });
   });
   it('refuses missing or reduced assertions instead of merely matching titles',()=>fixture(
