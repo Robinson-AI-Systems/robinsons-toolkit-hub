@@ -18,3 +18,5 @@ Status: **IN PROGRESS — not a release certification**. Source: `Robinson-AI-Sy
 - Original source cases requiring Stripe imports are not copied as if portable; the source suite stays authoritative.
 - A service's account/mode/profile selection is never inferred from MCP arguments.
 - No release or adoption claim until every pending cell is verified by actual server tests, source-drift review and the complete gates in `K3-RELEASE-GATES.md`.
+
+**K-3y source write matrix:** Original `src/core/write.js` is now pinned and directly executed against portable lifecycle fixtures: preview, confirmed/unconfirmed, owned target, LIVE denial, source-compatible audit/preflight, failed apply and read-back. The portable malformed-money refusal is a deliberately stricter boundary. Service owner consent, account/day ledger, actual provider retries and migrations are still outstanding.

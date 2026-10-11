@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3y (PR #47, as-if-merged):** pinned and executed original Stripe guarded write source against portable write lifecycle with synthetic audited preview, confirmation, ownership, LIVE denial, uncertain outcomes, durable audit and independent money preflight. The portable malformed-money refusal intentionally tightens source behavior. No provider requests or real owner approval performed; service owner gates still required. K-3 remains IN_PROGRESS and private. **Next:** dispatch runtime/source integration and original endpoint assertion parity.
+
 - **K-3x (PR #46, as-if-merged):** execute pinned original HTTP utility source side by side with private core for HTTPS issuer parsing, body media/invalid input, escaped output, no-store headers and 405 refusal. Endpoint owner login and SQL still service-owned. K-3 remains IN_PROGRESS/private; no release or service repo changes. **Next:** source endpoint assertion parity and write/dispatch runtime compatibility.
 
 - **K-3w (PR #45, as-if-merged):** pinned original OAuth source handler/runtime and executed source-vs-portable HTTP metadata, registration safety, grant/refresh and replay-denial differential tests with isolated fake service storage. Source owner-account authorization page remains service-owned. This completes the five-PR batch without claiming source UI/SQL, guarded write/dispatch adaptation, or an actual Release. K-3 IN_PROGRESS and private; D-4 WAITING_ON_OWNER. **Next:** remaining original HTTP endpoint assertion-body parity and adapted write/dispatch runtime compatibility; complete source-service SQL and release prerequisites before any public GitHub Release.
