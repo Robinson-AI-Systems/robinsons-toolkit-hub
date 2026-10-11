@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
+  "reviewedMain": "587ad2e9eb7cb2a1e8f3a567c4ec8c827a8ae2f6",
+  "reviewedAt": "2026-10-11",
+  "disposition": "REVIEWED_SNAPSHOT_NOT_RELEASE",
+  "note": "Eleven source modules match the older K-3 extraction provenance exactly. Test suites pinned here are additional drift surfaces; this is not original-suite execution or source-service adoption.",
+  "source": {
+    "src/core/oauth.js": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
+    "src/core/crypto.js": "34dce85cd4ca32553bfa2512778e68f819558de5",
+    "src/core/registry.js": "a92f4f36987b73a02bcc32c1d98902cc3b6ef7ca",
+    "src/core/http.js": "1b2078afb1bccbb576bfb493c623067871866b7f",
+    "src/core/write-contract-check.js": "c604cf99d6d2b5fbbcf7ca77306b2c383079b146",
+    "src/core/profiles.js": "654d1dedbc244a6f0e799793d7b41e89bf92304e",
+    "src/core/mcp-auth.js": "eea535069b2179dfa74ed4ad101abacd5789dea0",
+    "src/core/one-time-secrets.js": "071900c19db7d77a608c7bb65574b12b24c080fb",
+    "src/core/oauth-handlers.js": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
+    "src/core/write.js": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
+    "src/core/mcp-server.js": "51309da34c8aab8f44c67411fe83c89367d664b6"
+  },
+  "tests": {
+    "tests/unit/oauth-core.test.js": "fb3a616a02f775f94a9d5b9f06caff465dc1f712",
+    "tests/unit/oauth-handlers.test.js": "10cf67ca0da2a608c5e7f70d3931b68bef6683ba",
+    "tests/unit/keys.test.js": "b05a1fa49019d9bbcdfac23fb0ebcc286a7a23a9",
+    "tests/unit/registry.test.js": "ee0fa4ccbae9d685be7fd9d8bacf11cfeb27b948",
+    "tests/unit/profiles.test.js": "b24803fc0d276556ae04fc526cb19a83ce831cf8",
+    "tests/unit/write-metadata.test.js": "46cf601b1dffee8bfc23ced5bbed3be9fd8cc0ef",
+    "tests/unit/write-core.test.js": "f74d93b67748b23c660ddb0425c7ca48f9721d6d",
+    "tests/unit/write-contract.test.js": "7c36ab9733d1d46e728984524cf20f3aeb558924"
+  }
+}

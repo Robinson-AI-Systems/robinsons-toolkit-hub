@@ -23,6 +23,8 @@ provider credential or server-repository mutation is authorized by this file.
 
 K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OAuth endpoint functions directly alongside portable adapter functions in CI, pinning original runtime Git blobs. This is in-memory differential evidence, **not** source service SQL/owner login adoption. Four service-owned OAuth HTTP endpoint cases, direct original dispatch function tested with fake injected helpers; full source transport and service SQL still missing, final release-candidate evidence and actual GitHub Release remain open.
 
+`node scripts/verify-k3-upstream-drift.mjs` now probes current Stripe main through authenticated or public GitHub REST, compares eleven source files and eight relevant original test suites with the independently reviewed snapshot in `K3-UPSTREAM-BASELINE.json`, and refuses unavailable/truncated/changed evidence. This is an explicit operator-invoked network probe, not a substitute for fresh final-candidate reconciliation, server-owned source tests or release authorization. The earlier eleven source blob hashes were identical on Stripe main `587ad2e9eb7cb2a1e8f3a567c4ec8c827a8ae2f6` (2026-10-11).
+
 ## Mandatory before any candidate is published
 
 1. Fetch the current **Stripe main** source and tests, compare all source
