@@ -5,6 +5,10 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3k (PR #32)
+
+Core distribution policy is now checked in every `npm run check`: explicit export/file closure, ESM-only source, private package, no external runtime dependencies, no source symlinks, no install scripts or dynamic import. Failing fixtures demonstrate enforcement. Not a release workflow and does not certify source behavior or production adoption.
+
 ## Built in K-3j (PR #31)
 
 Cross-boundary offline tests compose core OAuth issue/refresh, MCP bearer projection, guarded dispatch, independent server-owned money preflight and scoped oversized result persistence. Tests use an isolated in-memory service fixture and make no claim of SQL, live adoption or published release. K-3 remains private and unfinished.
