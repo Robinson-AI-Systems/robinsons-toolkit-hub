@@ -125,6 +125,30 @@ describe('portable MCP dispatcher source adapter integrity',()=>{
     expect(privateFn).not.toHaveBeenCalled();
     expect(f.authorizeTool).toHaveBeenCalledTimes(2);
   });
+  it('prevents nested runRead from executing writes even under full-profile permissive policy',async()=>{
+    const write=vi.fn(async()=>text({changed:true}));
+    const f=fixture({
+      tools:[{name:'fixture_read',writes:false},{name:'owner_write',writes:true}],
+      handlers:{fixture_read:async(_args,ctx)=>ctx.runRead('owner_write',{confirm:true}),owner_write:write},
+      policy:()=>true
+    });
+    const denied=await f.call();
+    expect(denied.isError).toBe(true);
+    expect(parsed(denied)).toMatch(/Nested calls may only invoke/);
+    expect(write).not.toHaveBeenCalled();
+    expect(f.authorizeTool).toHaveBeenCalledTimes(2);
+  });
+  it('requires explicit writes false for nested calls while preserving legitimate nested reads',async()=>{
+    const target=vi.fn(async()=>text({ok:true}));
+    const f=fixture({tools:[{name:'fixture_read',writes:false},{name:'target'}],
+      handlers:{fixture_read:async(_args,ctx)=>ctx.runRead('target',{}),target},
+      policy:()=>true});
+    expect((await f.call()).isError).toBe(true);
+    expect(target).not.toHaveBeenCalled();
+    f.registry.tools[1].writes=false;
+    expect(parsed(await f.call())).toEqual({ok:true});
+    expect(target).toHaveBeenCalledTimes(1);
+  });
   it('fails closed when the server result page adapter does not return an object',async()=>{
     for(const page of [null,42,'bad',[]]){
       const f=fixture({handlers:{fixture_read:async()=>text(longValue())},
