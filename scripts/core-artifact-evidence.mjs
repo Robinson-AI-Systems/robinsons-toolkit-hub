@@ -4,7 +4,7 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {mkdtempSync,readFileSync,rmSync,lstatSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {basename,dirname,join,resolve} from 'node:path';
+import {dirname,join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {verifyCorePackage} from './verify-core-package.mjs';
 import {verifyCoreSourceTrace} from './check-core-source-trace.mjs';
