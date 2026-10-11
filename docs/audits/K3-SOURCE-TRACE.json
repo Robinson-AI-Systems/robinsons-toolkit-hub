@@ -1,0 +1,158 @@
+{
+  "schema": 1,
+  "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
+  "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
+  "verifiedAt": "2026-10-11",
+  "status": "PARTIAL_PRIVATE_NOT_RELEASED",
+  "note": "Git blob hashes for source files are pinned evidence; adapted files require independent server adoption and original source regression suites. This manifest does not certify release readiness.",
+  "modules": {
+    "./oauth": {
+      "sourceFile": "src/core/oauth.js",
+      "sourceBlob": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
+      "target": "./src/oauth.js",
+      "coreBlob": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
+      "kind": "verbatim",
+      "tests": [
+        "packages/core/test/oauth.test.js"
+      ],
+      "serverOwned": [
+        "SQL lockout and OAuth owner UI"
+      ]
+    },
+    "./crypto": {
+      "sourceFile": "src/core/crypto.js",
+      "sourceBlob": "34dce85cd4ca32553bfa2512778e68f819558de5",
+      "target": "./src/crypto.js",
+      "coreBlob": "34dce85cd4ca32553bfa2512778e68f819558de5",
+      "kind": "verbatim",
+      "tests": [
+        "packages/core/test/crypto.test.js"
+      ],
+      "serverOwned": [
+        "server key-storage and live mode"
+      ]
+    },
+    "./registry": {
+      "sourceFile": "src/core/registry.js",
+      "sourceBlob": "a92f4f36987b73a02bcc32c1d98902cc3b6ef7ca",
+      "target": "./src/registry.js",
+      "coreBlob": "a92f4f36987b73a02bcc32c1d98902cc3b6ef7ca",
+      "kind": "verbatim",
+      "tests": [
+        "packages/core/test/registry.test.js"
+      ],
+      "serverOwned": [
+        "server tool catalog"
+      ]
+    },
+    "./http": {
+      "sourceFile": "src/core/http.js",
+      "sourceBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
+      "target": "./src/http.js",
+      "coreBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
+      "kind": "verbatim",
+      "tests": [
+        "packages/core/test/http.test.js"
+      ],
+      "serverOwned": [
+        "host transport"
+      ]
+    },
+    "./write-contract-check": {
+      "sourceFile": "src/core/write-contract-check.js",
+      "sourceBlob": "c604cf99d6d2b5fbbcf7ca77306b2c383079b146",
+      "target": "./src/write-contract-check.js",
+      "coreBlob": "c604cf99d6d2b5fbbcf7ca77306b2c383079b146",
+      "kind": "verbatim",
+      "tests": [
+        "packages/core/test/write-contract-check.test.js"
+      ],
+      "serverOwned": [
+        "service money policy"
+      ]
+    },
+    "./profiles": {
+      "sourceFile": "src/core/profiles.js",
+      "sourceBlob": "654d1dedbc244a6f0e799793d7b41e89bf92304e",
+      "target": "./src/profiles.js",
+      "coreBlob": "f795f514c7e0580c95c6a83f83b19190fecceed7",
+      "kind": "adapted",
+      "tests": [
+        "packages/core/test/profiles.test.js"
+      ],
+      "serverOwned": [
+        "service account, mode, listing and guarded test areas"
+      ]
+    },
+    "./mcp-auth": {
+      "sourceFile": "src/core/mcp-auth.js",
+      "sourceBlob": "eea535069b2179dfa74ed4ad101abacd5789dea0",
+      "target": "./src/mcp-auth.js",
+      "coreBlob": "88f02bf11a1d5cf9509495e637627ec9217a55af",
+      "kind": "adapted",
+      "tests": [
+        "packages/core/test/mcp-auth.test.js",
+        "packages/core/test/integration-boundary.test.js"
+      ],
+      "serverOwned": [
+        "durable token lookup, expiration and connection projection"
+      ]
+    },
+    "./one-time-secrets": {
+      "sourceFile": "src/core/one-time-secrets.js",
+      "sourceBlob": "071900c19db7d77a608c7bb65574b12b24c080fb",
+      "target": "./src/one-time-secrets.js",
+      "coreBlob": "2e05c803725c76cba20d241619a271f6bf8e5274",
+      "kind": "adapted",
+      "tests": [
+        "packages/core/test/one-time-secrets.test.js",
+        "tests/db/core-storage-adapters.test.js"
+      ],
+      "serverOwned": [
+        "service-specific ciphertext AAD and atomic SQL row ownership"
+      ]
+    },
+    "./oauth-protocol": {
+      "sourceFile": "src/core/oauth-handlers.js",
+      "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
+      "target": "./src/oauth-protocol.js",
+      "coreBlob": "0ad6b88acfe02c35413a7deaab5eadc2cff26771",
+      "kind": "adapted",
+      "tests": [
+        "packages/core/test/oauth-protocol.test.js",
+        "packages/core/test/integration-boundary.test.js"
+      ],
+      "serverOwned": [
+        "owner login UI, account grants and refresh settings SQL"
+      ]
+    },
+    "./write": {
+      "sourceFile": "src/core/write.js",
+      "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
+      "target": "./src/write.js",
+      "coreBlob": "5ecedeb9c6d74674a0ebdf5bb13efd06b41abe76",
+      "kind": "adapted",
+      "tests": [
+        "packages/core/test/write.test.js",
+        "packages/core/test/integration-boundary.test.js"
+      ],
+      "serverOwned": [
+        "owner-independent money consent, shared limits, live guard and retry key"
+      ]
+    },
+    "./mcp-dispatch": {
+      "sourceFile": "src/core/mcp-server.js",
+      "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
+      "target": "./src/mcp-dispatch.js",
+      "coreBlob": "3e434c9dc9118003ad4905a0415a7d39cec7dc25",
+      "kind": "adapted",
+      "tests": [
+        "packages/core/test/mcp-dispatch.test.js",
+        "packages/core/test/integration-boundary.test.js"
+      ],
+      "serverOwned": [
+        "MCP HTTP transport, service policy, redaction and scoped results"
+      ]
+    }
+  }
+}
