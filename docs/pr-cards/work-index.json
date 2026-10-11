@@ -55,12 +55,15 @@
         "K-1"
       ],
       "card": "docs/pr-cards/K-2.md",
-      "status": "READY",
+      "status": "MERGED",
       "units": [
         "K-2"
       ],
       "readiness": "READY",
-      "externalGates": []
+      "externalGates": [],
+      "pr": [
+        "#10"
+      ]
     },
     {
       "id": "K-2b",

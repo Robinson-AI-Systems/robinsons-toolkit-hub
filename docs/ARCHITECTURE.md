@@ -2,8 +2,16 @@
 
 Updated in the same PR that ships behavior. Designs describe what is planned.
 
-As of 2026-10-10 (K-0): **the repository foundation is built; no product code exists.** No Vercel project, Neon
+As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
+
+## Built in K-2 (PR #10)
+
+| What | Where | Notes |
+|---|---|---|
+| RTC fake server | `packages/conformance/fake-server/server.js` | Node HTTP on loopback only; random passes, guarded read/write, batch and handles; deliberate fault switches. Test behavior only, not a public service. |
+| Conformance runner | `packages/conformance/src/run.js` | Real HTTP checks of manifest, OpenAPI, catalog, meta, reads, writes, passes, error safety and compact budget. No keys logged. Missing roles are skipped, not passed. |
+| Conformance CLI | `packages/conformance/bin/rtc-conformance.js` | Env-name flags, exit status 0/1/2; root `npm run test:conformance` exercises fake and negative probes. K-2b will add OAuth refresh/two-instance checks. |
 
 ## Built
 
@@ -17,6 +25,6 @@ database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04)
 
 ## Planned (not built)
 
-`packages/conformance` (K-2, K-2b), `packages/core` (K-3), `rtool` CLI and local MCP (D-1, D-2), the GitHub relay
+`packages/conformance` OAuth/two-instance extensions (K-2b), `packages/core` (K-3), `rtool` CLI and local MCP (D-1, D-2), the GitHub relay
 `api/relay/github.js` with table `relay_seen` (D-3), the hub server with `hub_servers` and `hub_change_log` (H), workflows
-(C), local tools (L). Scripts `test:conformance` and `test:doors` arrive with K-2 and D-1.
+(C), local tools (L). The `test:doors` script arrives with D-1; `test:conformance` is now real.
