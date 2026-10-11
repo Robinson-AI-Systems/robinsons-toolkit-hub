@@ -5,6 +5,12 @@ the central hub server and relay are not yet built.
 
 ## Next
 
+- **D-2 merged (#16):** rtool mcp exposes compact, server-alias-prefixed local
+  broker tools over JSON-RPC stdio, with server-owned guard enforcement. The two
+  local HTTP fake services are tested for read, write confirmation and refusal.
+- **Next:** D-3 encrypted GitHub relay implementation. Relay private repository
+  and hosted credentials are still owner-side gates; build/test against fake APIs
+  without claiming production deployment.
 - **D-1 complete (#15):** standalone rtool CLI accepts multiple servers, secure keychain
   login, real guarded HTTPS tools, SDK generation and agent setup; TypeScript compiler
   verifies generated declaration files. Immutable cli-v1 tag runs on the merged main.
@@ -29,6 +35,12 @@ the central hub server and relay are not yet built.
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-2 local MCP (#16):** newline-delimited JSON-RPC 2.0 stdio
+server, deterministic tool listing, two-server calls with real RTC HTTP passes,
+provider guard refusals, and compact schema budget test. No direct production
+accounts accessed.
+
 
 **2026-10-11 — D-1 compiler and CLI v1 release (#15):** TypeScript 5.9.3 pinned;
 actual generated SDK declarations typechecked with strict compiler and deliberate
