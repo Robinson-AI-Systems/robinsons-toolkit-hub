@@ -26,6 +26,11 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
     try { permitted = !!item && (await authorizeTool(item, connection)) === true; }
     catch { permitted = false; }
     if (!permitted) return deny('Tool unavailable for this connection');
+    // runRead is a privileged convenience, never a route to execute a write.
+    // Fail closed when a nested tool lacks an explicit read declaration.
+    if (depth > 0 && item.writes !== false) {
+      return deny('Nested calls may only invoke explicitly declared read tools');
+    }
     // Metadata alone cannot authorize inherited Object.prototype functions.
     // An executable handler must be an explicitly registered own property.
     const handler = Object.hasOwn(registry.handlers, name) ?

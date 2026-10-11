@@ -150,7 +150,7 @@
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "c2b97e24f64f6437d2007737fac99ae7a7bd4a84",
+      "coreBlob": "9237c469f7fca55d2142d0e6d13a32874f0c17a6",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
@@ -159,7 +159,8 @@
       ],
       "serverOwned": [
         "MCP HTTP transport, service policy, redaction and scoped results",
-        "core refuses prototype-inherited handlers and page metadata override; server still owns MCP transport, scoped result SQL and redaction"
+        "core refuses prototype-inherited handlers and page metadata override; server still owns MCP transport, scoped result SQL and redaction",
+        "nested runRead explicitly denies writes and metadata-unknown tools even under otherwise permissive service policy"
       ]
     }
   }
