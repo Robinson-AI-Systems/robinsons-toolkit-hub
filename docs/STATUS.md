@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3l (PR #33, as-if-merged):** disposable PostgreSQL integration proof now exercises cross-pool atomic consume-once encrypted secrets, expired/AAD-mismatched refusal, shared login lockouts and expiry, and connection-scoped oversized result storage. These are fixture adapters using independent pools, not a production migration or source-service adoption; K-3 remains IN_PROGRESS. **Next:** source-specific assertion parity and complete release gating before any publication.
+
 - **K-3k (PR #32, as-if-merged):** release-isolation gate runs in npm check, verifying the core private package exports every shipped ESM module explicitly, rejects source symlinks/path escapes, runtime dependencies, dynamic imports, install scripts and unreviewed new source files. Negative fixtures prove the gate catches violations. The complete package release is still gated by source-parity/adoption checks.
 
 - **K-3j (PR #31, as-if-merged):** private core integration proof joins OAuth registration/grants, bearer projection, read/write dispatch, durable result scoping and server-owned independent money preflight. The deterministic fake verifies refresh/revocation, read-only refusal, audited money approval and oversized scoped storage; no provider or service repository touched. **Next:** reconcile complete Stripe upstream assertion coverage and remaining source compatibility boundaries before any release. K-3 remains IN_PROGRESS.
