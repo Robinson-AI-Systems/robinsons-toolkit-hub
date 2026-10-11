@@ -116,14 +116,15 @@
       "sourceFile": "src/core/oauth-handlers.js",
       "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
       "target": "./src/oauth-protocol.js",
-      "coreBlob": "0ad6b88acfe02c35413a7deaab5eadc2cff26771",
+      "coreBlob": "c3920110f645b506d044b73205f63939e1fc0e09",
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
         "packages/core/test/integration-boundary.test.js"
       ],
       "serverOwned": [
-        "owner login UI, account grants and refresh settings SQL"
+        "owner login UI, account grants and refresh settings SQL",
+        "core rejects mapped or rotated token IDs that differ from issued IDs; service SQL must return matching durable claims"
       ]
     },
     "./write": {
