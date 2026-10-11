@@ -5,6 +5,14 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3c (PR #24, as-if-merged):** source-equivalent profile visibility,
+  public tool metadata and Stripe's explicit write-declaration checker copied
+  into private core with original profile assertion bodies plus money metadata
+  rejection tests. This is **metadata-only**; it does not implement money-out
+  execution, server-side guards, or authorize the hub to override a server.
+  Next K-3d: package isolation/consumer smoke and finish boundary accounting.
+
+
 - **K-3b (PR #23, as-if-merged):** extracted Stripe's source-identical
   registry and HTTP helpers into private `packages/core`. Dedicated tests
   check duplicate/missing handlers, HTTPS issuer, response headers, safe input

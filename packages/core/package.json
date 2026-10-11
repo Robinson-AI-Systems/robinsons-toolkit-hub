@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Portable security, registry and HTTP primitives (partial K-3; private)",
+  "description": "Partial private extraction: OAuth, encryption, catalog, HTTP and metadata safety helpers",
   "engines": {
     "node": "24.x"
   },
@@ -11,7 +11,9 @@
     "./oauth": "./src/oauth.js",
     "./crypto": "./src/crypto.js",
     "./registry": "./src/registry.js",
-    "./http": "./src/http.js"
+    "./http": "./src/http.js",
+    "./profiles": "./src/profiles.js",
+    "./write-contract-check": "./src/write-contract-check.js"
   },
   "files": [
     "src/"

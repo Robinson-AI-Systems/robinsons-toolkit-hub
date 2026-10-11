@@ -5,6 +5,16 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3c (PR #24)
+
+`packages/core/src/profiles.js` retains only Stripe's portable
+`CONNECTION_PROFILES`, `isToolAllowed`, `visibleTools`, `profileCounts` and
+`publicToolInfo` functions (same function bodies); Stripe's guarded test-area,
+account and listing policy stays service-owned. `write-contract-check.js` is
+source-identical optional declaration validation for `defineWrite-v1` metadata.
+Neither helper executes a write, approves money, or replaces DB-backed guards.
+The server keeps independent approval and limit enforcement.
+
 ## Built in K-3b (PR #23)
 
 Source-identical Stripe `src/core/registry.js` and `http.js` are now private
