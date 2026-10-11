@@ -43,9 +43,9 @@ export async function startFakeServer({ prefix = 'fake', faults = [] } = {}) {
       readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false } }),
     tool(names[3], true, { money: true, description: 'MOVES MONEY: Move fake currency' })];
   const byName = new Map(tools.map((entry) => [entry.name, entry]));
-  function reply(body, pass, res) {
+  function reply(body, pass, res, status = 200) {
     if (!body.ok || JSON.stringify(body).length <= 8192 || bad.has('oversize-without-handle')) {
-      return deliver(res, 200, body);
+      return deliver(res, status, body);
     }
     const handle = randomBytes(16).toString('hex');
     state.handles.set(handle, { pass, body, expires: Date.now() + 86_400_000 });
@@ -140,7 +140,7 @@ export async function startFakeServer({ prefix = 'fake', faults = [] } = {}) {
         if (req.method === 'POST' && entry) {
           const args = await readBody(req);
           const outcome = await invoke(name, args, pass);
-          return reply(outcome.body, pass, res);
+          return reply(outcome.body, pass, res, outcome.status);
         }
       }
       if (bad.has('bad-error-envelope')) return deliver(res, 404, { nope: true });

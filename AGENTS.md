@@ -146,9 +146,8 @@ npm run test:db -- <file>         # throwaway localhost Postgres (CI's service, 
 python3 docs/pr-cards/validate-index.py
 ```
 
-Added by the card that first has real tests for them (no script before then): `npm run test:conformance` (K-2,
-contract checks against the reference fake server) and `npm run test:doors` (D-1, CLI, local MCP, relay and hub HTTPS
-against fake servers).
+`npm run test:conformance` is implemented by K-2 (reference fake server and real probes). Added later:
+`npm run test:doors` (D-1, CLI, local MCP, relay and hub HTTPS against fake servers).
 
 ## Ending a session
 

@@ -6,8 +6,9 @@ or server).
 
 ## Next
 
-- **Ready now:** **K-2 — conformance package and reference fake server** ([card](pr-cards/K-2.md),
-  code, medium effort). Branch `ai/<tool>/k-2-conformance` from latest `main`.
+- **K-2 complete (#10):** reference fake server, deterministic contract probes and CLI, fault tests
+  and an actual conformance command for service-server CI.
+- **Next:** K-2b (OAuth refresh settings and two-server-instance database rate limit), then D-1.
 - **K-1 complete (#9):** RTC 1 frozen; rule-to-check mapping, pass formats and skipped-check reporting documented;
   five service plans checked and the token-shape secret scan hardened.
 - **Then:** K-2b (refresh keeps settings, two-instance rate limit; write its card at start), then D-1.
@@ -18,12 +19,6 @@ or server).
   Workspace move to Node 24.x, and Stripe prefixes every tool name with `stripe_` before its first tools are built
   (contract §3); Workspace renames generic areas (`admin_`, `chat_`, `contacts_`, `workflow_` …) during its Phase 8 (no old-name aliases).
 
-## In-flight implementation
-
-- **K-2** on branch `ai/gpt6/k-2-conformance`: first checkpoint installs the working HTTP reference fake
-  server with real pass guards, dry-run/confirmation flow, result handle isolation and unit tests.
-  Next: the conformance runner, its negative cases and CLI. This is not completed until its own PR merges.
-
 ## Environment
 
 - Repo `Robinson-AI-Systems/robinsons-toolkit-hub` (created by Chris 2026-10-10; public, no automated review). First commit straight to `main` because the
@@ -32,6 +27,12 @@ or server).
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — K-2 conformance and reference fake (PR #10):** actual localhost HTTP fake,
+secure pass-shape generation, read and guarded-write calls, fake-change log, handle isolation, deterministic
+named probes, seven deliberate regression faults, skipped-role reporting and CLI arguments from env variables.
+Script `npm run test:conformance` now executes real tests. This entry is written as merged per Step 6.
+
 
 **2026-10-11 — K-1 contract freeze (PR #9):** reviewed five server plans against RTC 1, mapped normative
 rules to named checks or server-owned tests, clarified the runner's environment-only role passes and
