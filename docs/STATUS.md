@@ -5,15 +5,17 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
-- **D-3 complete in code (#17–19):** signed encrypted relay server, atomic replay
-  claims, CLI/local MCP direct-first fallback, bounded ciphertext cleanup and
-  owner-gated hourly scheduler. No real relay is deployed or connected.
-- **Next:** D-4 agent setup recipes and safe verification runner; real authorized
-  direct/relay/sandbox runs stay waiting on owner resources and test-pass approval.
-- K-3 requires fresh verification of Stripe A–C and follows the D-4 code/document slice.
-- D-1/D-2 remain merged; actual native OS keychain smoke still owner-side.
-- Session contract: five substantial merged PRs per chat; this chat stops at #20.
-  Every handoff is concise and points to repo rules, with current SHA and next task.
+- **D-4a merged (#20):** agent recipes and secret-safe read-only route verifier;
+  actual fake direct and signed encrypted relay tests. No real agent route is certified.
+- **Next executable card:** K-3 shared-core extraction, after verifying current
+  Stripe MCP A–C completion and actual helpers against its repository docs.
+  Write K-3 just in time; do not modify Stripe from this repo or invent compatibility.
+- **D-4 WAITING_ON_OWNER:** real local direct, GitHub-only relay and Vercel Sandbox
+  direct runs; owner-approved short-lived passes and subsequent revocation evidence.
+  IN-02/03/04 relay resources/keys remain unset; actual OS vault smoke also unverified.
+- D-3 code complete (#17–19); no real relay is deployed or connected.
+- This chat stopped at #20; normal sessions merge five new substantial PRs and
+  return the concise repo-documentation-based continuation prompt (AGENTS).
 
 ## Environment
 
@@ -23,6 +25,19 @@ the central hub server is not yet built; the relay server is built but not deplo
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-4a agent setup (#20):** all environment recipes and read-only
+runner, with named environment passes/args and neutral output. Real routes remain
+D-4 WAITING. Next K-3 after fresh prerequisite verification.
+
+**2026-10-11 — D-3 relay completion (#19):** safe direct-first CLI/MCP/SDK routing,
+exact RTC path allowlist, independently authenticated ciphertext cleanup and inert
+hourly scheduler; fake end-to-end tests. No live deployment authorization assumed.
+
+**2026-10-11 — D-3b server (#18):** raw signed webhook private-repo bindings,
+atomic Postgres replay claims and encrypted guarded replies. CI database proof
+uses independent pools; no production passes/secrets used.
+
 
 **2026-10-11 — D-3a encrypted relay client (#17):** random request IDs, ephemeral
 X25519 exchange, authenticated ciphertext, symmetric encrypted reply key delivered

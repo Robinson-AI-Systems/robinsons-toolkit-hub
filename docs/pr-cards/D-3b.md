@@ -44,6 +44,6 @@ Budget: approximately 500 production lines, hard maximum 800.
 - Successor inherits createRelayServer, createReplayStore and raw Vercel handler.
 
 ## Evidence
-13 relay tests and 2 client tests pass locally; independent-pool replay tests are
+14 relay tests and 2 client tests pass locally; independent-pool replay tests are
 implemented for CI Postgres. No local Postgres binary is available.
 Reply/crypto cap adjusted to fit GitHub 65,536-byte comments; no silent truncation.

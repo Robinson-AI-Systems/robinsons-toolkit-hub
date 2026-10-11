@@ -93,3 +93,10 @@ a paid cron. This does not authorize activation or spending. Direct POST request
 with ambiguous outcomes never automatically retry via relay.
 Chris requests five merged PRs per chat and a concise repo-documentation-based
 handoff; this particular chat ends after PR #20, then normal five-PR sessions resume.
+
+## 2026-10-11 — D-4 honest real-run boundary
+D-4a ships environment recipes and a read-only verifier using named environment
+credentials and neutral output. It defaults to localhost and refuses full passes
+or writing/money/destructive metadata. Real-run opt-in is a technical control, not
+owner authorization. Actual three-environment evidence and pass revocation remain
+D-4 WAITING_ON_OWNER; no fake tests stand in for real certification.

@@ -100,6 +100,14 @@ it('CLI traverses fake GitHub and signed encrypted server to real guarded RTC', 
       }
       await rm(dir, { recursive: true, force: true });
     }
+    const { checkAgent } = await import('../src/agent-check.js');
+    let reportText = '';
+    expect(await checkAgent({ server: 'fake', readTool: 'fake_read_record', passEnv: 'TEST_RUN_PASS',
+      expectRoute: 'relay', authorizedRealRun: true,
+      env: { ...env, TEST_RUN_PASS: fake.passes.readOnly }, write: text => { reportText = text; } })).toBe(0);
+    expect(JSON.parse(reportText)).toMatchObject({ ok: true, route: 'relay' });
+    expect(reportText).not.toContain(fake.passes.readOnly);
+    expect(comments).toHaveLength(0);
     expect(bodies.every(body => body.startsWith('rtc:v1:'))).toBe(true);
     expect(bodies.join('')).not.toContain(fake.passes.full);
     expect(bodies.join('')).not.toContain('fake_read_record');

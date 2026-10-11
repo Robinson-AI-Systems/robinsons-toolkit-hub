@@ -273,22 +273,43 @@
       ]
     },
     {
-      "id": "D-4",
-      "title": "Agent setup recipes and real runs",
+      "id": "D-4a",
+      "title": "Agent setup recipes and read-only route verification runner",
       "batch": "D",
       "design": "docs/designs/BATCH-D.md",
       "dependencies": [
         "D-2",
         "D-3"
       ],
+      "card": "docs/pr-cards/D-4a.md",
+      "status": "MERGED",
+      "units": [
+        "D-4a"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#20"
+      ]
+    },
+    {
+      "id": "D-4",
+      "title": "Agent setup recipes and real runs",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-4a"
+      ],
       "card": "docs/pr-cards/D-4.md",
-      "status": "APPROVED",
+      "status": "WAITING_ON_OWNER",
       "units": [
         "D-4"
       ],
-      "readiness": "WRITE_CARD_AT_START",
+      "readiness": "WAITING_ON_OWNER",
       "externalGates": [
-        "a server with its HTTPS tool API"
+        "IN-02/03/04 relay resources and secrets",
+        "owner-authorized read_only non-production test passes",
+        "local/GitHub-only/Vercel Sandbox real runs and revocation evidence"
       ]
     },
     {

@@ -148,3 +148,8 @@ ambiguous writes never repeat. Until owner keys exist, clients supply the public
 key through public environment configuration. The hourly GitHub scheduler stays
 inert until the owner configures its URL and separate bearer; no paid Vercel cron
 is provisioned. Live routes remain D-4 owner-gated acceptance.
+
+**2026-10-11 — D-4a prerequisite slice.** Agent recipes and a runnable read-only
+verification tool are D-4a. Real local/GitHub-only/Vercel Sandbox runs and pass
+revocation stay in D-4 WAITING_ON_OWNER. No fake test certifies a real agent route.
+K-3 prerequisite verification can proceed independently while owner setup waits.

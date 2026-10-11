@@ -2,8 +2,18 @@
 
 Updated in the same PR that ships behavior. Designs describe what is planned.
 
-As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
+As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
+
+## Built in D-4a (PR #20)
+
+| What | Where | Notes |
+|---|---|---|
+| Agent verification | scripts/agent-check.mjs; packages/cli/src/agent-check.js | Env-name pass/args only, default localhost boundary, read_only profile and non-writing metadata required, real read/handle, observed route per probe; neutral output. |
+| Agent recipes | docs/AGENT-SETUP.md | Local/cloud Claude/Codex, Cursor, Copilot, Actions, Vercel Sandbox and Docker; pinned reviewed commit, direct/relay/MCP/SDK doors. |
+| Real-run acceptance | docs/pr-cards/D-4.md | WAITING for owner-authorized three-route evidence and test-pass revocation. |
+
+This is verification infrastructure, not certification of any real hosted route.
 
 ## Built in D-3 (PR #19)
 
@@ -127,6 +137,6 @@ Without both local fixtures the extended suite reports skips and cannot certify 
 
 ## Planned (not built)
 
-`packages/conformance` release tagged after K-2b, `packages/core` (K-3), `rtool` SDK/login/skill/init (D-1), local MCP (D-2), the GitHub relay
-`api/relay/github.js` with table `relay_seen` (D-3), the hub server with `hub_servers` and `hub_change_log` (H), workflows
-(C), local tools (L). The `test:doors` script arrives with D-1; `test:conformance` is now real.
+Shared `packages/core` extraction (K-3), new-server scaffold (K-4), hosted hub (H),
+workflows (C) and local tools (L). D-4 real environment proof and native OS credential
+smokes remain unverified. Owner relay resources/secrets are not provisioned here.

@@ -149,6 +149,18 @@ python3 docs/pr-cards/validate-index.py
 `npm run test:conformance` is implemented by K-2 (reference fake server and real probes). Added later:
 `npm run test:doors` (D-1, real CLI door tests against localhost fake servers; D-2 and D-3 add their own door checks).
 
+## Session batches and handoff (Chris, 2026-10-11)
+
+Complete and merge five substantial production-quality PRs per chat, then stop
+implementation and provide a concise ready-to-copy continuation prompt. An explicit
+session cutoff from Chris overrides that count (the 2026-10-11 session stops at #20).
+Count only newly merged PRs. Keep the ~500-line production target and 800-line hard
+maximum; genuinely smaller coherent/gated work is allowed, never pad it.
+The handoff names the repository, verified main SHA, merged PRs, outstanding work
+and next card; preserve this five-PR contract and refer to these repository rules
+instead of repeating them. Each future session repeats the same concise handoff.
+At project completion supply final verification instead. Owner gates still apply.
+
 ## Ending a session
 
 STATUS (merged, in progress with branch/PR/head/CI, blocked, next) · DECISIONS for decisions · ROADMAP for ideas ·
