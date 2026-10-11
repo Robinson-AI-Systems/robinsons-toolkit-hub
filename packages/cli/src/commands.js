@@ -2,7 +2,8 @@
 import { open } from 'node:fs/promises';
 import { loadServers, displayServers, RouteError } from './config.js';
 import { ToolError, httpRequest, errorCodeOf } from './http.js';
-import { selectServer, byName, send, requirePass } from './dispatch.js';
+import { selectServer, byName, send } from './dispatch.js';
+import { toolPages, materialize } from './pages.js';
 
 const usage = [
   'rtool servers',
@@ -87,14 +88,12 @@ async function directTools(servers, env, names, options, write) {
     const params = new URLSearchParams({ limit: String(limit) });
     if (search) params.set('q', search);
     if (options['--area']) params.set('area', options['--area']);
-    const data = await send(server, '/api/tools?' + params.toString());
-    for (const t of data?.result?.tools || []) write(name + ' ' + t.name + ' — ' + t.description + '\n');
+    for await (const page of toolPages(server, '/api/tools?' + params.toString())) {
+      for (const t of page) write(name + ' ' + t.name + ' — ' + t.description + '\n');
+    }
     attempted++;
   }
   if (!attempted) throw new RouteError('No configured server with a pass can list tools');
-}
-function commandPass(server) {
-  return requirePass(server); // fail before contacting a server if unavailable
 }
 export async function runCLI(argv = [], { env = process.env, out = process.stdout, err = process.stderr,
   reader } = {}) {
@@ -143,7 +142,7 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       }
       const data = await send(server, '/api/tools/' + encodeURIComponent(server.tool),
         { method: 'POST', args: input });
-      await output(data, options, write);
+      await output(options['--out'] ? await materialize(server, data) : data, options, write);
       return data?.result?.needsConfirmation ? 2 : 0;
     }
     if (command === 'batch') {
@@ -160,7 +159,8 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       ensureCount(args, 2, 'rtool result <server> <handle>');
       if (!/^[a-zA-Z0-9_-]{1,256}$/.test(args[1])) throw new ToolError('Invalid result handle');
       const server = byName(servers, env, args[0]);
-      await output(await send(server, '/api/results/' + encodeURIComponent(args[1])), options, write);
+      const data = await send(server, '/api/results/' + encodeURIComponent(args[1]));
+      await output(options['--out'] ? await materialize(server, data) : data, options, write);
       return 0;
     }
     throw new ToolError('Unknown command. Supported:\n' + usage);

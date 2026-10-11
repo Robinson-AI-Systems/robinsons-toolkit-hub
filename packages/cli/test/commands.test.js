@@ -46,10 +46,14 @@ describe('rtool direct commands against real RTC HTTP fake', () => {
       expect(await runCLI(['call', 'fake_read_record', '--detail', 'full', '--out', path],
         { env, out: term.out, err: term.err })).toBe(0);
       const big = JSON.parse(readFileSync(path, 'utf8'));
-      expect(big.handle).toBeTypeOf('string');
+      expect(big.result.payload.length).toBe(9000);
       expect((statSync(path).mode & 0o777)).toBe(0o600);
       expect(term.text().length).toBeLessThan(300);
-      expect(await runCLI(['result', 'one', big.handle], { env, out: term.out, err: term.err })).toBe(0);
+      const response = await fetch(f.url + '/api/tools/fake_read_record', {
+        method: 'POST', headers: { authorization: 'Bearer ' + f.passes.full,
+          'content-type': 'application/json' }, body: JSON.stringify({ detail: 'full' }) });
+      const handle = (await response.json()).handle;
+      expect(await runCLI(['result', 'one', handle], { env, out: term.out, err: term.err })).toBe(0);
       expect(await runCLI(['call', 'fake_read_record', '--detail', 'full', '--out', path],
         { env, out: term.out, err: term.err })).toBe(4);
     } finally { await f.close(); rmSync(dir, { force: true, recursive: true }); }
