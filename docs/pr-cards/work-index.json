@@ -186,12 +186,15 @@
         "D-1c"
       ],
       "card": "docs/pr-cards/D-1.md",
-      "status": "APPROVED",
+      "status": "MERGED",
       "units": [
         "D-1"
       ],
       "readiness": "READY",
-      "externalGates": []
+      "externalGates": [],
+      "pr": [
+        "#15"
+      ]
     },
     {
       "id": "D-2",

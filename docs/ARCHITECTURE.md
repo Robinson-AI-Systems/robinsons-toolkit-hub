@@ -5,6 +5,16 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-1 (PR #15)
+
+| What | Where | Notes |
+|---|---|---|
+| SDK compiler gate | packages/cli/test/typescript.test.js | Strict TypeScript compiler checks actual generated declaration files and deliberate expected input type errors. |
+| Door scripts | package.json | npm run test:doors and test:types, both real runnable suites. |
+| CLI distribution | .github/workflows/tag-cli.yml | Immutable cli-v1 tag on verified main push, single tag only. |
+
+Real device smoke for native credentials remains unverified; hosted services and GitHub relay are not yet provisioned.
+
 ## Built in D-1c (PR #14)
 
 | What | Where | Notes |
@@ -23,7 +33,7 @@ Cross-platform native invocation plans are unit-tested, but actual device smoke 
 | Agent guidance | packages/cli/src/setup.js | rtool skill and init, managed AGENTS.md block, refuses symlinks and malformed managed blocks. Only direct HTTPS claimed until relay exists. |
 | Tested standalone SDK | packages/cli/test/sdk-setup.test.js | Live fake-server calls through generated functions; read-only/confirmation and no-pass persistence exercised. |
 
-**Not built:** final declaration compiler gate, relay, local MCP, hosted hub.
+**Not built:** relay, local MCP, hosted hub.
 Next D-1 finishes keychain and release readiness.
 
 ## Built in D-1a (PR #12)

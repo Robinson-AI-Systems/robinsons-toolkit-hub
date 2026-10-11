@@ -1,0 +1,26 @@
+# Main-only immutable CLI tag. The PR has no write credential; this workflow tags verified main.
+name: cli-v1-tag
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/cli/**'
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Create immutable CLI version pointer when absent
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin refs/tags/cli-v1 >/dev/null 2>&1; then
+            echo "cli-v1 already exists; do not rewrite"
+            exit 0
+          fi
+          git tag cli-v1 HEAD
+          git push origin refs/tags/cli-v1
