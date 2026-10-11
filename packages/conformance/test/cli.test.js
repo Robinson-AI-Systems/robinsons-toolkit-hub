@@ -25,7 +25,7 @@ describe('rtc-conformance CLI', () => {
       expect(lines.join(' ')).not.toContain(f.passes.full);
     } finally { await f.close(); }
   });
-  it('exits 0 for full role set and 1 for a deliberately broken server', async () => {
+  it('never gives a full certificate when local-only OAuth and two-instance checks are absent', async () => {
     const { main } = await import('../bin/rtc-conformance.js');
     for (const faults of [[], ['bad-error-envelope']]) {
       const f = await startFakeServer({ faults });
@@ -36,7 +36,7 @@ describe('rtc-conformance CLI', () => {
           EXPIRED: f.passes.expired, REVOKED: f.passes.revoked };
         const original = console.log;
         console.log = () => {};
-        try { expect(await main(args, env)).toBe(faults.length ? 1 : 0); }
+        try { expect(await main(args, env)).toBe(1); }
         finally { console.log = original; }
       } finally { await f.close(); }
     }
