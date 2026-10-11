@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Partial private extraction: OAuth, encryption, catalog, HTTP, metadata and MCP bearer boundaries",
+  "description": "Private extraction: OAuth, encryption, catalog, HTTP, metadata, MCP bearer and one-time secret adapters",
   "engines": {
     "node": "24.x"
   },
@@ -14,7 +14,8 @@
     "./http": "./src/http.js",
     "./profiles": "./src/profiles.js",
     "./write-contract-check": "./src/write-contract-check.js",
-    "./mcp-auth": "./src/mcp-auth.js"
+    "./mcp-auth": "./src/mcp-auth.js",
+    "./one-time-secrets": "./src/one-time-secrets.js"
   },
   "files": [
     "src/"

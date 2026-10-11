@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3f (PR #27, as-if-merged):** one-time encrypted secrets have a portable private adapter with explicit source AAD, route, account row and atomic durable store contracts. Ten-minute expiry, 32-character IDs and authenticated decryption retain Stripe source semantics; adapters cannot change old ciphertext without a server-side migration. Source server unchanged. **Next:** K-3g OAuth handler seams; no Release/adoption.
+
 - **K-3e (PR #26, as-if-merged):** private core adds service-neutral MCP bearer authentication. The server must inject token lookup and an explicit fail-closed connection projector; the source Stripe module remains untouched, with all account/mode/profile/expiry/revocation decisions at the server. Offline packed consumer and denial-path tests cover the new subpath. **Next:** K-3f OAuth handler boundary reconciliation; K-3 remains IN_PROGRESS, no release or server adoption.
 
 - **K-3d (PR #25, as-if-merged):** packed the **private** shared core
