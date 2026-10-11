@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-10",
+  "updated": "2026-10-11",
   "order": [
     "K",
     "D",
@@ -35,12 +35,15 @@
       "design": "docs/designs/BATCH-K.md",
       "dependencies": [],
       "card": "docs/pr-cards/K-1.md",
-      "status": "READY",
+      "status": "MERGED",
       "units": [
         "K-1"
       ],
       "readiness": "READY",
-      "externalGates": []
+      "externalGates": [],
+      "pr": [
+        "#9"
+      ]
     },
     {
       "id": "K-2",

@@ -27,6 +27,7 @@ const SECRET_VARS = [
 const RULES = [
   ['secret assignment', new RegExp(`\\b(${SECRET_VARS})\\s*[=:]\\s*['"]?([^\\s'"\`]{16,})`, 'g'),
     (m) => hasFake(m[2]) || isReference(m[2]) || localDbUrl(m[2])],
+  ['RTC pass shape', /\brtc_pass_[A-Za-z0-9_-]{43}\b/g, (m) => hasFake(m[0])],
   ['bearer token', /\bBearer\s+([A-Za-z0-9._~+/=-]{24,})/g, (m) => hasFake(m[1])],
   ['private key', /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----/g, (m) => hasFake(m[0])],
   ['GitHub token', /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})/g, (m) => hasFake(m[0])],

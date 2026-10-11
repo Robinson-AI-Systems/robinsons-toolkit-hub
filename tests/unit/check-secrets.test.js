@@ -16,6 +16,11 @@ describe('secret scan: planted hub secrets fail', () => {
     expect(labels('export RTC_PASS' + '="' + A(32) + '"')).toEqual(['secret assignment']);
     expect(labels('HUB_PASS' + ': ' + A(24))).toEqual(['secret assignment']);
   });
+  it('detects an RTC pass by shape even outside known variables or headers', () => {
+    expect(labels('plain text ' + 'rtc_pass_' + A(43))).toEqual(['RTC pass shape']);
+    expect(labels('rtc_pass_FAKE' + A(39))).toEqual([]);
+    expect(labels('rtc_pass_<redacted>')).toEqual([]);
+  });
   it('a pass sent as a bearer header', () => {
     expect(labels('curl -H "Authorization: ' + 'Bearer ' + A(43) + '"')).toEqual(['bearer token']);
   });
