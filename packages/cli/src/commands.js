@@ -8,6 +8,7 @@ import { generateSdk } from './sdk.js';
 import { routeSummary, writeAgentSetup, writeSkill, SKILL } from './setup.js';
 import { makeKeychain, addStoredPasses } from './keychain.js';
 import { readHiddenPass } from './input.js';
+import { serveLocalStdio } from './mcp.js';
 
 const usage = [
   'rtool servers',
@@ -21,7 +22,8 @@ const usage = [
   'rtool init [--out PROJECT_DIRECTORY]',
   'rtool skill [--out PROJECT_DIRECTORY]',
   'rtool login <server> (hidden stdin, OS keychain)',
-  'rtool logout <server> (remove local keychain entry)'
+  'rtool logout <server> (remove local keychain entry)',
+  'rtool mcp (JSON-RPC 2025-11-25 over stdio)'
 ].join('\n');
 const optionsWithValue = new Set(['--args', '--fields', '--detail', '--out', '--area', '--limit']);
 const flags = new Set(['--dry-run', '--confirm']);
@@ -105,7 +107,7 @@ async function directTools(servers, env, names, options, write) {
   if (!attempted) throw new RouteError('No configured server with a pass can list tools');
 }
 export async function runCLI(argv = [], { env = process.env, out = process.stdout, err = process.stderr,
-  reader, keychain, passReader = readHiddenPass } = {}) {
+  reader, keychain, input = process.stdin, passReader = readHiddenPass } = {}) {
   const write = (value) => out.write(value);
   const warning = (value) => err.write(value);
   try {
@@ -131,6 +133,11 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       return 0;
     }
     env = await addStoredPasses(servers, env, vault);
+    if (command === 'mcp') {
+      if (words.length) throw new ToolError('Usage: rtool mcp');
+      await serveLocalStdio({ servers, env, input, output: out });
+      return 0;
+    }
     if (command === 'servers') {
       ensureCount(words, 0, 'rtool servers');
       await output({ servers: displayServers(servers, env) }, {}, write);
