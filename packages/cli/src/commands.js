@@ -4,6 +4,8 @@ import { loadServers, displayServers, RouteError } from './config.js';
 import { ToolError } from './http.js';
 import { selectServer, byName, send } from './dispatch.js';
 import { toolPages, materialize } from './pages.js';
+import { generateSdk } from './sdk.js';
+import { routeSummary, writeAgentSetup, writeSkill, SKILL } from './setup.js';
 
 const usage = [
   'rtool servers',
@@ -12,7 +14,10 @@ const usage = [
   'rtool describe <server.tool|prefixed_tool>',
   'rtool call <server.tool|prefixed_tool> [--args JSON] [--dry-run] [--confirm] [--fields a,b] [--detail summary|full] [--out FILE]',
   'rtool batch <server> --args JSON',
-  'rtool result <server> <handle> [--out FILE]'
+  'rtool result <server> <handle> [--out FILE]',
+  'rtool sdk <server> [--out NEW_DIRECTORY]',
+  'rtool init [--out PROJECT_DIRECTORY]',
+  'rtool skill [--out PROJECT_DIRECTORY]'
 ].join('\n');
 const optionsWithValue = new Set(['--args', '--fields', '--detail', '--out', '--area', '--limit']);
 const flags = new Set(['--dry-run', '--confirm']);
@@ -111,6 +116,26 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       return 0;
     }
     const { args, options } = parseOptions(words);
+    if (command === 'sdk') {
+      ensureCount(args, 1, 'rtool sdk <server> [--out NEW_DIRECTORY]');
+      const report = await generateSdk({ servers, env, name: args[0], dest: options['--out'] });
+      await output(report, {}, write);
+      return 0;
+    }
+    if (command === 'init') {
+      ensureCount(args, 0, 'rtool init [--out PROJECT_DIRECTORY]');
+      const result = await writeAgentSetup({ dir: options['--out'], servers, env });
+      await output({ ...result, routes: routeSummary(servers, env) }, {}, write);
+      return 0;
+    }
+    if (command === 'skill') {
+      ensureCount(args, 0, 'rtool skill [--out PROJECT_DIRECTORY]');
+      if (!options['--out']) {
+        write(SKILL); return 0;
+      }
+      await output({ skill: await writeSkill({ dir: options['--out'] }) }, {}, write);
+      return 0;
+    }
     if (command === 'whoami') {
       if (args.length > 1 || (args.length === 0 && servers.size !== 1))
         throw new ToolError('Specify exactly one server for whoami');
