@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
+  "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
+  "status": "INCOMPLETE_SERVER_ADOPTION",
+  "note": "Literal upstream case titles and conservative expect-count floors reviewed at pinned source. This gate prevents silently dropping portable cases; it does not prove identical assertion bodies, SQL semantics or server adoption. Source files themselves are not downloaded by CI. HTTP has no dedicated upstream unit suite; its helper assertions are locally derived and upstream entrypoint tests remain a service-owned gap.",
+  "modules": {
+    "./oauth": {
+      "sourceTest": "tests/unit/oauth-core.test.js",
+      "coreTest": "packages/core/test/oauth.test.js",
+      "portable": [
+        {
+          "title": "generates unpredictable-looking tokens and returns stable hashes, never plaintext",
+          "minimumExpects": 7
+        },
+        {
+          "title": "requires S256 PKCE with a properly sized verifier, rejects plain or absent PKCE",
+          "minimumExpects": 5
+        },
+        {
+          "title": "accepts HTTPS and localhost redirects, rejects insecure external and open redirect forms",
+          "minimumExpects": 2
+        },
+        {
+          "title": "does not trust caller-controlled forwarded-for or accept missing IP as a bypass",
+          "minimumExpects": 4
+        },
+        {
+          "title": "locks an address after five wrong attempts for fifteen minutes",
+          "minimumExpects": 2
+        },
+        {
+          "title": "refuses missing passphrase configuration",
+          "minimumExpects": 1
+        }
+      ],
+      "serverOwned": []
+    },
+    "./crypto": {
+      "sourceTest": "tests/unit/keys.test.js",
+      "coreTest": "packages/core/test/crypto.test.js",
+      "portable": [
+        {
+          "title": "requires an exact 32-byte encryption key, without a plaintext fallback",
+          "minimumExpects": 3
+        },
+        {
+          "title": "uses AES-256-GCM with unique nonces, context binding, and fails closed on tampering",
+          "minimumExpects": 6
+        }
+      ],
+      "serverOwned": [
+        {
+          "title": "stores a provider-verified test key encrypted; public metadata never contains key",
+          "reason": "Needs Stripe-owned encrypted key store, account verification and provider fixture."
+        },
+        {
+          "title": "issues encrypted one-time records and returns only a setup link, then consumes once",
+          "reason": "Service-specific setup route and database mapping; portable adapter tested separately."
+        }
+      ]
+    },
+    "./registry": {
+      "sourceTest": "tests/unit/registry.test.js",
+      "coreTest": "packages/core/test/registry.test.js",
+      "portable": [
+        {
+          "title": "refuses duplicates across namespaces",
+          "minimumExpects": 1
+        },
+        {
+          "title": "refuses tools without a handler",
+          "minimumExpects": 1
+        }
+      ],
+      "serverOwned": [
+        {
+          "title": "registers only the intended safe metadata/audit readers",
+          "reason": "Asserts Stripe service catalog and write-count not present in generic core."
+        }
+      ]
+    },
+    "./write-contract-check": {
+      "sourceTest": "tests/unit/write-metadata.test.js",
+      "coreTest": "packages/core/test/write-contract-check.test.js",
+      "portable": [
+        {
+          "title": "accepts the current registered read tools and properly declared guarded writes",
+          "minimumExpects": 1
+        },
+        {
+          "title": "fails when writes is absent or a string, even for harmless-sounding names",
+          "minimumExpects": 2
+        },
+        {
+          "title": "fails when a write omits dryRun or confirm, or declares the wrong type",
+          "minimumExpects": 2
+        },
+        {
+          "title": "fails money-out tools that lack a provider-derived spec even with confirmation",
+          "minimumExpects": 3
+        },
+        {
+          "title": "refuses writes with no trusted lifecycle, and read tools faking a money spec",
+          "minimumExpects": 2
+        },
+        {
+          "title": "rejects invalid registry shapes instead of treating them as zero tools",
+          "minimumExpects": 2
+        }
+      ],
+      "serverOwned": [
+        {
+          "title": "actual Stripe write adapter declares money spec only when installed",
+          "reason": "Stripe lifecycle implementation owns money preparation and actual catalog semantics."
+        }
+      ]
+    },
+    "./http": {
+      "sourceTest": "tests/unit/oauth-handlers.test.js",
+      "coreTest": "packages/core/test/http.test.js",
+      "note": "No direct upstream HTTP helper suite: local helper behavior tests exercise protocol invariants observed through source OAuth endpoints; case bodies are not claimed to be upstream copies.",
+      "portable": [
+        {
+          "title": "accepts only configured HTTPS origins, never caller Host headers",
+          "minimumExpects": 2
+        },
+        {
+          "title": "writes no-store, nosniff, correct JSON/string responses",
+          "minimumExpects": 5
+        },
+        {
+          "title": "HTML-escapes untrusted account names and reflects no markup",
+          "minimumExpects": 2
+        },
+        {
+          "title": "parses GET, JSON and form inputs without accepting arrays or invalid bodies",
+          "minimumExpects": 4
+        },
+        {
+          "title": "refuses unallowed methods with 405 and Allow header",
+          "minimumExpects": 5
+        }
+      ],
+      "serverOwned": []
+    }
+  }
+}
