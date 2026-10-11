@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3x (PR #46, as-if-merged):** execute pinned original HTTP utility source side by side with private core for HTTPS issuer parsing, body media/invalid input, escaped output, no-store headers and 405 refusal. Endpoint owner login and SQL still service-owned. K-3 remains IN_PROGRESS/private; no release or service repo changes. **Next:** source endpoint assertion parity and write/dispatch runtime compatibility.
+
 - **K-3w (PR #45, as-if-merged):** pinned original OAuth source handler/runtime and executed source-vs-portable HTTP metadata, registration safety, grant/refresh and replay-denial differential tests with isolated fake service storage. Source owner-account authorization page remains service-owned. This completes the five-PR batch without claiming source UI/SQL, guarded write/dispatch adaptation, or an actual Release. K-3 IN_PROGRESS and private; D-4 WAITING_ON_OWNER. **Next:** remaining original HTTP endpoint assertion-body parity and adapted write/dispatch runtime compatibility; complete source-service SQL and release prerequisites before any public GitHub Release.
 
 - **K-3v (PR #44, as-if-merged):** pin actual source bearer/one-time/HTTP/crypto runtime blobs and execute source modules directly against portable adapters under isolated fake database bindings. HTTP challenge/status/error parity and bidirectional AES-GCM ciphertext compatibility are now tested, with altered AAD refusing. Disposable fixture is not production SQL, owner-login, revocation or external adoption evidence. K-3 remains private/IN_PROGRESS. **Next:** source OAuth endpoint and remaining guarded write/dispatch matrix and release readiness gates.
