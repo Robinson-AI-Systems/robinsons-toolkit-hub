@@ -19,6 +19,10 @@ provider credential or server-repository mutation is authorized by this file.
 | `tests/db/core-storage-adapters.test.js` | Throwaway independent PostgreSQL pool behavior | Deployment's real migrations, account ownership and production storage |
 | `npm run core:evidence` | Disposable offline npm pack file-list, byte count, SHA1 and SHA256 | A retained, tagged, uploaded or verified GitHub Release asset |
 
+## Additional verified source compatibility (partial)
+
+K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OAuth endpoint functions directly alongside portable adapter functions in CI, pinning original runtime Git blobs. This is in-memory differential evidence, **not** source service SQL/owner login adoption. Source HTTP endpoint original test assertion bodies, complete guarded write/dispatch source differentials, final release-candidate evidence and actual GitHub Release remain open.
+
 ## Mandatory before any candidate is published
 
 1. Fetch the current **Stripe main** source and tests, compare all source
