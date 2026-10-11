@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3ab (PR #50, as-if-merged):** added a CI-enforced, machine-readable K-3 release prerequisite guard and candidate-denial command. Eight named prerequisites remain explicit; seven require more than local private-package proof. Tests reject false completion, fabricated owner approval, missing evidence, provenance drift and public package toggles. This is a protective release block, not a release. K-3 IN_PROGRESS; D-4 WAITING_ON_OWNER. **Next:** actual source/service integration, complete original assertion body parity, final immutable candidate and authenticated GitHub Release proof only when eligible.
+
 - **K-3aa (PR #49, as-if-merged):** pinned original Stripe MCP transport source and executed its unchanged dispatch function with isolated source-policy/result shims beside the portable dispatcher. Asserted guarded tool visibility, nested reads, synthetic TEST write, oversized scoped storage and failures. Portable prototype-handler refusal is deliberately stricter. This is not SDK route, provider redaction, live SQL or owner money approval proof. K-3 remains IN_PROGRESS/private. **Next:** reinforce service integration/release-prerequisite enforcement.
 
 - **K-3z (PR #48, as-if-merged):** pinned the complete original Stripe OAuth HTTP endpoint suite as an encoded, Git-blob-verified source snapshot. Executed its first two portable original endpoint assertion bodies unchanged. Four remaining cases depend on service-owner login, durable account/grant/refresh/lockout or authenticated bearer and remain service-owned; do not count them as portable. Core private/K-3 IN_PROGRESS. **Next:** dispatch source/runtime compatibility and full release/adoption gates.
