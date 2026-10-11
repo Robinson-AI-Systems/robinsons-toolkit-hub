@@ -27,7 +27,7 @@ provider credential or server-repository mutation is authorized by this file.
    rather than counting renamed tests as literal parity.
 2. For the five unchanged modules, run the complete relevant original upstream
    assertion bodies inside the package with only justified import/fixture
-   rewiring. The title/expect-count inventory is a guardrail, not a substitute.
+   rewiring. The title/expect-count inventory is a guardrail, not a substitute. K-3s/t additionally pin and compare 15 original OAuth, registry, crypto and write metadata portable assertion bodies. This does not cover the original HTTP endpoint suite or any adapted-service assertions.
    Preserve upstream service-owned assertions in the source service suite.
 3. For six adapted exports (profiles, bearer authentication, one-time secrets,
    OAuth protocol, guarded write, MCP dispatch), complete an exact

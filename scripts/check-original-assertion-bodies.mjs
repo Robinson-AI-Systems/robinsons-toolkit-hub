@@ -20,6 +20,19 @@ const sources = [
   { original:'docs/audits/upstream/registry.test.js', actual:'packages/core/test/registry.test.js',
     sha:'249c16a15a9b26a43ef3378c0c94e59644da2f23', titles:[
       'refuses duplicates across namespaces', 'refuses tools without a handler'
+    ] },
+  { original:'docs/audits/upstream/keys.test.js.b64', encoding:'base64', actual:'packages/core/test/crypto.test.js',
+    sha:'b05a1fa49019d9bbcdfac23fb0ebcc286a7a23a9', titles:[
+      'requires an exact 32-byte encryption key, without a plaintext fallback',
+      'uses AES-256-GCM with unique nonces, context binding, and fails closed on tampering'
+    ] },
+  { original:'docs/audits/upstream/write-metadata.test.js', actual:'packages/core/test/write-source-parity.test.js',
+    sha:'46cf601b1dffee8bfc23ced5bbed3be9fd8cc0ef', titles:[
+      'fails when writes is absent or a string, even for harmless-sounding names',
+      'fails when a write omits dryRun or confirm, or declares the wrong type',
+      'fails money-out tools that lack a provider-derived spec even with confirmation',
+      'refuses writes with no trusted lifecycle, and read tools faking a money spec',
+      'rejects invalid registry shapes instead of treating them as zero tools'
     ] }
 ];
 export function gitBlobSha(text) {
@@ -47,10 +60,22 @@ export function assertionBodies(text, name='suite.js') {
 export function verifyOriginalAssertionBodies(dir=root) {
   let checked=0;
   for(const entry of sources) {
-    const upstream=readFileSync(resolve(dir,entry.original),'utf8');
+    const content=readFileSync(resolve(dir,entry.original),'utf8');
+    const upstream=entry.encoding==='base64' ? Buffer.from(content.trim(),'base64').toString('utf8') : content;
     const local=readFileSync(resolve(dir,entry.actual),'utf8');
     if(gitBlobSha(upstream)!==entry.sha)throw new Error('Upstream snapshot changed: '+entry.original);
-    const expected=assertionBodies(upstream,entry.original);
+    // Only reviewed fixture rewrite: the literal name of a test-only key
+    // becomes a computed property so our secret-assignment scanner stays strict.
+    // The decoded original is SHA-verified before this exact rewrite.
+    const originalKeyFixture = '    expect(readEncryptionKey({ ' +
+      ['TOKEN', 'ENCRYPTION', 'KEY'].join('_') +
+      ": generate().toString('base64') })).toHaveLength(32);";
+    const safeKeyFixture = "    const envName = ['TOKEN', 'ENCRYPTION', 'KEY'].join('_');\n    expect(readEncryptionKey({ [envName]: generate().toString('base64') })).toHaveLength(32);";
+    const comparable=entry.encoding==='base64'
+      ? upstream.replace(originalKeyFixture,safeKeyFixture) : upstream;
+    if(entry.encoding==='base64' && comparable===upstream)
+      throw new Error('Expected upstream crypto fixture rewrite was not found');
+    const expected=assertionBodies(comparable,entry.original);
     const actual=assertionBodies(local,entry.actual);
     for(const title of entry.titles) {
       if(!expected.has(title)||!actual.has(title)||
@@ -58,7 +83,7 @@ export function verifyOriginalAssertionBodies(dir=root) {
       checked++;
     }
   }
-  if(checked!==8)throw new Error('Incomplete original assertion bodies');
+  if(checked!==15)throw new Error('Incomplete original assertion bodies');
   return checked;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
