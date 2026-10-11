@@ -10,7 +10,7 @@ const allowedEnv = ['PATH', 'HOME', 'USER', 'USERPROFILE', 'SYSTEMROOT', 'WINDIR
   'TMP', 'TEMP', 'LANG', 'LC_ALL', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS'];
 const safeEnvironment = (env) => Object.fromEntries(
   allowedEnv.filter((key) => typeof env[key] === 'string').map((key) => [key, env[key]]));
-const winScript = String.raw
+const winScript = String.raw`
   Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -72,7 +72,7 @@ if ($action -eq 'store') {
 } elseif ($action -eq 'delete') {
   if (-not [RtoolCredential]::Remove($target)) { exit 3 }
 } else { exit 2 }
-;
+`;
 export function nativePlan({ action, name, platform = process.platform, env = process.env } = {}) {
   if (!ALIAS.test(name || '') || !['store', 'lookup', 'delete'].includes(action)) {
     throw new RouteError('Invalid keychain service name or operation');
