@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "state": "NOT_READY",
+  "packageName": "robinson-mcp-core",
+  "packageVersion": "0.1.0",
+  "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
+  "originalBodiesVerified": 21,
+  "note": "Only local assertions, package isolation and synthetic adapter proofs are available. This is an explicit blocker inventory, not a candidate or an authenticated GitHub Release.",
+  "requirements": [
+    {
+      "id": "package-isolation",
+      "status": "VERIFIED_LOCAL",
+      "owner": "hub",
+      "evidence": "scripts/verify-core-package.mjs",
+      "reason": "Private package exposes reviewed local ESM modules without provider dependencies.",
+      "next": "Repeat final clean offline pack and consumer install on immutable candidate."
+    },
+    {
+      "id": "current-source-drift",
+      "status": "OPEN",
+      "owner": "hub",
+      "evidence": "docs/audits/K3-SOURCE-TRACE.json",
+      "reason": "The reviewed source SHA is not a current-source revalidation at final candidate.",
+      "next": "Re-fetch Stripe main and reconcile every reviewed source module and original suite."
+    },
+    {
+      "id": "original-http-assertions",
+      "status": "PARTIAL",
+      "owner": "stripe-service",
+      "evidence": "docs/audits/upstream/oauth-handlers.test.js.b64",
+      "reason": "Twenty-one exact portable assertion bodies pass; four OAuth HTTP cases require original source service execution.",
+      "next": "Execute and retain the remaining original source-owned HTTP cases in the Stripe service."
+    },
+    {
+      "id": "adapted-interface-matrix",
+      "status": "PARTIAL",
+      "owner": "hub-and-services",
+      "evidence": "docs/audits/K3-ADAPTED-COMPATIBILITY.md",
+      "reason": "Synthetic compatible adapters do not prove full provider routing, account ownership or original transport.",
+      "next": "Prove each adapted boundary against authentic service-owned adapters and source tests."
+    },
+    {
+      "id": "service-durable-storage",
+      "status": "OPEN",
+      "owner": "stripe-service",
+      "evidence": "docs/adoption/stripe-mcp.md",
+      "reason": "Throwaway PostgreSQL fixtures are not the original service schema, migrations or multiple-instance behavior.",
+      "next": "Verify actual service migrations, expiry, revocation, audit and concurrent account-scoped SQL."
+    },
+    {
+      "id": "money-owner-approval",
+      "status": "OPEN",
+      "owner": "stripe-service",
+      "evidence": "docs/adoption/stripe-mcp.md",
+      "reason": "Synthetic approval fixtures never establish independent authenticated owner consent or shared account/day limits.",
+      "next": "Verify the owner's independent consent, account/day cap, provider idempotency and read-back in source service tests."
+    },
+    {
+      "id": "independent-service-adoption",
+      "status": "OPEN",
+      "owner": "stripe-and-workspace",
+      "evidence": "docs/adoption/google-workspace-mcp.md",
+      "reason": "Neither standalone service has adopted an immutable core archive under its own tested cards.",
+      "next": "Complete independent service adoption after release candidate is fully proven."
+    },
+    {
+      "id": "github-release-asset",
+      "status": "OPEN",
+      "owner": "hub",
+      "evidence": "docs/audits/K3-RELEASE-GATES.md",
+      "reason": "No complete immutable tagged GitHub Release asset or authenticated remote digest has been certified.",
+      "next": "Only after all gates: version and upload complete asset; re-fetch tag, target SHA, size, name and SHA256."
+    }
+  ]
+}

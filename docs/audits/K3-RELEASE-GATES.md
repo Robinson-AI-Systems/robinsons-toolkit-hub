@@ -73,3 +73,9 @@ substitute a fake release response for an actual GitHub Release.
 adapted-interface matrix, then release prerequisites and real release
 verification when actually ready. K-4/H-1 wait for K-3. D-4 remains
 WAITING_ON_OWNER independently.
+
+## Machine-enforced current blocker ledger (K-3ab)
+
+`docs/audits/K3-RELEASE-PREREQUISITES.json` lists eight required gates with owners, reasons and next evidence actions. `npm run check` executes `scripts/check-k3-release-gates.mjs`, checking the private 11-export package, the 21 currently verified exact original assertion bodies, pinned source SHA alignment, missing external proof and this **NOT READY / NOT RELEASED** decision. This does **not** turn synthetic adapters into real SQL/owner consent or certify an asset.
+
+`node scripts/check-k3-release-gates.mjs --candidate` intentionally returns failure while any required service, upstream-drift, adoption or remote GitHub Release proof remains open. That refusal is deliberate and cannot be bypassed by changing a JSON status field; changing publication conditions requires a separately reviewed implementation with authentic remote evidence and all gates met. Do not tag or upload a partial package.
