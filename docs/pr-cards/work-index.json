@@ -216,12 +216,31 @@
       ]
     },
     {
+      "id": "D-3a",
+      "title": "X25519 relay client and encrypted GitHub comment transport",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-2"
+      ],
+      "card": "docs/pr-cards/D-3a.md",
+      "status": "MERGED",
+      "units": [
+        "D-3a"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#17"
+      ]
+    },
+    {
       "id": "D-3",
       "title": "GitHub relay",
       "batch": "D",
       "design": "docs/designs/BATCH-D.md",
       "dependencies": [
-        "D-1"
+        "D-3a"
       ],
       "card": "docs/pr-cards/D-3.md",
       "status": "APPROVED",

@@ -5,6 +5,16 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-3a (PR #17)
+
+| What | Where | Notes |
+|---|---|---|
+| Relay envelope crypto | packages/relay/src/crypto.js | X25519 ephemeral exchange, HKDF-SHA256, AES-256-GCM authenticated messages; reply key sealed inside request; timestamp and request ID authenticated. |
+| GitHub comments client | packages/cli/src/relay.js | Fixed GitHub API origin and scoped repository/issue, ciphertext-only bodies, bounded poll, delete request and reply comments, no token passed to GitHub body. |
+| Security tests | packages/relay/test/crypto.test.js and packages/cli/test/relay-client.test.js | Tamper/wrong-key/replay-window tests, fake Github API encrypted round trip and cleanup. |
+
+D-3 webhooks, database replay locks, server forwarding and live deployment are not built in this slice.
+
 ## Built in D-2 (PR #16)
 
 | What | Where | Notes |
