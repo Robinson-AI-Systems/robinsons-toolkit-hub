@@ -63,3 +63,9 @@ was to help make sure you designed this custom MCP with as much functionality as
 compatibility." Batch M (freeze, smoke test, namespace map, `--legacy` bridge, retirement checklist) is dropped and its
 design moved to `docs/archive/`; IN-05 answered "not needed". The old toolkits stay what they were meant to be: a
 checklist each server's gap check covers. Servers drop their old-name maps and toolkit decision notes the same way.
+
+**2026-10-10 — Stronger anti-stall rules (from the implementing agent's own diagnosis).** Sol stopped after opening a PR
+with red CI although nothing blocked it. Its reasons: too much code before running tests; preventable CI errors (a wrong
+API parameter, lint, outdated test expectations); no rule forcing a red PR to be finished first; and chat sessions that
+end between actions. Added: SESSION-START §0 (finish open PRs first), §6 (problems vs real blockers, thin slices, a
+no-shell path with draft PRs, an exact recovery point at every push) and AGENTS rules 11–13.
