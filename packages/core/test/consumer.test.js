@@ -37,7 +37,7 @@ describe('K-3 packed core portable consumer', () => {
       expect(contents.name).toBe('robinson-mcp-core');
       const packed = contents.files.map(f => f.path).sort();
       expect(packed).toEqual([
-        'package.json', 'src/crypto.js', 'src/http.js', 'src/mcp-auth.js', 'src/oauth.js',
+        'package.json', 'src/crypto.js', 'src/http.js', 'src/mcp-auth.js', 'src/oauth.js', 'src/one-time-secrets.js',
         'src/profiles.js', 'src/registry.js', 'src/write-contract-check.js'
       ].sort());
       expect(contents.entryCount).toBe(packed.length);
@@ -46,20 +46,22 @@ describe('K-3 packed core portable consumer', () => {
       exec(npm, ['install', '--no-save', '--package-lock=false', '--ignore-scripts',
         '--offline', '--no-audit', '--no-fund', join(tmp, contents.filename)], consumer);
       const code = `
-        const [oauth, crypto, http, registry, profiles, write, auth] = await Promise.all([
+        const [oauth, crypto, http, registry, profiles, write, auth, once] = await Promise.all([
           import('robinson-mcp-core/oauth'),
           import('robinson-mcp-core/crypto'),
           import('robinson-mcp-core/http'),
           import('robinson-mcp-core/registry'),
           import('robinson-mcp-core/profiles'),
           import('robinson-mcp-core/write-contract-check'),
-          import('robinson-mcp-core/mcp-auth')
+          import('robinson-mcp-core/mcp-auth'),
+          import('robinson-mcp-core/one-time-secrets')
         ]);
         if (typeof oauth.randomToken(12) !== 'string') throw Error('oauth');
         if (typeof crypto.encryptSecret !== 'function') throw Error('crypto');
         if (http.publicOrigin({ PUBLIC_BASE_URL: 'https://example.test' }) !== 'https://example.test') throw Error('http');
         if (registry.mergeNamespaces([{ tools:[{name:'fake_read'}],handlers:{fake_read:()=>1} }]).tools.length !== 1) throw Error('registry');
         if (!profiles.isToolAllowed({name:'fake_read',writes:false,profiles:['read_only']},'read_only')) throw Error('profiles');
+        if (typeof once.createOneTimeSecretStore !== 'function') throw Error('once');
         if (typeof auth.createMcpBearerAuthenticator !== 'function') throw Error('auth');
         if (write.validateWriteDeclarations([{name:'fake_read',writes:false}]).length) throw Error('write');
         for(const banned of ['robinson-mcp-core/oauth-handlers', 'robinson-mcp-core/mcp-server']) {
