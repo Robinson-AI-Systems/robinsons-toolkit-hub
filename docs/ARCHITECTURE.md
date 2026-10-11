@@ -5,6 +5,15 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3b (PR #23)
+
+Source-identical Stripe `src/core/registry.js` and `http.js` are now private
+core subpath exports. Registry retains duplicate-name/missing-handler rejection;
+HTTP retains explicitly configured HTTPS issuer, no-cache/nosniff response,
+body parsing and method allowlist. Core has no provider SDK dependency.
+Tests exercise both before/after output and refusal side effects with captured
+response objects. No service adoption or public release is claimed.
+
 ## Built in K-3a (PR #22)
 
 `packages/core` (private, unshipped) copies Stripe MCP `src/core/oauth.js` and

@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Portable, verified Robinson MCP security primitives (partial K-3; not published)",
+  "description": "Portable security, registry and HTTP primitives (partial K-3; private)",
   "engines": {
     "node": "24.x"
   },
   "exports": {
     "./oauth": "./src/oauth.js",
-    "./crypto": "./src/crypto.js"
+    "./crypto": "./src/crypto.js",
+    "./registry": "./src/registry.js",
+    "./http": "./src/http.js"
   },
   "files": [
     "src/"
