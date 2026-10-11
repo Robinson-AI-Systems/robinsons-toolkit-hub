@@ -18,6 +18,12 @@ or server).
   Workspace move to Node 24.x, and Stripe prefixes every tool name with `stripe_` before its first tools are built
   (contract §3); Workspace renames generic areas (`admin_`, `chat_`, `contacts_`, `workflow_` …) during its Phase 8 (no old-name aliases).
 
+## In-flight implementation
+
+- **K-2** on branch `ai/gpt6/k-2-conformance`: first checkpoint installs the working HTTP reference fake
+  server with real pass guards, dry-run/confirmation flow, result handle isolation and unit tests.
+  Next: the conformance runner, its negative cases and CLI. This is not completed until its own PR merges.
+
 ## Environment
 
 - Repo `Robinson-AI-Systems/robinsons-toolkit-hub` (created by Chris 2026-10-10; public, no automated review). First commit straight to `main` because the

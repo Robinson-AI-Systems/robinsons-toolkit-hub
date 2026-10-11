@@ -5,6 +5,12 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-10 (K-0): **the repository foundation is built; no product code exists.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## In-flight (K-2, not yet merged)
+
+The reference HTTP fake server lives in `packages/conformance/fake-server/server.js` and uses process-local
+state exclusively for tests. Its generated passes never touch a production service and large result handles
+are scoped to a pass. The runner, CLI and conformance checks are not complete in this checkpoint.
+
 ## Built
 
 | What | Where | Notes |
