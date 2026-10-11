@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3k (PR #32, as-if-merged):** release-isolation gate runs in npm check, verifying the core private package exports every shipped ESM module explicitly, rejects source symlinks/path escapes, runtime dependencies, dynamic imports, install scripts and unreviewed new source files. Negative fixtures prove the gate catches violations. The complete package release is still gated by source-parity/adoption checks.
+
 - **K-3j (PR #31, as-if-merged):** private core integration proof joins OAuth registration/grants, bearer projection, read/write dispatch, durable result scoping and server-owned independent money preflight. The deterministic fake verifies refresh/revocation, read-only refusal, audited money approval and oversized scoped storage; no provider or service repository touched. **Next:** reconcile complete Stripe upstream assertion coverage and remaining source compatibility boundaries before any release. K-3 remains IN_PROGRESS.
 
 - **K-3i (PR #30, as-if-merged):** private core gains transport-free MCP dispatch with mandatory per-service tool policy, result redaction, field projection and scoped persistence adapters. Tests cover denied and indirect calls, compact results, oversized secure handles and failures; packed consumer imports without provider SDK. **Next:** K-3 final source-compatibility/adoption evidence and actual GitHub Release asset (only after every gate); K-3 stays IN_PROGRESS. D-4 still WAITING_ON_OWNER.
