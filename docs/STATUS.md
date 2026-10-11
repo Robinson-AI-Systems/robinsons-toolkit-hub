@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3h (PR #29, as-if-merged):** source-equivalent fail-closed write lifecycle now in private core with mandatory service account adapter and provider retry-key prefix. Independent money preflight/approval remains server-owned; audit intent precedes all provider mutations; uncertain outcomes are never called success. Tests cover previews, guards, money refusals, idempotency and audit failures. **Next:** K-3i MCP dispatcher/transport boundary; release/adoption still gated.
+
 - **K-3g (PR #28, as-if-merged):** portable private OAuth metadata, client registration and token grant/refresh HTTP handlers extracted with explicit server grant-claim projection and durable token storage. Account authorization UI, owner-login locks, selected-mode permissions and source DB remain service owned. **Next:** K-3h guarded write lifecycle; K-3 not released/adopted.
 
 - **K-3f (PR #27, as-if-merged):** one-time encrypted secrets have a portable private adapter with explicit source AAD, route, account row and atomic durable store contracts. Ten-minute expiry, 32-character IDs and authenticated decryption retain Stripe source semantics; adapters cannot change old ciphertext without a server-side migration. Source server unchanged. **Next:** K-3g OAuth handler seams; no Release/adoption.
