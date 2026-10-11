@@ -1,30 +1,16 @@
 # STATUS — current work, blockers and next action
 
-Updated 2026-10-11. Plan written by Claude (Opus 5.5) in the Appliance Desk planning system. **Repository foundation
-built (K-0):** checks, unit and database test harnesses, CI with the `ci` gate. No product code yet (no package, door
-or server).
+Updated 2026-10-11. RTC 1 conformance, direct rtool commands and SDK/agent setup are built;
+the central hub server and relay are not yet built.
 
 ## Next
 
-- **D-1a complete (#12):** working multi-server direct HTTPS CLI routes, safe environment
-  configuration, read/list/describe/call/batch/result commands, read-only and confirmation
-  enforcement through servers, and bounded output with secure file export.
-- **Next:** D-1 final (OS keychain, SDK, skill, init and remaining command acceptance).
-- **K-2b complete (#11):** OAuth refresh keeps restrictions, and two actual server processes
-  prove shared atomic Postgres rate limits. A main-only workflow tags conformance-v1.
-- **Next:** D-1 direct CLI (JIT card from BATCH-D).
-- **K-2 complete (#10):** reference fake server, deterministic contract probes and CLI, fault tests
-  and an actual conformance command for service-server CI.
-- **Next:** K-2b (OAuth refresh settings and two-server-instance database rate limit), then D-1.
-- **K-1 complete (#9):** RTC 1 frozen; rule-to-check mapping, pass formats and skipped-check reporting documented;
-  five service plans checked and the token-shape secret scan hardened.
-- **Then:** K-2b (refresh keeps settings, two-instance rate limit; write its card at start), then D-1.
-- **Elsewhere in the program:** Stripe MCP is being built (A-1 … A-5a merged by Sol); Google Workspace MCP Phase 8 plan
-  merged (its PR #28/#29). **GitHub, Vercel and Neon servers:** plans, gap checks against every older toolkit, and a
-  proven A-1 foundation merged in each repo (2026-10-10); next card A-2 in each.
-- **Adoption proposals for the existing servers** (executed through their own cards, never from here): Stripe and
-  Workspace move to Node 24.x, and Stripe prefixes every tool name with `stripe_` before its first tools are built
-  (contract §3); Workspace renames generic areas (`admin_`, `chat_`, `contacts_`, `workflow_` …) during its Phase 8 (no old-name aliases).
+- **D-1b merged (#13):** SDK generation from service metadata, verified guarded SDK calls,
+  rtool skill and managed agent init (preserves existing AGENTS instructions).
+- **Next:** D-1 secure OS keychain login and full CLI/type-check verification, then D-2 local MCP.
+- **K-3** shared-core extraction waits on Stripe MCP Batches A–C. No legacy compatibility.
+- **External services:** all standalone servers remain independent; check their current repo
+  implementation state rather than relying on older progress claims.
 
 ## Environment
 
@@ -34,6 +20,11 @@ or server).
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-1b SDK and agent setup (#13):** generated typed SDK from real RTC tool
+metadata; zero persisted passes; real SDK read and guarded write tests; controlled AGENTS.md
+block edits, idempotency and symlink refusal. Next D-1 handles credential management.
+
 
 **2026-10-11 — D-1a direct rtool commands (PR #12):** standalone direct tool access
 from any Node 24 command-line workspace, without a hub. Configured passes never enter

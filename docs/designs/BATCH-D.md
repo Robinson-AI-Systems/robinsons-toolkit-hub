@@ -106,3 +106,10 @@ the full direct HTTPS command surface, environment config, prefix routing, safe 
 and direct write-contract tests. D-1 retains OS keychain login, SDK generation, agent skill,
 init, final combined door verification and cli-v1 tag. This avoids crossing the hard ~800
 production-line limit while keeping coherent, tested PRs. No acceptance is dropped.
+
+**2026-10-11 — D-1b SDK and setup separated from secure login.** D-1a established
+direct commands. D-1b adds SDK generation with TypeScript declaration files and real
+HTTP execution, plus safe skill/init management of agent instructions. The remaining
+D-1 card owns secure OS keychain login, declaration compiler gate, all-command
+verification and immutable cli-v1 tag. No acceptance is dropped; user-approved
+~500-line production PR target applies without padding unrelated security code.
