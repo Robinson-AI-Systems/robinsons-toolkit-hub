@@ -140,12 +140,31 @@
       ]
     },
     {
+      "id": "D-1b",
+      "title": "rtool typed SDK and safe agent skill/init",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-1a"
+      ],
+      "card": "docs/pr-cards/D-1b.md",
+      "status": "MERGED",
+      "units": [
+        "D-1b"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#13"
+      ]
+    },
+    {
       "id": "D-1",
       "title": "rtool CLI, multi-server config, SDK, skill, init",
       "batch": "D",
       "design": "docs/designs/BATCH-D.md",
       "dependencies": [
-        "D-1a"
+        "D-1b"
       ],
       "card": "docs/pr-cards/D-1.md",
       "status": "APPROVED",

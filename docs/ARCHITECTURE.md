@@ -5,6 +5,17 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-1b (PR #13)
+
+| What | Where | Notes |
+|---|---|---|
+| Type-aware SDK generator | packages/cli/src/sdk.js | Reads a real RTC catalog, generates callable ES modules plus TypeScript declarations by area. The runtime reads passes only at invocation; output must not already exist. |
+| Agent guidance | packages/cli/src/setup.js | rtool skill and init, managed AGENTS.md block, refuses symlinks and malformed managed blocks. Only direct HTTPS claimed until relay exists. |
+| Tested standalone SDK | packages/cli/test/sdk-setup.test.js | Live fake-server calls through generated functions; read-only/confirmation and no-pass persistence exercised. |
+
+**Not built:** OS keychain login, final declaration compiler gate, relay, local MCP, hosted hub.
+Next D-1 finishes keychain and release readiness.
+
 ## Built in D-1a (PR #12)
 
 | What | Where | Notes |
