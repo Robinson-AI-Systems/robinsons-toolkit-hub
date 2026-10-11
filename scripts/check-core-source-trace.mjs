@@ -1,7 +1,7 @@
 // Deterministic offline source trace; no GitHub API, package publication or runtime imports.
 import {createHash} from 'node:crypto';
 import {readFileSync,lstatSync} from 'node:fs';
-import {resolve,join,relative,dirname,sep} from 'node:path';
+import {resolve,dirname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const hex40=/^[a-f0-9]{40}$/;
