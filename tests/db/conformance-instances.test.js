@@ -33,6 +33,9 @@ describe('RTC shared limit across two actual server processes', () => {
     const local = await startFakeServer();
     const running = [];
     try {
+      // Prepare shared test schema before either child starts. Concurrent PostgreSQL
+      // CREATE TABLE IF NOT EXISTS can still race on system catalog inserts.
+      await db.query('CREATE TABLE IF NOT EXISTS rtc_fake_limits (token TEXT PRIMARY KEY, used INTEGER NOT NULL)');
       const memory = await Promise.all([
         launch(db, local.passes, 'memory', 12), launch(db, local.passes, 'memory', 12)
       ]);

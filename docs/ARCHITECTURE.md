@@ -5,6 +5,18 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-1a (PR #12)
+
+| What | Where | Notes |
+|---|---|---|
+| rtool direct CLI | packages/cli/bin and src/commands.js | Real HTTP calls to RTC 1 service doors. Supports servers, whoami, tools, describe, call, batch and result. |
+| Safe config | packages/cli/src/config.js | URL-only servers.json and RTOOL_SERVERS overrides; bearer passes only via env for now. OS keychain comes in D-1. |
+| Server routing | packages/cli/src/dispatch.js | Prefix-to-server discovery, qualified override if same prefix exists, missing passes disable only that server. |
+| Result output | packages/cli/src/pages.js | Handles catalog continuation, full handle materialization to a user-chosen new 0600 file with a 50 MB cap. |
+| Error behavior | packages/cli/src/http.js | Stable exit codes and redacted error text; server guards remain authoritative. |
+
+SDK, OS keychain, setup skill and initialisation are not yet built (next D-1 PR).
+
 ## Built in K-2b (PR #11)
 
 | What | Where | Notes |
@@ -36,6 +48,6 @@ Without both local fixtures the extended suite reports skips and cannot certify 
 
 ## Planned (not built)
 
-`packages/conformance` release tagged after K-2b, `packages/core` (K-3), `rtool` CLI and local MCP (D-1, D-2), the GitHub relay
+`packages/conformance` release tagged after K-2b, `packages/core` (K-3), `rtool` SDK/login/skill/init (D-1), local MCP (D-2), the GitHub relay
 `api/relay/github.js` with table `relay_seen` (D-3), the hub server with `hub_servers` and `hub_change_log` (H), workflows
 (C), local tools (L). The `test:doors` script arrives with D-1; `test:conformance` is now real.

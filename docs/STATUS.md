@@ -6,6 +6,10 @@ or server).
 
 ## Next
 
+- **D-1a complete (#12):** working multi-server direct HTTPS CLI routes, safe environment
+  configuration, read/list/describe/call/batch/result commands, read-only and confirmation
+  enforcement through servers, and bounded output with secure file export.
+- **Next:** D-1 final (OS keychain, SDK, skill, init and remaining command acceptance).
 - **K-2b complete (#11):** OAuth refresh keeps restrictions, and two actual server processes
   prove shared atomic Postgres rate limits. A main-only workflow tags conformance-v1.
 - **Next:** D-1 direct CLI (JIT card from BATCH-D).
@@ -30,6 +34,12 @@ or server).
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-1a direct rtool commands (PR #12):** standalone direct tool access
+from any Node 24 command-line workspace, without a hub. Configured passes never enter
+URLs/config files; results have safe summaries and explicit private output files.
+D-1 remains open for login, SDK, setup and skill tools.
+
 
 **2026-10-11 — K-2b authentication conformance (PR #11):** a local OAuth fixture checks
 profile/listing/areas/mode/account across refresh; its deliberate bug is detected.
