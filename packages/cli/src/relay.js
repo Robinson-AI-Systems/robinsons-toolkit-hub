@@ -44,6 +44,11 @@ export function githubCommentTransport({ repo, issue, token, fetchImpl = fetch }
   };
   return {
     repo, issue,
+    async checkPrivate() {
+      const metadata = await request('');
+      if (metadata?.private !== true || metadata.full_name !== repo)
+        throw new Error('Relay repository must remain private');
+    },
     async post(kind, envelope) {
       const response = await request('/issues/' + issue + '/comments', 'POST',
         { body: encodeRelayComment(kind, envelope) });
@@ -56,7 +61,7 @@ export function githubCommentTransport({ repo, issue, token, fetchImpl = fetch }
         const result = await request('/issues/' + issue + '/comments?per_page=100&page=' + page);
         if (!Array.isArray(result)) throw new Error('Invalid GitHub comments listing');
         comments.push(...result.filter((x) => Number.isSafeInteger(x.id) &&
-          typeof x.body === 'string').map((x) => ({ id: x.id, body: x.body })));
+          typeof x.body === 'string').map((x) => ({ id: x.id, body: x.body, createdAt: x.created_at })));
         if (result.length < 100) return comments;
       }
       throw new Error('GitHub relay issue has too many comments; cleanup required');

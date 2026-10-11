@@ -5,13 +5,15 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
-- **D-3b merged (#18):** raw signed private-repo webhook, issue/actor/server bindings,
-  encrypted RTC forwarding, Postgres atomic replay claims and lazy Vercel handler.
-- **Next:** D-3 CLI relay fallback, hourly ciphertext cleanup and deployment recipe.
-- D-1 (#12–15), D-2 (#16) and D-3a (#17) remain merged; no acceptance removed.
-- K-3 awaits a fresh verification of Stripe A–C; service servers stay independent.
-- **Owner gates:** IN-02/03/04 relay resources/credentials and D-4 real authorized runs.
-  Nothing is deployed or connected; real per-OS keychain smoke remains unverified.
+- **D-3 complete in code (#17–19):** signed encrypted relay server, atomic replay
+  claims, CLI/local MCP direct-first fallback, bounded ciphertext cleanup and
+  owner-gated hourly scheduler. No real relay is deployed or connected.
+- **Next:** D-4 agent setup recipes and safe verification runner; real authorized
+  direct/relay/sandbox runs stay waiting on owner resources and test-pass approval.
+- K-3 requires fresh verification of Stripe A–C and follows the D-4 code/document slice.
+- D-1/D-2 remain merged; actual native OS keychain smoke still owner-side.
+- Session contract: five substantial merged PRs per chat; this chat stops at #20.
+  Every handoff is concise and points to repo rules, with current SHA and next task.
 
 ## Environment
 

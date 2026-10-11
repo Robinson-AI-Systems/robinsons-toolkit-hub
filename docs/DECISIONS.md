@@ -85,3 +85,11 @@ purpose (the merge gate must be green at the exact head). The waste was pushing 
 started overlapping full runs. Rule added to SESSION-START §6: never push while your PR's run is in progress; collect all
 failures, fix them together, push once; run checks locally first; "re-run failed jobs" only for infrastructure hiccups.
 CI cancels an obsolete PR run when a newer push arrives.
+
+## 2026-10-11 — encrypted relay completion and session handoff
+D-3b isolates hosted security; D-3 completes exact RTC path routing and cleanup.
+Hourly cleanup uses an inert owner-configured GitHub job rather than provisioning
+a paid cron. This does not authorize activation or spending. Direct POST requests
+with ambiguous outcomes never automatically retry via relay.
+Chris requests five merged PRs per chat and a concise repo-documentation-based
+handoff; this particular chat ends after PR #20, then normal five-PR sessions resume.

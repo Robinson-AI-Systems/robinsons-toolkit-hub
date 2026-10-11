@@ -1,0 +1,33 @@
+# Inert until the owner authorizes and configures the relay endpoint and secret.
+name: relay ciphertext cleanup
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: relay-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: ${{ vars.RELAY_CLEANUP_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Clean aged ciphertext at the configured private relay
+        env:
+          RELAY_CLEANUP_URL: ${{ vars.RELAY_CLEANUP_URL }}
+          RELAY_CLEANUP_SECRET: ${{ secrets.RELAY_CLEANUP_SECRET }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const target = new URL(process.env.RELAY_CLEANUP_URL);
+          if (target.protocol !== 'https:' || target.username || target.password || target.search ||
+              target.hash || target.pathname !== '/api/relay/cleanup') throw new Error('Invalid cleanup endpoint');
+          const secret = process.env.RELAY_CLEANUP_SECRET;
+          if (!secret || secret.length < 32) throw new Error('Cleanup authorization is not configured');
+          const response = await fetch(target, { method: 'POST', redirect: 'error',
+            signal: AbortSignal.timeout(60000), headers: { authorization: 'Bearer ' + secret } });
+          if (!response.ok) throw new Error('Relay cleanup failed; inspect the relay privately');
+          console.log('Relay ciphertext cleanup completed');
+          NODE

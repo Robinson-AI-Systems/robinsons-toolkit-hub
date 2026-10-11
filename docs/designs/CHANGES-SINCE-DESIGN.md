@@ -9,3 +9,8 @@ D-3 successor reuses createRelayRuntime / createRelayServer / createReplayStore.
 GitHub comment cap is 65,536 bytes; encrypted payload cap 40 KiB, RTC reply 32 KiB.
 Runtime bindings are issue → numeric actorId and server alias, scoped to private repo.
 Production env is unset; deployment and real passes remain owner-gated.
+
+## D-3 — 2026-10-11
+D-4 inherits direct-first CLI/MCP routes and docs/RELAY-DEPLOY.md. Runner must use
+read-only tools and env-named passes; no real pass, production smoke or fake live
+claim. Unknown write outcomes require service change-log inspection.

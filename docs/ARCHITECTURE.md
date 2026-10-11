@@ -5,6 +5,21 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-3 (PR #19)
+
+| What | Where | Notes |
+|---|---|---|
+| Relay HTTP door | packages/relay/src/routes.js | Reserved rtc.http envelope allows exact manifest/whoami/tools/batch/results paths and bounded query fields only; no arbitrary URLs. |
+| CLI routing | packages/cli/src/relay-route.js; http.js; dispatch.js | Direct first, fallback on reads or proved pre-connect POST failure; server refusals and ambiguous writes never retried; server passes stay in encrypted envelope. |
+| Ciphertext cleanup | api/relay/cleanup.js; packages/relay/src/cleanup.js | Separate bearer, configured private-repo issues, ciphertext older than one hour, explicit bounded/failure handling; prune old seen IDs after comment cleanup. |
+| Hourly scheduler | .github/workflows/relay-cleanup.yml | Inert until owner supplies URL variable and cleanup bearer secret. No GitHub token permissions; no paid Vercel cron configured. |
+| Setup | docs/RELAY-DEPLOY.md | IN-02/03/04 remain unmet; no deployed/live smoke claim. Generated standalone SDK bundles the relay-capable runtime; passes remain environment-only. |
+
+Client env: `RTOOL_RELAY` (public repo/key/alias→issue JSON),
+`RTOOL_RELAY_TOKEN` (private agent one-repo token), plus the normal server pass.
+`RELAY_CLEANUP_SECRET` is a separate hosted/scheduler bearer. Scheduler timing is
+best effort; its failure is visible in Actions. No production settings supplied.
+
 ## Built in D-3b (PR #18)
 
 | What | Where | Notes |

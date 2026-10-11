@@ -140,3 +140,11 @@ Postgres replay protection, HTTPS forwarding and the Vercel handler. D-3 retains
 CLI route fallback, scheduled ciphertext cleanup and deployment instructions.
 Bindings narrow reach to explicit owner configuration; no public deployment or
 real credentials are authorized by this split. No acceptance is removed.
+
+**2026-10-11 — D-3 route and cleanup details.** The reserved `rtc.http` sealed
+envelope carries exact RTC paths to support discovery/batch/results without any
+caller-selected server URL. POST fallback requires proved pre-connect failure;
+ambiguous writes never repeat. Until owner keys exist, clients supply the public
+key through public environment configuration. The hourly GitHub scheduler stays
+inert until the owner configures its URL and separate bearer; no paid Vercel cron
+is provisioned. Live routes remain D-4 owner-gated acceptance.

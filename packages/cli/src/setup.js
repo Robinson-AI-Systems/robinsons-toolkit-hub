@@ -12,13 +12,13 @@ export const SKILL = [
   'Run rtool servers, tools, describe, and call to discover actual tools.',
   'Preview changing operations with --dry-run; --confirm does not bypass server guards.',
   'Use --out NEW_FILE for large results. Never claim a call succeeded without read-back.',
-  'The GitHub relay has not been implemented yet, so only direct HTTPS is available.'
+  'Direct HTTPS is tried first; owner-configured encrypted GitHub relay is the fallback. Never repeat an ambiguous write.'
 ].join('\n') + '\n';
 export function routeSummary(servers, env = process.env) {
   return displayServers(servers, env).map(({ name, url, passConfigured }) => ({
     name, url, route: 'direct HTTPS (not connectivity tested)',
     authorization: passConfigured ? 'pass supplied, not verified' : 'no pass configured',
-    relay: 'unavailable until D-3'
+    relay: env.RTOOL_RELAY ? 'configured, not connectivity tested' : 'not configured'
   }));
 }
 function section(servers, env) {
@@ -26,7 +26,7 @@ function section(servers, env) {
     'Discover only real tools: rtool servers; rtool tools ALIAS; rtool describe ALIAS.TOOL.',
     'To call: rtool call ALIAS.TOOL --args JSON; for writes use --dry-run first.',
     'Never include passes in this file. The remote server enforces confirmation.',
-    'GitHub relay is not available yet.', '',
+    'Use owner-configured relay routes only; never store passes or tokens here.', '',
     ...routeSummary(servers, env).map((x) => '- ' + x.name + ': ' +
       x.route + ', ' + x.authorization),
     END].join('\n');

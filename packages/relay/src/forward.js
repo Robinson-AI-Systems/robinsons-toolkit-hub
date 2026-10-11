@@ -1,4 +1,5 @@
 // The pass belongs to the RTC server. Relay policy only narrows routing.
+import { relayHttpRoute } from './routes.js';
 const MAX_RESULT_BYTES = 32 * 1024;
 const failure = (code) => ({ ok: false, error: { code, what: 'Relay service request failed' } });
 export function validateServerUrl(value, allowLoopback = false) {
@@ -30,15 +31,19 @@ export function createForwarder({ servers, fetchImpl = fetch, allowLoopback = fa
   const origins = new Map(Object.entries(servers).map(([name, value]) =>
     [name, validateServerUrl(value, allowLoopback)]));
   return async ({ server, tool, args, pass }) => {
-    if (!origins.has(server) || !/^[A-Za-z0-9_]{1,200}$/.test(tool))
+    if (!origins.has(server) || (tool !== 'rtc.http' && !/^[a-z][a-z0-9_]{0,199}$/.test(tool)))
       return failure('outside_scope');
     try {
-      const response = await fetchImpl(origins.get(server) + '/api/tools/' + tool, {
-        method: 'POST', redirect: 'error', signal: AbortSignal.timeout(12000),
+      const route = tool === 'rtc.http' ? relayHttpRoute(args) :
+        { path: '/api/tools/' + tool, method: 'POST', body: args };
+      const response = await fetchImpl(origins.get(server) + route.path, {
+        method: route.method, redirect: 'error', signal: AbortSignal.timeout(12000),
         headers: { authorization: 'Bearer ' + pass, 'content-type': 'application/json' },
-        body: JSON.stringify(args)
+        ...(route.body === undefined ? {} : { body: JSON.stringify(route.body) })
       });
       const value = await boundedJson(response);
+      if (route.path === '/api/contract' && route.method === 'GET' && response.ok && value?.rtc === 1)
+        return { ok: true, result: value };
       if (!value || typeof value !== 'object' || typeof value.ok !== 'boolean')
         return failure('service_error');
       if (!response.ok && value.ok) return failure('service_error');
