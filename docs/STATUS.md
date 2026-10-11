@@ -17,6 +17,15 @@ the central hub server is not yet built; the relay server is built but not deplo
 - This chat stopped at #20; normal sessions merge five new substantial PRs and
   return the concise repo-documentation-based continuation prompt (AGENTS).
 
+## Implementation guidance
+
+Code-grounded recipes now live in
+[IMPLEMENTATION-GUIDE](implementation-contracts/IMPLEMENTATION-GUIDE.md), linked from
+startup and card writing. §6 records Stripe A–C completion at the inspected SHA,
+but also the failed whole-core portability assumption. K-3 remains next/JIT and
+needs fresh source reconciliation and amendment before semantic extraction.
+No product code, owner gates or card completion status changed.
+
 ## Environment
 
 - Repo `Robinson-AI-Systems/robinsons-toolkit-hub` (created by Chris 2026-10-10; public, no automated review). First commit straight to `main` because the

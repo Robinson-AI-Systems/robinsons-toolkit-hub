@@ -17,6 +17,11 @@ Designs govern behavior; cards cannot silently override them.
 - Commands to run (with `set -o pipefail` when piping).
 - Done when: observable conditions; what the successor inherits.
 
+Use [IMPLEMENTATION-GUIDE §2](../implementation-contracts/IMPLEMENTATION-GUIDE.md#2-the-executable-card-packet)
+for exact helper/fixture/mapping packets. Its §1 routes to the relevant recipe; §6
+works through K-3 using inspected Stripe code. Label proposed paths, reconcile failed
+assumptions before implementation, and preserve JIT cards and all existing gates.
+
 Validate coverage with `python3 docs/pr-cards/validate-index.py`.
 
 ## Effort guide for Sol 5.6
