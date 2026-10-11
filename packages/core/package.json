@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Partial private security and write contract extraction; no production release",
+  "description": "Private portable core with transport-neutral guarded MCP dispatch; not a published release",
   "engines": {
     "node": "24.x"
   },
@@ -17,7 +17,8 @@
     "./mcp-auth": "./src/mcp-auth.js",
     "./one-time-secrets": "./src/one-time-secrets.js",
     "./oauth-protocol": "./src/oauth-protocol.js",
-    "./write": "./src/write.js"
+    "./write": "./src/write.js",
+    "./mcp-dispatch": "./src/mcp-dispatch.js"
   },
   "files": [
     "src/"

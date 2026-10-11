@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3i (PR #30, as-if-merged):** private core gains transport-free MCP dispatch with mandatory per-service tool policy, result redaction, field projection and scoped persistence adapters. Tests cover denied and indirect calls, compact results, oversized secure handles and failures; packed consumer imports without provider SDK. **Next:** K-3 final source-compatibility/adoption evidence and actual GitHub Release asset (only after every gate); K-3 stays IN_PROGRESS. D-4 still WAITING_ON_OWNER.
+
 - **K-3h (PR #29, as-if-merged):** source-equivalent fail-closed write lifecycle now in private core with mandatory service account adapter and provider retry-key prefix. Independent money preflight/approval remains server-owned; audit intent precedes all provider mutations; uncertain outcomes are never called success. Tests cover previews, guards, money refusals, idempotency and audit failures. **Next:** K-3i MCP dispatcher/transport boundary; release/adoption still gated.
 
 - **K-3g (PR #28, as-if-merged):** portable private OAuth metadata, client registration and token grant/refresh HTTP handlers extracted with explicit server grant-claim projection and durable token storage. Account authorization UI, owner-login locks, selected-mode permissions and source DB remain service owned. **Next:** K-3h guarded write lifecycle; K-3 not released/adopted.
