@@ -147,7 +147,7 @@ python3 docs/pr-cards/validate-index.py
 ```
 
 `npm run test:conformance` is implemented by K-2 (reference fake server and real probes). Added later:
-`npm run test:doors` (D-1, CLI, local MCP, relay and hub HTTPS against fake servers).
+`npm run test:doors` (D-1, real CLI door tests against localhost fake servers; D-2 and D-3 add their own door checks).
 
 ## Ending a session
 

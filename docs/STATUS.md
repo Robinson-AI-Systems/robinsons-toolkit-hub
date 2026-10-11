@@ -5,6 +5,12 @@ the central hub server and relay are not yet built.
 
 ## Next
 
+- **D-1 complete (#15):** standalone rtool CLI accepts multiple servers, secure keychain
+  login, real guarded HTTPS tools, SDK generation and agent setup; TypeScript compiler
+  verifies generated declaration files. Immutable cli-v1 tag runs on the merged main.
+- **Next:** D-2 local stdio MCP for two configured servers, then D-3 encrypted GitHub relay.
+- **External gates:** real per-OS keychain smoke and any real deployment/owner secret
+  authorization still require owner-side setup and must never be assumed complete.
 - **D-1c as merged (#14):** OS keychain adapters, hidden pass input, guarded login/logout,
   with environment passes taking precedence and missing keychains handled safely.
 - **Next:** D-1 TypeScript SDK typecheck and cli-v1 release, then D-2 local MCP.
@@ -23,6 +29,12 @@ the central hub server and relay are not yet built.
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-1 compiler and CLI v1 release (#15):** TypeScript 5.9.3 pinned;
+actual generated SDK declarations typechecked with strict compiler and deliberate
+expected type errors; test:doors/test:types scripts are real; cli-v1 main-only tag
+workflow added. Next D-2.
+
 
 **2026-10-11 — D-1c secure OS credential manager (#14):** Linux Secret Service,
 macOS Keychain and Windows Credential Manager native adapters with no secret argv
