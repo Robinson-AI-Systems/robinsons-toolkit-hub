@@ -75,6 +75,7 @@ export function createEncryptedRelayClient({ transport, publicKey, attempts = 15
     async execute({ server, tool, args = {}, pass }) {
       const sealed = sealRequest({ publicKey, server, tool, args, pass });
       let requestComment = null, replyComment = null, completed = false, value;
+      let taskError = null;
       try {
         requestComment = await transport.post('request', sealed.request);
         for (let i = 0; i < attempts; i++) {
@@ -89,12 +90,14 @@ export function createEncryptedRelayClient({ transport, publicKey, attempts = 15
           }
           if (i < attempts - 1) await sleep(pollIntervalMs);
         }
-      } finally {
-        const ids = [replyComment, requestComment].filter(Boolean);
-        const settled = await Promise.allSettled(ids.map((id) => transport.delete(id)));
-        if (settled.some((x) => x.status === 'rejected'))
-          throw new Error('Encrypted relay cleanup failed; ciphertext comments need manual cleanup');
+      } catch (error) {
+        taskError = error;
       }
+      const ids = [replyComment, requestComment].filter(Boolean);
+      const settled = await Promise.allSettled(ids.map((id) => transport.delete(id)));
+      if (settled.some((x) => x.status === 'rejected'))
+        throw new Error('Encrypted relay cleanup failed; ciphertext comments need manual cleanup');
+      if (taskError) throw taskError;
       if (!completed) throw new Error('Encrypted relay reply did not arrive before timeout');
       return value;
     }
