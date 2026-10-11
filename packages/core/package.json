@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Partial private extraction: OAuth, encryption, catalog, HTTP and metadata safety helpers",
+  "description": "Partial private extraction: OAuth, encryption, catalog, HTTP, metadata and MCP bearer boundaries",
   "engines": {
     "node": "24.x"
   },
@@ -13,7 +13,8 @@
     "./registry": "./src/registry.js",
     "./http": "./src/http.js",
     "./profiles": "./src/profiles.js",
-    "./write-contract-check": "./src/write-contract-check.js"
+    "./write-contract-check": "./src/write-contract-check.js",
+    "./mcp-auth": "./src/mcp-auth.js"
   },
   "files": [
     "src/"
