@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3z (PR #48, as-if-merged):** pinned the complete original Stripe OAuth HTTP endpoint suite as an encoded, Git-blob-verified source snapshot. Executed its first two portable original endpoint assertion bodies unchanged. Four remaining cases depend on service-owner login, durable account/grant/refresh/lockout or authenticated bearer and remain service-owned; do not count them as portable. Core private/K-3 IN_PROGRESS. **Next:** dispatch source/runtime compatibility and full release/adoption gates.
+
 - **K-3y (PR #47, as-if-merged):** pinned and executed original Stripe guarded write source against portable write lifecycle with synthetic audited preview, confirmation, ownership, LIVE denial, uncertain outcomes, durable audit and independent money preflight. The portable malformed-money refusal intentionally tightens source behavior. No provider requests or real owner approval performed; service owner gates still required. K-3 remains IN_PROGRESS and private. **Next:** dispatch runtime/source integration and original endpoint assertion parity.
 
 - **K-3x (PR #46, as-if-merged):** execute pinned original HTTP utility source side by side with private core for HTTPS issuer parsing, body media/invalid input, escaped output, no-store headers and 405 refusal. Endpoint owner login and SQL still service-owned. K-3 remains IN_PROGRESS/private; no release or service repo changes. **Next:** source endpoint assertion parity and write/dispatch runtime compatibility.
