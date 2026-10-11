@@ -5,6 +5,15 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3d (PR #25)
+
+`packages/core/test/consumer.test.js` uses offline `npm pack` and a
+separate temporary npm install to exercise the exact public package exports.
+The package remains `private: true` and bundles only six vetted leaf modules
+plus package.json. Service-owned handlers are not exported, and imports require
+no SDK, provider client, secret or live HTTP request. This is clean-consumer
+proof for the **partial** package, not completion of K-3 or a Release asset.
+
 ## Built in K-3c (PR #24)
 
 `packages/core/src/profiles.js` retains only Stripe's portable

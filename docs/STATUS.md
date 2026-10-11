@@ -5,6 +5,17 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3d (PR #25, as-if-merged):** packed the **private** shared core
+  and installed it in a temporary offline consumer separate from all hub
+  workspaces. Its six public subpath exports import without provider modules,
+  credentials or configuration; Stripe-specific handlers remain unexported.
+  This is release-readiness evidence, **not** the K-3 final Release tarball.
+- **Next eligible work:** K-3e, reconcile and extract remaining service-neutral
+  OAuth/MCP/write lifecycle boundaries through explicit adapters, with source
+  behavior and service guards intact. K-3 stays IN_PROGRESS; no release or
+  adoption until all source tests, clean consumer and actual Release artifact.
+
+
 - **K-3c (PR #24, as-if-merged):** source-equivalent profile visibility,
   public tool metadata and Stripe's explicit write-declaration checker copied
   into private core with original profile assertion bodies plus money metadata
