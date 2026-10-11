@@ -21,7 +21,7 @@ provider credential or server-repository mutation is authorized by this file.
 
 ## Additional verified source compatibility (partial)
 
-K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OAuth endpoint functions directly alongside portable adapter functions in CI, pinning original runtime Git blobs. This is in-memory differential evidence, **not** source service SQL/owner login adoption. Source HTTP endpoint original test assertion bodies, complete guarded write/dispatch source differentials, final release-candidate evidence and actual GitHub Release remain open.
+K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OAuth endpoint functions directly alongside portable adapter functions in CI, pinning original runtime Git blobs. This is in-memory differential evidence, **not** source service SQL/owner login adoption. Four service-owned OAuth HTTP endpoint cases, complete dispatch source differentials, final release-candidate evidence and actual GitHub Release remain open.
 
 ## Mandatory before any candidate is published
 
@@ -31,7 +31,7 @@ K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OA
    rather than counting renamed tests as literal parity.
 2. For the five unchanged modules, run the complete relevant original upstream
    assertion bodies inside the package with only justified import/fixture
-   rewiring. The title/expect-count inventory is a guardrail, not a substitute. K-3s/t/u additionally pin and compare 19 original OAuth, registry, crypto, write metadata and profile portable assertion bodies (one narrowly specified scanner-safe key fixture rewrite). This does not cover the original HTTP endpoint suite or any adapted-service assertions.
+   rewiring. The title/expect-count inventory is a guardrail, not a substitute. K-3s/t/u/z additionally pin and compare 21 original OAuth, registry, crypto, write metadata and profile portable assertion bodies (one narrowly specified scanner-safe key fixture rewrite). This does not cover the original HTTP endpoint suite or any adapted-service assertions.
    Preserve upstream service-owned assertions in the source service suite.
 3. For six adapted exports (profiles, bearer authentication, one-time secrets,
    OAuth protocol, guarded write, MCP dispatch), complete an exact

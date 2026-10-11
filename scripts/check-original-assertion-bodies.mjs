@@ -40,6 +40,12 @@ const sources = [
       'current MCP remains read-only even on an everyday or full connection',
       'refuses undeclared/invalid profiles and tools missing explicit writes metadata',
       'never publishes internal capability metadata with listed tools'
+    ] },
+  { original:'docs/audits/upstream/oauth-handlers.test.js.b64', encoding:'base64',
+    actual:'packages/core/test/oauth-http-source-bodies.test.js',
+    sha:'10cf67ca0da2a608c5e7f70d3931b68bef6683ba', titles:[
+      'publishes fixed HTTPS metadata and does not advertise weak PKCE',
+      'rejects insecure redirect URIs and unsupported public-client auth'
     ] }
 ];
 export function gitBlobSha(text) {
@@ -90,7 +96,7 @@ export function verifyOriginalAssertionBodies(dir=root) {
       checked++;
     }
   }
-  if(checked!==19)throw new Error('Incomplete original assertion bodies');
+  if(checked!==21)throw new Error('Incomplete original assertion bodies');
   return checked;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
