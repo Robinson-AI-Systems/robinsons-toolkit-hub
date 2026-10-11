@@ -20,3 +20,5 @@ Status: **IN PROGRESS — not a release certification**. Source: `Robinson-AI-Sy
 - No release or adoption claim until every pending cell is verified by actual server tests, source-drift review and the complete gates in `K3-RELEASE-GATES.md`.
 
 **K-3y source write matrix:** Original `src/core/write.js` is now pinned and directly executed against portable lifecycle fixtures: preview, confirmed/unconfirmed, owned target, LIVE denial, source-compatible audit/preflight, failed apply and read-back. The portable malformed-money refusal is a deliberately stricter boundary. Service owner consent, account/day ledger, actual provider retries and migrations are still outstanding.
+
+**K-3aa executable dispatch seam:** An unchanged original `dispatchReadOnlyTool` body is checked against the Git-blob-pinned full service file and run with explicit offline policy/result shims. Reads, policy denials, nested calls and oversized scoped storage compare to private portable dispatch; source TEST-only summary wording is intentionally generalized. Source SDK transport, live profile projection, result SQL and provider-error redactors have not been extracted or verified by a service.
