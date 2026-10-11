@@ -87,6 +87,10 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 - **An organization-wide Codex reviewer posts on every new repo** even when a repo says "no automated review": handle and
   resolve its threads, never wait for one.
 
+- **Anti-stall, learned from the implementing agent (2026-10-10):** copy SESSION-START §0 (finish open PRs, red CI first),
+  §6 (problems vs real blockers, thin slices, no-shell draft-PR path, an exact recovery point at every push) and AGENTS
+  rules 11–13 into every new server.
+
 ## 4. Guards every server decides up front
 
 - **Destructive / irreversible:** always `confirm`, read-back, change log.
