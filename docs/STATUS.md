@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3e (PR #26, as-if-merged):** private core adds service-neutral MCP bearer authentication. The server must inject token lookup and an explicit fail-closed connection projector; the source Stripe module remains untouched, with all account/mode/profile/expiry/revocation decisions at the server. Offline packed consumer and denial-path tests cover the new subpath. **Next:** K-3f OAuth handler boundary reconciliation; K-3 remains IN_PROGRESS, no release or server adoption.
+
 - **K-3d (PR #25, as-if-merged):** packed the **private** shared core
   and installed it in a temporary offline consumer separate from all hub
   workspaces. Its six public subpath exports import without provider modules,
