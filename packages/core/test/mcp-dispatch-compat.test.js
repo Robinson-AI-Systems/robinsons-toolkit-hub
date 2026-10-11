@@ -3,7 +3,9 @@
 import {describe,it,expect,vi} from 'vitest';
 import {createGuardedMcpDispatcher} from '../src/mcp-dispatch.js';
 
-const parsed=result=>JSON.parse(result.content[0].text);
+const parsed=result=>{const body=result.content[0].text;
+  try{return JSON.parse(body);}catch{return body;}
+};
 const text=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
 function fixture({handlers,tools,page=()=>({offset:0,nextOffset:null}),
   policy=()=>true,redact=value=>value,resultScope='connection-a'}={}){
