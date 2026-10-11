@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3q (PR #39, as-if-merged):** guarded write now refuses missing, fractional, negative and inconsistent provider-derived money preview metadata before independent owner approval, audit or provider mutation. Broken provider error classifiers are recorded as uncertain rather than escaping the audit lifecycle. Synthetic source-style safety regressions cover refusal, valid approval, uncertain outcome and read-back. Core still private; money consent and shared limits remain entirely service-owned. Next: complete compatibility/release prerequisites; K-3 IN_PROGRESS.
+
 - **K-3p (PR #38, as-if-merged):** portable OAuth protocol now refuses a server claim mapper or durable refresh adapter that substitutes an issued access token, refresh token or client ID. Source-style grant and refresh tests verify preserved service-selected claims, replay denial and failed stores; source owner login UI and durable SQL still require service-owned adoption. K-3 IN_PROGRESS; no release or production activation.
 
 - **K-3o (PR #37, as-if-merged):** pinned offline assertion inventory for all five byte-identical core exports, with 21 locally enforced cases across the five verbatim exports and four explicitly server-owned cases. Root check now rejects missing, skipped or reduced local tests; actual assertion-body equivalence, six adapted boundaries and source service adoption still require further proof. Next: adapted OAuth, bearer, write and dispatch compatibility; core remains private and K-3 IN_PROGRESS. D-4 stays WAITING_ON_OWNER.

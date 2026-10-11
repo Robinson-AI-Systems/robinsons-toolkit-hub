@@ -79,8 +79,18 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
       guardContext = allowed === true ? null : { ownership:allowed.ownership };
     }
     const prepared = prepare ? await prepare(args, ctx, before) : null;
-    if (prepared && (prepared.amountCents != null || prepared.direction != null) &&
-        typeof beforeApply !== 'function') {
+    // Even a partially populated money preview is monetary, not an ordinary write.
+    // Reject malformed provider-derived amounts before consulting approval or sending a write.
+    const moneyIntent = prepared !== null && typeof prepared === 'object' &&
+      !Array.isArray(prepared) &&
+      ['amountCents', 'currency', 'direction'].some(field =>
+        Object.hasOwn(prepared, field));
+    if (moneyIntent && (!Number.isSafeInteger(prepared.amountCents) ||
+      prepared.amountCents <= 0 || !/^[a-z]{3}$/.test(prepared.currency) ||
+      !['in', 'out'].includes(prepared.direction))) {
+      return respond({ done: false, error: 'Invalid provider-derived money preview: action refused' }, true);
+    }
+    if (moneyIntent && typeof beforeApply !== 'function') {
       return respond({ done: false, error: 'Independent server money authorization is required' }, true);
     }
     const summaryText = await summarize(before, args, ctx, guardContext);
@@ -129,7 +139,10 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     } catch (error) {
       // Only a verified definitive provider SDK rejection frees a reservation.
       // Transport, rate-limit, idempotency conflicts and unknown failures do not.
-      status = classifyError(error) === 'rejected' ? 'rejected' : 'uncertain';
+      // A broken classifier cannot erase a possibly executed provider operation.
+      // Preserve the reservation and continue durable audit as uncertain.
+      try { status = classifyError(error) === 'rejected' ? 'rejected' : 'uncertain'; }
+      catch { status = 'uncertain'; }
     }
     if (applied) {
       try {

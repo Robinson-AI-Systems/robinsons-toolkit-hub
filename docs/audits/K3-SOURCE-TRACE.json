@@ -132,14 +132,16 @@
       "sourceFile": "src/core/write.js",
       "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
       "target": "./src/write.js",
-      "coreBlob": "5ecedeb9c6d74674a0ebdf5bb13efd06b41abe76",
+      "coreBlob": "e23ece23c179c9aba0e429618b0ca77fc31cd03f",
       "kind": "adapted",
       "tests": [
         "packages/core/test/write.test.js",
-        "packages/core/test/integration-boundary.test.js"
+        "packages/core/test/integration-boundary.test.js",
+        "packages/core/test/write-safety-parity.test.js"
       ],
       "serverOwned": [
-        "owner-independent money consent, shared limits, live guard and retry key"
+        "owner-independent money consent, shared limits, live guard and retry key",
+        "service-authenticated owner approval and durable shared per-account caps remain mandatory; portable money shape and classifier guards cannot grant consent"
       ]
     },
     "./mcp-dispatch": {
