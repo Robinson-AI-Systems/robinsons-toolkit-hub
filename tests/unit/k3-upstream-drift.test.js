@@ -1,6 +1,7 @@
 import {describe,it,expect,vi} from 'vitest';
 import {compareK3UpstreamTree,verifyK3UpstreamDrift} from '../../scripts/verify-k3-upstream-drift.mjs';
-import baseline from '../../docs/audits/K3-UPSTREAM-BASELINE.json' with {type:'json'};
+import {readFileSync} from 'node:fs';
+const baseline=JSON.parse(readFileSync(new URL('../../docs/audits/K3-UPSTREAM-BASELINE.json',import.meta.url),'utf8'));
 const main=baseline.reviewedMain;
 const tree=()=>({truncated:false,tree:Object.entries({...baseline.source,...baseline.tests})
   .map(([path,sha])=>({path,sha,type:'blob'}))});
