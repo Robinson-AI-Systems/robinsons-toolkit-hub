@@ -8,6 +8,7 @@ operates mostly from a phone; everything he reads must be plain language.
 
 1. Implementing a card: [SESSION-START](SESSION-START.md). Otherwise AGENTS — workflow and hard limits.
 2. [STATUS](STATUS.md) → [MASTER-ROADMAP](MASTER-ROADMAP.md) → the card → the cited design headings.
+   For concrete execution, [implementation guide](implementation-contracts/IMPLEMENTATION-GUIDE.md) §1 selects one bounded recipe.
 3. The contract: [CONTRACT](CONTRACT.md), one section at a time.
 4. Starting a new service server: [kit/SERVER-PLAYBOOK](kit/SERVER-PLAYBOOK.md) and [kit/SERVER-ROADMAP](kit/SERVER-ROADMAP.md).
 

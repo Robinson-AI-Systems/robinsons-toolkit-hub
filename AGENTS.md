@@ -116,6 +116,7 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 | Procedure and testing | `docs/PLAYBOOK.md` |
 | Remaining acceptance | `docs/PLAN.md` |
 | Designs | `docs/designs/BATCH-*.md` |
+| Concrete helper, mapping and fixture recipes (read by unit) | `docs/implementation-contracts/IMPLEMENTATION-GUIDE.md` §1 |
 | Current state and order | `docs/STATUS.md`, `docs/MASTER-ROADMAP.md`, `docs/pr-cards/work-index.json` |
 | Owner decisions | `docs/OWNER-INPUTS.md` |
 | Dated decisions | `docs/DECISIONS.md` |
