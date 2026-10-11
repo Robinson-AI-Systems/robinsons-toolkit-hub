@@ -6,11 +6,13 @@ const marker = (kind) => 'rtc:v1:' + kind + ':';
 const validRepo = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 export function encodeRelayComment(kind, envelope) {
   if (!['request', 'reply'].includes(kind)) throw new Error('Invalid relay comment kind');
-  return marker(kind) + Buffer.from(JSON.stringify(envelope)).toString('base64url');
+  const body = marker(kind) + Buffer.from(JSON.stringify(envelope)).toString('base64url');
+  if (Buffer.byteLength(body) > 65536) throw new Error('Relay comment exceeds GitHub body cap');
+  return body;
 }
 export function decodeRelayComment(kind, body) {
   if (typeof body !== 'string' || !body.startsWith(marker(kind)) ||
-    body.length > 250000) return null;
+    Buffer.byteLength(body) > 65536) return null;
   try {
     const result = JSON.parse(Buffer.from(body.slice(marker(kind).length), 'base64url').toString('utf8'));
     if (!result || result.v !== 1 || typeof result.id !== 'string' ||
@@ -28,7 +30,7 @@ export function githubCommentTransport({ repo, issue, token, fetchImpl = fetch }
     let response;
     try {
       response = await fetchImpl(base + path, {
-        method, headers: { authorization: 'Bearer ' + token, accept: 'application/vnd.github+json',
+        method, redirect: 'error', headers: { authorization: 'Bearer ' + token, accept: 'application/vnd.github+json',
           'content-type': 'application/json', 'user-agent': 'rtool-relay-v1',
           'x-github-api-version': '2022-11-28' },
         ...(data === undefined ? {} : { body: JSON.stringify(data) }),

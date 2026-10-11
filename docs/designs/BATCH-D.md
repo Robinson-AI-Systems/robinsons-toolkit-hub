@@ -133,3 +133,10 @@ are isolated as D-3a. D-3 completes the signed webhook server, atomic
 database replay resistance, forwarding, reply encryption, cleanup and CLI
 fallback wiring. Relay repo creation, keys and production deployment are
 owner gates and do not justify unsafe or placeholder code.
+
+**2026-10-11 — D-3b server boundary split.** D-3b owns raw signed webhook
+verification, configured private repository/issue/actor/server bindings, atomic
+Postgres replay protection, HTTPS forwarding and the Vercel handler. D-3 retains
+CLI route fallback, scheduled ciphertext cleanup and deployment instructions.
+Bindings narrow reach to explicit owner configuration; no public deployment or
+real credentials are authorized by this split. No acceptance is removed.
