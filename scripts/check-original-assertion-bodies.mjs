@@ -84,9 +84,10 @@ export function verifyOriginalAssertionBodies(dir=root) {
       ['TOKEN', 'ENCRYPTION', 'KEY'].join('_') +
       ": generate().toString('base64') })).toHaveLength(32);";
     const safeKeyFixture = "    const envName = ['TOKEN', 'ENCRYPTION', 'KEY'].join('_');\n    expect(readEncryptionKey({ [envName]: generate().toString('base64') })).toHaveLength(32);";
-    const comparable=entry.encoding==='base64'
+    const cryptoFixture=entry.original==='docs/audits/upstream/keys.test.js.b64';
+    const comparable=cryptoFixture
       ? upstream.replace(originalKeyFixture,safeKeyFixture) : upstream;
-    if(entry.encoding==='base64' && comparable===upstream)
+    if(cryptoFixture && comparable===upstream)
       throw new Error('Expected upstream crypto fixture rewrite was not found');
     const expected=assertionBodies(comparable,entry.original);
     const actual=assertionBodies(local,entry.actual);
