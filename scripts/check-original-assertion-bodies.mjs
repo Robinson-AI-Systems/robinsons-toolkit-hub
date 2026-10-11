@@ -33,6 +33,13 @@ const sources = [
       'fails money-out tools that lack a provider-derived spec even with confirmation',
       'refuses writes with no trusted lifecycle, and read tools faking a money spec',
       'rejects invalid registry shapes instead of treating them as zero tools'
+    ] },
+  { original:'docs/audits/upstream/profiles.test.js', actual:'packages/core/test/profiles.test.js',
+    sha:'390246cc07f242736b62628400d282c539ba2e00', titles:[
+      'read_only never sees money/destructive tools, even when enablement is requested',
+      'current MCP remains read-only even on an everyday or full connection',
+      'refuses undeclared/invalid profiles and tools missing explicit writes metadata',
+      'never publishes internal capability metadata with listed tools'
     ] }
 ];
 export function gitBlobSha(text) {
@@ -83,7 +90,7 @@ export function verifyOriginalAssertionBodies(dir=root) {
       checked++;
     }
   }
-  if(checked!==15)throw new Error('Incomplete original assertion bodies');
+  if(checked!==19)throw new Error('Incomplete original assertion bodies');
   return checked;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

@@ -3,7 +3,7 @@ import { assertionBodies, gitBlobSha, verifyOriginalAssertionBodies } from '../.
 
 describe('pinned upstream assertion-body parity',()=>{
   it('executes every selected original upstream assertion body unchanged',()=>{
-    expect(verifyOriginalAssertionBodies()).toBe(15);
+    expect(verifyOriginalAssertionBodies()).toBe(19);
   });
   it('rejects body changes even if test title and expect count are preserved',()=>{
     const first="it('sample',()=>{ expect(true).toBe(true); });";
