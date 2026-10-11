@@ -235,12 +235,31 @@
       ]
     },
     {
+      "id": "D-3b",
+      "title": "Signed relay webhook and atomic replay protection",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-3a"
+      ],
+      "card": "docs/pr-cards/D-3b.md",
+      "status": "MERGED",
+      "units": [
+        "D-3b"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#18"
+      ]
+    },
+    {
       "id": "D-3",
       "title": "GitHub relay",
       "batch": "D",
       "design": "docs/designs/BATCH-D.md",
       "dependencies": [
-        "D-3a"
+        "D-3b"
       ],
       "card": "docs/pr-cards/D-3.md",
       "status": "APPROVED",

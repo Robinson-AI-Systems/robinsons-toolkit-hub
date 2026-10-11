@@ -1,36 +1,17 @@
 # STATUS — current work, blockers and next action
 
 Updated 2026-10-11. RTC 1 conformance, direct rtool commands and SDK/agent setup are built;
-the central hub server and relay are not yet built.
+the central hub server is not yet built; the relay server is built but not deployed.
 
 ## Next
 
-- **D-3a merged (#17):** X25519/AES-256-GCM authenticated request/reply relay envelopes,
-  ciphertext-only GitHub issue comment transport, bounded polling and comment cleanup.
-- **Next:** D-3 webhook verification, persisted anti-replay and Vercel handler, with
-  fake GitHub tests and a local Postgres database. Deployment/private relay repository
-  remain owner-gated; do not claim deployed or connected.
-- **D-2 merged (#16):** rtool mcp exposes compact, server-alias-prefixed local
-  broker tools over JSON-RPC stdio, with server-owned guard enforcement. The two
-  local HTTP fake services are tested for read, write confirmation and refusal.
-- **Next:** D-3 encrypted GitHub relay implementation. Relay private repository
-  and hosted credentials are still owner-side gates; build/test against fake APIs
-  without claiming production deployment.
-- **D-1 complete (#15):** standalone rtool CLI accepts multiple servers, secure keychain
-  login, real guarded HTTPS tools, SDK generation and agent setup; TypeScript compiler
-  verifies generated declaration files. Immutable cli-v1 tag runs on the merged main.
-- **Next:** D-2 local stdio MCP for two configured servers, then D-3 encrypted GitHub relay.
-- **External gates:** real per-OS keychain smoke and any real deployment/owner secret
-  authorization still require owner-side setup and must never be assumed complete.
-- **D-1c as merged (#14):** OS keychain adapters, hidden pass input, guarded login/logout,
-  with environment passes taking precedence and missing keychains handled safely.
-- **Next:** D-1 TypeScript SDK typecheck and cli-v1 release, then D-2 local MCP.
-- **D-1b merged (#13):** SDK generation from service metadata, verified guarded SDK calls,
-  rtool skill and managed agent init (preserves existing AGENTS instructions).
-- **Next:** D-1 secure OS keychain login and full CLI/type-check verification, then D-2 local MCP.
-- **K-3** shared-core extraction waits on Stripe MCP Batches A–C. No legacy compatibility.
-- **External services:** all standalone servers remain independent; check their current repo
-  implementation state rather than relying on older progress claims.
+- **D-3b merged (#18):** raw signed private-repo webhook, issue/actor/server bindings,
+  encrypted RTC forwarding, Postgres atomic replay claims and lazy Vercel handler.
+- **Next:** D-3 CLI relay fallback, hourly ciphertext cleanup and deployment recipe.
+- D-1 (#12–15), D-2 (#16) and D-3a (#17) remain merged; no acceptance removed.
+- K-3 awaits a fresh verification of Stripe A–C; service servers stay independent.
+- **Owner gates:** IN-02/03/04 relay resources/credentials and D-4 real authorized runs.
+  Nothing is deployed or connected; real per-OS keychain smoke remains unverified.
 
 ## Environment
 

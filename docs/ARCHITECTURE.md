@@ -5,6 +5,21 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-3b (PR #18)
+
+| What | Where | Notes |
+|---|---|---|
+| Signed webhook | api/relay/github.js; packages/relay/src/webhook.js | Original raw bytes, HMAC-SHA256 timing-safe check; created comments on configured private repo/issue/actor only. |
+| Replay store | packages/relay/migrations/001-relay-seen.sql; src/store.js | Atomic unique request ID insert; no passes/args/results at rest; claims retained after failed writes/posting. |
+| RTC forwarding | packages/relay/src/forward.js; src/server.js | Fixed HTTPS server origins, redirects refused, original pass and guards, encrypted reply with bounded sizes and accidental credential echo redaction. |
+| Lazy runtime | packages/relay/src/runtime.js; src/handler.js | Missing settings disable relay only; pool and configuration created on first request; generic public errors. |
+
+Required owner environment: `RELAY_REPOSITORY`, `RELAY_WEBHOOK_SECRET`,
+`RELAY_GITHUB_TOKEN`, `RELAY_PRIVATE_KEY` (base64 PKCS8 DER X25519),
+`RELAY_SERVERS` (alias to HTTPS origin), `RELAY_BINDINGS` (issue to actorId/server),
+`RELAY_DATABASE_URL` (TLS Postgres). All secrets set privately; never put in repo.
+Deploy/migration and cleanup are retained for D-3; owner gates remain IN-02/03/04.
+
 ## Built in D-3a (PR #17)
 
 | What | Where | Notes |
@@ -13,7 +28,7 @@ database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04)
 | GitHub comments client | packages/cli/src/relay.js | Fixed GitHub API origin and scoped repository/issue, ciphertext-only bodies, bounded poll, delete request and reply comments, no token passed to GitHub body. |
 | Security tests | packages/relay/test/crypto.test.js and packages/cli/test/relay-client.test.js | Tamper/wrong-key/replay-window tests, fake Github API encrypted round trip and cleanup. |
 
-D-3 webhooks, database replay locks, server forwarding and live deployment are not built in this slice.
+D-3b supplies the server boundary. D-3 retains route fallback, cleanup and deployment recipe.
 
 ## Built in D-2 (PR #16)
 

@@ -3,7 +3,7 @@
 import { generateKeyPairSync, createPublicKey, diffieHellman, hkdfSync,
   createCipheriv, createDecipheriv, randomBytes, randomUUID } from 'node:crypto';
 
-const MAX_BYTES = 128 * 1024;
+const MAX_BYTES = 40 * 1024;
 const WINDOW_MS = 5 * 60 * 1000;
 const encoding = (value) => Buffer.from(value).toString('base64url');
 const decoding = (value) => {
