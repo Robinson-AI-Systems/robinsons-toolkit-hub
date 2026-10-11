@@ -5,6 +5,14 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3a portable security core (PR #22, as-if-merged):** `packages/core` now has
+  source-identical Stripe OAuth primitives and AES-GCM secret encryption, with
+  upstream assertion bodies and a small injected login-store fixture. This is a
+  **partial, private** package: no release, no server adoption, no live test passes.
+  K-3b next: registry/HTTP/metadata helpers; keep the whole-folder boundary gated.
+  Stripe A–C cards remain MERGED at inspected main `09ed53a048820989a3f69c057ebf8a6be0c2a988`.
+
+
 - **D-4a merged (#20):** agent recipes and secret-safe read-only route verifier;
   actual fake direct and signed encrypted relay tests. No real agent route is certified.
 - **Next executable card:** K-3 shared-core extraction, after verifying current

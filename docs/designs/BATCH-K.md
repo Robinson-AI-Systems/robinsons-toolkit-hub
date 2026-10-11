@@ -76,3 +76,14 @@ Done when: a scaffolded repo passes its own `npm run check` and conformance agai
    `conformance-v1`. K-4 depends on K-2b. Acceptance mapping unchanged (`negative.test.js` spans both).
 3. The conformance runner receives the read-only, expired and revoked passes it needs from environment variables named
    on its command line; a check whose pass was not supplied is reported `skipped`, never ok (K-1 confirms in CONTRACT §9).
+
+**2026-10-11 — K-3 extraction boundary reconciliation (drift A; Stripe main 09ed53a).**
+K2's entire-folder portability assumption is false despite A–C cards being MERGED:
+`src/core/profiles.js`, `write.js`, `oauth-handlers.js`, `mcp-auth.js`,
+`mcp-server.js` and `one-time-secrets.js` embed account, mode, provider,
+AAD, or transitive service semantics. Extract in reviewed, source-compatible
+slices K-3a (OAuth/crypto), K-3b (registry/HTTP/write-declaration checker),
+then remaining semantic adapters and packaging/proof. All K-3 acceptance stays
+open until full contract-generic exports and clean-consumer tarball test are
+complete and a GitHub Release asset actually exists. No default policy or RTC
+version changes; Stripe and Workspace adoption remain separate repo-owned cards.
