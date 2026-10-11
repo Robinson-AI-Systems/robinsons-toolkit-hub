@@ -61,6 +61,33 @@ widening default pass permissions; committing to `main`; skipping, disabling or 
    bounded wait in PLAYBOOK Step 10 (the merge gate is the check named `ci`; failed jobs' annotations show the errors),
    write the self-review, then merge with the exact head SHA (Steps 7–9).
 
+### GitHub REST fallback for constrained environments (permanent)
+
+When the active workspace cannot clone GitHub, has no usable Git checkout or terminal,
+or cannot reach github.com (including DNS/network restrictions), **use the authenticated
+GitHub REST route** rather than retrying blocked shell or CLI commands. The GitHub
+connector's repository/branch/file/PR/check-run operations are an acceptable REST
+transport for staged changes and evidence. Keep all normal branch, reviewer, scope,
+owner approval and exact-head CI gates; this changes transport, not policy.
+
+1. Verify GitHub `main` and open PRs with REST metadata, and inspect existing
+   branches, review threads, required files and check-run results before editing.
+2. Create an `ai/<tool>/*` branch from the verified exact main commit. Use REST
+   file writes with existing blob SHA preconditions; never write to main directly.
+3. Make a small coherent edit with tests. If local Node/npm/Postgres cannot execute,
+   **do not claim local validation**: open a draft PR and use CI at the exact branch
+   head as the execution environment, including disposable PostgreSQL jobs.
+4. For failures, inspect CI annotations and job summaries/logs through REST,
+   correct every actionable failure on the branch and wait for the new exact-head
+   checks. Do not merge if required checks are missing, pending or red.
+5. Record the unavailable local command, the exact CI run/head evidence, the
+   reviewed diff, unresolved threads and resume point in the PR/card. Complete
+   the ordinary self-review and merge only with exact-head SHA protection.
+
+Do not interpret a network-restricted checkout as authorization to use production
+credentials or external production services for testing. No synthetic green status,
+no skipping regression/DB checks, and no workaround that weakens safeguards.
+
 ## 4. Resume note — so stopping never loses your place
 
 Keep `docs/pr-cards/<ID>.progress.md` (≤20 lines) on your branch and update it after every commit:
