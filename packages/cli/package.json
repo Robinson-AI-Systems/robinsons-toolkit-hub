@@ -1,0 +1,13 @@
+{
+  "name": "@robinson-ai-systems/rtool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "rtool": "bin/rtool.js"
+  },
+  "exports": {
+    "./api": "./src/http.js",
+    "./config": "./src/config.js"
+  }
+}
