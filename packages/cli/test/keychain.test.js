@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PassThrough } from 'node:stream';
 import { startFakeServer } from '../../conformance/fake-server/server.js';
-import { nativePlan, makeKeychain, addStoredPasses, runNative } from '../src/keychain.js';
+import { nativePlan, makeKeychain, addStoredPasses } from '../src/keychain.js';
 import { readHiddenPass } from '../src/input.js';
 import { runCLI } from '../src/commands.js';
 

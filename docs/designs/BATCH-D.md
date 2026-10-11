@@ -113,3 +113,8 @@ HTTP execution, plus safe skill/init management of agent instructions. The remai
 D-1 card owns secure OS keychain login, declaration compiler gate, all-command
 verification and immutable cli-v1 tag. No acceptance is dropped; user-approved
 ~500-line production PR target applies without padding unrelated security code.
+
+**2026-10-11 — D-1c split for native credentials.** Linux/macOS/Windows keychain access
+is independently reviewed as an authorization boundary. D-1 retains the TypeScript
+SDK compiler check, all-door acceptance and cli-v1 tag. Actual device smoke checks
+must not be confused with CI mocks of the native adapter invocation plans.

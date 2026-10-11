@@ -5,6 +5,16 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-1c (PR #14)
+
+| What | Where | Notes |
+|---|---|---|
+| OS credentials | packages/cli/src/keychain.js | Native Linux, macOS, Windows keychains; pass delivered over child stdin, never argv or source. |
+| Hidden login | packages/cli/src/input.js | Silent terminal input, RTC format validation before saving. |
+| Keychain CLI | packages/cli/src/commands.js | Login verifies whoami before store; logout deletes only local record; missing keyring isolates service. |
+
+Cross-platform native invocation plans are unit-tested, but actual device smoke has not run.
+
 ## Built in D-1b (PR #13)
 
 | What | Where | Notes |
@@ -13,7 +23,7 @@ database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04)
 | Agent guidance | packages/cli/src/setup.js | rtool skill and init, managed AGENTS.md block, refuses symlinks and malformed managed blocks. Only direct HTTPS claimed until relay exists. |
 | Tested standalone SDK | packages/cli/test/sdk-setup.test.js | Live fake-server calls through generated functions; read-only/confirmation and no-pass persistence exercised. |
 
-**Not built:** OS keychain login, final declaration compiler gate, relay, local MCP, hosted hub.
+**Not built:** final declaration compiler gate, relay, local MCP, hosted hub.
 Next D-1 finishes keychain and release readiness.
 
 ## Built in D-1a (PR #12)
