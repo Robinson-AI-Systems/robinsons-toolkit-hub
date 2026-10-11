@@ -95,8 +95,9 @@ describe('local rtool stdio MCP', () => {
       const tools = (await mcp.dispatch(message(1, 'tools/list'))).result.tools;
       expect(tools).toHaveLength(6);
       expect(tools.some((x) => x.name.startsWith('two_'))).toBe(false);
-      expect((await mcp.dispatch(message(2, 'tools/call', {
-        name: 'two_call', arguments: { tool: 'fake_read_record' } } )).error.code).toBe(-32602);
+      const unavailable = await mcp.dispatch(message(2, 'tools/call', {
+        name: 'two_call', arguments: { tool: 'fake_read_record' } }));
+      expect(unavailable.error.code).toBe(-32602);
     } finally { await fixture.close(); }
   });
 });
