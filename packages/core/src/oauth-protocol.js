@@ -68,7 +68,9 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       }
       const accessToken=randomToken(32),refreshToken=randomToken(32);
       const mapped=await buildAccessRow({accessToken,refreshToken,clientId:p.client_id,grant:record});
-      if (!mapped || typeof mapped!=='object' || Array.isArray(mapped)) {
+      if (!mapped || typeof mapped!=='object' || Array.isArray(mapped) ||
+        mapped.accessToken!==accessToken || mapped.refreshToken!==refreshToken ||
+        mapped.clientId!==p.client_id) {
         return bad(res,400,'invalid_grant','Connection settings cannot be issued');
       }
       await db.createAccessToken(mapped);
@@ -80,7 +82,8 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       // Only the durable store may rotate a token; it must copy account/profile/mode/listing.
       const rotated=await db.rotateRefreshToken({refreshToken:p.refresh_token,clientId:p.client_id,
         accessToken,newRefreshToken:refreshToken});
-      if (!rotated) {
+      if (!rotated || rotated.accessToken!==accessToken ||
+        rotated.refreshToken!==refreshToken || rotated.clientId!==p.client_id) {
         return bad(res,400,'invalid_grant','Refresh credential is expired, used, or revoked');
       }
       return send(res,200,tokenResponse(accessToken,refreshToken));
