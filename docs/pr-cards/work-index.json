@@ -74,12 +74,15 @@
         "K-2"
       ],
       "card": "docs/pr-cards/K-2b.md",
-      "status": "APPROVED",
+      "status": "MERGED",
       "units": [
         "K-2b"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#11"
+      ]
     },
     {
       "id": "K-3",

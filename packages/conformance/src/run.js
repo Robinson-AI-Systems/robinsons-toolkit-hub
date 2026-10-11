@@ -1,5 +1,7 @@
 // Wire-level RTC 1 conformance: every probe uses real HTTP requests, never a service credential.
 // Passes remain in memory and never enter a URL, assertion message or output.
+import { verifyRefreshSettings } from './oauth.js';
+import { verifyTwoInstanceRateLimit } from './rate-limit.js';
 const tokenPattern = /(?:rtc_pass_[A-Za-z0-9_-]{43}|(?:sk|rk)_live_[A-Za-z0-9]{12,}|github_pat_[A-Za-z0-9_]{30,})/g;
 const clean = (message, passes) => {
   let output = String(message).replace(tokenPattern, '[redacted]');
@@ -28,7 +30,7 @@ const call = async (url, pass, path, args, method) => {
 const toolsOf = (data) => Array.isArray(data?.result?.tools) ? data.result.tools : [];
 const available = (passes, key) => typeof passes[key] === 'string' && passes[key].length > 0;
 
-export async function runConformance({ url, passes = {} } = {}) {
+export async function runConformance({ url, passes = {}, oauth, instances } = {}) {
   if (!url || !/^https?:\/\/[^?#/]+/.test(url)) throw new TypeError('A server URL is required');
   const checks = [];
   const probe = async (name, run, { needs = [], requiresManifest = false } = {}) => {
@@ -192,5 +194,13 @@ export async function runConformance({ url, passes = {} } = {}) {
     assert(small.data.ok === true &&
       JSON.stringify(small.data).length / 4 < 5000, '§5: compact listing exceeds 5000 tokens');
   }, { needs: ['full'], requiresManifest: true });
+  if (oauth) await probe('oauth.refresh_settings',
+    async () => verifyRefreshSettings(oauth), { requiresManifest: true });
+  else checks.push({ name: 'oauth.refresh_settings', ok: false, skipped: true,
+    message: 'Skipped: no local server-owned OAuth fixture adapter' });
+  if (instances) await probe('limits.two_instance',
+    async () => verifyTwoInstanceRateLimit(instances), { requiresManifest: true });
+  else checks.push({ name: 'limits.two_instance', ok: false, skipped: true,
+    message: 'Skipped: no two independent processes sharing a throwaway database' });
   return { ok: checks.length > 0 && checks.every((x) => x.ok && !x.skipped), checks };
 }

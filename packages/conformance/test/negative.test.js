@@ -8,14 +8,15 @@ const cases = {
   'key-in-result': 'safety',
   'oversize-without-handle': 'reads',
   'unprefixed-tool': 'catalog',
-  'bad-error-envelope': 'safety'
+  'bad-error-envelope': 'safety',
+  'refresh-drops-settings': 'oauth.refresh_settings'
 };
 describe('deliberate RTC violations', () => {
   for (const [fault, check] of Object.entries(cases)) {
     it(fault + ' fails ' + check + ' rather than passing silently', async () => {
       const f = await startFakeServer({ faults: [fault] });
       try {
-        const result = await runConformance({ url: f.url, passes: f.passes });
+        const result = await runConformance({ url: f.url, passes: f.passes, oauth: f.oauth });
         expect(result.ok).toBe(false);
         const failures = result.checks.filter((x) => !x.ok && !x.skipped);
         expect(failures.map((x) => x.name)).toEqual([check]);

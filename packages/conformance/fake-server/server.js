@@ -31,9 +31,15 @@ const readBody = async (req) => {
 const project = (value, fields) => fields?.length ? Object.fromEntries(
   fields.filter((key) => Object.hasOwn(value, key)).map((key) => [key, value[key]])) : value;
 
-export async function startFakeServer({ prefix = 'fake', faults = [] } = {}) {
+export async function startFakeServer({ prefix = 'fake', faults = [], passes: sharedPasses, rateLimit } = {}) {
   const bad = new Set(faults);
-  const passes = { full: secret(), readOnly: secret(), expired: secret(), revoked: secret() };
+  const passes = sharedPasses || { full: secret(), readOnly: secret(), expired: secret(), revoked: secret() };
+  const oauthAccess = randomBytes(32).toString('base64url');
+  const oauthRefresh = randomBytes(32).toString('base64url');
+  const oauthTokens = new Map([[oauthAccess, { profile: 'read_only', listing: 'compact',
+    areas: ['testing'], mode: 'test', account: 'sandbox' }]]);
+  const refreshTokens = new Map([[oauthRefresh, oauthAccess]]);
+  const localCounts = new Map();
   const state = { value: 'original', changes: [], handles: new Map() };
   const names = [prefix + '_read_record', prefix + '_write_record',
     prefix + '_delete_record', prefix + '_send_money'];
@@ -79,6 +85,30 @@ export async function startFakeServer({ prefix = 'fake', faults = [] } = {}) {
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
+      if (req.method === 'POST' && url.pathname === '/api/oauth/token') {
+        let data = '';
+        for await (const chunk of req) data += chunk;
+        const params = new URLSearchParams(data);
+        const source = refreshTokens.get(params.get('refresh_token'));
+        if (params.get('grant_type') !== 'refresh_token' || !source)
+          return deliver(res, 400, error('invalid_args').body);
+        refreshTokens.delete(params.get('refresh_token'));
+        const access = randomBytes(32).toString('base64url');
+        const refresh = randomBytes(32).toString('base64url');
+        const settings = oauthTokens.get(source);
+        oauthTokens.set(access, bad.has('refresh-drops-settings') ?
+          { profile: 'full', listing: 'catalog', areas: [], mode: 'live', account: 'sandbox' } :
+          structuredClone(settings));
+        refreshTokens.set(refresh, access);
+        return deliver(res, 200, { access_token: access, refresh_token: refresh,
+          token_type: 'Bearer', expires_in: 3600 });
+      }
+      if (req.method === 'GET' && url.pathname === '/__rtc_test/oauth/settings') {
+        const token = req.headers.authorization?.replace(/^Bearer /, '');
+        const settings = oauthTokens.get(token);
+        return settings ? deliver(res, 200, { ok: true, result: settings }) :
+          deliver(res, 401, error('permission', 401).body);
+      }
       if (req.method === 'GET' && url.pathname === '/api/contract') {
         if (bad.has('no-manifest')) return deliver(res, 404, error('not_found', 404).body);
         return deliver(res, 200, { rtc: 1, server: 'reference-fake', prefix,
@@ -100,6 +130,12 @@ export async function startFakeServer({ prefix = 'fake', faults = [] } = {}) {
       }
       if (pass !== passes.full && pass !== passes.readOnly) {
         const e = error('permission', 401); return deliver(res, e.status, e.body);
+      }
+      if (rateLimit && req.method === 'GET' && url.pathname === '/api/whoami') {
+        const count = rateLimit.increment ? await rateLimit.increment(pass) :
+          (localCounts.set(pass, (localCounts.get(pass) || 0) + 1), localCounts.get(pass));
+        if (count > rateLimit.max) return deliver(res, 429,
+          error('rate_limited', 429).body, { 'retry-after': '60' });
       }
       if (req.method === 'GET' && url.pathname === '/api/whoami')
         return deliver(res, 200, { ok: true, result: { profile:
@@ -151,7 +187,23 @@ export async function startFakeServer({ prefix = 'fake', faults = [] } = {}) {
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
-  return { url: 'http://127.0.0.1:' + address.port, passes, state,
+  const serverUrl = 'http://127.0.0.1:' + address.port;
+  const oauth = {
+    async inspect(token = oauthAccess) {
+      const response = await fetch(serverUrl + '/__rtc_test/oauth/settings',
+        { headers: { authorization: 'Bearer ' + token } });
+      if (!response.ok) throw new Error('OAuth fixture inspection failed');
+      return (await response.json()).result;
+    },
+    async refresh() {
+      const response = await fetch(serverUrl + '/api/oauth/token', { method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: oauthRefresh }) });
+      if (!response.ok) throw new Error('OAuth refresh request failed');
+      return (await response.json()).access_token;
+    }
+  };
+  return { url: serverUrl, passes, state, oauth,
     close: () => new Promise((resolve, reject) =>
       server.close((e) => e ? reject(e) : resolve())) };
 }
