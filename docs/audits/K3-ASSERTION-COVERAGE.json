@@ -3,7 +3,7 @@
   "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
   "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
   "status": "INCOMPLETE_SERVER_ADOPTION",
-  "note": "Literal upstream case titles and conservative expect-count floors reviewed at pinned source. This gate prevents silently dropping portable cases; it does not prove identical assertion bodies, SQL semantics or server adoption. Source files themselves are not downloaded by CI.",
+  "note": "Literal upstream case titles and conservative expect-count floors reviewed at pinned source. This gate prevents silently dropping portable cases; it does not prove identical assertion bodies, SQL semantics or server adoption. Source files themselves are not downloaded by CI. HTTP has no dedicated upstream unit suite; its helper assertions are locally derived and upstream entrypoint tests remain a service-owned gap.",
   "modules": {
     "./oauth": {
       "sourceTest": "tests/unit/oauth-core.test.js",
@@ -80,38 +80,6 @@
         }
       ]
     },
-    "./profiles": {
-      "sourceTest": "tests/unit/profiles.test.js",
-      "coreTest": "packages/core/test/profiles.test.js",
-      "portable": [
-        {
-          "title": "read_only never sees money/destructive tools, even when enablement is requested",
-          "minimumExpects": 4
-        },
-        {
-          "title": "current MCP remains read-only even on an everyday or full connection",
-          "minimumExpects": 3
-        },
-        {
-          "title": "refuses undeclared/invalid profiles and tools missing explicit writes metadata",
-          "minimumExpects": 4
-        },
-        {
-          "title": "never publishes internal capability metadata with listed tools",
-          "minimumExpects": 3
-        }
-      ],
-      "serverOwned": [
-        {
-          "title": "hidden tools cannot be invoked by guessing their exact registered names",
-          "reason": "Source dispatch guard uses Stripe-specific policies; portable dispatch tests are separate."
-        },
-        {
-          "title": "home endpoint publishes true currently usable counts for each profile",
-          "reason": "Exact count is a Stripe server catalog and HTTP route contract, not core policy."
-        }
-      ]
-    },
     "./write-contract-check": {
       "sourceTest": "tests/unit/write-metadata.test.js",
       "coreTest": "packages/core/test/write-contract-check.test.js",
@@ -147,6 +115,34 @@
           "reason": "Stripe lifecycle implementation owns money preparation and actual catalog semantics."
         }
       ]
+    },
+    "./http": {
+      "sourceTest": "tests/unit/oauth-handlers.test.js",
+      "coreTest": "packages/core/test/http.test.js",
+      "note": "No direct upstream HTTP helper suite: local helper behavior tests exercise protocol invariants observed through source OAuth endpoints; case bodies are not claimed to be upstream copies.",
+      "portable": [
+        {
+          "title": "accepts only configured HTTPS origins, never caller Host headers",
+          "minimumExpects": 2
+        },
+        {
+          "title": "writes no-store, nosniff, correct JSON/string responses",
+          "minimumExpects": 5
+        },
+        {
+          "title": "HTML-escapes untrusted account names and reflects no markup",
+          "minimumExpects": 2
+        },
+        {
+          "title": "parses GET, JSON and form inputs without accepting arrays or invalid bodies",
+          "minimumExpects": 4
+        },
+        {
+          "title": "refuses unallowed methods with 405 and Allow header",
+          "minimumExpects": 5
+        }
+      ],
+      "serverOwned": []
     }
   }
 }
