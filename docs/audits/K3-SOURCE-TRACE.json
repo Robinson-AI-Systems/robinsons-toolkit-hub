@@ -88,14 +88,16 @@
       "sourceFile": "src/core/mcp-auth.js",
       "sourceBlob": "eea535069b2179dfa74ed4ad101abacd5789dea0",
       "target": "./src/mcp-auth.js",
-      "coreBlob": "88f02bf11a1d5cf9509495e637627ec9217a55af",
+      "coreBlob": "17393062a6b020b5bb3729ac1c837c5a4e8c7887",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-auth.test.js",
-        "packages/core/test/integration-boundary.test.js"
+        "packages/core/test/integration-boundary.test.js",
+        "packages/core/test/mcp-auth-projection-isolation.test.js"
       ],
       "serverOwned": [
-        "durable token lookup, expiration and connection projection"
+        "durable token lookup, expiration and connection projection",
+        "adapter projection remains service-authored; core now refuses credential-named fields, echoed bearer, active getters, mutable nested identities and oversized claims"
       ]
     },
     "./one-time-secrets": {
