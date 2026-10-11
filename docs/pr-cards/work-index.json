@@ -205,12 +205,15 @@
         "D-1"
       ],
       "card": "docs/pr-cards/D-2.md",
-      "status": "APPROVED",
+      "status": "MERGED",
       "units": [
         "D-2"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#16"
+      ]
     },
     {
       "id": "D-3",

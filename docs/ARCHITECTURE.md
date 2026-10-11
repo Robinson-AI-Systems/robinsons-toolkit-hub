@@ -5,6 +5,14 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in D-2 (PR #16)
+
+| What | Where | Notes |
+|---|---|---|
+| Local stdio MCP | packages/cli/src/mcp.js | MCP JSON-RPC 2.0 (2025-11-25), one UTF-8 JSON message per line. Handles initialize, ping, tools/list, tools/call. No stdout logs or secrets. |
+| Six broker tools per service | alias_search, alias_describe, alias_call, alias_batch, alias_result, alias_whoami | Service-alias prefix, tiny schemas rather than thousands of provider schemas; runtime server remains safety authority. |
+| Two-server integration | packages/cli/test/mcp.test.js | Two separate RTC loopback servers prove direct read, guarded writes and denial; catalog under 5000 estimated tokens. |
+
 ## Built in D-1 (PR #15)
 
 | What | Where | Notes |
@@ -33,7 +41,7 @@ Cross-platform native invocation plans are unit-tested, but actual device smoke 
 | Agent guidance | packages/cli/src/setup.js | rtool skill and init, managed AGENTS.md block, refuses symlinks and malformed managed blocks. Only direct HTTPS claimed until relay exists. |
 | Tested standalone SDK | packages/cli/test/sdk-setup.test.js | Live fake-server calls through generated functions; read-only/confirmation and no-pass persistence exercised. |
 
-**Not built:** relay, local MCP, hosted hub.
+**Not built:** GitHub relay and hosted hub; local MCP is now built.
 Next D-1 finishes keychain and release readiness.
 
 ## Built in D-1a (PR #12)

@@ -118,3 +118,11 @@ verification and immutable cli-v1 tag. No acceptance is dropped; user-approved
 is independently reviewed as an authorization boundary. D-1 retains the TypeScript
 SDK compiler check, all-door acceptance and cli-v1 tag. Actual device smoke checks
 must not be confused with CI mocks of the native adapter invocation plans.
+
+**2026-10-11 — D-2 compact MCP tool design clarification.** The local stdio
+door presents six tiny alias-prefixed broker tools per configured authorized
+server instead of every provider schema, preserving the original cheap-discovery
+intent. A broker call forwards unmodified tool arguments/confirmation to that
+server's HTTPS door and must not implement a shadow authorization policy.
+Use the published 2025-11-25 MCP stdio JSON-RPC framing and never write
+non-protocol output to stdout.
