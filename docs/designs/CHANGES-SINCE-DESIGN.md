@@ -14,3 +14,8 @@ Production env is unset; deployment and real passes remain owner-gated.
 D-4 inherits direct-first CLI/MCP routes and docs/RELAY-DEPLOY.md. Runner must use
 read-only tools and env-named passes; no real pass, production smoke or fake live
 claim. Unknown write outcomes require service change-log inspection.
+
+## D-4a — 2026-10-11
+D-4 real-run card remains owner-gated. K-3 implementer must verify the current
+Stripe repo A–C and actual core candidates before writing its JIT extraction card.
+Five-PR concise handoff is permanent; this session explicitly stops at #20.
