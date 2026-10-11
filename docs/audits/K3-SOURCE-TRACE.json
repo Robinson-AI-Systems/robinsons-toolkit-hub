@@ -120,7 +120,8 @@
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
-        "packages/core/test/integration-boundary.test.js"
+        "packages/core/test/integration-boundary.test.js",
+        "packages/core/test/oauth-compat.test.js"
       ],
       "serverOwned": [
         "owner login UI, account grants and refresh settings SQL",
