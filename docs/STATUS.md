@@ -27,6 +27,9 @@ or server).
 
 ## Recent merges (newest first)
 
+**2026-10-10 — CI cadence (docs + CI config PR):** never push while a PR's CI run is in progress (SESSION-START §6,
+PLAYBOOK Step 5); obsolete PR runs are cancelled, runs on `main` never are. Next action unchanged.
+
 **2026-10-10 — K-0 repository foundation and proven CI (PR #5):** `package.json` (Node 24.x, npm workspaces
 `packages/*`, exact versions, committed lockfile); `npm run check` = secret scan with hub rules (passes, relay keys,
 GitHub tokens, every server's service keys), docs check (code needs STATUS + card; CONTRACT needs DECISIONS), index
