@@ -5,6 +5,15 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3a (PR #22)
+
+`packages/core` (private, unshipped) copies Stripe MCP `src/core/oauth.js` and
+`crypto.js` unchanged at source main `09ed53a048820989a3f69c057ebf8a6be0c2a988`.
+Public subpath exports `./oauth` and `./crypto` require no SDK or provider account.
+Security tests retain upstream assertions; the login store is injected only in
+unit tests. Distributed lockout remains the adopting server's SQL responsibility.
+No release, adoption, secret, or production capability exists from this slice.
+
 ## Built in D-4a (PR #20)
 
 | What | Where | Notes |
