@@ -1,0 +1,103 @@
+// Protocol-only OAuth endpoints: the owner login UI, account selection and SQL policy live in each service.
+// No access to a provider, no default profile/mode and no access-token use outside the service.
+import { randomToken, hashToken, secretsMatch, verifyPkce, validRedirectUri } from './oauth.js';
+import { publicOrigin, send, paramsOf, only } from './http.js';
+
+const bad = (res, status, error, message) =>
+  send(res, status, { error, error_description: message });
+const str = value => typeof value === 'string' ? value : '';
+const tokenResponse = (access, refresh) => ({
+  access_token: access, token_type: 'Bearer', expires_in: 3600, refresh_token: refresh
+});
+const defaultPaths = Object.freeze({ mcp: '/api/mcp', authorize: '/api/oauth/authorize',
+  token: '/api/oauth/token', register: '/api/oauth/register' });
+
+export function createOAuthProtocolHandlers({ db, env = process.env, paths = defaultPaths, buildAccessRow }) {
+  for (const name of ['createOAuthClient','getOAuthClient','consumeAuthCode','createAccessToken','rotateRefreshToken']) {
+    if (typeof db?.[name] !== 'function') throw new TypeError('Durable OAuth storage is required: '+name);
+  }
+  if (typeof buildAccessRow !== 'function') {
+    throw new TypeError('Server-owned access-token claim mapping is required');
+  }
+  for (const key of ['mcp','authorize','token','register']) {
+    if (typeof paths?.[key] !== 'string' || !/^\/(?!\/)[a-zA-Z0-9/_-]+$/.test(paths[key])) {
+      throw new TypeError('Only absolute local OAuth route paths are supported');
+    }
+  }
+  function resource() { return publicOrigin(env) + paths.mcp; }
+  function origin() { return publicOrigin(env); }
+  async function register(req, res) {
+    if (!only(res, req, ['POST'])) return;
+    let p;
+    try { p=paramsOf(req); } catch { return bad(res,400,'invalid_client_metadata','Malformed registration'); }
+    if (!Array.isArray(p.redirect_uris) || p.redirect_uris.length<1 || p.redirect_uris.length>8 ||
+      !p.redirect_uris.every(x=>typeof x==='string' && validRedirectUri(x)) ||
+      new Set(p.redirect_uris).size !== p.redirect_uris.length) {
+      return bad(res,400,'invalid_client_metadata','One to eight valid, distinct redirect URIs required');
+    }
+    if (p.token_endpoint_auth_method && p.token_endpoint_auth_method !== 'client_secret_post') {
+      return bad(res,400,'invalid_client_metadata','Only client_secret_post is supported');
+    }
+    const id=randomToken(24), secret=randomToken(32);
+    await db.createOAuthClient({clientId:id,clientSecret:secret,redirectUris:p.redirect_uris,
+      clientName:str(p.client_name).slice(0,100)});
+    return send(res,201,{client_id:id,client_secret:secret,client_secret_expires_at:0,
+      redirect_uris:p.redirect_uris,token_endpoint_auth_method:'client_secret_post',
+      grant_types:['authorization_code','refresh_token'],response_types:['code']});
+  }
+  async function token(req, res) {
+    if (!only(res, req, ['POST'])) return;
+    let p;
+    try { p=paramsOf(req); } catch { return bad(res,400,'invalid_request','Malformed token request'); }
+    if (p.resource !== resource()) {
+      return bad(res,400,'invalid_target','Token resource must be this MCP');
+    }
+    const client=await db.getOAuthClient(str(p.client_id));
+    if (!client || typeof p.client_secret!=='string' || !p.client_secret ||
+      !secretsMatch(hashToken(p.client_secret), client.client_secret_hash)) {
+      return bad(res,401,'invalid_client','Client credentials rejected');
+    }
+    if (p.grant_type === 'authorization_code') {
+      if (!p.code || !client.redirect_uris.includes(p.redirect_uri) || !p.code_verifier) {
+        return bad(res,400,'invalid_grant','Missing or invalid authorization details');
+      }
+      const record=await db.consumeAuthCode(p.code);
+      if (!record || record.client_id!==p.client_id || record.redirect_uri!==p.redirect_uri ||
+        !verifyPkce(p.code_verifier,record.code_challenge,record.code_challenge_method)) {
+        return bad(res,400,'invalid_grant','Code is expired, used, or failed PKCE');
+      }
+      const accessToken=randomToken(32),refreshToken=randomToken(32);
+      const mapped=await buildAccessRow({accessToken,refreshToken,clientId:p.client_id,grant:record});
+      if (!mapped || typeof mapped!=='object' || Array.isArray(mapped)) {
+        return bad(res,400,'invalid_grant','Connection settings cannot be issued');
+      }
+      await db.createAccessToken(mapped);
+      return send(res,200,tokenResponse(accessToken,refreshToken));
+    }
+    if (p.grant_type==='refresh_token') {
+      if (!str(p.refresh_token)) return bad(res,400,'invalid_grant','Missing refresh token');
+      const accessToken=randomToken(32),refreshToken=randomToken(32);
+      // Only the durable store may rotate a token; it must copy account/profile/mode/listing.
+      const rotated=await db.rotateRefreshToken({refreshToken:p.refresh_token,clientId:p.client_id,
+        accessToken,newRefreshToken:refreshToken});
+      if (!rotated) {
+        return bad(res,400,'invalid_grant','Refresh credential is expired, used, or revoked');
+      }
+      return send(res,200,tokenResponse(accessToken,refreshToken));
+    }
+    return bad(res,400,'unsupported_grant_type','Supported grants: authorization_code and refresh_token');
+  }
+  function metadata(req,res) {
+    if (!only(res,req,['GET'])) return;
+    const base=origin();
+    return send(res,200,{issuer:base,authorization_endpoint:base+paths.authorize,
+      token_endpoint:base+paths.token,registration_endpoint:base+paths.register,
+      response_types_supported:['code'],grant_types_supported:['authorization_code','refresh_token'],
+      code_challenge_methods_supported:['S256'],token_endpoint_auth_methods_supported:['client_secret_post']});
+  }
+  function resourceMetadata(req,res) {
+    if (!only(res,req,['GET'])) return;
+    return send(res,200,{resource:resource(),authorization_servers:[origin()]});
+  }
+  return Object.freeze({register,token,metadata,resourceMetadata});
+}
