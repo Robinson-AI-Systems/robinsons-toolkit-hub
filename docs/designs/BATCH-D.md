@@ -126,3 +126,10 @@ intent. A broker call forwards unmodified tool arguments/confirmation to that
 server's HTTPS door and must not implement a shadow authorization policy.
 Use the published 2025-11-25 MCP stdio JSON-RPC framing and never write
 non-protocol output to stdout.
+
+**2026-10-11 — D-3 split into D-3a and D-3.** The client-side authenticated
+X25519 relay envelope and GitHub ciphertext-only issue comment transport
+are isolated as D-3a. D-3 completes the signed webhook server, atomic
+database replay resistance, forwarding, reply encryption, cleanup and CLI
+fallback wiring. Relay repo creation, keys and production deployment are
+owner gates and do not justify unsafe or placeholder code.

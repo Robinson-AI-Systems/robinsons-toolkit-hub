@@ -5,6 +5,11 @@ the central hub server and relay are not yet built.
 
 ## Next
 
+- **D-3a merged (#17):** X25519/AES-256-GCM authenticated request/reply relay envelopes,
+  ciphertext-only GitHub issue comment transport, bounded polling and comment cleanup.
+- **Next:** D-3 webhook verification, persisted anti-replay and Vercel handler, with
+  fake GitHub tests and a local Postgres database. Deployment/private relay repository
+  remain owner-gated; do not claim deployed or connected.
 - **D-2 merged (#16):** rtool mcp exposes compact, server-alias-prefixed local
   broker tools over JSON-RPC stdio, with server-owned guard enforcement. The two
   local HTTP fake services are tested for read, write confirmation and refusal.
@@ -35,6 +40,12 @@ the central hub server and relay are not yet built.
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-3a encrypted relay client (#17):** random request IDs, ephemeral
+X25519 exchange, authenticated ciphertext, symmetric encrypted reply key delivered
+only inside sealed payload; GitHub receives envelopes rather than secrets, and both
+comments are deleted after a successful encrypted reply. No real GitHub token used.
+
 
 **2026-10-11 — D-2 local MCP (#16):** newline-delimited JSON-RPC 2.0 stdio
 server, deterministic tool listing, two-server calls with real RTC HTTP passes,
