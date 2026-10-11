@@ -5,6 +5,9 @@ the central hub server and relay are not yet built.
 
 ## Next
 
+- **D-1c as merged (#14):** OS keychain adapters, hidden pass input, guarded login/logout,
+  with environment passes taking precedence and missing keychains handled safely.
+- **Next:** D-1 TypeScript SDK typecheck and cli-v1 release, then D-2 local MCP.
 - **D-1b merged (#13):** SDK generation from service metadata, verified guarded SDK calls,
   rtool skill and managed agent init (preserves existing AGENTS instructions).
 - **Next:** D-1 secure OS keychain login and full CLI/type-check verification, then D-2 local MCP.
@@ -20,6 +23,11 @@ the central hub server and relay are not yet built.
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — D-1c secure OS credential manager (#14):** Linux Secret Service,
+macOS Keychain and Windows Credential Manager native adapters with no secret argv
+or plaintext secret files. Real hardware keychain smoke tests remain to be performed.
+
 
 **2026-10-11 — D-1b SDK and agent setup (#13):** generated typed SDK from real RTC tool
 metadata; zero persisted passes; real SDK read and guarded write tests; controlled AGENTS.md

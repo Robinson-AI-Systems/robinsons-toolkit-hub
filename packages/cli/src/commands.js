@@ -1,11 +1,13 @@
 // rtool's direct HTTPS commands. No hub required; every write uses the server's guard.
 import { open } from 'node:fs/promises';
 import { loadServers, displayServers, RouteError } from './config.js';
-import { ToolError } from './http.js';
+import { ToolError, httpRequest } from './http.js';
 import { selectServer, byName, send } from './dispatch.js';
 import { toolPages, materialize } from './pages.js';
 import { generateSdk } from './sdk.js';
 import { routeSummary, writeAgentSetup, writeSkill, SKILL } from './setup.js';
+import { makeKeychain, addStoredPasses } from './keychain.js';
+import { readHiddenPass } from './input.js';
 
 const usage = [
   'rtool servers',
@@ -17,7 +19,9 @@ const usage = [
   'rtool result <server> <handle> [--out FILE]',
   'rtool sdk <server> [--out NEW_DIRECTORY]',
   'rtool init [--out PROJECT_DIRECTORY]',
-  'rtool skill [--out PROJECT_DIRECTORY]'
+  'rtool skill [--out PROJECT_DIRECTORY]',
+  'rtool login <server> (hidden stdin, OS keychain)',
+  'rtool logout <server> (remove local keychain entry)'
 ].join('\n');
 const optionsWithValue = new Set(['--args', '--fields', '--detail', '--out', '--area', '--limit']);
 const flags = new Set(['--dry-run', '--confirm']);
@@ -101,7 +105,7 @@ async function directTools(servers, env, names, options, write) {
   if (!attempted) throw new RouteError('No configured server with a pass can list tools');
 }
 export async function runCLI(argv = [], { env = process.env, out = process.stdout, err = process.stderr,
-  reader } = {}) {
+  reader, keychain, passReader = readHiddenPass } = {}) {
   const write = (value) => out.write(value);
   const warning = (value) => err.write(value);
   try {
@@ -110,6 +114,23 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       write(usage + '\n'); return 0;
     }
     const servers = await loadServers(env, reader);
+    const vault = keychain || makeKeychain({ env });
+    if (command === 'login' || command === 'logout') {
+      if (words.length !== 1) throw new ToolError('Usage: rtool ' + command + ' <server>');
+      const server = byName(servers, env, words[0]);
+      if (command === 'logout') {
+        const removed = await vault.delete(server.name);
+        write(removed ? 'Local stored pass deleted; server pass remains active until revoked\n' :
+          'No local stored pass found; server pass remains active until revoked\n');
+        return 0;
+      }
+      const pass = await passReader();
+      await httpRequest(server.url, pass, '/api/whoami');
+      await vault.set(server.name, pass);
+      write('Verified pass stored in OS keychain for ' + server.name + '\n');
+      return 0;
+    }
+    env = await addStoredPasses(servers, env, vault);
     if (command === 'servers') {
       ensureCount(words, 0, 'rtool servers');
       await output({ servers: displayServers(servers, env) }, {}, write);

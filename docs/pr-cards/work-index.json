@@ -159,12 +159,31 @@
       ]
     },
     {
+      "id": "D-1c",
+      "title": "Secure native OS credential-manager login",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "D-1b"
+      ],
+      "card": "docs/pr-cards/D-1c.md",
+      "status": "MERGED",
+      "units": [
+        "D-1c"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#14"
+      ]
+    },
+    {
       "id": "D-1",
       "title": "rtool CLI, multi-server config, SDK, skill, init",
       "batch": "D",
       "design": "docs/designs/BATCH-D.md",
       "dependencies": [
-        "D-1b"
+        "D-1c"
       ],
       "card": "docs/pr-cards/D-1.md",
       "status": "APPROVED",
