@@ -67,7 +67,7 @@ describe('rtool SDK and agent setup', () => {
       expect(text).toContain('one');
       expect(text).toContain('relay');
       expect((await writeAgentSetup({ dir, servers, env })).changed).toBe(false);
-      expect(reconcileAgentText('<!-- RTOOL:BEGIN --> broken', 'new')).toThrow();
+      expect(() => reconcileAgentText('<!-- RTOOL:BEGIN --> broken', 'new')).toThrow();
       const skillPath = await writeSkill({ dir });
       expect(await readFile(skillPath, 'utf8')).toBe(SKILL);
       await expect(writeSkill({ dir })).rejects.toThrow();

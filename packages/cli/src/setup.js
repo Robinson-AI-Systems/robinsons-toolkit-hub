@@ -22,7 +22,7 @@ export function routeSummary(servers, env = process.env) {
   }));
 }
 function section(servers, env) {
-  return [BEGIN, '### Robinson Toolkit (rtool)', '',
+  return [BEGIN, '### Robinson Toolkit (RTC / rtool)', '',
     'Discover only real tools: rtool servers; rtool tools ALIAS; rtool describe ALIAS.TOOL.',
     'To call: rtool call ALIAS.TOOL --args JSON; for writes use --dry-run first.',
     'Never include passes in this file. The remote server enforces confirmation.',
