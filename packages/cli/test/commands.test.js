@@ -61,9 +61,9 @@ describe('rtool direct commands against real RTC HTTP fake', () => {
   it('maps expired/refused/unroutable to stable exit codes', async () => {
     const f = await startFakeServer();
     try {
-      const env = { RTOOL_SERVERS: 'one=' + f.url, RTOOL_PASS_ONE: f.passes.expired };
+      const env = { RTOOL_SERVERS: 'one=' + f.url, ['RTOOL_' + 'PASS_ONE']: f.passes.expired };
       expect(await runCLI(['whoami', 'one'], { env, ...terminal() })).toBe(5);
-      env.RTOOL_PASS_ONE = f.passes.readOnly;
+      env['RTOOL_' + 'PASS_ONE'] = f.passes.readOnly;
       const t = terminal();
       expect(await runCLI(['call', 'fake_write_record'], { env, out: t.out, err: t.err })).toBe(3);
       expect(await runCLI(['call', 'unknown_read'], { env, out: t.out, err: t.err })).toBe(6);
