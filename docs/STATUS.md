@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3n (PR #35, as-if-merged):** reproducible local offline pack evidence now checks exact tarball file list, SHA1/size and SHA256, with tamper/extra-file negatives; it prints explicit NOT RELEASED/NOT READY status. Two adoption handoffs specify the independent Stripe and Workspace server verification sequence, including separate owner money consent and SQL proof. **Next:** reconcile complete original source assertion parity and amended adapter semantics, authorize and verify an actual GitHub Release only once all gates pass. K-3 stays IN_PROGRESS. D-4 remains WAITING_ON_OWNER.
+
 - **K-3m (PR #34, as-if-merged):** pinned, machine-verified source provenance for all 11 public core modules at Stripe main 60877ae: five byte-identical exports and six explicit service-adapted boundaries. CI now fails on undocumented local source changes or missing export/test mapping and never treats the private package as released. **Next:** complete adoption/release verification and source assertion parity; K-3 remains IN_PROGRESS.
 
 - **K-3l (PR #33, as-if-merged):** disposable PostgreSQL integration proof now exercises cross-pool atomic consume-once encrypted secrets, expired/AAD-mismatched refusal, shared login lockouts and expiry, and connection-scoped oversized result storage. These are fixture adapters using independent pools, not a production migration or source-service adoption; K-3 remains IN_PROGRESS. **Next:** source-specific assertion parity and complete release gating before any publication.

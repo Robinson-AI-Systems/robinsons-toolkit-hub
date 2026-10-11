@@ -17,7 +17,8 @@
     "test:db": "bash scripts/local-postgres-test.sh",
     "test:conformance": "vitest run packages/conformance/test",
     "test:doors": "vitest run packages/cli/test",
-    "test:types": "vitest run packages/cli/test/typescript.test.js"
+    "test:types": "vitest run packages/cli/test/typescript.test.js",
+    "core:evidence": "node scripts/core-artifact-evidence.mjs"
   },
   "devDependencies": {
     "eslint": "10.12.0",
