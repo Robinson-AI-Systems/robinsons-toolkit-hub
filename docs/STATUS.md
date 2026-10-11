@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3p (PR #38, as-if-merged):** portable OAuth protocol now refuses a server claim mapper or durable refresh adapter that substitutes an issued access token, refresh token or client ID. Source-style grant and refresh tests verify preserved service-selected claims, replay denial and failed stores; source owner login UI and durable SQL still require service-owned adoption. K-3 IN_PROGRESS; no release or production activation.
+
 - **K-3o (PR #37, as-if-merged):** pinned offline assertion inventory for all five byte-identical core exports, with 21 locally enforced cases across the five verbatim exports and four explicitly server-owned cases. Root check now rejects missing, skipped or reduced local tests; actual assertion-body equivalence, six adapted boundaries and source service adoption still require further proof. Next: adapted OAuth, bearer, write and dispatch compatibility; core remains private and K-3 IN_PROGRESS. D-4 stays WAITING_ON_OWNER.
 
 - **K-3n (PR #35, as-if-merged):** reproducible local offline pack evidence now checks exact tarball file list, SHA1/size and SHA256, with tamper/extra-file negatives; it prints explicit NOT RELEASED/NOT READY status. Two adoption handoffs specify the independent Stripe and Workspace server verification sequence, including separate owner money consent and SQL proof. **Next:** reconcile complete original source assertion parity and amended adapter semantics, authorize and verify an actual GitHub Release only once all gates pass. K-3 stays IN_PROGRESS. D-4 remains WAITING_ON_OWNER.
