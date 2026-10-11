@@ -5,6 +5,13 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3b (PR #23, as-if-merged):** extracted Stripe's source-identical
+  registry and HTTP helpers into private `packages/core`. Dedicated tests
+  check duplicate/missing handlers, HTTPS issuer, response headers, safe input
+  parsing and 405. K-3 remains IN_PROGRESS, no tarball released.
+  Next K-3c: metadata/write declaration portability and policy separation.
+
+
 - **K-3a portable security core (PR #22, as-if-merged):** `packages/core` now has
   source-identical Stripe OAuth primitives and AES-GCM secret encryption, with
   upstream assertion bodies and a small injected login-store fixture. This is a
