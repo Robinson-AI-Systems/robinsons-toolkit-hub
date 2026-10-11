@@ -16,7 +16,7 @@ Words: **server** = one service server (e.g. `stripe-mcp`). **Hub** = Robinson's
 | Door | Path | Who uses it |
 |---|---|---|
 | MCP connector | `POST /api/mcp` (Streamable HTTP), OAuth 2.1 + PKCE login at `/api/oauth/*` with discovery at `/.well-known/*` | claude.ai and other MCP clients |
-| HTTPS tool API | `GET /api/tools?q&area&limit`, `GET /api/tools/{name}`, `POST /api/tools/{name}`, `POST /api/tools/_batch`, `GET /api/results/{handle}`, `GET /api/whoami` | The hub, HTTP-only agents, the `rtool` CLI |
+| HTTPS tool API | `GET /api/tools?q&area&limit`, `GET /api/tools/{name}`, `POST /api/tools/{name}`, `POST /api/tools/_batch`, `GET /api/results/{handle}`, `GET /api/whoami`, `GET /api/openapi.json` (≤30 documented meta/workflow operations) | The hub, HTTP-only agents, the `rtool` CLI |
 | Contract manifest | `GET /api/contract` → `{ rtc: 1, server, prefix, version, apiVersion?, areas[], counts: { tools, writes, money }, profiles[], listingModes[], modes[] (e.g. `test`, `live` or `preview`, `production`), devTools: boolean }` (no auth) | The hub, the conformance test |
 
 The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built once in this repo), not server doors.
@@ -32,6 +32,11 @@ The CLI, the GitHub relay, the code SDK and local MCP are **hub** doors (built o
   chat. Each pass carries: profile, allowed areas, `allow_writes` (default false), live/production access where the server
   has such a concept (default off), money limit where money exists (default $0), expiry (default 24 h, max 30 days; the
   hub's own pass may be longer, see §8). Listed with the server's connections tool and revocable instantly.
+- Pass values use a recognisable wire format: `rtc_pass_` followed by exactly 43 unpadded base64url characters
+  (32 cryptographically random bytes). Create them with a cryptographically secure generator; never derive them from
+  account identifiers, use them in examples or test fixtures, or place them in logs. Scanners in every server
+  must reject a real-looking value by shape, whether or not it appears beside a known variable or Bearer header.
+  During testing a runner supplies passes through named **environment variables only**, never command-line values.
 - The HTTPS tool API accepts passes only (`Authorization: Bearer <pass>`); the MCP door accepts connector tokens.
 - **Rate limits are shared across instances.** Servers run on serverless hosts where each instance has its own memory, so
   a per-pass or per-address limit (including the login lockout) is counted in the server's database with one atomic
@@ -112,6 +117,39 @@ revoked passes refused; a refreshed connector token keeps its settings; every to
 sends **overlapping** calls split between them (more than the limit, all at once), expecting exactly the limit to
 succeed and the rest `rate_limited` — so neither one warm process nor a read-then-update counter can pass; against a single
 deployed URL this check is skipped and reported as such, and each server also keeps its own two-instance database test); no key-shaped strings in any response; listing budgets. Each server runs it in its own CI.
+
+### Named conformance probes (RTC 1 freeze: 2026-10-11)
+
+`packages/conformance` reports `{ ok, checks: [{ name, ok, skipped?, message }] }`. Every check has a stable
+name below and reports a plain failure explaining the violated rule. The runner accepts `--pass-env RTC_PASS`,
+`--read-only-pass-env`, `--expired-pass-env`, and `--revoked-pass-env`: each option is an **environment-variable
+name**, not a pass value. It never prints any supplied pass. No role pass supplied means its check is
+`skipped: true, ok: false` with a reason; **skipped is not passed**, and the overall `ok` is false unless all
+applicable required checks pass. A CLI invocation with missing required role passes exits nonzero rather than
+certifying the server. The two-instance test requires two processes sharing one throwaway database; when only
+one deployed URL is supplied its result is explicitly `skipped`, not a successful rate-limit test.
+
+| RTC requirement | Named test / card |
+|---|---|
+| §1 public manifest, prefix, doors, declared version | `manifest`, `meta` (K-2) |
+| §1 optional OpenAPI entry and bounded operation count | `manifest.openapi` (K-2) |
+| §2 pass-only HTTPS authorization; restricted, expired and revoked passes | `passes` (K-2) |
+| §2 OAuth refresh retains settings | `oauth.refresh_settings` (K-2b) |
+| §2 login lockout and per-pass rate limits shared across instances | `limits.two_instance` (K-2b); server DB test for 5/15-minute lockout |
+| §2 pass entropy, one-time display and 24h/30d/365d bounds | server pass-issuance/secret-scan tests, with conformance `safety` (K-2) |
+| §3 prefix, metadata, annotations, descriptions, audience | `catalog` (K-2) |
+| §4 search, describe, guarded call, reads-only batch, handle, whoami | `meta` (K-2) |
+| §5 catalog/compact listing and selected profile filters | `budget`, `catalog` (K-2) |
+| §6 preview, confirmation, read-back, idempotency and change log | `writes` (K-2); server-specific idempotency test |
+| §7 envelopes, fields/detail, pagination, 8 KB handles and ownership | `reads`, `safety` (K-2); server result-store ownership test |
+| §7 money minor units and local-time rendering | server money/time formatting tests where applicable |
+| §8 hub refuses unknown RTC and duplicate prefixes, narrows passes, logs forwarding | hub federation and pass tests (H-2 to H-5), not a service-server probe |
+| §9 conformance against reference fake and deliberately broken variants | `fake-passes`, `negative`, `skips`, `cli` (K-2); two-instance faults (K-2b) |
+| §10 dev-only safe mode, run recording and precise cleanup | `developer` where `devTools: true` (K-2b or separate conformance card); per-server cleanup tests |
+| §11 owner overview, guided settings and owner-change guard | `owner` (K-2b or separate conformance card); per-server dashboard-map coverage test |
+
+A manifest advertising RTC 1 before this freeze is invalid. New or incompatible requirements **after** this
+freeze require a new RTC version and dated decision; service servers adopt such versions through their own cards.
 
 ## 10. Developer conventions (SHOULD for every server; MUST once a server offers `devTools`)
 

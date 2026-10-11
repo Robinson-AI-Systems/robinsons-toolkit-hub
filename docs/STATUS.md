@@ -1,15 +1,15 @@
 # STATUS — current work, blockers and next action
 
-Updated 2026-10-10. Plan written by Claude (Opus 5.5) in the Appliance Desk planning system. **Repository foundation
+Updated 2026-10-11. Plan written by Claude (Opus 5.5) in the Appliance Desk planning system. **Repository foundation
 built (K-0):** checks, unit and database test harnesses, CI with the `ci` gate. No product code yet (no package, door
 or server).
 
 ## Next
 
-- **Ready now (either order, may run in parallel):**
-  - **K-2 — conformance package and reference fake server** ([card](pr-cards/K-2.md), code, medium effort). Branch
-    `ai/<tool>/k-2-conformance` from `main`.
-  - **K-1 — contract final and kit docs** ([card](pr-cards/K-1.md), docs only, medium effort).
+- **Ready now:** **K-2 — conformance package and reference fake server** ([card](pr-cards/K-2.md),
+  code, medium effort). Branch `ai/<tool>/k-2-conformance` from latest `main`.
+- **K-1 complete (#9):** RTC 1 frozen; rule-to-check mapping, pass formats and skipped-check reporting documented;
+  five service plans checked and the token-shape secret scan hardened.
 - **Then:** K-2b (refresh keeps settings, two-instance rate limit; write its card at start), then D-1.
 - **Elsewhere in the program:** Stripe MCP is being built (A-1 … A-5a merged by Sol); Google Workspace MCP Phase 8 plan
   merged (its PR #28/#29). **GitHub, Vercel and Neon servers:** plans, gap checks against every older toolkit, and a
@@ -26,6 +26,12 @@ or server).
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — K-1 contract freeze (PR #9):** reviewed five server plans against RTC 1, mapped normative
+rules to named checks or server-owned tests, clarified the runner's environment-only role passes and
+honest skip handling. A secret-shape scanner rule detects real-looking RTC passes even outside known
+assignments. K-2 is the next implementation card. This entry is written as merged per PLAYBOOK Step 6.
+
 
 **2026-10-10 — CI cadence (docs + CI config PR):** never push while a PR's CI run is in progress (SESSION-START §6,
 PLAYBOOK Step 5); obsolete PR runs are cancelled, runs on `main` never are. Next action unchanged.

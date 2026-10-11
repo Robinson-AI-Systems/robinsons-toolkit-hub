@@ -70,6 +70,16 @@ API parameter, lint, outdated test expectations); no rule forcing a red PR to be
 end between actions. Added: SESSION-START §0 (finish open PRs first), §6 (problems vs real blockers, thin slices, a
 no-shell path with draft PRs, an exact recovery point at every push) and AGENTS rules 11–13.
 
+**2026-10-11 — K-1 freezes RTC 1 and makes conformance evidence explicit.** Reviewed Stripe Batch R, Workspace
+Phase 8 and the GitHub/Vercel/Neon Batch R plans; all five plan the same RTC 1 doors and guarded
+passes, while their rate defaults (Neon 60/minute; others 120/minute) deliberately differ per service.
+The source trees of all five showed no `/api/contract` implementation when checked for the freeze.
+Pass values use `rtc_pass_` plus 43 unpadded base64url characters from 32 random bytes, which secret scanners
+catch by shape. Conformance role passes are passed only through named environment variables; missing
+roles show `skipped`, never passed. The rule-to-test table names service-specific checks where a wire-level
+probe cannot prove one-time issuance, database behavior or owner dashboard coverage. A later contract
+change requires RTC 2 (or newer), not an in-place clarification.
+
 **2026-10-10 — CI cadence (from the implementing agent's review of its own CI use).** Every push runs the full CI on
 purpose (the merge gate must be green at the exact head). The waste was pushing fixes while a run was still going, which
 started overlapping full runs. Rule added to SESSION-START §6: never push while your PR's run is in progress; collect all
