@@ -37,7 +37,7 @@ describe('K-3 packed core portable consumer', () => {
       expect(contents.name).toBe('robinson-mcp-core');
       const packed = contents.files.map(f => f.path).sort();
       expect(packed).toEqual([
-        'package.json', 'src/crypto.js', 'src/http.js', 'src/mcp-auth.js', 'src/oauth.js', 'src/oauth-protocol.js', 'src/one-time-secrets.js',
+        'package.json', 'src/crypto.js', 'src/http.js', 'src/mcp-auth.js', 'src/mcp-dispatch.js', 'src/oauth.js', 'src/oauth-protocol.js', 'src/one-time-secrets.js',
         'src/profiles.js', 'src/registry.js', 'src/write-contract-check.js', 'src/write.js'
       ].sort());
       expect(contents.entryCount).toBe(packed.length);
@@ -46,7 +46,7 @@ describe('K-3 packed core portable consumer', () => {
       exec(npm, ['install', '--no-save', '--package-lock=false', '--ignore-scripts',
         '--offline', '--no-audit', '--no-fund', join(tmp, contents.filename)], consumer);
       const code = `
-        const [oauth, crypto, http, registry, profiles, write, auth, once, protocol, lifecycle] = await Promise.all([
+        const [oauth, crypto, http, registry, profiles, write, auth, once, protocol, lifecycle, dispatch] = await Promise.all([
           import('robinson-mcp-core/oauth'),
           import('robinson-mcp-core/crypto'),
           import('robinson-mcp-core/http'),
@@ -56,13 +56,15 @@ describe('K-3 packed core portable consumer', () => {
           import('robinson-mcp-core/mcp-auth'),
           import('robinson-mcp-core/one-time-secrets'),
           import('robinson-mcp-core/oauth-protocol'),
-          import('robinson-mcp-core/write')
+          import('robinson-mcp-core/write'),
+          import('robinson-mcp-core/mcp-dispatch')
         ]);
         if (typeof oauth.randomToken(12) !== 'string') throw Error('oauth');
         if (typeof crypto.encryptSecret !== 'function') throw Error('crypto');
         if (http.publicOrigin({ PUBLIC_BASE_URL: 'https://example.test' }) !== 'https://example.test') throw Error('http');
         if (registry.mergeNamespaces([{ tools:[{name:'fake_read'}],handlers:{fake_read:()=>1} }]).tools.length !== 1) throw Error('registry');
         if (!profiles.isToolAllowed({name:'fake_read',writes:false,profiles:['read_only']},'read_only')) throw Error('profiles');
+        if (typeof dispatch.createGuardedMcpDispatcher !== 'function') throw Error('dispatch');
         if (typeof lifecycle.defineWrite !== 'function') throw Error('lifecycle');
         if (typeof protocol.createOAuthProtocolHandlers !== 'function') throw Error('protocol');
         if (typeof once.createOneTimeSecretStore !== 'function') throw Error('once');
