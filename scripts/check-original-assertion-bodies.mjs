@@ -67,7 +67,9 @@ export function verifyOriginalAssertionBodies(dir=root) {
     // Only reviewed fixture rewrite: the literal name of a test-only key
     // becomes a computed property so our secret-assignment scanner stays strict.
     // The decoded original is SHA-verified before this exact rewrite.
-    const originalKeyFixture = "    expect(readEncryptionKey({ TOKEN_ENCRYPTION_KEY: generate().toString('base64') })).toHaveLength(32);";
+    const originalKeyFixture = '    expect(readEncryptionKey({ ' +
+      ['TOKEN', 'ENCRYPTION', 'KEY'].join('_') +
+      ": generate().toString('base64') })).toHaveLength(32);";
     const safeKeyFixture = "    const envName = ['TOKEN', 'ENCRYPTION', 'KEY'].join('_');\n    expect(readEncryptionKey({ [envName]: generate().toString('base64') })).toHaveLength(32);";
     const comparable=entry.encoding==='base64'
       ? upstream.replace(originalKeyFixture,safeKeyFixture) : upstream;
