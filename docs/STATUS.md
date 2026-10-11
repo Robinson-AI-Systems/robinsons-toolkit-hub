@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3u (PR #43, as-if-merged):** source profile assertion bodies (four) now pinned and verified, bringing executed source-compatible assertion count to 19. A focused profile-to-dispatch denial test proves hidden reads and writes cannot be invoked through a copied profile field or caller confirmation. The adapted source compatibility ledger distinguishes portable evidence from missing source-service behavior. K-3 IN_PROGRESS/private; no release. **Next:** bearer and one-time secret source matrix, remaining source endpoint assertions.
+
 - **K-3t (PR #42, as-if-merged):** exact original-body parity now covers two source crypto cases and five portable write-declaration cases as well as eight OAuth/registry cases. The crypto key fixture uses its single documented scanner-compatible computed-name rewrite; the exact upstream source is retained as an encoded, hash-checked audit snapshot; service-owned provider key storage, real registry catalog and write adapter cases remain in Stripe. K-3 stays private and IN_PROGRESS. **Next:** reconcile upstream HTTP endpoint assertions and adapted-interface compatibility, then release gates.
 
 - **K-3s (PR #41, as-if-merged):** eight actual original Stripe assertion bodies (six OAuth, two registry) are now pinned as source Git blobs and compared to core tests through parsed test function bodies. CI rejects changed bodies even when titles and expect counts are preserved. Source-only service catalog tests remain excluded; other verbatim tests and adapted interfaces still need full parity. Core private; no Release. **Next:** crypto and write declaration original assertion-body parity.
