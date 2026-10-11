@@ -26,7 +26,10 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
     try { permitted = !!item && (await authorizeTool(item, connection)) === true; }
     catch { permitted = false; }
     if (!permitted) return deny('Tool unavailable for this connection');
-    const handler = registry.handlers[name];
+    // Metadata alone cannot authorize inherited Object.prototype functions.
+    // An executable handler must be an explicitly registered own property.
+    const handler = Object.hasOwn(registry.handlers, name) ?
+      registry.handlers[name] : undefined;
     if (typeof handler !== 'function') return deny('Tool unavailable');
     try {
       const raw = await shapeResult(await handler(args, {
@@ -75,6 +78,12 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       const page = resultPage(body, 0);
       if (!page || typeof page !== 'object' || Array.isArray(page)) {
         return deny('Result cannot be securely paged for this connection.');
+      }
+      // A paging adapter may append page data, but may never replace the core's
+      // scoped handle, immutable byte count, retention or audit summary.
+      if (['handle','summary','totalBytes','records','expiresInHours'].some(key =>
+        Object.hasOwn(page,key))) {
+        return deny('Result page attempted to replace protected handle metadata.');
       }
       const answer = { handle, summary, totalBytes: body.totalBytes, records, expiresInHours: 24,
         ...page };
