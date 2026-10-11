@@ -1,4 +1,5 @@
 import { RouteError, passFor } from './config.js';
+import { relayRoute } from './relay-route.js';
 import { contract, httpRequest } from './http.js';
 
 export async function selectServer(servers, env, requested) {
@@ -6,10 +7,10 @@ export async function selectServer(servers, env, requested) {
   if (named) {
     const [name, tool] = named;
     if (!servers.has(name) || !tool) throw new RouteError('Unknown qualified tool: ' + requested);
-    return { name, tool, url: servers.get(name), pass: passFor(name, env) };
+    return { ...byName(servers, env, name), tool };
   }
   const discovery = await Promise.allSettled([...servers].map(async ([name, url]) => ({
-    name, url, prefix: (await contract(url)).prefix
+    name, url, prefix: (await contract(url, passFor(name, env), relayRoute(name, env, env.relayNotice))).prefix
   })));
   const candidates = discovery.filter((x) => x.status === 'fulfilled')
     .map((x) => x.value).filter((s) => requested.startsWith(s.prefix + '_'));
@@ -18,7 +19,7 @@ export async function selectServer(servers, env, requested) {
       'No configured server owns the tool prefix');
   }
   const { name, url } = candidates[0];
-  return { name, tool: requested, url, pass: passFor(name, env) };
+  return { ...byName(servers, env, name), tool: requested, url };
 }
 export function requirePass(server) {
   if (!server.pass) throw new RouteError('No pass configured for ' + server.name +
@@ -27,8 +28,8 @@ export function requirePass(server) {
 }
 export function byName(servers, env, name) {
   if (!servers.has(name)) throw new RouteError('Unknown configured server: ' + name);
-  return { name, url: servers.get(name), pass: passFor(name, env) };
+  return { name, url: servers.get(name), pass: passFor(name, env), fallback: relayRoute(name, env, env.relayNotice) };
 }
 export async function send(server, path, opts = {}) {
-  return httpRequest(server.url, requirePass(server), path, opts);
+  return httpRequest(server.url, requirePass(server), path, { ...opts, fallback: server.fallback });
 }

@@ -1,7 +1,7 @@
 // rtool's direct HTTPS commands. No hub required; every write uses the server's guard.
 import { open } from 'node:fs/promises';
 import { loadServers, displayServers, RouteError } from './config.js';
-import { ToolError, httpRequest } from './http.js';
+import { ToolError } from './http.js';
 import { selectServer, byName, send } from './dispatch.js';
 import { toolPages, materialize } from './pages.js';
 import { generateSdk } from './sdk.js';
@@ -115,6 +115,7 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
     if (!command || command === 'help' || command === '--help') {
       write(usage + '\n'); return 0;
     }
+    env = { ...env, relayNotice: warning };
     const servers = await loadServers(env, reader);
     const vault = keychain || makeKeychain({ env });
     if (command === 'login' || command === 'logout') {
@@ -127,7 +128,7 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
         return 0;
       }
       const pass = await passReader();
-      await httpRequest(server.url, pass, '/api/whoami');
+      await send({ ...server, pass }, '/api/whoami');
       await vault.set(server.name, pass);
       write('Verified pass stored in OS keychain for ' + server.name + '\n');
       return 0;

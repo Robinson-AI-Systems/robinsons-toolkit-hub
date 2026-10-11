@@ -262,12 +262,15 @@
         "D-3b"
       ],
       "card": "docs/pr-cards/D-3.md",
-      "status": "APPROVED",
+      "status": "MERGED",
       "units": [
         "D-3"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#19"
+      ]
     },
     {
       "id": "D-4",
