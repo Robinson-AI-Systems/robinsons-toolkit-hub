@@ -21,7 +21,7 @@ provider credential or server-repository mutation is authorized by this file.
 
 ## Additional verified source compatibility (partial)
 
-K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OAuth endpoint functions directly alongside portable adapter functions in CI, pinning original runtime Git blobs. This is in-memory differential evidence, **not** source service SQL/owner login adoption. Four service-owned OAuth HTTP endpoint cases, complete dispatch source differentials, final release-candidate evidence and actual GitHub Release remain open.
+K-3v/w now execute original Stripe MCP bearer, encrypted one-time secrets and OAuth endpoint functions directly alongside portable adapter functions in CI, pinning original runtime Git blobs. This is in-memory differential evidence, **not** source service SQL/owner login adoption. Four service-owned OAuth HTTP endpoint cases, direct original dispatch function tested with fake injected helpers; full source transport and service SQL still missing, final release-candidate evidence and actual GitHub Release remain open.
 
 ## Mandatory before any candidate is published
 
