@@ -5,6 +5,10 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3n (PR #35)
+
+`scripts/core-artifact-evidence.mjs` creates an offline temporary package, validates its exact vetted files and archive size/hash, reports SHA256, and deletes the candidate. This is pre-release integrity proof only: the package stays private and **no GitHub Release exists**. `docs/adoption/` contains proposed Stripe and Workspace steps; implementation in those standalone service repositories remains gated.
+
 ## Built in K-3m (PR #34)
 
 Source-to-core provenance is pinned in `docs/audits/K3-SOURCE-TRACE.json`. An offline `npm run check` verifier computes Git blob hashes of all public modules, validates mapped tests and the five identical/six adapted dispositions, and intentionally refuses a premature released status. No runtime, service route or production capability changes.
