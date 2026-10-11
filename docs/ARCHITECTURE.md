@@ -5,6 +5,10 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-3l (PR #33)
+
+The database suite now validates the core adapter contracts against throwaway Postgres with independent connection pools: single-use encrypted secrets, shared fifteen-minute login lockouts, and connection-scoped results. It never creates service migrations or provisions external infrastructure. Source servers must separately adopt and verify their own storage implementations.
+
 ## Built in K-3k (PR #32)
 
 Core distribution policy is now checked in every `npm run check`: explicit export/file closure, ESM-only source, private package, no external runtime dependencies, no source symlinks, no install scripts or dynamic import. Failing fixtures demonstrate enforcement. Not a release workflow and does not certify source behavior or production adoption.
