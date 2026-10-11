@@ -11,7 +11,7 @@
       "portable": [
         {
           "title": "generates unpredictable-looking tokens and returns stable hashes, never plaintext",
-          "minimumExpects": 6
+          "minimumExpects": 7
         },
         {
           "title": "requires S256 PKCE with a properly sized verifier, rejects plain or absent PKCE",
