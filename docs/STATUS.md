@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3r (PR #40, as-if-merged):** adapted MCP dispatch now rejects prototype-inherited handlers and any page adapter attempt to overwrite a core-generated result handle, byte count, record count, retention or summary. New compatibility tests cover scoped redacted oversized results, nested authorization and refused stores. `docs/audits/K3-RELEASE-GATES.md` records the original assertion/adapted-interface and actual GitHub Release verification prerequisites. GitHub Releases was empty when checked. K-3 remains IN_PROGRESS and private; next original source assertion-body parity and complete adapted matrix. D-4 stays WAITING_ON_OWNER.
+
 - **K-3q (PR #39, as-if-merged):** guarded write now refuses missing, fractional, negative and inconsistent provider-derived money preview metadata before independent owner approval, audit or provider mutation. Broken provider error classifiers are recorded as uncertain rather than escaping the audit lifecycle. Synthetic source-style safety regressions cover refusal, valid approval, uncertain outcome and read-back. Core still private; money consent and shared limits remain entirely service-owned. Next: complete compatibility/release prerequisites; K-3 IN_PROGRESS.
 
 - **K-3p (PR #38, as-if-merged):** portable OAuth protocol now refuses a server claim mapper or durable refresh adapter that substitutes an issued access token, refresh token or client ID. Source-style grant and refresh tests verify preserved service-selected claims, replay denial and failed stores; source owner login UI and durable SQL still require service-owned adoption. K-3 IN_PROGRESS; no release or production activation.

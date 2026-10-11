@@ -148,14 +148,16 @@
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "3e434c9dc9118003ad4905a0415a7d39cec7dc25",
+      "coreBlob": "c2b97e24f64f6437d2007737fac99ae7a7bd4a84",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
-        "packages/core/test/integration-boundary.test.js"
+        "packages/core/test/integration-boundary.test.js",
+        "packages/core/test/mcp-dispatch-compat.test.js"
       ],
       "serverOwned": [
-        "MCP HTTP transport, service policy, redaction and scoped results"
+        "MCP HTTP transport, service policy, redaction and scoped results",
+        "core refuses prototype-inherited handlers and page metadata override; server still owns MCP transport, scoped result SQL and redaction"
       ]
     }
   }
