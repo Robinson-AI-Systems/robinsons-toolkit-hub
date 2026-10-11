@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PassThrough } from 'node:stream';
 import { startFakeServer } from '../../conformance/fake-server/server.js';
-import { createLocalMcp, serveLocalStdio } from '../src/mcp.js';
+import { createLocalMcp } from '../src/mcp.js';
 import { runCLI } from '../src/commands.js';
 
 const message = (id, method, params = {}) => ({ jsonrpc: '2.0', id, method, params });
