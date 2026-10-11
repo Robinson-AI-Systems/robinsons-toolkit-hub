@@ -1,0 +1,26 @@
+# One-time immutable reference tag for RTC 1 conformance. Never runs on PR code.
+name: conformance-v1-tag
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/conformance/**'
+permissions:
+  contents: write
+jobs:
+  release-tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Tag conformance-v1 only if absent
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin refs/tags/conformance-v1 >/dev/null 2>&1; then
+            echo 'conformance-v1 exists and is immutable'
+            exit 0
+          fi
+          git tag conformance-v1 HEAD
+          git push origin refs/tags/conformance-v1

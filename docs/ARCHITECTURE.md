@@ -5,6 +5,17 @@ Updated in the same PR that ships behavior. Designs describe what is planned.
 As of 2026-10-11 (K-2): **the foundation and the executable conformance harness exist.** No Vercel project, Neon
 database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
 
+## Built in K-2b (PR #11)
+
+| What | Where | Notes |
+|---|---|---|
+| OAuth safety | packages/conformance/src/oauth.js | Local fixture adapter compares settings across token refresh; no debug endpoint in production. |
+| Shared limits | packages/conformance/src/rate-limit.js | Concurrent requests to two distinct loopback processes. |
+| Subprocess | packages/conformance/fake-server/instance.js | Atomic Postgres test counter, or deterministic failing in-memory variant. |
+| Release pointer | .github/workflows/tag-conformance.yml | Creates immutable conformance-v1 tag on main; no credentials stored. |
+
+Without both local fixtures the extended suite reports skips and cannot certify a server.
+
 ## Built in K-2 (PR #10)
 
 | What | Where | Notes |
@@ -25,6 +36,6 @@ database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04)
 
 ## Planned (not built)
 
-`packages/conformance` OAuth/two-instance extensions (K-2b), `packages/core` (K-3), `rtool` CLI and local MCP (D-1, D-2), the GitHub relay
+`packages/conformance` release tagged after K-2b, `packages/core` (K-3), `rtool` CLI and local MCP (D-1, D-2), the GitHub relay
 `api/relay/github.js` with table `relay_seen` (D-3), the hub server with `hub_servers` and `hub_change_log` (H), workflows
 (C), local tools (L). The `test:doors` script arrives with D-1; `test:conformance` is now real.

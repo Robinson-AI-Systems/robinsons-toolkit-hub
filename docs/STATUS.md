@@ -6,6 +6,9 @@ or server).
 
 ## Next
 
+- **K-2b complete (#11):** OAuth refresh keeps restrictions, and two actual server processes
+  prove shared atomic Postgres rate limits. A main-only workflow tags conformance-v1.
+- **Next:** D-1 direct CLI (JIT card from BATCH-D).
 - **K-2 complete (#10):** reference fake server, deterministic contract probes and CLI, fault tests
   and an actual conformance command for service-server CI.
 - **Next:** K-2b (OAuth refresh settings and two-server-instance database rate limit), then D-1.
@@ -27,6 +30,11 @@ or server).
 - Old toolkit `Robinson-AI-Systems/robinsons-toolkit-mcp`: reference only (no compatibility; Batch M dropped 2026-10-10).
 
 ## Recent merges (newest first)
+
+**2026-10-11 — K-2b authentication conformance (PR #11):** a local OAuth fixture checks
+profile/listing/areas/mode/account across refresh; its deliberate bug is detected.
+Real overlapping requests across two processes prove shared Postgres limits.
+
 
 **2026-10-11 — K-2 conformance and reference fake (PR #10):** actual localhost HTTP fake,
 secure pass-shape generation, read and guarded-write calls, fake-change log, handle isolation, deterministic
