@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3t (PR #42, as-if-merged):** exact original-body parity now covers two source crypto cases and five portable write-declaration cases as well as eight OAuth/registry cases. The only crypto fixture-environment alias was removed; service-owned provider key storage, real registry catalog and write adapter cases remain in Stripe. K-3 stays private and IN_PROGRESS. **Next:** reconcile upstream HTTP endpoint assertions and adapted-interface compatibility, then release gates.
+
 - **K-3s (PR #41, as-if-merged):** eight actual original Stripe assertion bodies (six OAuth, two registry) are now pinned as source Git blobs and compared to core tests through parsed test function bodies. CI rejects changed bodies even when titles and expect counts are preserved. Source-only service catalog tests remain excluded; other verbatim tests and adapted interfaces still need full parity. Core private; no Release. **Next:** crypto and write declaration original assertion-body parity.
 
 - **K-3r (PR #40, as-if-merged):** adapted MCP dispatch now rejects prototype-inherited handlers and any page adapter attempt to overwrite a core-generated result handle, byte count, record count, retention or summary. New compatibility tests cover scoped redacted oversized results, nested authorization and refused stores. `docs/audits/K3-RELEASE-GATES.md` records the original assertion/adapted-interface and actual GitHub Release verification prerequisites. GitHub Releases was empty when checked. K-3 remains IN_PROGRESS and private; next original source assertion-body parity and complete adapted matrix. D-4 stays WAITING_ON_OWNER.

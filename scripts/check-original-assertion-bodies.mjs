@@ -20,6 +20,19 @@ const sources = [
   { original:'docs/audits/upstream/registry.test.js', actual:'packages/core/test/registry.test.js',
     sha:'249c16a15a9b26a43ef3378c0c94e59644da2f23', titles:[
       'refuses duplicates across namespaces', 'refuses tools without a handler'
+    ] },
+  { original:'docs/audits/upstream/keys.test.js', actual:'packages/core/test/crypto.test.js',
+    sha:'b05a1fa49019d9bbcdfac23fb0ebcc286a7a23a9', titles:[
+      'requires an exact 32-byte encryption key, without a plaintext fallback',
+      'uses AES-256-GCM with unique nonces, context binding, and fails closed on tampering'
+    ] },
+  { original:'docs/audits/upstream/write-metadata.test.js', actual:'packages/core/test/write-source-parity.test.js',
+    sha:'46cf601b1dffee8bfc23ced5bbed3be9fd8cc0ef', titles:[
+      'fails when writes is absent or a string, even for harmless-sounding names',
+      'fails when a write omits dryRun or confirm, or declares the wrong type',
+      'fails money-out tools that lack a provider-derived spec even with confirmation',
+      'refuses writes with no trusted lifecycle, and read tools faking a money spec',
+      'rejects invalid registry shapes instead of treating them as zero tools'
     ] }
 ];
 export function gitBlobSha(text) {
@@ -58,7 +71,7 @@ export function verifyOriginalAssertionBodies(dir=root) {
       checked++;
     }
   }
-  if(checked!==8)throw new Error('Incomplete original assertion bodies');
+  if(checked!==15)throw new Error('Incomplete original assertion bodies');
   return checked;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
