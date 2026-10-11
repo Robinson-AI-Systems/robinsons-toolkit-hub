@@ -121,19 +121,38 @@
       "externalGates": []
     },
     {
+      "id": "D-1a",
+      "title": "rtool direct CLI, server config and guarded HTTPS calls",
+      "batch": "D",
+      "design": "docs/designs/BATCH-D.md",
+      "dependencies": [
+        "K-2"
+      ],
+      "card": "docs/pr-cards/D-1a.md",
+      "status": "MERGED",
+      "units": [
+        "D-1a"
+      ],
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#12"
+      ]
+    },
+    {
       "id": "D-1",
       "title": "rtool CLI, multi-server config, SDK, skill, init",
       "batch": "D",
       "design": "docs/designs/BATCH-D.md",
       "dependencies": [
-        "K-2"
+        "D-1a"
       ],
       "card": "docs/pr-cards/D-1.md",
       "status": "APPROVED",
       "units": [
         "D-1"
       ],
-      "readiness": "WRITE_CARD_AT_START",
+      "readiness": "READY",
       "externalGates": []
     },
     {

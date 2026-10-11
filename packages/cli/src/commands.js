@@ -1,7 +1,7 @@
 // rtool's direct HTTPS commands. No hub required; every write uses the server's guard.
 import { open } from 'node:fs/promises';
 import { loadServers, displayServers, RouteError } from './config.js';
-import { ToolError, httpRequest, errorCodeOf } from './http.js';
+import { ToolError } from './http.js';
 import { selectServer, byName, send } from './dispatch.js';
 import { toolPages, materialize } from './pages.js';
 

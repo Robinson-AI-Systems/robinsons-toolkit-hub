@@ -24,6 +24,7 @@
     "yaml": "2.9.1"
   },
   "bin": {
-    "rtc-conformance": "packages/conformance/bin/rtc-conformance.js"
+    "rtc-conformance": "packages/conformance/bin/rtc-conformance.js",
+    "rtool": "packages/cli/bin/rtool.js"
   }
 }

@@ -100,3 +100,9 @@ local machine (direct), a GitHub-only cloud workspace (relay) and a Vercel Sandb
 | Same guards through every door | write-contract through CLI, local MCP, relay |
 
 ## Amendments
+
+**2026-10-11 — D-1 split into D-1a and D-1 (implementation pacing).** D-1a owns
+the full direct HTTPS command surface, environment config, prefix routing, safe result handling
+and direct write-contract tests. D-1 retains OS keychain login, SDK generation, agent skill,
+init, final combined door verification and cli-v1 tag. This avoids crossing the hard ~800
+production-line limit while keeping coherent, tested PRs. No acceptance is dropped.

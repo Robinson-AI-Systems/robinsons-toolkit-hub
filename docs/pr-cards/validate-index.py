@@ -19,7 +19,7 @@ errors = []
 
 REQUIRED_BATCHES = ['K', 'D', 'H', 'C', 'L', 'S']
 REQUIRED_UNITS = set("""
-K-0 K-1 K-2 K-2b K-3 K-4 D-1 D-2 D-3 D-4 H-1 H-2 H-3 H-4 H-5 C-1 C-2 C-3 L-1 L-2 L-3 L-4 S-vercel S-neon S-github S-messaging
+K-0 K-1 K-2 K-2b K-3 K-4 D-1a D-1 D-2 D-3 D-4 H-1 H-2 H-3 H-4 H-5 C-1 C-2 C-3 L-1 L-2 L-3 L-4 S-vercel S-neon S-github S-messaging
 """.split())
 
 if len(BY_ID) != len(CARDS):
