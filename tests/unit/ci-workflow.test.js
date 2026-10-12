@@ -27,7 +27,7 @@ describe('.github/workflows/ci.yml', () => {
   });
   it('the aggregate ci job always runs, needs every job and requires each to be success', () => {
     const jobs = Object.keys(wf.jobs).filter((n) => n !== 'ci');
-    expect(jobs.sort()).toEqual(['check', 'db', 'stripe-source-sql', 'unit']);
+    expect(jobs.sort()).toEqual(['check', 'db', 'stripe-source-owner-http', 'stripe-source-sql', 'unit']);
     expect(wf.jobs.ci.if).toBe('always()');
     expect([...wf.jobs.ci.needs].sort()).toEqual(jobs);
     const script = wf.jobs.ci.steps.map((s) => s.run).join('\n');
@@ -52,6 +52,23 @@ describe('.github/workflows/ci.yml', () => {
       'tests/db/owner-money-limit.test.js'
     ]) expect(suite.run).toContain(path);
     expect(suite.env.TEST_DATABASE_URL).toContain('@127.0.0.1:5432/');
+  });
+  it('runs original Stripe owner HTTP suites without substituting a fake hub owner session', () => {
+    const job = wf.jobs['stripe-source-owner-http'];
+    const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout'));
+    const sqlCheckout = wf.jobs['stripe-source-sql'].steps.find(s =>
+      s.uses?.startsWith('actions/checkout'));
+    expect(checkout.with.repository).toBe('Robinson-AI-Systems/stripe-mcp');
+    expect(checkout.with.ref).toBe(sqlCheckout.with.ref);
+    expect(checkout.with['persist-credentials']).toBe(false);
+    expect(job.steps.find(s => typeof s.run === 'string' &&
+      s.run.includes('git rev-parse HEAD')).run).toContain(checkout.with.ref);
+    const suites = job.steps.find(s => typeof s.run === 'string' && s.run.includes('vitest run')).run;
+    for (const suite of [
+      'tests/unit/oauth-handlers.test.js', 'tests/unit/money-owner-approval.test.js',
+      'tests/unit/owner-money-limit.test.js', 'tests/unit/setup-page.test.js'
+    ]) expect(suites).toContain(suite);
+    expect(job.services).toBeUndefined();
   });
   it('the database job uses a throwaway localhost Postgres service', () => {
     expect(wf.jobs.db.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');

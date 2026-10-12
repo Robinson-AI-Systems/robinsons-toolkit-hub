@@ -11,3 +11,5 @@ Run through `.github/workflows/ci.yml` on PR and main. The job fails on inaccess
 ## Verification
 - Real GitHub Actions `stripe source SQL (reviewed immutable commit)` job on exact PR head plus aggregate `ci` are required.
 - No local GitHub checkout is available in the current API-only workspace: this document does not claim locally executed SQL.
+
+**K-3an source owner HTTP guard:** A separate required `stripe-source-owner-http` job runs the reviewed original Stripe source's OAuth HTTP handler, owner money approval, owner limit and setup route suites. It uses synthetic owner credentials in local test fixtures, requires CSRF/origin/password and separate explicit consent checks, and is pinned to the same immutable source commit as the SQL job. This remains a service-source **test**, not an authenticated human browser sign-off, production connection, or service adoption. Both jobs must pass to merge.
