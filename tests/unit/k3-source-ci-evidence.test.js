@@ -12,7 +12,7 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
   it('requires all nine original source suites and keeps the private release incomplete',()=>{
     expect(validateK3SourceCIEvidence(copy())).toMatchObject({
       reviewedMain:baseline.reviewedMain,originalSourceModules:11,
-      originalTrackedSuites:8,serviceOwnedModules:4,sqlSuites:5,ownerHttpSuites:5,releaseReady:false
+      originalTrackedSuites:8,serviceOwnedModules:4,rtcSuites:4,sqlSuites:7,ownerHttpSuites:7,releaseReady:false
     });
   });
   it('rejects moving refs, mismatched SQL and owner sources and persistent tokens',()=>{
@@ -123,6 +123,23 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
       step.name==='Pack core privately and compare installed leaves to original Stripe')
       .run='node -e "process.exit(0)"';
     expect(()=>validateK3SourceCIEvidence(spoof)).toThrow(/packed original-source/);
+  });
+  it('requires all four authentic original RTC test blobs and SQL coverage',()=>{
+    for(const name of ['stripe-source-sql','stripe-source-owner-http']){
+      const bad=copy();
+      const step=bad.workflow.jobs[name].steps.find(s=>
+        s.name==='Verify exact reviewed original Stripe OAuth/key test blobs');
+      step.run=step.run.replace(baseline.rtcTests['tests/unit/rtc-http.test.js'],
+        'a'.repeat(40));
+      expect(()=>validateK3SourceCIEvidence(bad)).toThrow(/RTC suite blob mismatch/);
+    }
+    const omitted=copy();
+    command(omitted.workflow,'stripe-source-sql','npm run test:db').run=
+      command(omitted.workflow,'stripe-source-sql','npm run test:db').run.replace(
+        'tests/db/rtc-rate-limit.test.js','');
+    expect(()=>validateK3SourceCIEvidence(omitted)).toThrow(/original suite/);
+    const missing=copy();delete missing.baseline.rtcTests['tests/unit/rtc-passes.test.js'];
+    expect(()=>validateK3SourceCIEvidence(missing)).toThrow(/inventory/);
   });
   it('rejects fewer original source modules, suites or changed release disposition',()=>{
     const missing=copy();

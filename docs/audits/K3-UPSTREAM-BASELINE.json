@@ -4,7 +4,7 @@
   "reviewedMain": "de56af8199fee39b20c2a1ac733562f2622dfda7",
   "reviewedAt": "2026-10-12",
   "disposition": "REVIEWED_SNAPSHOT_NOT_RELEASE",
-  "note": "Complete read-only nontruncated upstream Stripe Git tree inspected at immutable de56af8199fee39b20c2a1ac733562f2622dfda7: 15 direct src/core JS files total. All 11 original extracted source and 8 tracked original assertion-suite blobs are byte-identical to previously reviewed 7c9e981. Four newer service-owned core files are independently blob pinned: browser-cors.js, rtc-passes.js, rtc-http.js and rtc-route.js. They provide source transport/TEST pass/RTC routes and are NOT portable core exports or live RTC acceptance. The drift verifier rejects unreviewed new src/core modules and changed service-owned blobs. Both mandatory original Stripe SQL and owner HTTP CI jobs pin this immutable source and preserve all existing original suites. Actual TEST pass issuance/revocation and hub's three real D-4 routes, source adoption, independent human money-out approval and shared-core GitHub Release remain unverified.",
+  "note": "Complete read-only nontruncated upstream Stripe Git tree inspected at immutable de56af8199fee39b20c2a1ac733562f2622dfda7: 15 direct src/core JS files total. All 11 original extracted source and 8 tracked original assertion-suite blobs are byte-identical to previously reviewed 7c9e981. Four newer service-owned core files are independently blob pinned: browser-cors.js, rtc-passes.js, rtc-http.js and rtc-route.js. They provide source transport/TEST pass/RTC routes and are NOT portable core exports or live RTC acceptance. The drift verifier rejects unreviewed new src/core modules and changed service-owned blobs. Both mandatory original Stripe SQL and owner HTTP CI jobs pin this immutable source and preserve all existing original suites. Actual TEST pass issuance/revocation and hub's three real D-4 routes, source adoption, independent human money-out approval and shared-core GitHub Release remain unverified. Four separate original RTC SQL/HTTP assertion-suite Git blobs are pinned and executed in the required original Stripe source jobs. This is offline service-source evidence, not deployed or owner-authenticated acceptance.",
   "source": {
     "src/core/oauth.js": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
     "src/core/crypto.js": "34dce85cd4ca32553bfa2512778e68f819558de5",
@@ -33,5 +33,11 @@
     "src/core/rtc-passes.js": "81d10139ca1432afcead399b2e51c61b3b28d480",
     "src/core/rtc-http.js": "47c1c66bdf5ef8c8b7544238344fedbe948267ac",
     "src/core/rtc-route.js": "7833386fd04717dc137f06132c0caf3c375f6362"
+  },
+  "rtcTests": {
+    "tests/db/rtc-passes.test.js": "57b3a20bf2db9c2ae3eb55bcaac3a453cd70a655",
+    "tests/db/rtc-rate-limit.test.js": "d17d93ed4d270af440e0c07ef018c03243473865",
+    "tests/unit/rtc-http.test.js": "42409db17f65325efb8bc423250c8f523495352e",
+    "tests/unit/rtc-passes.test.js": "91bfb045e3f628d27f109c5041e6fbefc9b2271f"
   }
 }
