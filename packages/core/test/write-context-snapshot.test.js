@@ -65,7 +65,7 @@ describe('guarded writes bind immutable service connection across money decision
       badCtx,activeId,
       {...fixture().ctx,connection:{tenant:'tenant-a',mode:'test',profile:'full',
         owner:{get token(){getters++;return 'secret';}}}},
-      {...fixture().ctx,connectionId:'unsafe\\nconnection'},
+      {...fixture().ctx,connectionId:'unsafe'+String.fromCharCode(10)+'connection'},
       {...fixture().ctx,connection:new Date()}
     ];
     for(const ctx of inputs) {
