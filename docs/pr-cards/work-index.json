@@ -497,7 +497,8 @@
       "readiness": "READY",
       "externalGates": [],
       "pr": [
-        "#126 (L-1 read-only local file slice, partial)"
+        "#126 (L-1 scoped file access partial)",
+        "#127 (L-1 bounded Git inspection partial)"
       ]
     },
     {
