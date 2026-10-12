@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
-  "reviewedMain": "f2de5160d94799d5425e838fa54c5702b5d93f34",
+  "reviewedMain": "0e4ae2c873713e56de50d97af8e550d698eca0fe",
   "reviewedAt": "2026-10-11",
   "disposition": "REVIEWED_SNAPSHOT_NOT_RELEASE",
-  "note": "Read-only verified Stripe main f2de5160 (13 commits beyond immutable b2a1432f): all 11 original portable core source blobs and all eight tracked original source-suite blobs match the previously independently reviewed baseline exactly. Upstream changed service admin implementation/tests, documentation and CI only. Both authentic SQL and owner HTTP suites now use the immutable f2de5160 reviewed commit. This is not adoption, independent deployed human money approval, a released artifact or K-3 completion.",
+  "note": "Read-only verified Stripe main 0e4ae2c873713e56de50d97af8e550d698eca0fe (14 commits beyond f2de5160d94799d5425e838fa54c5702b5d93f34): actual immutable GitHub tree proves eleven original core source blobs and eight original unit suite blobs unchanged; changed service tools and synthetic owner TEST smoke belong to Stripe. Both required SQL and owner HTTP jobs pin this reviewed source, with an additional source-owned TEST-smoke fixture suite (not real account acceptance). No human owner approval, service adoption, candidate readiness or Release is claimed.",
   "source": {
     "src/core/oauth.js": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
     "src/core/crypto.js": "34dce85cd4ca32553bfa2512778e68f819558de5",
