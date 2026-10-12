@@ -111,6 +111,10 @@ jobs:
           test "$(git hash-object src/core/rtc-http.js)" = "47c1c66bdf5ef8c8b7544238344fedbe948267ac"
           test "$(git hash-object src/core/rtc-passes.js)" = "81d10139ca1432afcead399b2e51c61b3b28d480"
           test "$(git hash-object src/core/browser-cors.js)" = "e4b5d948a83737344c53079912dc148b4227ef60"
+          test "$(git hash-object tests/db/rtc-passes.test.js)" = "57b3a20bf2db9c2ae3eb55bcaac3a453cd70a655"
+          test "$(git hash-object tests/db/rtc-rate-limit.test.js)" = "d17d93ed4d270af440e0c07ef018c03243473865"
+          test "$(git hash-object tests/unit/rtc-http.test.js)" = "42409db17f65325efb8bc423250c8f523495352e"
+          test "$(git hash-object tests/unit/rtc-passes.test.js)" = "91bfb045e3f628d27f109c5041e6fbefc9b2271f"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -128,6 +132,8 @@ jobs:
           tests/db/money-owner-approval.test.js
           tests/db/money-reservation.test.js
           tests/db/owner-money-limit.test.js
+          tests/db/rtc-passes.test.js
+          tests/db/rtc-rate-limit.test.js
 
   stripe-source-owner-http:
     name: stripe source owner HTTP (reviewed immutable commit)
@@ -157,6 +163,10 @@ jobs:
           test "$(git hash-object src/core/rtc-http.js)" = "47c1c66bdf5ef8c8b7544238344fedbe948267ac"
           test "$(git hash-object src/core/rtc-passes.js)" = "81d10139ca1432afcead399b2e51c61b3b28d480"
           test "$(git hash-object src/core/browser-cors.js)" = "e4b5d948a83737344c53079912dc148b4227ef60"
+          test "$(git hash-object tests/db/rtc-passes.test.js)" = "57b3a20bf2db9c2ae3eb55bcaac3a453cd70a655"
+          test "$(git hash-object tests/db/rtc-rate-limit.test.js)" = "d17d93ed4d270af440e0c07ef018c03243473865"
+          test "$(git hash-object tests/unit/rtc-http.test.js)" = "42409db17f65325efb8bc423250c8f523495352e"
+          test "$(git hash-object tests/unit/rtc-passes.test.js)" = "91bfb045e3f628d27f109c5041e6fbefc9b2271f"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -172,6 +182,8 @@ jobs:
           tests/unit/owner-money-limit.test.js
           tests/unit/setup-page.test.js
           tests/unit/owner-test-smoke.test.js
+          tests/unit/rtc-http.test.js
+          tests/unit/rtc-passes.test.js
       - name: Compare authentic source HTTP with the private portable boundary
         run: node scripts/stripe-source-http-differential.mjs
       - name: Pack core privately and compare installed leaves to original Stripe

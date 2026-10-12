@@ -11,14 +11,18 @@ const sourceSql=Object.freeze([
   'tests/db/oauth.test.js',
   'tests/db/money-owner-approval.test.js',
   'tests/db/money-reservation.test.js',
-  'tests/db/owner-money-limit.test.js'
+  'tests/db/owner-money-limit.test.js',
+  'tests/db/rtc-passes.test.js',
+  'tests/db/rtc-rate-limit.test.js'
 ]);
 const ownerHttp=Object.freeze([
   'tests/unit/oauth-handlers.test.js',
   'tests/unit/money-owner-approval.test.js',
   'tests/unit/owner-money-limit.test.js',
   'tests/unit/setup-page.test.js',
-  'tests/unit/owner-test-smoke.test.js'
+  'tests/unit/owner-test-smoke.test.js',
+  'tests/unit/rtc-http.test.js',
+  'tests/unit/rtc-passes.test.js'
 ]);
 const fail=reason=>{throw new Error('K-3 Stripe source CI evidence: '+reason);};
 const runs=job=>job?.steps?.filter(step=>typeof step.run==='string')
@@ -31,9 +35,11 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
      Object.keys(baseline.source||{}).length!==11||
      Object.keys(baseline.tests||{}).length!==8||
      Object.keys(baseline.serviceOwnedCore||{}).length!==4||
+     Object.keys(baseline.rtcTests||{}).length!==4||
      Object.keys(baseline.serviceOwnedCore||{}).some(path=>
        !/^src\/core\/[a-z0-9-]+\.js$/.test(path)||Object.hasOwn(baseline.source,path))||
-     Object.values({...baseline.source,...baseline.tests,...baseline.serviceOwnedCore}).some(value=>!sha.test(value))){
+     Object.values({...baseline.source,...baseline.tests,...baseline.serviceOwnedCore,
+       ...baseline.rtcTests}).some(value=>!sha.test(value))){
     fail('reviewed original source inventory is incomplete or invalid');
   }
   const jobs=workflow?.jobs;
@@ -83,6 +89,11 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
       if(!evidence[0].run?.split('\n').map(line=>line.trim()).includes(expected))
         fail(name+': reviewed service-owned module blob mismatch for '+module);
     }
+    for(const [suite,blob] of Object.entries(baseline.rtcTests)){
+      const expected='test "$(git hash-object '+suite+')" = "'+blob+'"';
+      if(!evidence[0].run?.split('\n').map(line=>line.trim()).includes(expected))
+        fail(name+': reviewed source RTC suite blob mismatch for '+suite);
+    }
     const command=runs(job);
     if(!command.includes('git rev-parse HEAD')||
        !command.includes(baseline.reviewedMain)||!command.includes(runner)){
@@ -114,7 +125,8 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
     fail('private packed original-source adapter comparison is required');
   }
   return Object.freeze({reviewedMain:baseline.reviewedMain,originalSourceModules:11,
-    originalTrackedSuites:8,serviceOwnedModules:4,sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,
+    originalTrackedSuites:8,serviceOwnedModules:4,rtcSuites:Object.keys(baseline.rtcTests).length,
+    sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,
     releaseReady:false});
 }
 

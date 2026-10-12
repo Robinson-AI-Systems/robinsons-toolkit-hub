@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+- **K-3cf / D-4 original RTC suites (#118, as-if-merged):** pinned original Stripe source at de56af8 now runs two genuine RTC pass/revocation/shared-rate Postgres suites and two original service RTC HTTPS/owner pass unit suites, in addition to all ten previously required original source SQL/owner HTTP suites. Each new test file has a separately enforced immutable Git blob; no fake reference substitute. These are *source-only* disposable tests, not hosted TEST connectivity, full conformance, real owner-pass revocation, service adoption or publication. K-3 private/NOT_READY, D-4 IN_PROGRESS.
+
+
 - **K-3ce / pending PR #117:** the original immutable Stripe CI checkout now runs an independently packaged, **private offline tarball** through an isolated consumer, comparing four actual source leaf modules (OAuth, encryption, registry, write declarations) with the installed archive. Cross-decryption proves old ciphertext interoperates; source HTTP incompatibility remains explicitly tracked in #116. This is an authentic source+artifact **local rehearsal** but not a service-owned adapter, actual Stripe adoption, SQL/authenticated owner approval or publication. K-3 remains NOT_READY; D-4 hosted acceptance remains open.
 
 
