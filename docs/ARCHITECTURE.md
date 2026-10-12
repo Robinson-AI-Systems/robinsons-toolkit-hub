@@ -2,8 +2,7 @@
 
 Updated in the same PR that ships behavior. Designs describe what is planned.
 
-As of 2026-10-11 (#20): **foundation, conformance, direct doors and encrypted relay code exist.** No Vercel project, Neon
-database, relay repository or keys exist for this repo yet (IN-02, IN-03, IN-04).
+As of 2026-10-11 (#86): **foundation, conformance, direct doors and encrypted relay code exist.** The owner approved and provisioned a separate private relay-transport GitHub repository, a minimally sized Neon database with verified replay migration, and a Vercel production-target build READY from the hub source repository. Vercel has production-only secret variables and an owner-entered repo token, but it is still protected and not functionally connected: webhook, RTC server mapping, agent bindings, permission check, test passes and three real route proofs remain open (IN-04/D-4). Existing custom servers' `/api/mcp` does not certify RTC adoption. See `docs/RELAY-DEPLOY.md` and D-4 card.
 
 ## Built in K-3n (PR #35)
 
@@ -80,12 +79,12 @@ This is verification infrastructure, not certification of any real hosted route.
 | CLI routing | packages/cli/src/relay-route.js; http.js; dispatch.js | Direct first, fallback on reads or proved pre-connect POST failure; server refusals and ambiguous writes never retried; server passes stay in encrypted envelope. |
 | Ciphertext cleanup | api/relay/cleanup.js; packages/relay/src/cleanup.js | Separate bearer, configured private-repo issues, ciphertext older than one hour, explicit bounded/failure handling; prune old seen IDs after comment cleanup. |
 | Hourly scheduler | .github/workflows/relay-cleanup.yml | Inert until owner supplies URL variable and cleanup bearer secret. No GitHub token permissions; no paid Vercel cron configured. |
-| Setup | docs/RELAY-DEPLOY.md | IN-02/03/04 remain unmet; no deployed/live smoke claim. Generated standalone SDK bundles the relay-capable runtime; passes remain environment-only. |
+| Setup | docs/RELAY-DEPLOY.md | IN-02 and repo creation portion of IN-03 fulfilled; IN-04 partly configured. Vercel build READY but no webhook/RTC live smoke claim. Generated standalone SDK bundles the relay-capable runtime; passes remain environment-only. |
 
 Client env: `RTOOL_RELAY` (public repo/key/alias→issue JSON),
 `RTOOL_RELAY_TOKEN` (private agent one-repo token), plus the normal server pass.
 `RELAY_CLEANUP_SECRET` is a separate hosted/scheduler bearer. Scheduler timing is
-best effort; its failure is visible in Actions. No production settings supplied.
+best effort; its failure is visible in Actions. Some protected Vercel production variables exist, but scheduler, GitHub webhook, relay server/agent bindings and real passes remain disabled.
 
 ## Built in D-3b (PR #18)
 
@@ -100,7 +99,7 @@ Required owner environment: `RELAY_REPOSITORY`, `RELAY_WEBHOOK_SECRET`,
 `RELAY_GITHUB_TOKEN`, `RELAY_PRIVATE_KEY` (base64 PKCS8 DER X25519),
 `RELAY_SERVERS` (alias to HTTPS origin), `RELAY_BINDINGS` (issue to actorId/server),
 `RELAY_DATABASE_URL` (TLS Postgres). All secrets set privately; never put in repo.
-Deploy/migration and cleanup are retained for D-3; owner gates remain IN-02/03/04.
+Deployment and replay migration are provisioned under owner approval; GitHub webhook, cleanup activation, agent bindings, RTC-speaking custom service integration and D-4 real acceptance remain owner/service gated.
 
 ## Built in D-3a (PR #17)
 
