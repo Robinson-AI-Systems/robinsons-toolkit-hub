@@ -17,9 +17,20 @@ const reviewedSource={
   'src/core/write.js':'82157d03a818a60d6a9ae6e28dd798e0e7ca2a86',
   'src/core/mcp-server.js':'0b8364f0e8dd8358ff618f68ed037273c940ea87'
 };
+const reviewedTests={
+  'tests/unit/oauth-core.test.js': 'fb3a616a02f775f94a9d5b9f06caff465dc1f712',
+  'tests/unit/oauth-handlers.test.js': '217c0c18a0c427963fa374aa4c6fad570747865f',
+  'tests/unit/keys.test.js': '05574eecb0d0f246f0ddfd9a9bddb673bd75c5f0',
+  'tests/unit/registry.test.js': '93fbbf8e575d25f6431e27e71db48d2368a27c35',
+  'tests/unit/profiles.test.js': '716e26c5f4de9f6b7fdf894a01b1c755ba72ad06',
+  'tests/unit/write-metadata.test.js': '46cf601b1dffee8bfc23ced5bbed3be9fd8cc0ef',
+  'tests/unit/write-core.test.js': 'f74d93b67748b23c660ddb0425c7ca48f9721d6d',
+  'tests/unit/write-contract.test.js': '7c36ab9733d1d46e728984524cf20f3aeb558924'
+};
 describe('K-3 current Stripe original runtime/source-suite drift evidence',()=>{
   it('pins each original source blob including three reviewed changed modules',()=>{
     expect(manifest.source).toEqual(reviewedSource);
+    expect(manifest.tests).toEqual(reviewedTests);
     expect(manifest.disposition).toBe('REVIEWED_SNAPSHOT_NOT_RELEASE');
     expect(manifest.reviewedMain).toBe('7c9e981b75806e7fbfdbfdc84622ed11ca2185a2');
   });
@@ -35,6 +46,8 @@ describe('K-3 current Stripe original runtime/source-suite drift evidence',()=>{
       expect((manifest.source[path]||manifest.tests[path])).not.toBe(old);
       expect((manifest.source[path]||manifest.tests[path])).toMatch(/^[a-f0-9]{40}$/);
     }
+    expect(manifest.tests['tests/unit/oauth-handlers.test.js']).toBe('217c0c18a0c427963fa374aa4c6fad570747865f');
+    expect(manifest.tests['tests/unit/keys.test.js']).toBe('05574eecb0d0f246f0ddfd9a9bddb673bd75c5f0');
     expect(Object.keys({...manifest.source,...manifest.tests})).toHaveLength(19);
   });
   it('rejects any unseen core module drift even if service test SHA values are accepted',()=>{

@@ -55,6 +55,20 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
        checkouts[0].with?.['persist-credentials']!==false){
       fail(name+': source checkout must be the reviewed immutable, non-persistent ref');
     }
+    // The immutable checkout SHA alone is insufficient if a reviewed manifest is
+    // accidentally mistyped. Both original suites must hash to the exact
+    // independently reviewed Git blobs in each authentic source CI job.
+    const evidence=job.steps.filter(step=>
+      step.name==='Verify exact reviewed original Stripe OAuth/key test blobs');
+    if(evidence.length!==1||evidence[0]['working-directory']!=='source-stripe'){
+      fail(name+': missing exact original suite blob verification');
+    }
+    for(const suite of ['tests/unit/oauth-handlers.test.js','tests/unit/keys.test.js']){
+      const expected='test "$(git hash-object '+suite+')" = "'+baseline.tests[suite]+'"';
+      if(!evidence[0].run?.split('\n').map(line=>line.trim()).includes(expected)){
+        fail(name+': reviewed original suite blob mismatch for '+suite);
+      }
+    }
     const command=runs(job);
     if(!command.includes('git rev-parse HEAD')||
        !command.includes(baseline.reviewedMain)||!command.includes(runner)){
