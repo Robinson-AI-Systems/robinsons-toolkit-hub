@@ -119,3 +119,9 @@ query parameter name whose value carries the issued id (also percent-decoded ali
 first-value/last-value selector ambiguity before inserting the encrypted row; unaffected exact source
 query convention and path segment tests remain green. The service owns route interpretation,
 account-bound authorization, durable one-use SQL and production activation.
+
+**K-3av bearer transport provenance:** the portable MCP guard checks optional Node `headersDistinct`
+and `rawHeaders` alongside the normalized authorization string. More than one Authorization field,
+conflicting representations or malicious accessors are rejected as unauthorized before durable lookup;
+a normal single header still accepts. This is deliberately stricter fail-closed transport behavior than
+the source utility; the adopting service must verify its actual HTTP adapter separately.

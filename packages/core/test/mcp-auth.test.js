@@ -63,6 +63,38 @@ describe('portable MCP bearer boundary', () => {
     expect(f.getAccessToken).not.toHaveBeenCalled();
     expect(f.projectConnection).not.toHaveBeenCalled();
   });
+  it('refuses duplicate, mismatched or throwing original Authorization header evidence',async()=>{
+    const f=fixture(), auth='Bearer '+token;
+    const invalid=[
+      {headers:{authorization:auth},headersDistinct:{authorization:[auth,auth]}},
+      {headers:{authorization:auth},headersDistinct:{authorization:[auth+'x']}},
+      {headers:{authorization:auth},headersDistinct:{authorization:'not-an-array'}},
+      {headers:{authorization:auth},rawHeaders:['Authorization',auth,'authorization',auth]},
+      {headers:{authorization:auth},rawHeaders:['Authorization',auth,'AUTHORIZATION','other']},
+      {headers:{authorization:auth},rawHeaders:['Authorization']},
+      {headers:{authorization:auth},get rawHeaders(){throw Error('private raw header');}},
+      {headers:{authorization:auth},get headersDistinct(){throw Error('private distinct header');}}
+    ];
+    for(const request of invalid){
+      const {res,headers}=response();
+      expect(await f.authenticate(request,res)).toBeNull();
+      expect(res.statusCode).toBe(401);
+      expect(res.body.error).toBe('unauthorized');
+      expect(headers['WWW-Authenticate']).toContain('resource_metadata=');
+      expect(JSON.stringify(res.body)).not.toContain('private');
+    }
+    expect(f.getAccessToken).not.toHaveBeenCalled();
+    expect(f.projectConnection).not.toHaveBeenCalled();
+    for(const request of [
+      {headers:{authorization:auth},headersDistinct:{authorization:[auth]}},
+      {headers:{authorization:auth},rawHeaders:['Authorization',auth]}
+    ]){
+      const {res}=response();
+      expect(await f.authenticate(request,res)).toMatchObject({profile:'read_only'});
+      expect(res.statusCode).toBeNull();
+    }
+    expect(f.getAccessToken).toHaveBeenCalledTimes(2);
+  });
   it('checks storage and applies server policy before returning frozen projected identity', async () => {
     const f = fixture();
     const {res} = response();
