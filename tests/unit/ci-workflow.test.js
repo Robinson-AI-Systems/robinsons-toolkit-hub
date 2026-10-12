@@ -72,6 +72,16 @@ describe('.github/workflows/ci.yml', () => {
     ]) expect(suites).toContain(suite);
     expect(job.services).toBeUndefined();
   });
+  it('observes only fixed public RTC hosts with no pass or secrets and cannot certify a service', () => {
+    const job = wf.jobs.check;
+    const step = job.steps.find(s => s.name?.startsWith('Observe deployed RTC fleet'));
+    expect(step.run).toBe('node scripts/probe-rtc-fleet.mjs --public-observe');
+    expect(step.env).toBeUndefined();
+    expect(step.continue_on_error).toBeUndefined();
+    expect(job.permissions).toBeUndefined();
+    expect(text).not.toMatch(/RTC_FLEET_READ_TESTS|RTC_FLEET_ORIGINS/);
+    expect(wf.jobs.ci.needs).toContain('check');
+  });
   it('the database job uses a throwaway localhost Postgres service', () => {
     expect(wf.jobs.db.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
     expect(wf.jobs.db.steps.at(-1).env.TEST_DATABASE_URL).toMatch(/@127\.0\.0\.1:5432\//);

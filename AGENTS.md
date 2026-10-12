@@ -113,7 +113,21 @@ instead of skipping that dependency. Maintain service autonomy and all owner
 money-out approvals, credentials, tenancy, relay, hosting and review gates.
 
 PRs should be coherent and sized under existing limits; fewer than five is
-correct if no more substantive, safe, eligible work exists. On genuine blockage,
+correct if no more substantive, safe, eligible work exists. Before declaring any work blocked, investigate the root cause and attempt the
+authorized remedy: code, configuration, dependency drift, stale docs and owner
+decisions already recorded. Complete available implementation and verification;
+recording a blocker alone is insufficient. An unavailable external credential,
+permission, decision or genuine evidence source blocks only that operation,
+not the project. Isolate it, inspect the actual approved work index and
+dependencies, pursue the highest-priority independent work, and automatically
+requeue deferred acceptance when its condition changes. Stop early only with
+concrete evidence no approved independent work remains or a specific execution
+limitation. Record attempted remedies and the smallest genuinely missing
+external action; do not request approval already granted. Never bypass
+security/CI/review/release/hosting safeguards, enable Stripe LIVE or revive
+deferred Cortiware work. Carry this rule forward by pointing future continuation
+prompts to AGENTS/SESSION-START, not copying another instruction file.
+On genuine blockage,
 record the exact reason and continue independent approved work.
 End with a capability-level result, proof/remaining acceptance, verified SHA,
 PRs/CI/reviews, finite blockers and next action. Post a permanent handoff on

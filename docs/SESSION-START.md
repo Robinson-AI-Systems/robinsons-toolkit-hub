@@ -61,7 +61,10 @@ their owner-approved secure environments. Capture only neutral evidence in
 D-4/STATUS, including source versus deployed status and all unfinished gates.
 Keep repeating at both boundaries until every applicable server has **all**
 required real acceptance evidence. A failed check does not block unrelated
-approved implementation.
+approved implementation. When this executor cannot reach public hosts, CI's
+pinned --public-observe step captures the same read-only contract classifications
+on its runner; inspect actual job logs. Network failure is not service failure,
+and public observation is never a signed-in route acceptance.
 
 ## 0b. Outcome and blocker triage
 
@@ -69,7 +72,13 @@ Follow AGENTS' **Outcome-first autonomous development** policy before choosing
 new PRs: identify the next eligible capability milestone and finite remaining
 acceptance, recheck deferred items after owner/service/deployment changes, and
 keep code, original-source tests, deployed exact commit and authenticated real
-acceptance separate. Do not mistake five PRs for milestone completion. Update
+acceptance separate. Do not mistake five PRs for milestone completion. Before declaring any milestone
+blocked, investigate and attempt authorized code/config/dependency/doc/owner-input
+remedies; isolate only truly external evidence/permissions, then scan the actual
+approved index for independently eligible work and implement it. Do not stop at
+a recorded blocker or re-request approved IN-xx authority. Requeue deferred
+items immediately when real evidence arrives. An early stop requires proven
+absence of remaining safe approved work or a specific execution limitation. Update
 the permanent final-PR handoff and generate the same concise outcome-first
 continuation prompt every session.
 

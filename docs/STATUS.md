@@ -5,6 +5,20 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**D-4 public deployed fleet observation / PR #123 (as-if merged, CI pending):**
+the normal CI check job invokes pinned-inventory public-only RTC contract
+probes from a GitHub Actions runner, addressing this executor's DNS limitation.
+A failed hosted public endpoint becomes classified, never accepted; no
+bearer, runtime URL override, provider read or production change is used.
+Capture actual exact-head public HTTP results from CI; they do not prove a
+deployed TEST account identity, direct authenticated read, encrypted private
+relay, Sandbox or same-pass revocation. Owner IN-06 already approves scoped
+TEST work. **Owner blocker correction:** investigate and remedy available
+code/config/dependency/docs issues first; isolate external proof per operation
+and continue approved independent cards. Stripe package adoption remains with
+the Stripe agent; K-3 stays NOT_READY; H-1 order is unchanged.
+
+
 **K-3cj / PR #122 as-if-merged (exact-head CI required):** Source/test
 baseline is now the reviewed original Stripe `a38a325f07bdb993b46dc82d85e835d06281aff0`.
 Both mandatory original-service CI jobs and the #121 real service

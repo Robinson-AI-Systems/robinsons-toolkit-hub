@@ -31,6 +31,10 @@ jobs:
       - run: npm run check
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      # Public GET only: status/RTC manifest observation, not authenticated D-4 acceptance.
+      # Uses tracked pinned origins; no pass, origin overrides or repository write scope.
+      - name: Observe deployed RTC fleet (non-certifying, public only)
+        run: node scripts/probe-rtc-fleet.mjs --public-observe
 
   unit:
     name: unit
