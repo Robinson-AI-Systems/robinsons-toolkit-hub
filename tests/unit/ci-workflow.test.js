@@ -33,7 +33,7 @@ describe('.github/workflows/ci.yml', () => {
     const script = wf.jobs.ci.steps.map((s) => s.run).join('\n');
     for (const j of jobs) {
       const resultVariable = j.replaceAll("-", "_").toUpperCase();
-      expect(script).toContain(`test "${resultVariable}" = success`);
+      expect(script).toContain('test "$' + resultVariable + '" = success');
     }
   });
   it('pins real Stripe source and refuses unavailable source SQL evidence', () => {
@@ -51,7 +51,7 @@ describe('.github/workflows/ci.yml', () => {
       'tests/db/money-owner-approval.test.js', 'tests/db/money-reservation.test.js',
       'tests/db/owner-money-limit.test.js'
     ]) expect(suite.run).toContain(path);
-    expect(suite.env.TEST_DATABASE_URL).toMatch(/@127\\.0\\.0\\.1:5432\\//);
+    expect(suite.env.TEST_DATABASE_URL).toContain('@127.0.0.1:5432/');
   });
   it('the database job uses a throwaway localhost Postgres service', () => {
     expect(wf.jobs.db.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
