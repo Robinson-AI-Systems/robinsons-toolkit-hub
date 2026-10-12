@@ -17,7 +17,8 @@ const ownerHttp=Object.freeze([
   'tests/unit/oauth-handlers.test.js',
   'tests/unit/money-owner-approval.test.js',
   'tests/unit/owner-money-limit.test.js',
-  'tests/unit/setup-page.test.js'
+  'tests/unit/setup-page.test.js',
+  'tests/unit/owner-test-smoke.test.js'
 ]);
 const fail=reason=>{throw new Error('K-3 Stripe source CI evidence: '+reason);};
 const runs=job=>job?.steps?.filter(step=>typeof step.run==='string')
