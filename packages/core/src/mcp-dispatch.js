@@ -110,9 +110,11 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
           if (part?.type !== 'text' || typeof part.text !== 'string') return part;
           let value;
           try { value = JSON.parse(part.text); } catch { return part; }
-          return { ...part, text: JSON.stringify(readDetail(value, {
+          const projected = readDetail(value, {
             detail, fields: typeof args.fields === 'string' ? args.fields : undefined
-          })) };
+          });
+          if (!isInertJsonData(projected)) throw new TypeError('Unsafe detail projection');
+          return { ...part, text: JSON.stringify(projected) };
         }) };
       }
       // readDetail may replace text with adapter-produced objects; validate

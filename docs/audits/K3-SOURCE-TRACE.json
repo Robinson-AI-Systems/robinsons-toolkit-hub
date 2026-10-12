@@ -160,7 +160,7 @@
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "2bd9c4ef479ac23f828c91acf842449464184bbb",
+      "coreBlob": "0919ab3ac2330e73941255f8a4af28f9385da08b",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
@@ -173,7 +173,8 @@
         "nested runRead explicitly denies writes and metadata-unknown tools even under otherwise permissive service policy",
         "portable dispatcher now rejects inherited, accessor, symbol and dangerous top-level argument descriptors before policy, handlers, result storage or provider effects; service must retain JSON-only input validation",
         "portable scoped result paging refuses executable nested data, cycles and prototype-control payloads before persistence; service retains shape/redaction/SQL ownership",
-        "shared inert JSON checker rejects nested active argument data before policy and handler; original provider boundary remains service-owned"
+        "shared inert JSON checker rejects nested active argument data before policy and handler; original provider boundary remains service-owned",
+        "portable shaped responses, detail projections and scrubbed error objects must be inert before serialization, return or storage; the service owns provider redaction and tenant-scoped SQL"
       ]
     }
   }
