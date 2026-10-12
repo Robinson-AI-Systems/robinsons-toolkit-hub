@@ -88,7 +88,7 @@
       "sourceFile": "src/core/mcp-auth.js",
       "sourceBlob": "eea535069b2179dfa74ed4ad101abacd5789dea0",
       "target": "./src/mcp-auth.js",
-      "coreBlob": "17393062a6b020b5bb3729ac1c837c5a4e8c7887",
+      "coreBlob": "c17931c0fd3a4f16a0c231828e8d704a2aca9db3",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-auth.test.js",
@@ -97,7 +97,8 @@
       ],
       "serverOwned": [
         "durable token lookup, expiration and connection projection",
-        "adapter projection remains service-authored; core now refuses credential-named fields, echoed bearer, active getters, mutable nested identities and oversized claims"
+        "adapter projection remains service-authored; core now refuses credential-named fields, echoed bearer, active getters, mutable nested identities and oversized claims",
+        "core rejects coerced duplicate bearer headers and treats token-store outage as sanitized 503; source transport adapts independently"
       ]
     },
     "./one-time-secrets": {

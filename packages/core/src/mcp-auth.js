@@ -62,14 +62,23 @@ export function createMcpBearerAuthenticator({ getAccessToken, projectConnection
   return async function authenticate(req, res) {
     const challenge = 'Bearer resource_metadata="' +
       publicOrigin(env) + '/.well-known/oauth-protected-resource"';
-    const match = bearer.exec(String(req?.headers?.authorization || ''));
+    // Never coerce duplicate/array/object headers into a valid bearer credential.
+    const header = req?.headers?.authorization;
+    const match = typeof header === 'string' ? bearer.exec(header) : null;
     if (!match) {
       res.setHeader('WWW-Authenticate', challenge);
       send(res, 401, { error: 'unauthorized', error_description: 'A valid connection is required' });
       return null;
     }
     // The server owns durable expiry/revocation/lockout/account validation.
-    const record = await getAccessToken(match[1]);
+    let record;
+    try { record = await getAccessToken(match[1]); }
+    catch {
+      // A storage outage is not an invalid or revoked credential. Fail closed
+      // without revealing query details or pretending a token was revoked.
+      send(res, 503, { error: 'temporarily_unavailable' });
+      return null;
+    }
     let projected = null;
     if (record) {
       try {
