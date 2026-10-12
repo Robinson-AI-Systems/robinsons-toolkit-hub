@@ -58,19 +58,12 @@ export function githubCommentTransport({ repo, issue, token, fetchImpl = fetch }
       if (target?.number !== issue || target.state !== 'open' ||
           target.locked !== false || target.pull_request)
         throw new Error('Relay permission probe requires one unlocked open issue');
-      let commentId;
-      try {
-        const diagnostic = 'rtc:transport-probe:v1:' + randomBytes(16).toString('hex');
-        const result = await request('/issues/' + issue + '/comments', 'POST', { body: diagnostic });
-        if (!Number.isSafeInteger(result?.id) || result.id < 1)
-          throw new Error('Relay probe comment ID is missing; inspect private issue');
-        commentId = result.id;
-      } finally {
-        if (commentId !== undefined) {
-          try { await request('/issues/comments/' + commentId, 'DELETE'); }
-          catch { throw new Error('Relay permission probe cleanup failed; inspect private issue'); }
-        }
-      }
+      const diagnostic = 'rtc:transport-probe:v1:' + randomBytes(16).toString('hex');
+      const result = await request('/issues/' + issue + '/comments', 'POST', { body: diagnostic });
+      if (!Number.isSafeInteger(result?.id) || result.id < 1)
+        throw new Error('Relay probe comment ID is missing; inspect private issue');
+      try { await request('/issues/comments/' + result.id, 'DELETE'); }
+      catch { throw new Error('Relay permission probe cleanup failed; inspect private issue'); }
       return { repositoryPrivate: true, issueRead: true, commentCreate: true, commentDelete: true,
         leastPrivilegeVerified: false };
     },
