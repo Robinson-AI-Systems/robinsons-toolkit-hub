@@ -502,7 +502,9 @@ describe('unambiguous confidential OAuth Authorization provenance',()=>{
     ];
     for(const extra of invalid){
       const res=response();
-      await f.handlers.token({...req('POST',input),...extra},res);
+      const request=req('POST',input);
+      Object.defineProperties(request,Object.getOwnPropertyDescriptors(extra));
+      await f.handlers.token(request,res);
       expect(res.statusCode).toBe(401);
       expect(JSON.parse(res.body).error).toBe('invalid_client');
       expect(res.body).not.toContain('private');
