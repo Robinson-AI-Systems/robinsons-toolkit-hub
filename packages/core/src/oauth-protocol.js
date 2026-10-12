@@ -301,7 +301,16 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     if (allowBrowserProtocol(req,res,{methods:['POST']})) return;
     if (!only(res, req, ['POST'])) return;
     let p;
-    try { p=endpointParams(req); } catch { return bad(res,400,'invalid_request','Malformed token request'); }
+    try { p=endpointParams(req); } catch {
+      // Preserve the source-shaped 401 authentication challenge when malformed
+      // Authorization transport evidence accompanies an invalid request.
+      // Neither branch is permitted to consult the durable credential store.
+      if (!authorizationHeaderEvidence(req).valid) {
+        res.setHeader('WWW-Authenticate', 'Basic realm="MCP OAuth"');
+        return bad(res,401,'invalid_client','Client credentials rejected');
+      }
+      return bad(res,400,'invalid_request','Malformed token request');
+    }
     if (p.resource !== resource()) {
       return bad(res,400,'invalid_target','Token resource must be this MCP');
     }
