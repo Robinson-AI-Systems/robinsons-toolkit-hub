@@ -66,7 +66,15 @@ function endpointParams(req) {
       throw new TypeError('Unsafe OAuth input');
     }
   }
-  return params;
+  // The framework may pre-parse a JSON request before its real byte count
+  // becomes available. Refuse active/cyclic/oversized semantic data without
+  // trusting JSON.stringify on caller-owned objects. The service must still
+  // enforce its transport's exact raw-byte limit before credential lookup.
+  const snapshot=copyClaim(params,new Set(),{left:512},0,false);
+  if(Buffer.byteLength(JSON.stringify(snapshot),'utf8')>MAX_OAUTH_BODY_BYTES) {
+    throw new TypeError('Oversized OAuth input');
+  }
+  return snapshot;
 }
 // Snapshot only ordinary indexed data. Never pass a caller-owned, mutable
 // redirect array through service SQL and echo the same reference to the client.
@@ -89,7 +97,7 @@ function safeRedirectUris(uris) {
 // Snapshot all service-selected claims before a durable token receives them.
 // Nested accessors, cycles or mutable aliases must never change account/profile
 // settings after credentials are issued. Preserve ordinary SQL Date objects.
-function copyClaim(value, seen, budget, depth = 0) {
+function copyClaim(value, seen, budget, depth = 0, allowDate = true) {
   if (--budget.left < 0 || depth > 12) throw new TypeError('Oversized OAuth claim');
   if (value === null || typeof value === 'string' || typeof value === 'boolean' ||
       value === undefined) return value;
@@ -97,6 +105,7 @@ function copyClaim(value, seen, budget, depth = 0) {
   if (typeof value !== 'object') throw new TypeError('Unsafe OAuth claim');
   const proto = Object.getPrototypeOf(value);
   if (proto === Date.prototype) {
+    if (!allowDate) throw new TypeError('Date is not OAuth request JSON');
     if (Reflect.ownKeys(value).length) throw new TypeError('Unsafe OAuth timestamp');
     const ms = Date.prototype.getTime.call(value);
     if (!Number.isFinite(ms)) throw new TypeError('Invalid OAuth timestamp');
@@ -124,7 +133,7 @@ function copyClaim(value, seen, budget, depth = 0) {
       if (!desc.enumerable || !Object.hasOwn(desc,'value')) {
         throw new TypeError('Active OAuth claim');
       }
-      out[key] = copyClaim(desc.value, seen, budget, depth + 1);
+      out[key] = copyClaim(desc.value, seen, budget, depth + 1, allowDate);
     }
     return Object.freeze(out);
   } finally {

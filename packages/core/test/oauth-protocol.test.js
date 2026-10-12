@@ -581,3 +581,76 @@ describe('public OAuth CORS and OPTIONS owner-boundary isolation',()=>{
     expect(f.db.getOAuthClient).not.toHaveBeenCalled();
   });
 });
+
+describe('inert, bounded framework-preparsed OAuth payloads',()=>{
+  it('rejects oversized parsed data before client registration or token lookup',async()=>{
+    const f=fixture(),long='🧪'.repeat(5000);
+    const registration={redirect_uris:[callback],padding:long};
+    const refused=await call(f.handlers.register,'POST',registration);
+    expect(refused.status).toBe(400);
+    expect(refused.value.error).toBe('invalid_client_metadata');
+    const input={resource:env.PUBLIC_BASE_URL+'/api/mcp',client_id:'unowned',
+      grant_type:'authorization_code',padding:long};
+    const token=await call(f.handlers.token,'POST',input);
+    expect(token.status).toBe(400);
+    expect(token.value.error).toBe('invalid_request');
+    expect(f.db.createOAuthClient).not.toHaveBeenCalled();
+    expect(f.db.getOAuthClient).not.toHaveBeenCalled();
+  });
+  it('refuses executable nested input fields without invoking getters or serializers',async()=>{
+    const f=fixture(),evil={};let getters=0,serializers=0;
+    Object.defineProperty(evil,'value',{enumerable:true,get(){getters++;throw Error('private');}});
+    const objects=[
+      {redirect_uris:[callback],metadata:evil},
+      {redirect_uris:[callback],metadata:{toJSON(){serializers++;throw Error('private');}}},
+      {redirect_uris:[callback],metadata:new Date()},
+      {redirect_uris:[callback],metadata:new Set(['active'])}
+    ];
+    const cycle={};cycle.self=cycle;
+    objects.push({redirect_uris:[callback],metadata:cycle});
+    for(const body of objects){
+      const result=await call(f.handlers.register,'POST',body);
+      expect(result.status).toBe(400);
+      expect(result.value.error).toBe('invalid_client_metadata');
+      expect(JSON.stringify(result.value)).not.toContain('private');
+    }
+    expect(getters).toBe(0);
+    expect(serializers).toBe(0);
+    expect(f.db.createOAuthClient).not.toHaveBeenCalled();
+  });
+  it('binds client identity and confirmation data to a detached snapshot across asynchronous SQL hooks',async()=>{
+    const f=fixture();
+    const client=await registered(f);
+    const code='snapshot-client';
+    f.codes.set(code,{client_id:client.client_id,redirect_uri:callback,
+      code_challenge:challenge,code_challenge_method:'S256',tenant:'original-tenant',
+      mode:'test',profile:'read_only',listing:'compact'});
+    const body={grant_type:'authorization_code',client_id:client.client_id,
+      client_secret:client.client_secret,code,redirect_uri:callback,
+      code_verifier:verifier,resource:env.PUBLIC_BASE_URL+'/api/mcp'};
+    const originalRead=f.db.getOAuthClient.getMockImplementation();
+    f.db.getOAuthClient.mockImplementation(async id=>{
+      body.client_id='attacker';
+      body.client_secret='attacker';
+      body.grant_type='refresh_token';
+      body.resource='https://wrong.invalid/api/mcp';
+      return originalRead(id);
+    });
+    const result=await call(f.handlers.token,'POST',body);
+    expect(result.status).toBe(200);
+    expect(f.tokens.get(result.value.access_token)).toMatchObject({
+      clientId:client.client_id,tenant:'original-tenant',mode:'test',profile:'read_only'});
+    expect(f.db.consumeAuthCode).toHaveBeenCalledWith(code);
+    expect(f.db.createAccessToken).toHaveBeenCalledTimes(1);
+  });
+  it('keeps ordinary Unicode and form-shaped JSON data compatible',async()=>{
+    const f=fixture();
+    const response=await call(f.handlers.register,'POST',{
+      redirect_uris:[callback],client_name:'Everyday 🧪 agent',grant_types:[
+        'authorization_code','refresh_token'],response_types:['code']});
+    expect(response.status).toBe(201);
+    expect(response.value.token_endpoint_auth_method).toBe('client_secret_post');
+    expect(f.db.createOAuthClient).toHaveBeenCalledWith(expect.objectContaining({
+      clientName:'Everyday 🧪 agent',redirectUris:[callback]}));
+  });
+});
