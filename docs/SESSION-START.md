@@ -24,6 +24,34 @@ Your session can end at any moment (the chat stops between actions), so the next
    - Review threads open → fix or answer each, then resolve.
 3. Continue from the resume note's "Next step". Only when nothing of yours is open: §1 and the next card.
 
+## 0a. Mandatory RTC fleet check — every session, until all custom servers pass real acceptance
+
+After §0 and **again before the five-PR handoff**, run the hosted
+`node scripts/probe-rtc-fleet.mjs` using owner-verified pinned HTTPS origins in
+`RTC_FLEET_ORIGINS` (JSON alias-to-origin map). Probe Stripe, GitHub, Vercel,
+Neon, Google Workspace and any newly added custom MCP server; missing origins
+are **unverified**, not omitted. This only performs real deployed
+`GET /api/contract` requests. Never substitute GitHub source, a standard
+connector or `/api/mcp`. Record HTTP status/RTC version and separate:
+unavailable (network/404/503), blocked (401/403, invalid RTC),
+unverified (valid manifest but no scoped auth), ready (genuine authenticated
+direct read_only test). Even **ready** does not certify encrypted relay,
+Vercel Sandbox or revocation: those are separately recorded gates.
+
+If an independently owner-approved temporary non-production RTC TEST
+read_only pass is available, set `RTC_FLEET_READ_TESTS` to JSON of
+alias → `{ "readTool": "...", "passEnv": "ENV_NAME" }`, keep pass bytes only
+inside that environment, and invoke `node scripts/probe-rtc-fleet.mjs --authorized-read-only`.
+The existing `agent-check` enforces read_only identity, declared non-writing
+tool metadata and real harmless read, while requiring an exact direct route.
+Never run this opt-in against live/production or a write, never log a pass.
+Execute separate D-4 private GitHub relay/Sandbox and revocation checks using
+their owner-approved secure environments. Capture only neutral evidence in
+D-4/STATUS, including source versus deployed status and all unfinished gates.
+Keep repeating at both boundaries until every applicable server has **all**
+required real acceptance evidence. A failed check does not block unrelated
+approved implementation.
+
 ## 1. Find your place (2 minutes)
 
 Work happens in whatever workspace you were given (a cloud agent workspace, a Vercel Sandbox, a laptop). Code reaches
