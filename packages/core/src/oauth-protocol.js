@@ -2,6 +2,7 @@
 // No access to a provider, no default profile/mode and no access-token use outside the service.
 import { randomToken, hashToken, secretsMatch, verifyPkce, validRedirectUri } from './oauth.js';
 import { publicOrigin, send, paramsOf, only } from './http.js';
+import { authorizationHeaderEvidence } from './mcp-auth.js';
 
 
 export const MAX_OAUTH_BODY_BYTES = 16 * 1024;
@@ -135,19 +136,16 @@ function copyClaim(value, seen, budget, depth = 0) {
 // Header credentials are an alternate client authentication mechanism, never
 // a second body secret. Reject noncanonical encodings before durable SQL reads.
 function basicCredentials(req) {
-  const headers = req?.headers;
-  if (!headers || typeof headers !== 'object' ||
-      ![Object.prototype, null].includes(Object.getPrototypeOf(headers))) return null;
-  const descriptor = Object.getOwnPropertyDescriptor(headers, 'authorization');
-  if (!descriptor) return { present: false, basic: null };
-  if (!Object.hasOwn(descriptor, 'value') || typeof descriptor.value !== 'string') return null;
-  const match = /^Basic ([A-Za-z0-9+/]+={0,2})$/i.exec(descriptor.value);
-  if (!match) return { present: true, basic: null };
-  const bytes = Buffer.from(match[1], 'base64');
-  const value = bytes.toString('utf8'), colon = value.indexOf(':');
-  if (bytes.toString('base64') !== match[1] || !Buffer.from(value, 'utf8').equals(bytes) ||
-      colon < 1 || colon !== value.lastIndexOf(':')) return { present: true, basic: null };
-  return { present: true, basic: { id: value.slice(0, colon), secret: value.slice(colon + 1) } };
+  const evidence=authorizationHeaderEvidence(req);
+  if(!evidence.valid) return null;
+  if(evidence.value===undefined) return {present:false,basic:null};
+  const match=/^Basic ([A-Za-z0-9+/]+={0,2})$/i.exec(evidence.value);
+  if(!match) return {present:true,basic:null};
+  const bytes=Buffer.from(match[1],'base64');
+  const value=bytes.toString('utf8'),colon=value.indexOf(':');
+  if(bytes.toString('base64')!==match[1] || !Buffer.from(value,'utf8').equals(bytes) ||
+      colon<1 || colon!==value.lastIndexOf(':')) return {present:true,basic:null};
+  return {present:true,basic:{id:value.slice(0,colon),secret:value.slice(colon+1)}};
 }
 
 function safeClientBinding(row, expectedId) {
