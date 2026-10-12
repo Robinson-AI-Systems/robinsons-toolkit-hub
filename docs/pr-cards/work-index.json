@@ -490,12 +490,15 @@
         "D-2"
       ],
       "card": "docs/pr-cards/L-1.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "L-1"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "L-1 read-only local file slice (CI/review pending)"
+      ]
     },
     {
       "id": "L-2",
