@@ -127,7 +127,7 @@ D-3b supplies the server boundary. D-3 retains route fallback, cleanup and deplo
 | Door scripts | package.json | npm run test:doors and test:types, both real runnable suites. |
 | CLI distribution | .github/workflows/tag-cli.yml | Immutable cli-v1 tag on verified main push, single tag only. |
 
-Real device smoke for native credentials remains unverified; hosted services and GitHub relay are not yet provisioned.
+Real device smoke for native credentials remains unverified. Hosted Vercel and Neon infrastructure and the private relay transport GitHub repository are provisioned, but the build is protected and relay runtime routes, webhook, custom RTC service adoption, test passes and cleanup activation remain unverified (D-4 WAITING_ON_OWNER).
 
 ## Built in D-1c (PR #14)
 
