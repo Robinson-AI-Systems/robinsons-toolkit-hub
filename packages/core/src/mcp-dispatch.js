@@ -87,13 +87,20 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
         !safeDispatchArgs(args)) {
       return deny('Tool unavailable for this connection');
     }
-    // Clone before the first await, otherwise policy can alter confirmation fields.
-    let safeArgs;
-    try { safeArgs = snapshotDispatchArgs(args); }
-    catch { return deny('Tool unavailable for this connection'); }
+    // Capture both request and service-projected identity before the first await.
+    // Authorization, handler execution and scoped persistence must share one tenant.
+    let safeArgs, safeConnection;
+    try {
+      if (!isInertJsonData(connection) ||
+          ![Object.prototype, null].includes(Object.getPrototypeOf(connection))) {
+        throw new TypeError('Unsafe connection identity');
+      }
+      safeArgs = snapshotDispatchArgs(args);
+      safeConnection = snapshotDispatchArgs(connection);
+    } catch { return deny('Tool unavailable for this connection'); }
     const item = registry.tools.find(t => t.name === name);
     let permitted = false;
-    try { permitted = !!item && (await authorizeTool(item, connection)) === true; }
+    try { permitted = !!item && (await authorizeTool(item, safeConnection)) === true; }
     catch { permitted = false; }
     if (!permitted) return deny('Tool unavailable for this connection');
     // runRead is a privileged convenience, never a route to execute a write.
@@ -108,11 +115,11 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
     if (typeof handler !== 'function') return deny('Tool unavailable');
     try {
       const raw = await shapeResult(await handler(safeArgs, {
-        connection, connectionId: connection.resultScope, db, services, registry,
+        connection: safeConnection, connectionId: safeConnection.resultScope, db, services, registry,
         runRead: (nextName, nextArgs) => dispatch({
-          name: nextName, args: nextArgs, connection, db, services
+          name: nextName, args: nextArgs, connection: safeConnection, db, services
         }, depth + 1)
-      }), { mode: connection.mode });
+      }), { mode: safeConnection.mode });
       // Adapter objects may contain active toJSON/getters. Never serialize,
       // return, or page them before proving that all fields are inert JSON.
       if (!isInertJsonData(raw)) return deny('Tool returned an invalid result');
@@ -139,7 +146,7 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       if (!isInertJsonData(result)) return deny('Tool returned an invalid result');
       if (jsonBytes(result) <= MAX_INLINE_BYTES) return result;
       // Never clip provider output or store content before it passes service redaction.
-      if (typeof connection.resultScope !== 'string' || !connection.resultScope ||
+      if (typeof safeConnection.resultScope !== 'string' || !safeConnection.resultScope ||
           typeof db?.putScopedResult !== 'function' ||
           result.content.some(part => part?.type !== 'text')) {
         return deny('Result exceeds 8 KB and cannot be securely stored for this connection.');
@@ -174,13 +181,13 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       if (jsonBytes(answer) > MAX_INLINE_BYTES) {
         return deny('Result page exceeds the allowed response size.');
       }
-      await db.putScopedResult({ handle, connection: connection.resultScope, body, summary,
+      await db.putScopedResult({ handle, connection: safeConnection.resultScope, body, summary,
         expiresAt: new Date(Date.now() + 86400000) });
       return { content: [{ type: 'text', text: JSON.stringify(answer) }] };
     } catch (error) {
       // The service adapter may return a scrubbed error only; raw exceptions never escape.
       let safe = null;
-      try { safe = await formatError(error, { mode: connection.mode }); } catch { /* deny */ }
+      try { safe = await formatError(error, { mode: safeConnection.mode }); } catch { /* deny */ }
       if (isInertJsonData(safe) && safe?.isError && Array.isArray(safe.content)) return safe;
       return deny('Could not read account details; check server setup');
     }
