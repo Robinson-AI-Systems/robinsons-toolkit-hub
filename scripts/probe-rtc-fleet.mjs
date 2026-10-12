@@ -3,6 +3,7 @@
 import { readFile } from 'node:fs/promises';
 import { checkAgent } from '../packages/cli/src/agent-check.js';
 import { belongsToRtcNamespace } from '../packages/cli/src/rtc-tool-prefix.js';
+import { matchesDeploymentPin } from '../packages/cli/src/deployment-identity.js';
 import { parseFleetOrigins, parsePinnedFleetInventory, parseReadTests, probeRtcFleet } from '../packages/cli/src/fleet-probe.js';
 async function main() {
   // Public observation is safe in CI: it reads only reviewed inventory and
@@ -24,7 +25,10 @@ async function main() {
     origins,
     authorize: authorized ? async (server, origin, manifest) => {
       const test = tests[server];
-      if (!test || !belongsToRtcNamespace(manifest.prefix, test.readTool)) return false;
+      // Refuse stale/preview/unknown deployed identity *before* the pass-bearing
+      // agent-check ever sends a protected request.
+      if (!test || !belongsToRtcNamespace(manifest.prefix, test.readTool) ||
+          !matchesDeploymentPin(manifest.deployment, test.expectedDeployment)) return false;
       const env = { ...process.env, RTOOL_SERVERS: server + '=' + origin };
       let snapshot;
       const code = await checkAgent({ server, readTool: test.readTool,

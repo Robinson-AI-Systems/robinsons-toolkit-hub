@@ -41,7 +41,7 @@ Vercel Sandbox or revocation: those are separately recorded gates.
 
 If an independently owner-approved temporary non-production RTC TEST
 read_only pass is available, set `RTC_FLEET_READ_TESTS` to JSON of
-alias → `{ "readTool": "...", "passEnv": "ENV_NAME" }`, keep pass bytes only
+alias → `{ "readTool": "...", "passEnv": "ENV_NAME", "expectedDeployment": { "sha": "<exact 40-hex deployed commit>", "ref": "live", "environment": "production" } }`. First independently verify the exact deployed SHA, branch and environment through the service owner's trusted deployment evidence. These nonsecret pins must all match the service's public `deployment` self-report **before** the fleet checker starts its pass-bearing agent request; an absent, stale or preview claim remains unverified. A matching self-report alone is not an independent deployed attestation or real read. Keep pass bytes only
 inside that environment, and invoke `node scripts/probe-rtc-fleet.mjs --authorized-read-only`.
 The existing `agent-check` enforces read_only identity, declared non-writing
 tool metadata and real harmless read, while requiring an exact direct route.
