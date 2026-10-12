@@ -5,17 +5,20 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
-**K-3ch / PR #120 as-if-merged:** a disposable checkout of the **original Stripe
-service** receives an offline unpacked, private core archive under its own
-`node_modules`. Exactly four originally verbatim source leaves (OAuth, AES-GCM,
-registry, write declarations) are temporarily re-exported from that archive.
-Five unchanged original Stripe source assertion files—including owner OAuth
-HTTP—run through the service's authentic imports. Source SHA, leaf hashes,
-original test hashes and cleanup are checked. This is a genuine **local
-adoption rehearsal**, not Stripe-owned production adoption, full SQL with the
-installed adapter, currently deployed provider routes, independently
-authenticated money-out approval or a GitHub Release. K-3 remains NOT_READY.
-D-4 three-route/revocation acceptance remains independently open.
+**K-3ci / PR #121 as-if-merged (exact-head proof required):** the original
+Stripe service's seven unchanged OAuth, money-approval/limit/reservation and RTC
+PostgreSQL tests now run a second time **through four private installed core
+imports** in the disposable source checkout. The same job still requires
+pristine original SQL first; private archive and temporary overlays are
+removed afterward. This improves real original-service SQL compatibility
+evidence but does **not** commit adoption in Stripe's repository, authenticate
+independent human owner money-out consent, certify currently deployed account
+isolation or publish a Release. K-3 stays private, unpublished and NOT_READY.
+Current Stripe main a38a325 has reviewed tracked changes in source HTTP,
+bearer auth, RTC HTTP and RTC passes (four service-owned/security-sensitive
+blobs); original four verbatim import leaves and eight inventoried test blobs
+are unchanged. Do not silently repin newer service-owned behavior. D-4
+direct/relay/Sandbox/revocation acceptance stays independently open.
 
 
 **Active session outcome:** make K-3's private shared core safe for genuine
@@ -28,7 +31,7 @@ import rehearsal without claiming deployment or production adoption.
 | Work/owner | Implemented and automated evidence | Deployed/real acceptance | Blocker, dependency, re-entry condition, next action |
 |---|---|---|---|
 | K-3 portable HTTP / Hub | Real source comparison and private packed consumer; #119 fixes active getter/toJSON regression | No service-owned adapter adoption | Exact original service source body behavior differs. **Re-entry:** exact CI head and service-owned original HTTP review are independently green. **Next:** Stripe service agent evaluates the getter-free transport handoff under its own tests and approval policy. |
-| K-3 complete adoption/release / Stripe + Hub | Source SQL/owner HTTP and RTC suites pass at immutable historical SHA; local archive private | Service SQL against installed adapter, authenticated independent human money consent and immutable Release unverified | Needs original adopting-service tests, owner approval/account isolation proof and reviewed current-source drift. **Re-entry:** verified provider-owned adapter adoption and all gates. **Next:** source-specific CI and K-3 release matrix, no publication before gates. |
+| K-3 complete adoption/release / Stripe + Hub | Historical source SQL/owner HTTP and RTC original suites run; #121 adds original SQL rerun through four privately installed imports (requires exact-head CI) | Stripe-owned dependency adoption, current service SQL/account separation, authenticated independent human money consent and immutable Release unverified | Needs original adopting-service tests, owner approval/account isolation proof and reviewed current-source drift. **Re-entry:** verified provider-owned adapter adoption and all gates. **Next:** source-specific CI and K-3 release matrix, no publication before gates. |
 | D-4 TEST routes / Hub + service owners | Bounded fleet probe and fake-service runners; IN-06 **already approved** limited TEST relay configuration | Exact service TEST manifest, direct read, encrypted private GitHub relay, Vercel Sandbox and same-pass revocation not jointly proven | Eligible when service-owned exact deployed commit/TEST identity, protected ingress, owner-authorized temporary TEST pass and correct immutable relay binding are verified. **Next:** recheck approved fleet origins and verify four independent real route gates; no new IN-06 request. |
 | H-1 central Hub / Hub | No central server yet; D-2 direct client built | Central registry/discovery/routing not present | Work index requires K-3 completion first. **Re-entry:** K-3 release/adoption gates satisfy dependency. **Next:** write the H-1 JIT card, then approved minimum foundation; no silent dependency bypass. |
 
