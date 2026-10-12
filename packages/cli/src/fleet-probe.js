@@ -42,6 +42,7 @@ function report(name, origin, state, reason, extra = {}) {
 export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize } = {}) {
   const names = [...new Set([...REQUIRED_RTC_SERVERS, ...Object.keys(origins)])].sort();
   const checks = [];
+  const pending = [];
   for (const name of names) {
     if (!Object.hasOwn(origins, name)) {
       checks.push(report(name, null, 'unverified', 'no_verified_origin')); continue;
@@ -77,16 +78,47 @@ export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize
       checks.push(report(name, origin, 'blocked', 'rtc_1_contract_invalid',
         { httpStatus: response.status, advertisedRtc: Number.isInteger(manifest?.rtc) ? manifest.rtc : null })); continue;
     }
-    if (!authorize) {
-      checks.push(report(name, origin, 'unverified', 'read_only_auth_unverified',
-        { httpStatus: response.status, contract: true, prefix: manifest.prefix })); continue;
+    // Collect observed identities first. An authorized TEST read must not run
+    // under an alias that collides with another deployed RTC identity.
+    pending.push({ index: checks.length, name, origin, manifest,
+      httpStatus: response.status });
+    checks.push(report(name, origin, 'unverified', 'read_only_auth_unverified',
+      { httpStatus: response.status, contract: true, prefix: manifest.prefix }));
+  }
+  const byOrigin = new Map();
+  const byPrefix = new Map();
+  for (const entry of pending) {
+    if (!byOrigin.has(entry.origin)) byOrigin.set(entry.origin, []);
+    byOrigin.get(entry.origin).push(entry);
+    if (!byPrefix.has(entry.manifest.prefix)) byPrefix.set(entry.manifest.prefix, []);
+    byPrefix.get(entry.manifest.prefix).push(entry);
+  }
+  for (const entry of pending) {
+    // The RTC permits the same prefix for two deployments of the *same* server.
+    // One origin under two independent aliases, or one prefix claimed by two
+    // different server identities, must not be treated as a successful read.
+    const originCollision = byOrigin.get(entry.origin).length > 1;
+    const claimed = byPrefix.get(entry.manifest.prefix);
+    const prefixCollision = claimed.some(other =>
+      other.manifest.server !== entry.manifest.server);
+    if (originCollision || prefixCollision) {
+      checks[entry.index] = report(entry.name, entry.origin, 'blocked',
+        originCollision ? 'duplicate_deployed_origin' : 'rtc_prefix_identity_collision',
+        { httpStatus: entry.httpStatus, contract: true,
+          prefix: entry.manifest.prefix });
+      continue;
     }
+    if (!authorize) continue;
     let authorized = false;
-    try { authorized = (await authorize(name, origin, manifest)) === true; } catch { /* never print provider errors */ }
-    checks.push(report(name, origin, authorized ? 'ready' : 'unverified',
+    try {
+      authorized = (await authorize(entry.name, entry.origin, entry.manifest)) === true;
+    } catch { /* Provider failures and secret-bearing errors never enter evidence. */ }
+    checks[entry.index] = report(entry.name, entry.origin,
+      authorized ? 'ready' : 'unverified',
       authorized ? 'authenticated_direct_read_only' : 'read_only_auth_unverified',
-      { httpStatus: response.status, contract: true, prefix: manifest.prefix,
-        authenticatedReadOnly: authorized, direct: authorized }));
+      { httpStatus: entry.httpStatus, contract: true,
+        prefix: entry.manifest.prefix, authenticatedReadOnly: authorized,
+        direct: authorized });
   }
   return { schema: 1, allAccepted: false, checks };
 }
