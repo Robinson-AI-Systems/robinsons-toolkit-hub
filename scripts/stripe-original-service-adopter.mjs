@@ -19,6 +19,26 @@ export const originalAdopterTests=Object.freeze([
   'tests/unit/registry.test.js','tests/unit/write-metadata.test.js',
   'tests/unit/oauth-handlers.test.js'
 ]);
+// Original Stripe's own SQL suites; these remain unchanged and run only
+ // against disposable local PostgreSQL while the private archive is installed.
+export const originalAdopterSqlTests=Object.freeze([
+  'tests/db/oauth-persistent.test.js','tests/db/oauth.test.js',
+  'tests/db/money-owner-approval.test.js','tests/db/money-reservation.test.js',
+  'tests/db/owner-money-limit.test.js','tests/db/rtc-passes.test.js',
+  'tests/db/rtc-rate-limit.test.js'
+]);
+export function assertDisposableSqlEnvironment(env=process.env) {
+  if(env.CI!=='true'||typeof env.TEST_DATABASE_URL!=='string')
+    throw new Error('Original installed-core SQL tests require CI and disposable local PostgreSQL');
+  let u;
+  try {u=new URL(env.TEST_DATABASE_URL);}
+  catch {throw new Error('Original installed-core SQL database URL invalid');}
+  if(u.protocol!=='postgresql:'||u.hostname!=='127.0.0.1'||
+    u.port!=='5432'||u.pathname!=='/postgres'||u.search||u.hash)
+    throw new Error('Original installed-core SQL tests refuse non-local or unexpected database');
+  return true;
+}
+
 export function validateOriginalAdoptionPlan({baseline,trace,sourceHead}) {
   if(baseline?.disposition!=='REVIEWED_SNAPSHOT_NOT_RELEASE'||
     !/^[a-f0-9]{40}$/.test(sourceHead||'')||
@@ -51,7 +71,8 @@ const run=(command,args,cwd,timeout=60000)=>{
       command.split(/[\\/]/).at(-1)+', exit '+String(result.status)+')');
   return result.stdout;
 };
-export function verifyPrivateAdoption() {
+export function verifyPrivateAdoption({withSql=false}={}) {
+  if(withSql)assertDisposableSqlEnvironment();
   const source=join(root,'source-stripe');
   const baseline=JSON.parse(readFileSync(join(root,'docs/audits/K3-UPSTREAM-BASELINE.json'),'utf8'));
   const trace=JSON.parse(readFileSync(join(root,'docs/audits/K3-SOURCE-TRACE.json'),'utf8'));
@@ -98,8 +119,15 @@ export function verifyPrivateAdoption() {
     // its real server imports, now routed through the installed core tarball.
     run(npx,['--no-install','vitest','run','--config','vitest.config.js',
       ...originalAdopterTests],source,90000);
+    if(withSql) {
+      // The pristine original SQL suite already passed in the same CI job.
+      // Repeat it through real unchanged service imports, now backed by the
+      // installed private archive. Never connect to deployed/provider SQL.
+      run(npm,['run','test:db','--',...originalAdopterSqlTests],source,180000);
+    }
     return Object.freeze({source:sourceHead,overlaidOriginalModules:plan.plans.length,
       unchangedOriginalTests:originalAdopterTests.length,
+      originalSqlTestsThroughInstalledCore:withSql?originalAdopterSqlTests.length:0,
       privateArchiveSha256:createHash('sha256').update(bytes).digest('hex'),
       serviceRepoModified:false,serviceDeployed:false,
       adapterOwnedSqlAndMoneyApprovalProven:false,releaseReady:false});
@@ -110,7 +138,12 @@ export function verifyPrivateAdoption() {
   }
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  try{console.log(JSON.stringify(verifyPrivateAdoption()));}
+  try{
+    if(process.argv.length>3||
+      (process.argv[2]&&process.argv[2]!=='--with-sql'))
+      throw new Error('Only --with-sql is supported');
+    console.log(JSON.stringify(verifyPrivateAdoption({withSql:process.argv[2]==='--with-sql'})));
+  }
   catch(error){console.error('Private K-3 source adopter: '+error.message);
     process.exitCode=1;}
 }

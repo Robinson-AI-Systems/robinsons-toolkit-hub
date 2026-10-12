@@ -64,10 +64,8 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
     if(original.length!==1||original[0].with?.repository!==baseline.sourceRepository||
        original[0].with?.ref!==baseline.reviewedMain||
        original[0].with?.['persist-credentials']!==false||
-       (name==='stripe-source-owner-http'?
-         hub.length!==1||hub[0].with?.repository!==undefined||
-           hub[0].with?.['persist-credentials']!==false:
-         hub.length!==0)){
+       hub.length!==1||hub[0].with?.repository!==undefined||
+       hub[0].with?.['persist-credentials']!==false){
       fail(name+': source checkout must be the reviewed immutable, non-persistent ref');
     }
     // The immutable checkout SHA alone is insufficient if a reviewed manifest is
@@ -112,6 +110,21 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
       }
     }else if(job.services)fail(name+': source owner HTTP should not use a live database');
   }
+  const sqlJob=jobs['stripe-source-sql'];
+  const hubInstall=sqlJob.steps.filter(step=>
+    step.name==='Install Toolkit private package tooling without lifecycle scripts');
+  if(hubInstall.length!==1||
+     hubInstall[0].run?.trim()!=='npm ci --ignore-scripts --no-audit --no-fund')
+    fail('original installed-core SQL test requires private Hub package tooling');
+  const installedSql=sqlJob.steps.filter(step=>
+    step.name==='Rehearse original Stripe SQL with privately installed core imports');
+  if(installedSql.length!==1||
+     installedSql[0].run?.trim()!=='node scripts/stripe-original-service-adopter.mjs --with-sql'||
+     installedSql[0].env?.TEST_DATABASE_URL!==
+       'postgresql://postgres:ci-only-not-a-secret@127.0.0.1:5432/postgres'||
+     sqlJob.steps.indexOf(installedSql[0])<=
+       sqlJob.steps.findIndex(step=>step.name==='Execute authentic source OAuth and money SQL against throwaway PostgreSQL'))
+    fail('original installed-core SQL adoption must follow original suites on local PostgreSQL');
   const differential=jobs['stripe-source-owner-http'].steps.filter(step=>
     step.name==='Compare authentic source HTTP with the private portable boundary');
   if(differential.length!==1||
@@ -132,7 +145,8 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
   }
   return Object.freeze({reviewedMain:baseline.reviewedMain,originalSourceModules:11,
     originalTrackedSuites:8,serviceOwnedModules:4,rtcSuites:Object.keys(baseline.rtcTests).length,
-    sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,
+    sqlSuites:sourceSql.length,installedCoreSqlSuites:sourceSql.length,
+    ownerHttpSuites:ownerHttp.length,
     releaseReady:false});
 }
 

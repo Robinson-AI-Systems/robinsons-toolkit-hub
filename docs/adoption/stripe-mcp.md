@@ -48,3 +48,23 @@ private artifact and source SHA, adopt only proven stable imports behind a
 reversible tested PR, run all original unit/SQL/money approval suites against
 that actual adopter and retain standalone autonomy. The HTTP module
 still requires a service-owned getter-free request-body review.
+
+## K-3ci immutable installed-core SQL adoption rehearsal (2026-10-12)
+
+Hub's #121 original service checkout SQL job now preserves its pristine source
+seven-suite PostgreSQL pass and repeats the seven original SQL suites while four
+proven source-verbatim imports route through the unpacked private package.
+This is stronger than the earlier five unchanged original unit suites, but
+does not make the package a committed dependency of Stripe, exercise the
+adapted bearer/HTTP/owner consent adapter through private core or establish
+real owner-financial consent. Keep the original server's own migration and
+approval gates.
+
+Source review at Stripe main `a38a325f07bdb993b46dc82d85e835d06281aff0`:
+compared against Hub's pinned `de56af8199fee39b20c2a1ac733562f2622dfda7`,
+four tracked core files differ (`http`, `mcp-auth`, `rtc-http`, `rtc-passes`);
+all four overlaid verbatim leaves and eight original tracked unit-suite blobs
+remain stable. The current-service agent must review these service-owned
+security differences before adoption rather than treating historical green CI
+as proof of current compatibility. Release remains blocked.
+
