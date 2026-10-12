@@ -113,3 +113,9 @@ portable `createGuardedMcpDispatcher` may also be imported directly, so it now r
 non-enumerable, symbol and prototype-sensitive top-level argument descriptors before authorization or side
 effects. Regression verifies plain and null-prototype compatible requests, denied getters and no provider
 calls. This is deliberate fail-closed adaptation, not a claim about source HTTP transport adoption.
+
+**K-3au encrypted setup link selector integrity:** the portable store now refuses any repeated
+query parameter name whose value carries the issued id (also percent-decoded aliases). That closes a
+first-value/last-value selector ambiguity before inserting the encrypted row; unaffected exact source
+query convention and path segment tests remain green. The service owns route interpretation,
+account-bound authorization, durable one-use SQL and production activation.

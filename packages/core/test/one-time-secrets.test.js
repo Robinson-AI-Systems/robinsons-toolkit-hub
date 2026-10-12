@@ -119,6 +119,28 @@ describe('private one-time secret adapter', () => {
     expect(setupPath).toBe('/api/stripe/setup/'+id);
     expect(await pathBound.consume(id)).toBe('synthetic-value');
   });
+  it('rejects a duplicated selector name even with one exact identifier', async () => {
+    const f=fixture();
+    const badPaths=[
+      id=>'/api/stripe/setup?show='+id+'&show=wrong',
+      id=>'/api/stripe/setup?show=wrong&show='+id,
+      id=>'/api/stripe/setup?show='+id+'&%73how=wrong',
+      id=>'/api/stripe/setup?%73how='+id+'&show=wrong'
+    ];
+    for(const setupPathFor of badPaths) {
+      const store=createOneTimeSecretStore({...f.adapters,setupPathFor});
+      await expect(store.issue({kind:'setup',secret:'synthetic-opaque'}))
+        .rejects.toThrow(/route/);
+    }
+    expect(f.db.addOneTimeSecret).not.toHaveBeenCalled();
+    const safe=createOneTimeSecretStore({...f.adapters,
+      setupPathFor:id=>'/api/stripe/setup?show='+id+'&kind=setup'
+    });
+    const issued=await safe.issue({kind:'setup',secret:'synthetic-opaque'});
+    expect(issued.setupPath).toBe('/api/stripe/setup?show='+issued.id+'&kind=setup');
+    expect(await safe.consume(issued.id)).toBe('synthetic-opaque');
+    expect(f.db.addOneTimeSecret).toHaveBeenCalledTimes(1);
+  });
   it('refuses missing durability, missing AAD mappings or an unconfigured key', () => {
     const f=fixture();
     expect(()=>createOneTimeSecretStore({...f.adapters,db:{}})).toThrow(/Durable/);
