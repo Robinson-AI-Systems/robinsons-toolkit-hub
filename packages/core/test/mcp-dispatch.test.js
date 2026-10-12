@@ -46,6 +46,30 @@ describe('transport-independent MCP dispatch adapter',()=>{
     expect(f.handlers.example_read).not.toHaveBeenCalled();
     expect(f.handlers.restricted_read).not.toHaveBeenCalled();
   });
+  it('refuses untrusted argument descriptors before policy, handler or storage',async()=>{
+    const f=fixture();
+    let getterCalls=0;
+    const accessor={};
+    Object.defineProperty(accessor,'detail',{enumerable:true,get(){getterCalls++;throw Error('private control');}});
+    const inherited=Object.create({confirm:true});
+    const symbol={};symbol[Symbol('private')]=true;
+    const malicious=[
+      accessor,inherited,symbol,{constructor:'Object'},{prototype:{}},
+      new Proxy({}, {getPrototypeOf(){throw Error('private proxy')}})
+    ];
+    for(const args of malicious){
+      const result=await f.dispatch('example_read',args);
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result)).not.toMatch(/private control|private proxy/);
+    }
+    expect(getterCalls).toBe(0);
+    expect(f.authorizeTool).not.toHaveBeenCalled();
+    expect(f.handlers.example_read).not.toHaveBeenCalled();
+    expect(f.db.putScopedResult).not.toHaveBeenCalled();
+    const nullRecord=Object.assign(Object.create(null),{detail:'summary',fields:'value'});
+    expect((await f.dispatch('example_read',nullRecord)).isError).toBeUndefined();
+    expect(f.handlers.example_read).toHaveBeenCalledTimes(1);
+  });
   it('fails closed when injected policy throws or handler is missing',async()=>{
     const f=fixture();
     f.authorizeTool.mockImplementationOnce(()=>{throw new Error('private-policy-error');});
