@@ -54,7 +54,36 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
         requestKey: { type: 'string', maxLength: 128 } },
       additionalProperties: true } });
   async function handler(args, ctx) {
-    const connection = ctx?.connection;
+    // Bind one inert, detached service connection across all async hooks.
+    // A mutable caller ctx must not turn an approved TEST account into LIVE,
+    // switch owner identity, or silently redirect the subsequent audit.
+    let connection;
+    try {
+      if (!ctx || ![Object.prototype,null].includes(Object.getPrototypeOf(ctx)) ||
+          Reflect.ownKeys(ctx).some(key=>typeof key!=='string')) throw new TypeError('Unsafe write context');
+      const descriptors=Object.getOwnPropertyDescriptors(ctx);
+      const fields=Object.entries(descriptors);
+      if (fields.some(([,field])=>!field.enumerable || !Object.hasOwn(field,'value')) ||
+          !Object.hasOwn(descriptors,'connection') || !Object.hasOwn(descriptors,'db')) {
+        throw new TypeError('Unsafe write context');
+      }
+      if (!descriptors.connection.value || Array.isArray(descriptors.connection.value) ||
+          !isInertJsonData(descriptors.connection.value) ||
+          ![Object.prototype,null].includes(Object.getPrototypeOf(descriptors.connection.value))) {
+        throw new TypeError('Unsafe connection identity');
+      }
+      const id=descriptors.connectionId?.value;
+      if (id!==undefined && id!==null && (typeof id!=='string' ||
+          id.length>256 || /[\\x00-\\x1f\\x7f]/.test(id))) {
+        throw new TypeError('Invalid connection audit identifier');
+      }
+      connection=frozenJsonCopy(descriptors.connection.value);
+      ctx=Object.freeze(Object.fromEntries(fields.map(([key,field])=>[
+        key,key==='connection'?connection:field.value
+      ])));
+    } catch {
+      return reply({done:false,error:'This connection is not allowed to change provider records'},true);
+    }
     const respond = (value, isError = false) => {
       if (connection?.mode !== 'live') return reply(value, isError);
       const banner = { ...value };
