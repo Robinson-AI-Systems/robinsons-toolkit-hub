@@ -110,11 +110,12 @@
       "sourceFile": "src/core/one-time-secrets.js",
       "sourceBlob": "071900c19db7d77a608c7bb65574b12b24c080fb",
       "target": "./src/one-time-secrets.js",
-      "coreBlob": "ab6e35e31191b48cf054be732caea23cdfcf2bd9",
+      "coreBlob": "d2a2b2836e18151de6a5d051373229f02e51e8de",
       "kind": "adapted",
       "tests": [
         "packages/core/test/one-time-secrets.test.js",
-        "tests/db/core-storage-adapters.test.js"
+        "tests/db/core-storage-adapters.test.js",
+        "packages/core/test/one-time-secret-expiry-integrity.test.js"
       ],
       "serverOwned": [
         "service-specific ciphertext AAD and atomic SQL row ownership",
@@ -122,7 +123,8 @@
         "setup link must carry exactly one complete issued id as a path segment or query value; only the owning service can verify its precise parameter and access control",
         "ambiguous same-name or encoded duplicate one-time setup query selectors are denied before inserting encrypted secrets; service still validates the exact route name and atomic SQL ownership",
         "one-time issuance validates account, TEST/LIVE mode, kind and finite ten-minute expiry clock before storage; frozen AAD bindings prevent adapter mutation while source service retains SQL and access control",
-        "portable consume now checks own inert SQL row fields and scalar AAD binding before decrypt; service keeps atomic expiry, row ownership and authenticated reveal"
+        "portable consume now checks own inert SQL row fields and scalar AAD binding before decrypt; service keeps atomic expiry, row ownership and authenticated reveal",
+        "Portable one-time secret store owns a detached copy of its configured encryption key and denies stale/malformed or contradictory returned expiry aliases; source SQL must still atomically consume only unexpired service-owned rows"
       ]
     },
     "./oauth-protocol": {
