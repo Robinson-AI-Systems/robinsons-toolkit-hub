@@ -13,7 +13,7 @@ export function oauthTransportBodyWithinLimit(req) {
   const declaredValue = req.headers?.['content-length'];
   let declared;
   if (declaredValue !== undefined) {
-    if (typeof declaredValue !== 'string' || !/^(0|[1-9]\\d*)$/.test(declaredValue)) return false;
+    if (typeof declaredValue !== 'string' || !/^(0|[1-9]\d*)$/.test(declaredValue)) return false;
     declared = Number(declaredValue);
     if (!Number.isSafeInteger(declared) || declared > MAX_OAUTH_BODY_BYTES) return false;
   }
