@@ -59,7 +59,7 @@ describe('.github/workflows/ci.yml', () => {
     const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout') &&
       s.with?.path === 'source-stripe');
     const sqlCheckout = wf.jobs['stripe-source-sql'].steps.find(s =>
-      s.uses?.startsWith('actions/checkout'));
+      s.uses?.startsWith('actions/checkout') && s.with?.path === 'source-stripe');
     expect(checkout.with.repository).toBe('Robinson-AI-Systems/stripe-mcp');
     expect(checkout.with.ref).toBe(sqlCheckout.with.ref);
     expect(checkout.with['persist-credentials']).toBe(false);
