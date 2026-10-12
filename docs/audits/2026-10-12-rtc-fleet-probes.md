@@ -20,3 +20,32 @@ is not a verified service connection. Reprobe at the end of this session; this
 dated table is not a substitute for future sessions' new HTTP observations.
 The private ciphertext-only relay repository and protected hosted webhook
 are separate from these service RTC origins.
+
+## Bounded additional session verification (2026-10-12, K-3 batch #116–#120)
+
+At the later session boundary, the committed inventory was reviewed again
+against Stripe, GitHub, Google Workspace, Vercel and Neon. **Do not overwrite
+the earlier positive HTTP observations in the table above** with an executor
+transport failure.
+
+- Stripe, GitHub, Google Workspace: an independent public `GET /api/contract`
+  attempt from this session's execution container failed at DNS resolution
+  (`curl` exit 6, HTTP status 000 for each); the web fetch context also
+  could not access these URLs. This proves **this runner cannot probe**, not
+  that the deployed services became unreachable or lost RTC compatibility.
+  The earlier observed HTTP 200/200/404 results remain dated, not fresh
+  authenticated connection proof.
+- Vercel and Neon: public RTC origins are still `null` in the owner-reviewed
+  inventory. Neither was guessed or probed by hostname. Coordinate each
+  service's exact deployed TEST RTC domain and protected mode contract through
+  that service repository handoff before adding them.
+- No owner-issued temporary TEST pass was available in this execution
+  environment, so **zero authenticated TEST direct reads** were attempted.
+  Neither encrypted private GitHub relay, Vercel Sandbox nor same-pass
+  revocation was executed. D-4 remains **IN_PROGRESS**, not accepted.
+- Re-entry: run `scripts/probe-rtc-fleet.mjs` from a network-capable,
+  owner-approved executor with fixed verified origins; provide temporary
+  service-issued scoped TEST pass through protected environment only.
+  Then collect four separate neutral direct/relay/Sandbox/revocation results.
+  Existing IN-06 approval is sufficient for its restricted scope; no repeat
+  approval request or security weakening is authorized.
