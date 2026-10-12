@@ -39,7 +39,8 @@ describe('.github/workflows/ci.yml', () => {
   it('pins real Stripe source and refuses unavailable source SQL evidence', () => {
     const job = wf.jobs['stripe-source-sql'];
     expect(job.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
-    const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout'));
+    const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout') &&
+      s.with?.path === 'source-stripe');
     expect(checkout.with.repository).toBe('Robinson-AI-Systems/stripe-mcp');
     expect(checkout.with.ref).toMatch(/^[0-9a-f]{40}$/);
     expect(checkout.with['persist-credentials']).toBe(false);
