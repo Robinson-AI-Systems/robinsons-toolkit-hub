@@ -79,7 +79,7 @@ describe('private one-time secret adapter', () => {
     const f=fixture();
     const {id}=await f.store.issue({account:'acct_fixture',kind:'setup',secret:'synthetic'});
     const returned=f.rows.get(id);
-    const bad=createOneTimeSecretStore({...f.adapters,accountFromRow:()=> 'acct\\ninvalid'});
+    const bad=createOneTimeSecretStore({...f.adapters,accountFromRow:()=> 'acct\ninvalid'});
     await expect(bad.consume(id)).rejects.toThrow(/account/);
     const {id:next}=await f.store.issue({account:'acct_fixture',kind:'setup',secret:'synthetic'});
     const mutation=createOneTimeSecretStore({...f.adapters,contextFor:binding=>{
