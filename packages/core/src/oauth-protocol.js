@@ -9,24 +9,75 @@ export const MAX_OAUTH_BODY_BYTES = 16 * 1024;
 // Mirror current source transport evidence without changing the older pinned
 // byte-identical HTTP helper. Hosts must supply rawBody or a trusted length
 // before relying on byte-exact acceptance for pre-parsed framework requests.
+// Reject ambiguous HTTP framing before reading a framework-preparsed body or
+// letting a token handler reach durable storage. Inspect descriptors, never
+// invoke request/header accessors supplied by a caller.
+function oauthTransportFrame(req) {
+  if (!req || typeof req !== 'object') return null;
+  for (const key of ['headers','rawHeaders','rawBody','body']) {
+    const own = Object.getOwnPropertyDescriptor(req,key);
+    if (own && !Object.hasOwn(own,'value')) return null;
+  }
+  const headers=req.headers;
+  if (!headers || ![Object.prototype,null].includes(Object.getPrototypeOf(headers))) return null;
+  const descriptors=Object.getOwnPropertyDescriptors(headers);
+  const selected=new Map();
+  const names=['content-length','content-type','transfer-encoding'];
+  for (const key of Reflect.ownKeys(descriptors)) {
+    if (typeof key!=='string') return null;
+    const lower=key.toLowerCase();
+    if (!names.includes(lower)) continue;
+    const descriptor=descriptors[key];
+    if (key!==lower || selected.has(lower) || !descriptor.enumerable ||
+        !Object.hasOwn(descriptor,'value') || typeof descriptor.value!=='string') return null;
+    selected.set(lower,descriptor.value);
+  }
+  if (req.rawHeaders!==undefined) {
+    const raw=req.rawHeaders;
+    if (!Array.isArray(raw) || Object.getPrototypeOf(raw)!==Array.prototype ||
+        raw.length%2!==0 || raw.length>128) return null;
+    const found=new Map();
+    for (let i=0;i<raw.length;i+=2) {
+      const name=Object.getOwnPropertyDescriptor(raw,String(i));
+      const value=Object.getOwnPropertyDescriptor(raw,String(i+1));
+      if (!name || !value || !Object.hasOwn(name,'value') ||
+          !Object.hasOwn(value,'value') || typeof name.value!=='string' ||
+          typeof value.value!=='string') return null;
+      const lower=name.value.toLowerCase();
+      if (!names.includes(lower)) continue;
+      if (found.has(lower)) return null;
+      found.set(lower,value.value);
+    }
+    for (const name of names) {
+      if (found.has(name)!==selected.has(name) ||
+          found.has(name) && found.get(name)!==selected.get(name)) return null;
+    }
+  }
+  if (selected.has('transfer-encoding') && selected.has('content-length')) return null;
+  const supplied=selected.get('content-length');
+  let declared;
+  if (supplied!==undefined) {
+    if (!/^(0|[1-9]\\d*)$/.test(supplied)) return null;
+    declared=Number(supplied);
+    if (!Number.isSafeInteger(declared) || declared>MAX_OAUTH_BODY_BYTES) return null;
+  }
+  return Object.freeze({declared});
+}
+
 export function oauthTransportBodyWithinLimit(req) {
   if (req.method !== 'POST') return true;
-  const declaredValue = req.headers?.['content-length'];
-  let declared;
-  if (declaredValue !== undefined) {
-    if (typeof declaredValue !== 'string' || !/^(0|[1-9]\d*)$/.test(declaredValue)) return false;
-    declared = Number(declaredValue);
-    if (!Number.isSafeInteger(declared) || declared > MAX_OAUTH_BODY_BYTES) return false;
-  }
-  const raw = req.rawBody;
+  const frame=oauthTransportFrame(req);
+  if (!frame) return false;
+  const declared=frame.declared;
+  const raw=req.rawBody;
   if (raw !== undefined) {
     if (typeof raw !== 'string' && !Buffer.isBuffer(raw)) return false;
-    const bytes = Buffer.byteLength(raw);
-    if (bytes > MAX_OAUTH_BODY_BYTES || declared !== undefined && bytes !== declared) return false;
+    const bytes=Buffer.byteLength(raw);
+    if (bytes>MAX_OAUTH_BODY_BYTES || declared!==undefined && bytes!==declared) return false;
   } else if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
-    const bytes = Buffer.byteLength(req.body);
-    if (bytes > MAX_OAUTH_BODY_BYTES || declared !== undefined && bytes !== declared) return false;
-  } else if (declared === undefined && req.body && typeof req.body === 'object') {
+    const bytes=Buffer.byteLength(req.body);
+    if (bytes>MAX_OAUTH_BODY_BYTES || declared!==undefined && bytes!==declared) return false;
+  } else if (declared===undefined && req.body && typeof req.body==='object') {
     return false;
   }
   return true;
@@ -43,7 +94,8 @@ function endpointParams(req) {
   // The portable endpoint refuses contradictory raw/declared evidence. Exact
   // raw-byte enforcement for pre-parsed requests without either belongs to
   // the host adapter; never infer a raw length by reserializing input.
-  if ((req.rawBody !== undefined || req.headers?.['content-length'] !== undefined) &&
+  const frame=oauthTransportFrame(req);
+  if (!frame || (req.rawBody !== undefined || frame.declared !== undefined) &&
       !oauthTransportBodyWithinLimit(req)) throw new TypeError('Invalid OAuth wire body');
   // OAuth input must be an unambiguous JSON data record, not active accessors or
   // repeated form fields that different HTTP stacks may interpret differently.
