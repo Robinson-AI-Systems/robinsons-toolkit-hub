@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMcpBearerAuthenticator } from '../src/mcp-auth.js';
+import { createMcpBearerAuthenticator, allowBrowserProtocol } from '../src/mcp-auth.js';
 
 const token = 'T'.repeat(32);
 function response() {
@@ -196,5 +196,55 @@ describe('shared source-bound Authorization header evidence',()=>{
       expect(res.statusCode).toBe(401);
     }
     expect(f.getAccessToken).not.toHaveBeenCalled();
+  });
+});
+
+describe('public OAuth and MCP CORS without ambient credential permissions',()=>{
+  function browserRes(){
+    const headers={};let status=200,ended=false;
+    return {headers,get statusCode(){return status;},get ended(){return ended;},
+      setHeader(k,v){headers[k]=v;return this;},status(n){status=n;return this;},
+      end(){ended=true;return this;}};
+  }
+  it('preflights only explicitly selected public methods and does not expose credential cookies',()=>{
+    for(const mcp of [false,true]){
+      const res=browserRes();
+      expect(allowBrowserProtocol({method:'OPTIONS',headers:{origin:'https://agent.example'}},
+        res,{methods:['GET','POST'],mcp})).toBe(true);
+      expect(res.statusCode).toBe(204);
+      expect(res.ended).toBe(true);
+      expect(res.headers['Access-Control-Allow-Origin']).toBe('*');
+      expect(res.headers['Access-Control-Allow-Methods']).toBe('GET, POST, OPTIONS');
+      expect(res.headers['Access-Control-Allow-Credentials']).toBeUndefined();
+      expect(res.headers['Cache-Control']).toBe('no-store');
+      expect(res.headers['Access-Control-Allow-Headers']).toContain('authorization');
+      if(mcp) {
+        expect(res.headers['Access-Control-Allow-Headers']).toContain('mcp-session-id');
+        expect(res.headers['Access-Control-Expose-Headers']).toContain('mcp-session-id');
+      } else {
+        expect(res.headers['Access-Control-Allow-Headers']).not.toContain('mcp-session-id');
+      }
+    }
+  });
+  it('does not widen private non-CORS and rejects active origin getters without executing them',()=>{
+    const res=browserRes();
+    expect(allowBrowserProtocol({method:'OPTIONS',headers:{}},res)).toBe(false);
+    expect(res.headers).toEqual({});
+    let reads=0;
+    const headers={};
+    Object.defineProperty(headers,'origin',{enumerable:true,get(){reads++;return 'https://evil.invalid';}});
+    expect(allowBrowserProtocol({method:'OPTIONS',headers},res)).toBe(false);
+    expect(reads).toBe(0);
+    expect(res.headers).toEqual({});
+    expect(allowBrowserProtocol({method:'POST',headers:{origin:'https://agent.example'}},res)).toBe(false);
+    expect(res.headers['Access-Control-Allow-Origin']).toBe('*');
+    expect(res.statusCode).toBe(200);
+  });
+  it('rejects invalid helper options rather than advertising unauthorized browser verbs',()=>{
+    const res=browserRes(),req={method:'OPTIONS',headers:{origin:'https://agent.example'}};
+    for(const methods of [[],['PUT'],['GET','GET'],['POST','PATCH']]){
+      expect(()=>allowBrowserProtocol(req,res,{methods})).toThrow(/Invalid public browser methods/);
+    }
+    expect(res.headers).toEqual({});
   });
 });
