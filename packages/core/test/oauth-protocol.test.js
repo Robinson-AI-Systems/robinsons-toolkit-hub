@@ -131,6 +131,50 @@ describe('portable OAuth protocol handlers',()=>{
     expect(getterCalls).toBe(0);
     expect(f.db.createAccessToken).not.toHaveBeenCalled();
   });
+  it('deep-snapshots owner-selected OAuth claims before creating any durable bearer', async()=>{
+    const f=fixture(),c=await registered(f);
+    const nested={roles:['viewer'],settings:{listing:'compact'}};
+    const date=new Date('2026-10-11T00:00:00.000Z');
+    f.codes.set('nested-code',{client_id:c.client_id,redirect_uri:callback,
+      code_challenge:challenge,code_challenge_method:'S256',profile:'read_only',mode:'test'});
+    f.buildAccessRow.mockImplementationOnce(({grant: _grant,...tokens})=>
+      ({...tokens,profile:'read_only',mode:'test',nested,date}));
+    const answer=await call(f.handlers.token,'POST',{
+      grant_type:'authorization_code',client_id:c.client_id,client_secret:c.client_secret,
+      redirect_uri:callback,code:'nested-code',code_verifier:verifier,
+      resource:env.PUBLIC_BASE_URL+'/api/mcp'});
+    expect(answer.status).toBe(200);
+    const saved=f.tokens.get(answer.value.access_token);
+    expect(saved.nested).not.toBe(nested);
+    expect(saved.nested.roles).not.toBe(nested.roles);
+    expect(Object.isFrozen(saved.nested.settings)).toBe(true);
+    expect(saved.date).not.toBe(date);
+    nested.roles.push('owner');
+    nested.settings.listing='expanded';
+    date.setFullYear(2040);
+    expect(saved.nested).toEqual({roles:['viewer'],settings:{listing:'compact'}});
+    expect(saved.date.toISOString()).toBe('2026-10-11T00:00:00.000Z');
+  });
+  it('rejects nested active, cyclic and oversized service credential claims without calling SQL',async()=>{
+    const f=fixture(),c=await registered(f);
+    let executed=0;
+    const active={};
+    Object.defineProperty(active,'role',{enumerable:true,get(){executed++;return 'owner';}});
+    const cyclic={};cyclic.self=cyclic;
+    for (const value of [active,cyclic,Array(260).fill('x')]) {
+      const code='unsafe-'+f.db.consumeAuthCode.mock.calls.length;
+      f.codes.set(code,{client_id:c.client_id,redirect_uri:callback,
+        code_challenge:challenge,code_challenge_method:'S256',mode:'test'});
+      f.buildAccessRow.mockImplementationOnce(({grant: _grant,...tokens})=>({...tokens,extra:value}));
+      const outcome=await call(f.handlers.token,'POST',{
+        grant_type:'authorization_code',client_id:c.client_id,client_secret:c.client_secret,
+        redirect_uri:callback,code,code_verifier:verifier,
+        resource:env.PUBLIC_BASE_URL+'/api/mcp'});
+      expect(outcome).toMatchObject({status:400,value:{error:'invalid_grant'}});
+    }
+    expect(executed).toBe(0);
+    expect(f.db.createAccessToken).not.toHaveBeenCalled();
+  });
   it('does not return bearer credentials when the rotated SQL receipt has active fields',async()=>{
     const f=fixture(),c=await registered(f);
     let getterCalls=0;

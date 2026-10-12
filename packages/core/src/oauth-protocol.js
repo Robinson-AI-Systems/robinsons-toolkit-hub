@@ -51,23 +51,59 @@ function safeRedirectUris(uris) {
   return new Set(clean).size === clean.length ? Object.freeze(clean) : null;
 }
 
-// An adapter must not persist an active/mutable OAuth row with credential
-// getters or token identities that differ from the server-issued credentials.
-// Preserve service-specific claim fields (including Date timestamps) as data.
+// Snapshot all service-selected claims before a durable token receives them.
+// Nested accessors, cycles or mutable aliases must never change account/profile
+// settings after credentials are issued. Preserve ordinary SQL Date objects.
+function copyClaim(value, seen, budget, depth = 0) {
+  if (--budget.left < 0 || depth > 12) throw new TypeError('Oversized OAuth claim');
+  if (value === null || typeof value === 'string' || typeof value === 'boolean' ||
+      value === undefined) return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'object') throw new TypeError('Unsafe OAuth claim');
+  const proto = Object.getPrototypeOf(value);
+  if (proto === Date.prototype) {
+    if (Reflect.ownKeys(value).length) throw new TypeError('Unsafe OAuth timestamp');
+    const ms = Date.prototype.getTime.call(value);
+    if (!Number.isFinite(ms)) throw new TypeError('Invalid OAuth timestamp');
+    return new Date(ms);
+  }
+  const array = Array.isArray(value);
+  if (array ? proto !== Array.prototype :
+      proto !== Object.prototype && proto !== null) throw new TypeError('Unsafe OAuth claim');
+  if (seen.has(value)) throw new TypeError('Cyclic OAuth claim');
+  seen.add(value);
+  try {
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const keys = Reflect.ownKeys(descriptors);
+    if (array && (value.length > 256 || keys.length !== value.length + 1)) {
+      throw new TypeError('Unsafe OAuth array');
+    }
+    const out = array ? [] : Object.create(null);
+    for (const key of keys) {
+      if (array && key === 'length') continue;
+      if (typeof key !== 'string' || ['__proto__','prototype','constructor'].includes(key) ||
+          (array && (!/^(0|[1-9][0-9]*)$/.test(key) || Number(key) >= value.length))) {
+        throw new TypeError('Unsafe OAuth claim key');
+      }
+      const desc = descriptors[key];
+      if (!desc.enumerable || !Object.hasOwn(desc,'value')) {
+        throw new TypeError('Active OAuth claim');
+      }
+      out[key] = copyClaim(desc.value, seen, budget, depth + 1);
+    }
+    return Object.freeze(out);
+  } finally {
+    seen.delete(value);
+  }
+}
 function safeAccessBinding(row, expected) {
   if (!row || typeof row !== 'object' || Array.isArray(row) ||
-      ![Object.prototype,null].includes(Object.getPrototypeOf(row)) ||
-      Object.getOwnPropertySymbols(row).length) return null;
-  const out=Object.create(null);
-  for (const [name, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(row))) {
-    if (['__proto__','constructor','prototype'].includes(name) ||
-        !descriptor.enumerable || !Object.hasOwn(descriptor,'value')) return null;
-    out[name]=descriptor.value;
-  }
+      ![Object.prototype,null].includes(Object.getPrototypeOf(row))) return null;
+  const out = copyClaim(row, new Set(), {left: 512});
   for (const [name, expectedValue] of Object.entries(expected)) {
     if (!Object.hasOwn(out,name) || out[name]!==expectedValue) return null;
   }
-  return Object.freeze(out);
+  return out;
 }
 
 const defaultPaths = Object.freeze({ mcp: '/api/mcp', authorize: '/api/oauth/authorize',
