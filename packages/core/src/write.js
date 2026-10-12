@@ -9,6 +9,20 @@ const reply = (value, isError = false) => ({
 const modes = new Set(['test', 'live']); // LIVE additionally requires injected server-only guard.
 const profiles = new Set(['everyday', 'full']);
 
+// An untrusted provider preview or ownership row must not be aliased through
+// asynchronous service hooks after the preview has been independently checked.
+function frozenJsonCopy(value) {
+  const frozen = structuredClone(value);
+  function freeze(node) {
+    if (node !== null && typeof node === 'object') {
+      for (const child of Object.values(node)) freeze(child);
+      Object.freeze(node);
+    }
+    return node;
+  }
+  return freeze(frozen);
+}
+
 /** All hooks run server-side. The MCP does not expose a write handler until
  * profile, app-ownership and live guards are installed in later cards.
  *
@@ -100,12 +114,26 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
         return respond({ done: false, error: 'App-owned record or unsafe target',
           reason: typeof allowed === 'string' ? allowed : undefined }, true);
       }
-      // Per invocation, no mutable global state or second customer lookup.
-      guardContext = allowed === true ? null : { ownership:allowed.ownership };
+      // Bind an immutable ownership snapshot; later hooks must not change the
+      // authorizer's account/target decision by mutating an aliased object.
+      if (allowed !== true) {
+        try {
+          guardContext = Object.freeze({ ownership: Object.hasOwn(allowed, 'ownership')
+            ? frozenJsonCopy(allowed.ownership) : undefined });
+        } catch {
+          return respond({ done: false, error: 'App-owned record or unsafe target' }, true);
+        }
+      }
     }
-    const prepared = prepare ? await prepare(args, ctx, before) : null;
-    if (prepared !== null && !isInertJsonData(prepared)) {
-      return respond({ done: false, error: 'Invalid provider-derived money preview: action refused' }, true);
+    let prepared = prepare ? await prepare(args, ctx, before) : null;
+    if (prepared !== null) {
+      if (!isInertJsonData(prepared)) {
+        return respond({ done: false, error: 'Invalid provider-derived money preview: action refused' }, true);
+      }
+      try { prepared = frozenJsonCopy(prepared); }
+      catch {
+        return respond({ done: false, error: 'Invalid provider-derived money preview: action refused' }, true);
+      }
     }
     // Even a partially populated money preview is monetary, not an ordinary write.
     // Reject malformed provider-derived amounts before consulting approval or sending a write.

@@ -145,7 +145,7 @@
       "sourceFile": "src/core/write.js",
       "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
       "target": "./src/write.js",
-      "coreBlob": "8abd5ba01788a293b90b3168d6dc59f16ecc91f0",
+      "coreBlob": "c3ae8cf343b5e14f1d512a6eca01047b269fef4c",
       "kind": "adapted",
       "tests": [
         "packages/core/test/write.test.js",
