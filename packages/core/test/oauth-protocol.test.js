@@ -472,3 +472,63 @@ describe('current source transport-byte evidence at portable OAuth boundary', ()
     expect(oauthTransportBodyWithinLimit({method:'POST',headers:{},rawBody:Buffer.alloc(MAX_OAUTH_BODY_BYTES+1)})).toBe(false);
   });
 });
+
+describe('unambiguous confidential OAuth Authorization provenance',()=>{
+  it('denies duplicate, conflicting, active and mixed-case header evidence before SQL or code consumption',async()=>{
+    const f=fixture();
+    const basic=(await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      token_endpoint_auth_method:'client_secret_basic'})).value;
+    const auth='Basic '+Buffer.from(basic.client_id+':'+basic.client_secret).toString('base64');
+    const input={client_id:basic.client_id,grant_type:'authorization_code',
+      resource:env.PUBLIC_BASE_URL+'/api/mcp',code:'unconsumed',
+      code_verifier:verifier,redirect_uri:callback};
+    let accessed=0;
+    const distinct={};
+    Object.defineProperty(distinct,'authorization',{enumerable:true,get(){accessed++;return [auth];}});
+    const raw=['Authorization',auth];
+    Object.defineProperty(raw,'1',{enumerable:true,configurable:true,get(){accessed++;return auth;}});
+    const normalized={'content-type':'application/json',authorization:auth};
+    const invalid=[
+      {headers:{...normalized,Authorization:auth}},
+      {headers:normalized,headersDistinct:{authorization:[auth,auth]}},
+      {headers:normalized,headersDistinct:{authorization:[auth+'x']}},
+      {headers:normalized,headersDistinct:{Authorization:[auth]}},
+      {headers:normalized,headersDistinct:distinct},
+      {headers:normalized,rawHeaders:['Authorization',auth,'authorization',auth]},
+      {headers:normalized,rawHeaders:['Authorization',auth+'wrong']},
+      {headers:normalized,rawHeaders:[]},
+      {headers:normalized,rawHeaders:raw},
+      {headers:normalized,get rawHeaders(){accessed++;throw Error('private');}}
+    ];
+    for(const extra of invalid){
+      const res=response();
+      await f.handlers.token({...req('POST',input),...extra},res);
+      expect(res.statusCode).toBe(401);
+      expect(res.headers['WWW-Authenticate']).toMatch(/^Basic realm=/);
+      expect(res.body).not.toContain('private');
+    }
+    expect(accessed).toBe(0);
+    expect(f.db.getOAuthClient).not.toHaveBeenCalled();
+    expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+  });
+  it('preserves one consistent Node Basic credential over distinct or raw headers',async()=>{
+    const f=fixture();
+    const client=(await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      token_endpoint_auth_method:'client_secret_basic'})).value;
+    const authorization='Basic '+Buffer.from(client.client_id+':'+client.client_secret).toString('base64');
+    const input={client_id:client.client_id,grant_type:'unknown_grant',
+      resource:env.PUBLIC_BASE_URL+'/api/mcp'};
+    for(const transport of [
+      {headersDistinct:{authorization:[authorization]}},
+      {rawHeaders:['Authorization',authorization]}
+    ]){
+      const res=response();
+      await f.handlers.token({...req('POST',input),headers:{
+        'content-type':'application/json',authorization},...transport},res);
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).error).toBe('unsupported_grant_type');
+    }
+    expect(f.db.getOAuthClient).toHaveBeenCalledTimes(2);
+    expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+  });
+});
