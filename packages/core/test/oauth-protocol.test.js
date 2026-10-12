@@ -105,6 +105,62 @@ describe('portable OAuth protocol handlers',()=>{
       grant_type:'password'})).value.error).toBe('unsupported_grant_type');
     expect(f.db.createAccessToken).not.toHaveBeenCalled();
   });
+  it('rejects foreign, active and ambiguous client SQL rows before any code consume',async()=>{
+    const f=fixture(),c=await registered(f);
+    const base={grant_type:'authorization_code',client_id:c.client_id,client_secret:c.client_secret,
+      redirect_uri:callback,code:'synthetic-code',code_verifier:verifier,
+      resource:env.PUBLIC_BASE_URL+'/api/mcp'};
+    let getterCalls=0;
+    const getter={client_id:c.client_id,redirect_uris:[callback]};
+    Object.defineProperty(getter,'client_secret_hash',{enumerable:true,
+      get(){getterCalls++;return hashToken(c.client_secret);}});
+    const activeRedirect={client_id:c.client_id,client_secret_hash:hashToken(c.client_secret)};
+    Object.defineProperty(activeRedirect,'redirect_uris',{enumerable:true,
+      get(){getterCalls++;return [callback];}});
+    const wrong={client_id:'another-client',client_secret_hash:hashToken(c.client_secret),
+      redirect_uris:[callback]};
+    const unsafe=[callback]; unsafe.hidden=true;
+    const ambiguous={client_id:c.client_id,client_secret_hash:hashToken(c.client_secret),
+      redirect_uris:unsafe};
+    for(const row of [getter,activeRedirect,wrong,ambiguous]) {
+      f.db.getOAuthClient.mockResolvedValueOnce(row);
+      const answer=await call(f.handlers.token,'POST',base);
+      expect(answer).toMatchObject({status:401,value:{error:'invalid_client'}});
+    }
+    expect(getterCalls).toBe(0);
+    expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+    expect(f.db.createAccessToken).not.toHaveBeenCalled();
+  });
+  it('deep-snapshots consumed authorization code rows and refuses active claims',async()=>{
+    const f=fixture(),c=await registered(f);
+    const params=code=>({grant_type:'authorization_code',client_id:c.client_id,
+      client_secret:c.client_secret,redirect_uri:callback,code,
+      code_verifier:verifier,resource:env.PUBLIC_BASE_URL+'/api/mcp'});
+    let getterCalls=0;
+    const active={client_id:c.client_id,redirect_uri:callback,
+      code_challenge_method:'S256',tenant:'tenant-one'};
+    Object.defineProperty(active,'code_challenge',{enumerable:true,
+      get(){getterCalls++;return challenge;}});
+    f.db.consumeAuthCode.mockResolvedValueOnce(active);
+    const denied=await call(f.handlers.token,'POST',params('active-code'));
+    expect(denied).toMatchObject({status:400,value:{error:'invalid_grant'}});
+    expect(getterCalls).toBe(0);
+    expect(f.buildAccessRow).not.toHaveBeenCalled();
+    const raw={client_id:c.client_id,redirect_uri:callback,code_challenge:challenge,
+      code_challenge_method:'S256',tenant:'tenant-one',claims:{scope:['read']}};
+    f.db.consumeAuthCode.mockResolvedValueOnce(raw);
+    f.buildAccessRow.mockImplementationOnce(({grant,...issued})=>{
+      expect(grant).not.toBe(raw);
+      expect(Object.isFrozen(grant.claims.scope)).toBe(true);
+      raw.tenant='different-account';
+      raw.claims.scope.push('admin');
+      return {...issued,tenant:grant.tenant,scope:grant.claims.scope};
+    });
+    const success=await call(f.handlers.token,'POST',params('valid-code'));
+    expect(success.status).toBe(200);
+    expect(f.tokens.get(success.value.access_token)).toMatchObject({
+      tenant:'tenant-one',scope:['read']});
+  });
   it('never persists active or mismatched access row mappings after grant consumption',async()=>{
     const f=fixture(),c=await registered(f);
     let sequence=0;
