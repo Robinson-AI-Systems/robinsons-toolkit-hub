@@ -62,8 +62,8 @@ approve and revoke each short-lived read-only non-production test pass.
 | Variable | Meaning |
 |---|---|
 | RELAY_REPOSITORY | Private owner/repo |
-| RELAY_SERVERS | JSON alias to fixed HTTPS server origin; no caller-selected URL |
-| RELAY_BINDINGS | JSON issue number to `{ actorId, server }`; one agent/server pair |
+| RELAY_SERVERS | JSON alias to fixed public HTTPS RTC origin on default port 443; rejects private/metadata literals, internal DNS, embedded credentials, paths and query |
+| RELAY_BINDINGS | JSON issue number to **exactly** `{ actorId, server }`; duplicate actor/server grants on different issues are forbidden |
 | RELAY_DATABASE_URL | TLS Postgres connection with `sslmode=require` or `verify-full` |
 | RELAY_PRIVATE_KEY | X25519 private key, PKCS8 DER encoded as base64 |
 | RELAY_WEBHOOK_SECRET | At least 32 unpredictable characters; matches GitHub webhook |

@@ -28,11 +28,18 @@ export function relaySettings(env = process.env) {
     if (!/^[a-z][a-z0-9_-]{0,39}$/.test(name)) throw new Error('Invalid relay server alias');
     servers[name] = validateServerUrl(url);
   }
+  const assigned = new Set();
   for (const [issue, value] of Object.entries(bindings)) {
     if (!/^[1-9][0-9]*$/.test(issue) || !Number.isSafeInteger(Number(issue)) ||
         !Number.isSafeInteger(value?.actorId) || value.actorId < 1 ||
-        typeof value.server !== 'string' || !Object.hasOwn(servers, value.server))
+        typeof value.server !== 'string' || !Object.hasOwn(servers, value.server) ||
+        !value || Array.isArray(value) ||
+        Object.keys(value).length !== 2 ||
+        !Object.hasOwn(value, 'actorId') || !Object.hasOwn(value, 'server'))
       throw new Error('Invalid relay issue binding');
+    const pair = value.actorId + ':' + value.server;
+    if (assigned.has(pair)) throw new Error('Duplicate relay actor and server binding');
+    assigned.add(pair);
   }
   let privateKey;
   try {
