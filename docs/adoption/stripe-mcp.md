@@ -33,3 +33,18 @@ and implement equivalent getter-free preflight and original-service regressions
 under Stripe's cards/CI; retain byte-exact host framing and independent owner
 money-out/account SQL guards. This is a service-owned action; Hub does not
 edit the Stripe repository or claim it adopted the package.
+
+## K-3ch original-service local archive rehearsal (2026-10-12)
+
+Hub CI now runs five unchanged original Stripe assertion files against
+the real original service code while the service's four proven verbatim leaf
+module imports are temporarily replaced by re-exports from a privately
+installed core tarball. This isolated CI-only overlay does not modify or
+activate the standalone Stripe repository, and does not replace its durable
+Postgres adapters or independently authenticated owner financial consent.
+
+Next action for Stripe agent when repository-approved: inspect the immutable
+private artifact and source SHA, adopt only proven stable imports behind a
+reversible tested PR, run all original unit/SQL/money approval suites against
+that actual adopter and retain standalone autonomy. The HTTP module
+still requires a service-owned getter-free request-body review.

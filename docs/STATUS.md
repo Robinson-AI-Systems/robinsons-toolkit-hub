@@ -5,6 +5,19 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**K-3ch / PR #120 as-if-merged:** a disposable checkout of the **original Stripe
+service** receives an offline unpacked, private core archive under its own
+`node_modules`. Exactly four originally verbatim source leaves (OAuth, AES-GCM,
+registry, write declarations) are temporarily re-exported from that archive.
+Five unchanged original Stripe source assertion files—including owner OAuth
+HTTP—run through the service's authentic imports. Source SHA, leaf hashes,
+original test hashes and cleanup are checked. This is a genuine **local
+adoption rehearsal**, not Stripe-owned production adoption, full SQL with the
+installed adapter, currently deployed provider routes, independently
+authenticated money-out approval or a GitHub Release. K-3 remains NOT_READY.
+D-4 three-route/revocation acceptance remains independently open.
+
+
 **Active session outcome:** make K-3's private shared core safe for genuine
 service adoption, while pursuing independently authorized D-4 TEST RTC routes.
 Five PRs is a planning boundary, not acceptance. PRs #116–#118 prove original

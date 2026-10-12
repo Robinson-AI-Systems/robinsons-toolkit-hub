@@ -141,6 +141,18 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
     const missing=copy();delete missing.baseline.rtcTests['tests/unit/rtc-passes.test.js'];
     expect(()=>validateK3SourceCIEvidence(missing)).toThrow(/inventory/);
   });
+  it('requires an actual original Stripe handler-import substitution test',()=>{
+    const missing=copy();
+    missing.workflow.jobs['stripe-source-owner-http'].steps=
+      missing.workflow.jobs['stripe-source-owner-http'].steps.filter(step=>
+        step.name!=='Rehearse actual original Stripe handler imports through installed private core');
+    expect(()=>validateK3SourceCIEvidence(missing)).toThrow(/adopting-service/);
+    const fake=copy();
+    fake.workflow.jobs['stripe-source-owner-http'].steps.find(step=>
+      step.name==='Rehearse actual original Stripe handler imports through installed private core')
+      .run='echo mock-adoption';
+    expect(()=>validateK3SourceCIEvidence(fake)).toThrow(/adopting-service/);
+  });
   it('rejects fewer original source modules, suites or changed release disposition',()=>{
     const missing=copy();
     delete missing.baseline.source['src/core/oauth.js'];
