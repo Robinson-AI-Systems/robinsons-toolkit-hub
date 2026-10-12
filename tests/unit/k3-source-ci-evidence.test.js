@@ -70,7 +70,7 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
   });
   it('requires exact new source-owned RTC and browser blobs in both original CI jobs',()=>{
     for(const job of ['stripe-source-sql','stripe-source-owner-http']){
-      for(const [module,blob] of Object.entries(baseline.serviceOwnedCore)){
+      for(const blob of Object.values(baseline.serviceOwnedCore)){
         const bad=copy();
         const item=bad.workflow.jobs[job].steps.find(
           step=>step.name==='Verify exact reviewed original Stripe OAuth/key test blobs');
