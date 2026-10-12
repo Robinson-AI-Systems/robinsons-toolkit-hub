@@ -1,9 +1,11 @@
 # STATUS — current work, blockers and next action
 
-Updated 2026-10-11. RTC 1 conformance, direct rtool commands and SDK/agent setup are built;
-the central hub server is not yet built; the relay's hosted **build is READY** but does not yet accept verified real agent routes.
+Updated 2026-10-12. RTC 1 conformance, direct rtool commands and SDK/agent setup are built;
+the central hub server is not yet built; relay deployments have varied between READY and a Git source fetch ERROR, and no real agent route is certified.
 
 ## Next
+
+- **D-4c (PR #102, as-if-merged):** added opt-in, secret-suppressed genuine GitHub-style HMAC webhook ingress probe sending only synthetic `edited` issue_comment events to an exact pinned HTTPS Vercel route. It proves valid signatures receive 202 ignored and invalid signatures receive 401 before any RTC dispatch; fake tests cover SSO HTML, wrong route, malformed replies and excessive query permissions. Execution against the hosted signed ingress remains **unverified** until protected environment and synchronized webhook signing secret are configured. Owner IN-06 authorizes limited read-only test steps, not broad protection bypass or production MCP. D-4 IN_PROGRESS/unaccepted; K-3 private IN_PROGRESS/NOT_READY. **Next:** deploy signed endpoint safely, service-owned RTC adoption and three genuine routes, then credential revocation.
 
 - **D-4b (PR #101, as-if-merged):** Owner IN-06 approved 2026-10-12 for narrowly scoped webhook/ingress, test-only relay identity and genuine read_only custom RTC integration. Added an explicit synthetic GitHub relay comment create/delete probe that checks private bound issue permissions and fails safely; no service pass, provider mutation or secret print. This is executable **offline/unit validation** until an authorized protected-runtime run proves the existing token actually works. The command cannot independently prove the absence of broader token permissions. D-4 **IN_PROGRESS**, not accepted; signed ingress, least privilege proof, immutable RTC server origins, actual three-route tests and revocations remain. K-3 IN_PROGRESS/private/unpublished/NOT_READY. **Next:** owner-authorized scoped webhook/ingress activation and genuine custom service RTC adoption.
 
