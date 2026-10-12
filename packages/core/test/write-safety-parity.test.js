@@ -185,4 +185,41 @@ describe('adapted write source failure and monetary preview parity',()=>{
     expect(f.hooks.afterApply).toHaveBeenCalledWith(
       expect.objectContaining({status:'uncertain'}));
   });
+  it('keeps the approved request immutable even if asynchronous service hooks edit caller-owned args',async()=>{
+    const f=fixture();
+    const submitted={confirm:true,dryRun:false,payment:{amountCents:5,invoice:'owned'}};
+    f.hooks.read.mockImplementationOnce(async ()=>{
+      submitted.payment.amountCents=50000;
+      submitted.payment.invoice='other-owner';
+      submitted.confirm=false;
+      return {balance:100};
+    });
+    f.hooks.beforeApply.mockImplementationOnce(async ({args,prepared})=>{
+      expect(args).toEqual({confirm:true,dryRun:false,payment:{amountCents:5,invoice:'owned'}});
+      expect(Object.isFrozen(args)).toBe(true);
+      expect(Object.isFrozen(args.payment)).toBe(true);
+      expect(prepared.amountCents).toBe(5);
+      return {accepted:true};
+    });
+    expect(parse(await f.call(submitted))).toMatchObject({done:true,confirmed:true});
+    expect(f.hooks.apply.mock.calls[0][0]).toEqual({
+      confirm:true,dryRun:false,payment:{amountCents:5,invoice:'owned'}
+    });
+    expect(f.logs.at(-1)).toMatchObject({amountCents:5,direction:'out'});
+  });
+  it('keeps preview data stable if a read hook toggles dryRun and request key',async()=>{
+    const f=fixture();
+    const args={confirm:true,dryRun:true,requestKey:'initial'};
+    f.hooks.read.mockImplementationOnce(async ()=>{
+      args.dryRun=false; args.requestKey='replaced';
+      return {balance:100};
+    });
+    const result=parse(await f.call(args));
+    expect(result).toMatchObject({done:false,needsConfirmation:false});
+    expect(f.hooks.summarize.mock.calls[0][1]).toEqual({
+      confirm:true,dryRun:true,requestKey:'initial'
+    });
+    expect(f.hooks.apply).not.toHaveBeenCalled();
+    expect(f.logs).toMatchObject([{dryRun:true}]);
+  });
 });
