@@ -1,5 +1,6 @@
 // An observation is never a certification: record hosted contract, read-only and route gates separately.
 import { validateServerUrl, boundedJson } from '../../relay/src/forward.js';
+import { assertDistinctCredentialSlots, credentialSlot } from './config.js';
 export const REQUIRED_RTC_SERVERS = Object.freeze([
   'stripe', 'github', 'vercel', 'neon', 'google-workspace'
 ]);
@@ -18,6 +19,7 @@ export function parseFleetOrigins(raw) {
       throw new Error('Invalid RTC fleet server entry');
     origins[name] = validateServerUrl(url);
   }
+  assertDistinctCredentialSlots(Object.keys(origins));
   return origins;
 }
 export function parseReadTests(raw) {
@@ -41,9 +43,22 @@ function report(name, origin, state, reason, extra = {}) {
 }
 export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize } = {}) {
   const names = [...new Set([...REQUIRED_RTC_SERVERS, ...Object.keys(origins)])].sort();
+  // Reject aliases that share the same pass environment key before network
+  // requests or TEST authorization. Distinct URLs cannot make this safe.
+  const bySlot = new Map(), collisions = new Set();
+  for (const name of names) {
+    const slot = credentialSlot(name);
+    if (bySlot.has(slot)) {
+      collisions.add(bySlot.get(slot));
+      collisions.add(name);
+    } else bySlot.set(slot, name);
+  }
   const checks = [];
   const pending = [];
   for (const name of names) {
+    if (collisions.has(name)) {
+      checks.push(report(name, null, 'blocked', 'credential_alias_collision')); continue;
+    }
     if (!Object.hasOwn(origins, name)) {
       checks.push(report(name, null, 'unverified', 'no_verified_origin')); continue;
     }
@@ -139,5 +154,6 @@ export function parsePinnedFleetInventory(raw) {
       throw new Error('Invalid pinned fleet entry');
     if (url !== null) targets[name] = validateServerUrl(url);
   }
+  assertDistinctCredentialSlots(Object.keys(data.servers));
   return targets;
 }

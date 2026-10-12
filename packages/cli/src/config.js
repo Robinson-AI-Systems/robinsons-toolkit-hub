@@ -5,7 +5,21 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const serverName = /^[a-z][a-z0-9_-]{0,39}$/;
-const secretKey = (name) => 'RTOOL_PASS_' + name.toUpperCase().replaceAll('-', '_');
+// Hyphen and underscore aliases normalize to the same pass environment slot.
+// Reject ambiguity BEFORE loading or using any server credentials.
+export const credentialSlot = (name) =>
+  'RTOOL_PASS_' + name.toUpperCase().replaceAll('-', '_');
+const secretKey = credentialSlot;
+export function assertDistinctCredentialSlots(names) {
+  const seen = new Map();
+  for (const name of names) {
+    const key = credentialSlot(name);
+    if (seen.has(key) && seen.get(key) !== name) {
+      throw new RouteError('Server aliases share a credential slot');
+    }
+    seen.set(key, name);
+  }
+}
 export class RouteError extends Error {
   constructor(message) { super(message); this.name = 'RouteError'; this.exitCode = 6; }
 }
@@ -29,6 +43,7 @@ export function parseEnvServers(value) {
     if (!serverName.test(name) || map.has(name)) throw new RouteError('Invalid or duplicate server name');
     map.set(name, validateUrl(entry.slice(at + 1).trim()));
   }
+  assertDistinctCredentialSlots(map.keys());
   return map;
 }
 export function configPath(env = process.env) {
@@ -51,6 +66,7 @@ export async function loadServers(env = process.env, reader = readFile) {
     if (e.code !== 'ENOENT') throw e;
   }
   for (const [name, url] of parseEnvServers(env.RTOOL_SERVERS)) map.set(name, url);
+  assertDistinctCredentialSlots(map.keys());
   return map;
 }
 export function passFor(name, env = process.env) {
