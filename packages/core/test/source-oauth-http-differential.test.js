@@ -107,7 +107,6 @@ describe('source OAuth HTTP vs transport-free protocol compatibility',()=>{
     for(const input of [
       {redirect_uris:[]},{redirect_uris:['http://unsafe.example.test/cb']},
       {redirect_uris:[callback,callback]},
-      {redirect_uris:[callback],token_endpoint_auth_method:'unrecognized'},
       {redirect_uris:[callback+'#fragment']},
       {redirect_uris:'not-an-array'}
     ]){
@@ -117,6 +116,20 @@ describe('source OAuth HTTP vs transport-free protocol compatibility',()=>{
       expect(a.db.createOAuthClient).not.toHaveBeenCalled();
       expect(b.db.createOAuthClient).not.toHaveBeenCalled();
     }
+  });
+  it('retains original invalid-method denial while documenting adapted modern response',async()=>{
+    const invalid={redirect_uris:[callback],token_endpoint_auth_method:'unrecognized'};
+    const old=fixture(),next=fixture();
+    const source=await call('POST',old.upstream.register,invalid);
+    const portable=await call('POST',next.portable.register,invalid);
+    expect(source.status).toBe(400);
+    expect(source.body).toMatchObject({error:'invalid_client_metadata',
+      error_description:'Only client_secret_post is supported'});
+    expect(portable.status).toBe(400);
+    expect(portable.body).toMatchObject({error:'invalid_client_metadata',
+      error_description:'Unsupported client authentication'});
+    expect(old.db.createOAuthClient).not.toHaveBeenCalled();
+    expect(next.db.createOAuthClient).not.toHaveBeenCalled();
   });
   it('keeps source registration response schema and client secret private from later reads',async()=>{
     const f=fixture();
