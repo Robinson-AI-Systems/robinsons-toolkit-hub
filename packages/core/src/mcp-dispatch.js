@@ -111,23 +111,39 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       if (!registered || !isInertJsonData(registered)) return deny('Tool unavailable for this connection');
       item = snapshotDispatchArgs(registered);
     } catch { return deny('Tool unavailable for this connection'); }
+    // Capture an exact own handler BEFORE async policy and before provider
+    // execution. The service-owned registry may be updated while authorization
+    // awaits; a replacement must never execute under a decision for the old
+    // declaration. Accessor-backed handler slots are not callable.
+    let handler;
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(registry.handlers, name);
+      // Active handler properties may execute untrusted getters. Reject them
+      // without evaluating; preserve upstream policy-before-missing-handler
+      // behavior for absent/inherited slots.
+      if (descriptor && !Object.hasOwn(descriptor, 'value')) return deny('Tool unavailable');
+      handler = descriptor?.value;
+    } catch { return deny('Tool unavailable'); }
+    // A service-owned detail-exemption callback must be evaluated while no
+    // handler has run. Exception or non-Boolean value fails before any
+    // potentially consequential provider operation.
+    let exemptFromDetail;
+    try {
+      if (typeof handler === 'function') {
+        exemptFromDetail = skipDetailFor(name);
+        if (typeof exemptFromDetail !== 'boolean') return deny('Tool unavailable');
+      }
+    } catch { return deny('Tool unavailable'); }
     let permitted = false;
     try { permitted = (await authorizeTool(item, safeConnection)) === true; }
     catch { permitted = false; }
     if (!permitted) return deny('Tool unavailable for this connection');
+    if (typeof handler !== 'function') return deny('Tool unavailable');
     // runRead is a privileged convenience, never a route to execute a write.
     // Fail closed when a nested tool lacks an explicit read declaration.
     if (depth > 0 && item.writes !== false) {
       return deny('Nested calls may only invoke explicitly declared read tools');
     }
-    // Metadata alone cannot authorize inherited Object.prototype functions.
-    // An executable handler must be an explicitly registered own property.
-    let handler;
-    try {
-      const descriptor = Object.getOwnPropertyDescriptor(registry.handlers, name);
-      handler = descriptor && Object.hasOwn(descriptor, 'value') ? descriptor.value : undefined;
-    } catch { return deny('Tool unavailable'); }
-    if (typeof handler !== 'function') return deny('Tool unavailable');
     try {
       const raw = await shapeResult(await handler(safeArgs, {
         connection: safeConnection, connectionId: safeConnection.resultScope, db, services, registry,
@@ -144,7 +160,7 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
         return deny('Tool returned an invalid result');
       }
       let result = raw;
-      if (!skipDetailFor(name) && Array.isArray(raw.content)) {
+      if (!exemptFromDetail && Array.isArray(raw.content)) {
         const detail = ['summary','full'].includes(safeArgs.detail) ? safeArgs.detail : undefined;
         result = { ...raw, content: raw.content.map(part => {
           if (part?.type !== 'text' || typeof part.text !== 'string') return part;
