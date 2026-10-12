@@ -105,6 +105,47 @@ describe('portable OAuth protocol handlers',()=>{
       grant_type:'password'})).value.error).toBe('unsupported_grant_type');
     expect(f.db.createAccessToken).not.toHaveBeenCalled();
   });
+  it('never persists active or mismatched access row mappings after grant consumption',async()=>{
+    const f=fixture(),c=await registered(f);
+    const issue=async(build)=>{
+      const code='code_'+String(f.codes.size+1)+'_'+Math.random().toString(36).slice(2);
+      f.codes.set(code,{client_id:c.client_id,redirect_uri:callback,code_challenge:challenge,
+        code_challenge_method:'S256',tenant:'tenant-1',profile:'read_only',mode:'test'});
+      f.buildAccessRow.mockImplementationOnce(build);
+      const outcome=await call(f.handlers.token,'POST',{
+        grant_type:'authorization_code',client_id:c.client_id,client_secret:c.client_secret,
+        redirect_uri:callback,code,code_verifier:verifier,resource:env.PUBLIC_BASE_URL+'/api/mcp'});
+      expect(outcome.status).toBe(400);
+      expect(outcome.value.error).toBe('invalid_grant');
+    };
+    let getterCalls=0;
+    await issue(({grant,...base})=>{
+      const row={...base,tenant:grant.tenant};
+      Object.defineProperty(row,'accessToken',{enumerable:true,get(){
+        getterCalls++;throw Error('private access secret');}});
+      return row;
+    });
+    await issue(({grant,...base})=>({...base,clientId:'different',tenant:grant.tenant}));
+    await issue(({grant,...base})=>Object.assign(Object.create({inherited:true}),base));
+    expect(getterCalls).toBe(0);
+    expect(f.db.createAccessToken).not.toHaveBeenCalled();
+  });
+  it('does not return bearer credentials when the rotated SQL receipt has active fields',async()=>{
+    const f=fixture(),c=await registered(f);
+    let getterCalls=0;
+    f.db.rotateRefreshToken.mockImplementationOnce(async()=>{
+      const row={accessToken:'not-the-issued-access',clientId:c.client_id};
+      Object.defineProperty(row,'refreshToken',{enumerable:true,get(){
+        getterCalls++;throw Error('private SQL value');}});
+      return row;
+    });
+    const outcome=await call(f.handlers.token,'POST',{
+      grant_type:'refresh_token',client_id:c.client_id,client_secret:c.client_secret,
+      refresh_token:'synthetic-refresh',resource:env.PUBLIC_BASE_URL+'/api/mcp'});
+    expect(outcome.status).toBe(400);
+    expect(outcome.value.error).toBe('invalid_grant');
+    expect(getterCalls).toBe(0);
+  });
   it('refresh rotates exactly once and retains service claim settings in durable store',async()=>{
     const f=fixture(),c=await registered(f);
     const original={clientId:c.client_id,tenant:'tenant-2',profile:'full',listing:'compact',mode:'test',
