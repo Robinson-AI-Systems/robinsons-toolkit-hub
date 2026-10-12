@@ -69,11 +69,32 @@ export function createMcpBearerAuthenticator({ getAccessToken, projectConnection
       // transports silently collapse duplicate Authorization headers into one.
       // Refuse contradictory headersDistinct/rawHeaders evidence even if the
       // normalized header appears valid; do not select a preferred credential.
-      header = req?.headers?.authorization;
-      const distinct = req?.headersDistinct?.authorization;
-      if (distinct !== undefined &&
-          (!Array.isArray(distinct) || distinct.length !== 1 || distinct[0] !== header)) {
+      const headers = req?.headers;
+      // Header maps supplied by Node are plain own-data records. Do not
+      // invoke arbitrary normalized header getters or inherited credentials.
+      if (!headers || ![Object.prototype, null].includes(Object.getPrototypeOf(headers))) {
         ambiguous = true;
+      } else {
+        const auth = Object.getOwnPropertyDescriptor(headers, 'authorization');
+        if (auth && !Object.hasOwn(auth, 'value')) ambiguous = true;
+        header = auth?.value;
+      }
+      const distinctHeaders = req?.headersDistinct;
+      if (distinctHeaders !== undefined) {
+        if (!distinctHeaders || ![Object.prototype, null].includes(
+          Object.getPrototypeOf(distinctHeaders))) {
+          ambiguous = true;
+        } else {
+          const auth = Object.getOwnPropertyDescriptor(distinctHeaders, 'authorization');
+          if (!auth || !Object.hasOwn(auth, 'value') || !Array.isArray(auth.value) ||
+              auth.value.length !== 1) ambiguous = true;
+          else {
+            const single = Object.getOwnPropertyDescriptor(auth.value, '0');
+            if (!single || !Object.hasOwn(single, 'value') || single.value !== header) {
+              ambiguous = true;
+            }
+          }
+        }
       }
       const raw = req?.rawHeaders;
       if (raw !== undefined) {
@@ -81,13 +102,17 @@ export function createMcpBearerAuthenticator({ getAccessToken, projectConnection
         else {
           let count = 0;
           for (let i = 0; i < raw.length; i += 2) {
-            if (typeof raw[i] !== 'string' || typeof raw[i + 1] !== 'string') {
+            const name = Object.getOwnPropertyDescriptor(raw, String(i));
+            const value = Object.getOwnPropertyDescriptor(raw, String(i + 1));
+            if (!name || !value || !Object.hasOwn(name, 'value') ||
+                !Object.hasOwn(value, 'value') || typeof name.value !== 'string' ||
+                typeof value.value !== 'string') {
               ambiguous = true;
               break;
             }
-            if (raw[i].toLowerCase() === 'authorization') {
+            if (name.value.toLowerCase() === 'authorization') {
               count++;
-              if (raw[i + 1] !== header) ambiguous = true;
+              if (value.value !== header) ambiguous = true;
             }
           }
           if (count > 1) ambiguous = true;

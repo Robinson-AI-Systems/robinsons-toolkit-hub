@@ -95,6 +95,40 @@ describe('portable MCP bearer boundary', () => {
     }
     expect(f.getAccessToken).toHaveBeenCalledTimes(2);
   });
+  it('rejects normalized and raw bearer accessor evidence without executing it',async()=>{
+    const f=fixture(), auth='Bearer '+token;
+    let calls=0;
+    const guardedHeader={};Object.defineProperty(guardedHeader,'authorization',{
+      enumerable:true,get(){calls++;return auth;}});
+    const distinct={};Object.defineProperty(distinct,'authorization',{
+      enumerable:true,get(){calls++;return [auth];}});
+    const raw=['Authorization',auth];
+    Object.defineProperty(raw,'1',{enumerable:true,configurable:true,
+      get(){calls++;return auth;}});
+    for(const request of [
+      {headers:guardedHeader},
+      {headers:Object.create({authorization:auth})},
+      {headers:{authorization:auth},headersDistinct:distinct},
+      {headers:{authorization:auth},rawHeaders:raw}
+    ]){
+      const {res}=response();
+      expect(await f.authenticate(request,res)).toBeNull();
+      expect(res.statusCode).toBe(401);
+      expect(res.body.error).toBe('unauthorized');
+    }
+    expect(calls).toBe(0);
+    expect(f.getAccessToken).not.toHaveBeenCalled();
+    expect(f.projectConnection).not.toHaveBeenCalled();
+  });
+  it('accepts own Node-style header descriptors including null-prototype maps',async()=>{
+    const f=fixture(),auth='Bearer '+token;
+    const headers=Object.assign(Object.create(null),{authorization:auth});
+    const distinct=Object.assign(Object.create(null),{authorization:[auth]});
+    const {res}=response();
+    expect(await f.authenticate({headers,headersDistinct:distinct,
+      rawHeaders:['Authorization',auth]},res)).toMatchObject({profile:'read_only'});
+    expect(f.getAccessToken).toHaveBeenCalledExactlyOnceWith(token);
+  });
   it('checks storage and applies server policy before returning frozen projected identity', async () => {
     const f = fixture();
     const {res} = response();
