@@ -1,4 +1,5 @@
-// Owner-opted-in, read-only local filesystem door. Never used by hosted Hub/relay.
+// Owner-opted-in local filesystem door: read-only by default, explicit confirmation for create-only writes.
+// Never used by hosted Hub/relay.
 import { constants } from 'node:fs';
 import { open, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
