@@ -53,9 +53,15 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
       fail(name+': omitted from required aggregate CI');
     }
     const checkouts=job?.steps?.filter(step=>step.uses?.startsWith('actions/checkout@'));
-    if(checkouts?.length!==1||checkouts[0].with?.repository!==baseline.sourceRepository||
-       checkouts[0].with?.ref!==baseline.reviewedMain||
-       checkouts[0].with?.['persist-credentials']!==false){
+    const original=checkouts?.filter(step=>step.with?.path==='source-stripe')||[];
+    const hub=checkouts?.filter(step=>!step.with?.path)||[];
+    if(original.length!==1||original[0].with?.repository!==baseline.sourceRepository||
+       original[0].with?.ref!==baseline.reviewedMain||
+       original[0].with?.['persist-credentials']!==false||
+       (name==='stripe-source-owner-http'?
+         hub.length!==1||hub[0].with?.repository!==undefined||
+           hub[0].with?.['persist-credentials']!==false:
+         hub.length!==0)){
       fail(name+': source checkout must be the reviewed immutable, non-persistent ref');
     }
     // The immutable checkout SHA alone is insufficient if a reviewed manifest is
@@ -94,6 +100,12 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
         fail(name+': source SQL must use disposable localhost PostgreSQL');
       }
     }else if(job.services)fail(name+': source owner HTTP should not use a live database');
+  }
+  const differential=jobs['stripe-source-owner-http'].steps.filter(step=>
+    step.name==='Compare authentic source HTTP with the private portable boundary');
+  if(differential.length!==1||
+     differential[0].run?.trim()!=='node scripts/stripe-source-http-differential.mjs'){
+    fail('authentic source HTTP differential must execute after original source suites');
   }
   return Object.freeze({reviewedMain:baseline.reviewedMain,originalSourceModules:11,
     originalTrackedSuites:8,serviceOwnedModules:4,sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,

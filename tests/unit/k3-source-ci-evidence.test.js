@@ -6,7 +6,7 @@ import {validateK3SourceCIEvidence} from '../../scripts/check-k3-source-ci-evide
 const baseline=JSON.parse(readFileSync(new URL('../../docs/audits/K3-UPSTREAM-BASELINE.json',import.meta.url),'utf8'));
 const workflow=parse(readFileSync(new URL('../../.github/workflows/ci.yml',import.meta.url),'utf8'));
 const copy=()=>({baseline:structuredClone(baseline),workflow:structuredClone(workflow)});
-const checkout=(wf,name)=>wf.jobs[name].steps.find(s=>s.uses?.startsWith('actions/checkout@'));
+const checkout=(wf,name)=>wf.jobs[name].steps.find(s=>s.uses?.startsWith('actions/checkout@')&&s.with?.path==='source-stripe');
 const command=(wf,name,fragment)=>wf.jobs[name].steps.find(s=>s.run?.includes(fragment));
 describe('K-3 authentic source CI is tied to reviewed evidence, not release permission',()=>{
   it('requires all nine original source suites and keeps the private release incomplete',()=>{
@@ -94,6 +94,23 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
       check.run=check.run.replace('217c0c18a0c427963fa374aa4c6fad570747865f','a'.repeat(40));
       expect(()=>validateK3SourceCIEvidence(wrong)).toThrow(/reviewed original suite blob mismatch/);
     }
+  });
+  it('requires genuine original-module differential, not a mocked comparison',()=>{
+    const removed=copy();
+    removed.workflow.jobs['stripe-source-owner-http'].steps=
+      removed.workflow.jobs['stripe-source-owner-http'].steps.filter(step=>
+        step.name!=='Compare authentic source HTTP with the private portable boundary');
+    expect(()=>validateK3SourceCIEvidence(removed)).toThrow(/differential/);
+    const rewritten=copy();
+    rewritten.workflow.jobs['stripe-source-owner-http'].steps.find(step=>
+      step.name==='Compare authentic source HTTP with the private portable boundary')
+      .run='node -e "console.log(true)"';
+    expect(()=>validateK3SourceCIEvidence(rewritten)).toThrow(/differential/);
+    const unauthorizedCheckout=copy();
+    unauthorizedCheckout.workflow.jobs['stripe-source-owner-http'].steps.find(step=>
+      step.name==='Checkout private Toolkit source for bounded real-source differential')
+      .with['persist-credentials']=true;
+    expect(()=>validateK3SourceCIEvidence(unauthorizedCheckout)).toThrow(/checkout/);
   });
   it('rejects fewer original source modules, suites or changed release disposition',()=>{
     const missing=copy();

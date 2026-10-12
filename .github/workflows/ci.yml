@@ -134,6 +134,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
+      - name: Checkout private Toolkit source for bounded real-source differential
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Checkout original service HTTP and owner handlers without service writes
         uses: actions/checkout@v5
         with:
@@ -168,6 +172,8 @@ jobs:
           tests/unit/owner-money-limit.test.js
           tests/unit/setup-page.test.js
           tests/unit/owner-test-smoke.test.js
+      - name: Compare authentic source HTTP with the private portable boundary
+        run: node scripts/stripe-source-http-differential.mjs
 
   ci:
     name: ci
