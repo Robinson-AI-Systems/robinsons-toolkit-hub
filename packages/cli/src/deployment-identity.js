@@ -16,6 +16,11 @@ export function publicDeploymentClaim(value) {
   return { sha, ref, environment };
 }
 export function matchesDeploymentPin(advertised, independentlyVerifiedPin) {
+  // The externally supplied pin is a strict operator decision, unlike the
+  // remote service self-report (whose harmless extra fields are ignored).
+  if (!independentlyVerifiedPin || typeof independentlyVerifiedPin !== 'object' ||
+      Object.keys(independentlyVerifiedPin).some(k =>
+        !['sha', 'ref', 'environment'].includes(k))) return false;
   const claim = publicDeploymentClaim(advertised);
   const pin = publicDeploymentClaim(independentlyVerifiedPin);
   return !!(claim && pin && claim.sha === pin.sha &&

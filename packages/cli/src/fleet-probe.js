@@ -33,7 +33,9 @@ export function parseReadTests(raw) {
         !/^[a-z][a-z0-9_]{0,199}$/.test(value.readTool || '') ||
         !/^[A-Z][A-Z0-9_]{0,99}$/.test(value.passEnv || '') ||
         (value.argsEnv && !/^[A-Z][A-Z0-9_]{0,99}$/.test(value.argsEnv)) ||
-        !publicDeploymentClaim(value.expectedDeployment))
+        !publicDeploymentClaim(value.expectedDeployment) ||
+        Object.keys(value.expectedDeployment).some(k =>
+          !['sha', 'ref', 'environment'].includes(k)))
       throw new Error('Invalid RTC fleet read-test plan');
   }
   return data;

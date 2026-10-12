@@ -76,6 +76,9 @@ describe('standing RTC fleet deployment acceptance', () => {
     const plan = {stripe:{readTool:'stripe_admin_overview',passEnv:'READ_ONLY_PASS',
       expectedDeployment: pin}};
     expect(parseReadTests(JSON.stringify(plan))).toEqual(plan);
+    expect(() => parseReadTests(JSON.stringify({stripe: {
+      ...plan.stripe, expectedDeployment: { ...pin, extra: 'forbidden' }
+    }}))).toThrow();
     expect(() => parseReadTests('{"stripe":{"readTool":"stripe_admin_overview","passEnv":"READ_ONLY_PASS"}}'))
       .toThrow();
     for (const bad of ['{"stripe":{"readTool":"stripe_read","pass":"rtc_pass_unsafe"}}',
@@ -108,9 +111,11 @@ describe('independently pinned deployed revision before authorized TEST pass use
   const pin = { sha: 'a'.repeat(40), ref: 'live', environment: 'production' };
   it('requires all 3 validated exact claims, not a branch guess or absent metadata', () => {
     expect(matchesDeploymentPin(pin, pin)).toBe(true);
+    expect(matchesDeploymentPin({ ...pin, harmlessRemoteField: 42 }, pin)).toBe(true);
+    expect(matchesDeploymentPin(pin, { ...pin, unrecognizedOperatorField: 42 })).toBe(false);
     for (const bad of [undefined, null, {}, { ...pin, sha: 'b'.repeat(40) },
       { ...pin, ref: 'main' }, { ...pin, environment: 'preview' },
-      { ...pin, sha: 'not-sha' }, { ...pin, extra: 'ignored' },
+      { ...pin, sha: 'not-sha' },
       { ref: pin.ref, environment: pin.environment }]) {
       expect(matchesDeploymentPin(bad, pin)).toBe(false);
     }
