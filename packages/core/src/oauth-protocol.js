@@ -126,7 +126,9 @@ function safeClientBinding(row, expectedId) {
     return field?.enumerable && Object.hasOwn(field, 'value') ? field.value : null;
   };
   const id = value('client_id');
-  const hash = value('client_secret_hash');
+  const secretField = fields.client_secret_hash;
+  if (!secretField || !secretField.enumerable || !Object.hasOwn(secretField, 'value')) return null;
+  const hash = secretField.value;
   const redirects = safeRedirectUris(value('redirect_uris'));
   const methodField = fields.token_endpoint_auth_method;
   if (methodField && (!methodField.enumerable || !Object.hasOwn(methodField, 'value'))) return null;
