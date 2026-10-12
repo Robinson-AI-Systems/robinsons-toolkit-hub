@@ -49,15 +49,15 @@ function oauthTransportFrame(req) {
       found.set(lower,value.value);
     }
     for (const name of names) {
-      if (found.has(name)!==selected.has(name) ||
-          found.has(name) && found.get(name)!==selected.get(name)) return null;
+      if (found.has(name) && (!selected.has(name) ||
+          found.get(name)!==selected.get(name))) return null;
     }
   }
   if (selected.has('transfer-encoding') && selected.has('content-length')) return null;
   const supplied=selected.get('content-length');
   let declared;
   if (supplied!==undefined) {
-    if (!/^(0|[1-9]\\d*)$/.test(supplied)) return null;
+    if (!/^(0|[1-9][0-9]*)$/.test(supplied)) return null;
     declared=Number(supplied);
     if (!Number.isSafeInteger(declared) || declared>MAX_OAUTH_BODY_BYTES) return null;
   }
