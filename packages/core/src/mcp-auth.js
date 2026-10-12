@@ -115,6 +115,37 @@ export function authorizationHeaderEvidence(req) {
   } catch { return invalid; }
 }
 
+
+/**
+ * Public OAuth/MCP browser transport is bearer-only and never uses cookies.
+ * An adopting standalone service must explicitly call this at public doors;
+ * private authorize/setup pages must NOT use permissive CORS.
+ */
+export function allowBrowserProtocol(req,res,{methods=['GET'],mcp=false}={}){
+  const headers=req?.headers;
+  if(!headers || ![Object.prototype,null].includes(Object.getPrototypeOf(headers))) return false;
+  const descriptor=Object.getOwnPropertyDescriptor(headers,'origin');
+  if(!descriptor || !Object.hasOwn(descriptor,'value') ||
+      typeof descriptor.value!=='string' || !descriptor.value) return false;
+  if(!Array.isArray(methods) || !methods.length ||
+      methods.some(method=>!['GET','POST','DELETE'].includes(method)) ||
+      new Set(methods).size!==methods.length) throw new TypeError('Invalid public browser methods');
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods',[...methods,'OPTIONS'].join(', '));
+  res.setHeader('Access-Control-Allow-Headers',mcp
+    ? 'authorization, content-type, accept, mcp-protocol-version, mcp-session-id, last-event-id'
+    : 'authorization, content-type');
+  res.setHeader('Access-Control-Expose-Headers',mcp
+    ? 'www-authenticate, mcp-session-id' : 'www-authenticate');
+  res.setHeader('Access-Control-Max-Age','600');
+  // No Access-Control-Allow-Credentials; ambient cookies never authorize MCP.
+  if(req.method!=='OPTIONS') return false;
+  res.setHeader('Cache-Control','no-store');
+  res.setHeader('Allow',[...methods,'OPTIONS'].join(', '));
+  res.status(204).end();
+  return true;
+}
+
 export function createMcpBearerAuthenticator({ getAccessToken, projectConnection, env = process.env }) {
   if (typeof getAccessToken !== 'function' || typeof projectConnection !== 'function') {
     throw new TypeError('A token lookup and server-owned connection policy are required');
