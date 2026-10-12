@@ -81,7 +81,8 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
       ctx=Object.freeze(Object.fromEntries(fields.map(([key,field])=>[
         key,key==='connection'?connection:field.value
       ])));
-    } catch {
+    } catch (error) {
+      console.error('write context refused: '+error?.message);
       return reply({done:false,error:'This connection is not allowed to change provider records'},true);
     }
     const respond = (value, isError = false) => {
