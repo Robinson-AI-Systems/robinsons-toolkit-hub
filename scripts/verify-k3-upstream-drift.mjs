@@ -2,6 +2,7 @@
 // CI tests inject an offline fetch; operator invocation checks real GitHub REST.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import {githubEvidenceJson} from './github-evidence-json.mjs';
 const endpoint='https://api.github.com/repos/Robinson-AI-Systems/stripe-mcp';
 const sha=/^[a-f0-9]{40}$/;
 function fail(message){throw new Error('K-3 upstream drift: '+message);}
@@ -38,13 +39,12 @@ export function compareK3UpstreamTree(manifest,head,tree){
 }
 export async function verifyK3UpstreamDrift(manifest,{fetchImpl=globalThis.fetch,signal}={}){
   if(typeof fetchImpl!=='function')fail('fetch transport unavailable');
-  async function json(url){
-    let res;
-    try{res=await fetchImpl(url,{headers:{Accept:'application/vnd.github+json'},signal});}
-    catch{fail('upstream unreachable; no inferred source compatibility');}
-    if(!res?.ok)fail('upstream API returned '+String(res?.status||'unknown'));
-    try{return await res.json();}catch{fail('malformed upstream JSON');}
-  }
+  const json=url=>githubEvidenceJson(fetchImpl,url,{
+    signal,
+    unavailable:'K-3 upstream drift: upstream unreachable; no inferred source compatibility',
+    failed:status=>'K-3 upstream drift: upstream API returned '+status,
+    malformed:'K-3 upstream drift: malformed upstream JSON'
+  });
   const branch=await json(endpoint+'/branches/main');
   const head=branch?.commit?.sha;
   if(!sha.test(head||''))fail('upstream head SHA missing');

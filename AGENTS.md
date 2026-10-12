@@ -166,3 +166,11 @@ At project completion supply final verification instead. Owner gates still apply
 
 STATUS (merged, in progress with branch/PR/head/CI, blocked, next) · DECISIONS for decisions · ROADMAP for ideas ·
 plain-English report to Chris: what changed, how it was verified, what he must decide, what is next.
+
+## Development efficiency (K-3ar, PR #66)
+
+Use [the focused implementation and CI recipes](docs/implementation-contracts/DEVELOPMENT-EFFICIENCY.md)
+for approved work. Group cohesive, complete related capabilities (normally 450–800 production lines where
+natural), while preserving the ~800-line hard maximum, one risk area, reviewability and all hard gates.
+Use `npm run test:focus -- <group>` only inside a slice; full check, unit, DB, immutable upstream source
+CI and exact-head aggregate `ci` remain mandatory. Never split by endpoint merely to increase PR count.
