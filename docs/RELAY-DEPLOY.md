@@ -1,10 +1,50 @@
 # Relay setup — owner authorized steps only
 
-D-3 implements and tests the relay. It is **not deployed or connected**.
-IN-02/03/04 remain open; ask for approval at the actual resource/credential step.
-No real server pass is used by CI. Never paste credentials into a chat, PR or git.
+D-3 implements and tests relay software. **Infrastructure has been provisioned,
+but no authenticated agent request has been delivered through it.** Owner
+IN-02/IN-03 are applied for infrastructure/repository creation; IN-04 is
+partially applied for protected Vercel env entries. D-4 remains blocked on
+GitHub webhook/agent bindings and genuine custom RTC server compatibility.
+No real server pass is used by CI. Never paste credentials into chat, a PR, git
+or test logs. See docs/pr-cards/D-4.md and docs/OWNER-INPUTS.md.
 
-## Resources and private scope
+## Verified owner infrastructure checkpoint — 2026-10-11, PR #86
+
+| Item | Actual verified state |
+|---|---|
+| GitHub transport | `Robinson-AI-Systems/robinsons-toolkit-relay`, **private**, initially empty; not the source-code repo |
+| Vercel source/project | `robinsons-toolkit-relay` on existing Robinson AI Systems Pro plan, linked to `robinsons-toolkit-hub`, Node 24, standard resources |
+| Vercel deployment | Build from hub `702d61cf8dc8f46a154ce0ddd0e81ac74f5fcb03` READY; `https://robinsons-toolkit-relay.vercel.app`; **deployment protection enabled**; no live route acceptance |
+| Neon | Separate `robinsons-toolkit-relay` Postgres 18 project, existing Launch plan, us-east-1, 0.25 CU capped, five-minute idle suspend, one-hour history |
+| Database migration | `relay_seen(request_id, seen_at)` with unique primary key and `relay_seen_age` index, confirmed by catalog read |
+| Vercel configuration | `RELAY_REPOSITORY`, `RELAY_PUBLIC_KEY` (nonsecret), and sensitive production-only `RELAY_DATABASE_URL`, `RELAY_PRIVATE_KEY`, `RELAY_WEBHOOK_SECRET`, `RELAY_CLEANUP_SECRET`, `RELAY_GITHUB_TOKEN` present |
+| Deliberately unconfigured | `RELAY_SERVERS`, `RELAY_BINDINGS`, signed GitHub webhook, agent issues/grants, scheduler activation, RTC test passes |
+| Untested | GitHub token **permission** and actual webhook signature; Vercel ingress under protection; original service RTC adoption; all real D-4 paths |
+
+**Cost boundary:** no paid upgrades or purchases were made, but existing plans
+have usage-based charges/allowances. The low-size Neon compute and disabled
+unneeded preview deployment are not zero-cost guarantees.
+
+**Crucial distinction:** Vercel builds server code from the **hub** repository.
+The empty, private **relay** repository is only for encrypted GitHub issue
+comments. The standard ChatGPT connectors were used to provision infrastructure,
+never configured as routed tools. Your **custom** `stripe-mcp` and
+`google-workspace-mcp` currently expose `/api/mcp`; that MCP endpoint does
+*not* by itself satisfy this relay's RTC manifest and `/api/tools/...` contracts.
+Do not add them to `RELAY_SERVERS` until genuine service-owned RTC adoption
+and read-only tests are verified.
+
+**Next owner/security gates:** verify scoped fine-grained repo token permissions
+without revealing token bytes; create GitHub `issue_comment` JSON webhook
+against the private repo with SSL verification, and synchronize its signing
+secret with Vercel by **rotation** in the same controlled setup (Vercel sensitive
+values are not normally readable again). Confirm ingress despite existing
+Vercel deployment protection; use narrowly scoped, reviewed authentication or
+exception, **never blindly remove site-wide protection**. Set approved server
+origins and agent issue/actor bindings only when they are verified. Independently
+approve and revoke each short-lived read-only non-production test pass.
+
+## Resources and private scope (original instructions; completed items noted above)
 
 1. After IN-02 approval, create the Vercel project (Node 24, this repo, no framework)
    and a Neon database on the approved plan. Do not upgrade or purchase a plan.
@@ -29,6 +69,7 @@ No real server pass is used by CI. Never paste credentials into a chat, PR or gi
 | RELAY_WEBHOOK_SECRET | At least 32 unpredictable characters; matches GitHub webhook |
 | RELAY_GITHUB_TOKEN | Separate fine-grained one-repo Issues token |
 | RELAY_CLEANUP_SECRET | At least 32 unpredictable characters; scheduler-only bearer |
+| RELAY_PUBLIC_KEY | Nonsecret matching X25519 public key for provisioning agent client configuration; not consumed by hosted relay runtime |
 
 Generate X25519 keys privately using Node crypto or an approved secure key tool.
 Never print/store the private key in agent logs or the workspace; the owner places it
