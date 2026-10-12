@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 // GitHub issue comments are an encrypted transport, not a secret store.
 // Only ciphertext envelopes reach the API; the relay must delete consumed comments.
 import { sealRequest, openReply } from '../../relay/src/crypto.js';
@@ -48,6 +49,23 @@ export function githubCommentTransport({ repo, issue, token, fetchImpl = fetch }
       const metadata = await request('');
       if (metadata?.private !== true || metadata.full_name !== repo)
         throw new Error('Relay repository must remain private');
+    },
+    // Explicit, opt-in transport-only acceptance: no RTC pass or tool call.
+    // Its diagnostic body is deliberately not a decodable request/reply envelope.
+    async probePermissions() {
+      await this.checkPrivate();
+      const target = await request('/issues/' + issue);
+      if (target?.number !== issue || target.state !== 'open' ||
+          target.locked !== false || target.pull_request)
+        throw new Error('Relay permission probe requires one unlocked open issue');
+      const diagnostic = 'rtc:transport-probe:v1:' + randomBytes(16).toString('hex');
+      const result = await request('/issues/' + issue + '/comments', 'POST', { body: diagnostic });
+      if (!Number.isSafeInteger(result?.id) || result.id < 1)
+        throw new Error('Relay probe comment ID is missing; inspect private issue');
+      try { await request('/issues/comments/' + result.id, 'DELETE'); }
+      catch { throw new Error('Relay permission probe cleanup failed; inspect private issue'); }
+      return { repositoryPrivate: true, issueRead: true, commentCreate: true, commentDelete: true,
+        leastPrivilegeVerified: false };
     },
     async post(kind, envelope) {
       const response = await request('/issues/' + issue + '/comments', 'POST',

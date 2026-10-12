@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-11",
+  "updated": "2026-10-12",
   "order": [
     "K",
     "D",
@@ -331,15 +331,18 @@
         "D-4a"
       ],
       "card": "docs/pr-cards/D-4.md",
-      "status": "WAITING_ON_OWNER",
+      "status": "IN_PROGRESS",
       "units": [
         "D-4"
       ],
-      "readiness": "WAITING_ON_OWNER",
+      "readiness": "READY",
       "externalGates": [
         "IN-02/03/04 relay resources and secrets",
         "owner-authorized read_only non-production test passes",
         "local/GitHub-only/Vercel Sandbox real runs and revocation evidence"
+      ],
+      "pr": [
+        "#101 (D-4b partial)"
       ]
     },
     {
