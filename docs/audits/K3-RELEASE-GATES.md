@@ -85,3 +85,10 @@ WAITING_ON_OWNER independently.
 `docs/audits/K3-RELEASE-PREREQUISITES.json` lists eight required gates with owners, reasons and next evidence actions. `npm run check` executes `scripts/check-k3-release-gates.mjs`, checking the private 11-export package, the 21 currently verified exact original assertion bodies, pinned source SHA alignment, missing external proof and this **NOT READY / NOT RELEASED** decision. This does **not** turn synthetic adapters into real SQL/owner consent or certify an asset.
 
 `node scripts/check-k3-release-gates.mjs --candidate` intentionally returns failure while any required service, upstream-drift, adoption or remote GitHub Release proof remains open. That refusal is deliberate and cannot be bypassed by changing a JSON status field; changing publication conditions requires a separately reviewed implementation with authentic remote evidence and all gates met. Do not tag or upload a partial package.
+
+**K-3as fresh Stripe upstream review (PR #67):** current Stripe main `b2a1432fa6398b7f6848d84771e5af5b21d686e7` was reviewed
+at the source and eight original tracked suite blob level. Eleven portable source blobs are unchanged;
+registry/profiles service-catalog tests now include four G-6 admin tools (196 total; profile counts
+98/99/102; 94 writes). Both required original source SQL/owner HTTP jobs move together to this
+immutable reviewed SHA. This is source-drift reconciliation only. No service adoption, independently
+authenticated human money-out consent or publication approval; K-3 release remains NOT READY.
