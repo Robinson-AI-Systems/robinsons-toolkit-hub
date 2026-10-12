@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import {createHash} from 'node:crypto';
-import {createOAuthProtocolHandlers} from '../src/oauth-protocol.js';
+import {createOAuthProtocolHandlers,oauthTransportBodyWithinLimit,MAX_OAUTH_BODY_BYTES} from '../src/oauth-protocol.js';
 import {hashToken} from '../src/oauth.js';
 
 const env={PUBLIC_BASE_URL:'https://provider.example.test'};
@@ -446,5 +446,29 @@ describe('portable OAuth protocol handlers',()=>{
     expect((await call(f.handlers.token,'POST',data)).status).toBe(401);
     expect(called).toBe(0);
     expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+  });
+});
+
+describe('current source transport-byte evidence at portable OAuth boundary', () => {
+  it('rejects oversized and ambiguous wire evidence without reading durable OAuth clients', async () => {
+    const f=fixture();
+    const bad = [
+      {'content-length':'0003'}, {'content-length':'-3'},
+      {'content-length':'99999999999999999999'},
+      {'content-length':String(MAX_OAUTH_BODY_BYTES+1)}
+    ];
+    for (const headers of bad) {
+      const result=await call(f.handlers.token,'POST',{resource:env.PUBLIC_BASE_URL+'/api/mcp'},headers);
+      expect(result.status).toBe(400);
+    }
+    expect(f.db.getOAuthClient).not.toHaveBeenCalled();
+  });
+  it('validates exact raw body evidence but does not treat reserialized pre-parsed JSON as wire truth', () => {
+    const raw='{"a":1}', headers={'content-length':String(Buffer.byteLength(raw))};
+    expect(oauthTransportBodyWithinLimit({method:'POST',headers,rawBody:raw,body:{a:1}})).toBe(true);
+    expect(oauthTransportBodyWithinLimit({method:'POST',headers:{'content-length':'1'},rawBody:raw,body:{a:1}})).toBe(false);
+    expect(oauthTransportBodyWithinLimit({method:'POST',headers:{},body:{a:1}})).toBe(false);
+    expect(oauthTransportBodyWithinLimit({method:'GET',headers:{},body:{a:1}})).toBe(true);
+    expect(oauthTransportBodyWithinLimit({method:'POST',headers:{},rawBody:Buffer.alloc(MAX_OAUTH_BODY_BYTES+1)})).toBe(false);
   });
 });
