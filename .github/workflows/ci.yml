@@ -102,6 +102,11 @@ jobs:
       - name: Refuse source drift or substituted checkout
         working-directory: source-stripe
         run: test "$(git rev-parse HEAD)" = "7c9e981b75806e7fbfdbfdc84622ed11ca2185a2"
+      - name: Verify exact reviewed original Stripe OAuth/key test blobs
+        working-directory: source-stripe
+        run: |
+          test "$(git hash-object tests/unit/oauth-handlers.test.js)" = "217c0c18a0c427963fa374aa4c6fad570747865f"
+          test "$(git hash-object tests/unit/keys.test.js)" = "05574eecb0d0f246f0ddfd9a9bddb673bd75c5f0"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -135,6 +140,11 @@ jobs:
       - name: Verify immutable reviewed service revision
         working-directory: source-stripe
         run: test "$(git rev-parse HEAD)" = "7c9e981b75806e7fbfdbfdc84622ed11ca2185a2"
+      - name: Verify exact reviewed original Stripe OAuth/key test blobs
+        working-directory: source-stripe
+        run: |
+          test "$(git hash-object tests/unit/oauth-handlers.test.js)" = "217c0c18a0c427963fa374aa4c6fad570747865f"
+          test "$(git hash-object tests/unit/keys.test.js)" = "05574eecb0d0f246f0ddfd9a9bddb673bd75c5f0"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
