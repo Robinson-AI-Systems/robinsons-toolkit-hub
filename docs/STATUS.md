@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**L-1 local source search / PR #129 (as-if merged, CI pending):** Owner-opted-in local MCP adds bounded literal code search without external shell or network. Real temporary-filesystem tests cover matching lines, symlink avoidance, ignored private/dependency paths, scope refusal, match caps and incomplete-result signaling. Existing #126–#128 already merged. L-1 general shell remains pending safe confinement and confirmation; K-3 release and D-4 authenticated acceptance remain independent and unverified.
+
+
 **L-1 confirmed create-only local files / PR #128 (as-if merged, CI pending):**
 After #126 and #127 merged with full exact-head CI, owner-enabled local MCP
 can now create new UTF-8 files only with explicit confirm, exclusive
