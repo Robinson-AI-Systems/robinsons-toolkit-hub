@@ -60,6 +60,19 @@ export function isInertJsonData(value, seen = new WeakSet(), depth = 0) {
   } catch { return false; }
 }
 
+// Preserve validated caller intent across asynchronous authorization and execution.
+function snapshotDispatchArgs(args) {
+  const value = structuredClone(args);
+  function freeze(node) {
+    if (node !== null && typeof node === 'object') {
+      for (const child of Object.values(node)) freeze(child);
+      Object.freeze(node);
+    }
+    return node;
+  }
+  return freeze(value);
+}
+
 export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResult,
   readDetail, splitResult, resultPage, formatError, skipDetailFor = () => false }) {
   if (!Array.isArray(registry?.tools) || !registry?.handlers ||
@@ -74,6 +87,10 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
         !safeDispatchArgs(args)) {
       return deny('Tool unavailable for this connection');
     }
+    // Clone before the first await, otherwise policy can alter confirmation fields.
+    let safeArgs;
+    try { safeArgs = snapshotDispatchArgs(args); }
+    catch { return deny('Tool unavailable for this connection'); }
     const item = registry.tools.find(t => t.name === name);
     let permitted = false;
     try { permitted = !!item && (await authorizeTool(item, connection)) === true; }
@@ -90,7 +107,7 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       registry.handlers[name] : undefined;
     if (typeof handler !== 'function') return deny('Tool unavailable');
     try {
-      const raw = await shapeResult(await handler(args, {
+      const raw = await shapeResult(await handler(safeArgs, {
         connection, connectionId: connection.resultScope, db, services, registry,
         runRead: (nextName, nextArgs) => dispatch({
           name: nextName, args: nextArgs, connection, db, services
@@ -105,13 +122,13 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       }
       let result = raw;
       if (!skipDetailFor(name) && Array.isArray(raw.content)) {
-        const detail = ['summary','full'].includes(args.detail) ? args.detail : undefined;
+        const detail = ['summary','full'].includes(safeArgs.detail) ? safeArgs.detail : undefined;
         result = { ...raw, content: raw.content.map(part => {
           if (part?.type !== 'text' || typeof part.text !== 'string') return part;
           let value;
           try { value = JSON.parse(part.text); } catch { return part; }
           const projected = readDetail(value, {
-            detail, fields: typeof args.fields === 'string' ? args.fields : undefined
+            detail, fields: typeof safeArgs.fields === 'string' ? safeArgs.fields : undefined
           });
           if (!isInertJsonData(projected)) throw new TypeError('Unsafe detail projection');
           return { ...part, text: JSON.stringify(projected) };
