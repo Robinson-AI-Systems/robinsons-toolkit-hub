@@ -84,8 +84,10 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
     throw new TypeError('Explicit registry, policy, redaction and result adapters are required');
   }
   async function dispatch({ name, args = {}, connection, db, services = {} }, depth = 0) {
-    if (!connection || typeof connection !== 'object' || typeof name !== 'string' ||
-        !validName.test(name) || depth > MAX_NESTED_READS ||
+    // Retain the source adapter's generic unavailable message for invalid
+    // names (including inherited Object.prototype method names).
+    if (typeof name !== 'string' || !validName.test(name)) return deny('Tool unavailable');
+    if (!connection || typeof connection !== 'object' || depth > MAX_NESTED_READS ||
         !safeDispatchArgs(args)) {
       return deny('Tool unavailable for this connection');
     }

@@ -179,7 +179,7 @@
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "dfea11457900a0c18d7c4046802d1d9d726bffa3",
+      "coreBlob": "827d19c928ffc625deab4014cd7a08e699d952e2",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
