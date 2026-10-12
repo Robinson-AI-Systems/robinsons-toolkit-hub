@@ -46,6 +46,16 @@ inside that environment, and invoke `node scripts/probe-rtc-fleet.mjs --authoriz
 The existing `agent-check` enforces read_only identity, declared non-writing
 tool metadata and real harmless read, while requiring an exact direct route.
 Never run this opt-in against live/production or a write, never log a pass.
+After service owner revokes the exact temporary TEST read_only pass used
+for acceptance, verify an **explicit 401 `pass_revoked`** response with
+`node scripts/rtc-revocation-probe.mjs --server ALIAS --pass-env ENV_NAME --authorized-revoked-test`.
+The pass must be held only in that protected env and must be a revoked
+TEST pass. Generic 401/403, a failed network request or a previously denied
+credential is not revocation proof. Do not run in production. Save only the
+neutral output; the same-pass linkage and owner revocation action require
+independent protected acceptance evidence. This verifies direct denial
+only, not relay/Sandbox revocation.
+
 Execute separate D-4 private GitHub relay/Sandbox and revocation checks using
 their owner-approved secure environments. Capture only neutral evidence in
 D-4/STATUS, including source versus deployed status and all unfinished gates.

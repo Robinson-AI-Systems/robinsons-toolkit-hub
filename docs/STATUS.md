@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+- **D-4h (#109, as-if-merged):** added TEST-only owner-opt-in revoked-pass verifier using exact custom RTC `GET /api/whoami`, demanding genuine JSON HTTP 401 `pass_revoked`. Generic 401, 403, 200, network failures and HTML SSO cannot masquerade as revocation; reports are neutral and never print a pass. Offline fake tests are green only when CI passes; **no real owner pass or revocation was used**. D-4 remains IN_PROGRESS until actual identity, three routes and revocation; K-3 private NOT_READY.
+
+
 - **K-3ca (#108, as-if-merged):** portable MCP dispatch now binds inert frozen catalog declarations before async authorization and denies accessor-based handler/name metadata, coerced tool IDs and oversized provider/formatted error envelopes. New adversarial tests prevent mutated permissions, executable handler properties and error data amplification. This is only the independent portable core: Stripe service still owns real RTC deployment, SQL, owner-money consent and source test adoption. K-3 IN_PROGRESS/private/NOT_READY, D-4 IN_PROGRESS. Next: K-3 source compatibility and D-4 owner-authorized connection acceptance.
 
 
