@@ -125,3 +125,5 @@ and `rawHeaders` alongside the normalized authorization string. More than one Au
 conflicting representations or malicious accessors are rejected as unauthorized before durable lookup;
 a normal single header still accepts. This is deliberately stricter fail-closed transport behavior than
 the source utility; the adopting service must verify its actual HTTP adapter separately.
+
+**K-3aw OAuth request integrity:** Portable OAuth handler parsing now rejects repeated URL-encoded parameter names (including encoded aliases), inherited/accessor/prototype-control request records and accessor redirect URI entries before DB access. The shared HTTP helper remains an exact original-source copy; source service transport/parity and human owner consent are separate, unfinished gates.
