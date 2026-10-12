@@ -136,7 +136,7 @@
       "sourceFile": "src/core/write.js",
       "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
       "target": "./src/write.js",
-      "coreBlob": "e23ece23c179c9aba0e429618b0ca77fc31cd03f",
+      "coreBlob": "653a862743a1d8dd9c9f0383073f9ce5a40ae618",
       "kind": "adapted",
       "tests": [
         "packages/core/test/write.test.js",
@@ -145,7 +145,8 @@
       ],
       "serverOwned": [
         "owner-independent money consent, shared limits, live guard and retry key",
-        "service-authenticated owner approval and durable shared per-account caps remain mandatory; portable money shape and classifier guards cannot grant consent"
+        "service-authenticated owner approval and durable shared per-account caps remain mandatory; portable money shape and classifier guards cannot grant consent",
+        "confirm and dryRun require own Boolean data descriptors; no caller flag substitutes for independent owner money approval or SQL limits"
       ]
     },
     "./mcp-dispatch": {

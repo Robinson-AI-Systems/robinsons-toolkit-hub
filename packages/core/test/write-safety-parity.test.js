@@ -66,6 +66,39 @@ describe('adapted write source failure and monetary preview parity',()=>{
     expect(f.hooks.beforeApply).not.toHaveBeenCalled();
     expect(f.logs).toHaveLength(0);
   });
+  it('rejects inherited or accessor-based confirmation before preview, money approval or provider calls',async()=>{
+    const inherited=Object.create({confirm:true});
+    inherited.requestKey='fixture-intent';
+    const a=fixture(),denied=parse(await a.call(inherited));
+    expect(denied.error).toMatch(/Invalid write arguments/);
+    expect(a.hooks.read).not.toHaveBeenCalled();
+    expect(a.hooks.beforeApply).not.toHaveBeenCalled();
+    expect(a.hooks.apply).not.toHaveBeenCalled();
+    expect(a.logs).toHaveLength(0);
+    const getter=vi.fn(()=>true),b=fixture(),accessor={};
+    Object.defineProperty(accessor,'confirm',{enumerable:true,get:getter});
+    const response=parse(await b.call(accessor));
+    expect(response.error).toMatch(/Invalid write arguments/);
+    expect(getter).not.toHaveBeenCalled();
+    expect(b.hooks.apply).not.toHaveBeenCalled();
+    const c=fixture(),dryGetter=vi.fn(()=>true),dry={confirm:true};
+    Object.defineProperty(dry,'dryRun',{enumerable:true,get:dryGetter});
+    expect(parse(await c.call(dry)).error).toMatch(/Invalid write arguments/);
+    expect(dryGetter).not.toHaveBeenCalled();
+    expect(c.hooks.beforeApply).not.toHaveBeenCalled();
+  });
+  it('requires explicitly owned Boolean confirmation and retains ordinary preview flow',async()=>{
+    const noConfirm=fixture();
+    const args=Object.create(null);args.requestKey='isolated';
+    const pending=parse(await noConfirm.call(args));
+    expect(pending.needsConfirmation).toBe(true);
+    expect(noConfirm.hooks.apply).not.toHaveBeenCalled();
+    args.confirm=true;
+    const approved=parse(await noConfirm.call(args));
+    expect(approved).toMatchObject({done:true,confirmed:true});
+    expect(noConfirm.hooks.beforeApply).toHaveBeenCalledTimes(1);
+    expect(noConfirm.hooks.apply).toHaveBeenCalledTimes(1);
+  });
   it('requires separate server money approval even when confirm is true',async()=>{
     const f=fixture({approval:false});
     const result=parse(await f.call());

@@ -54,9 +54,25 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     if (!ctx.db || typeof ctx.db.recordChange !== 'function') {
       return respond({ done: false, error: 'Audit database unavailable: action refused' }, true);
     }
-    if (!args || typeof args !== 'object' || Array.isArray(args) ||
-      (args.dryRun !== undefined && typeof args.dryRun !== 'boolean') ||
-      (args.confirm !== undefined && typeof args.confirm !== 'boolean')) {
+    if (!args || typeof args !== 'object' || Array.isArray(args)) {
+      return respond({ done: false, error: 'Invalid write arguments or confirmation flags' }, true);
+    }
+    let confirmed = false, dryRunRequested = false;
+    try {
+      // Own data descriptors are required: prototype pollution and accessor
+      // getters may not silently supply or alter irreversible write consent.
+      const proto = Object.getPrototypeOf(args);
+      if (proto !== Object.prototype && proto !== null) throw new TypeError('Unsafe write arguments');
+      const dryRun = Object.getOwnPropertyDescriptor(args, 'dryRun');
+      const confirm = Object.getOwnPropertyDescriptor(args, 'confirm');
+      for (const flag of [dryRun, confirm]) {
+        if (flag && (!Object.hasOwn(flag, 'value') || typeof flag.value !== 'boolean')) {
+          throw new TypeError('Invalid confirmation descriptor');
+        }
+      }
+      confirmed = confirm?.value === true;
+      dryRunRequested = dryRun?.value === true;
+    } catch {
       return respond({ done: false, error: 'Invalid write arguments or confirmation flags' }, true);
     }
     if (connection.mode === 'live') {
@@ -101,13 +117,13 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     }
     const summary = prepared ? prepared.previewLine + '\n' + summaryText : summaryText;
     const preview = { done: false, mode: connection.mode, preview: summary,
-      needsConfirmation: args.confirm !== true };
-    if (args.dryRun === true) {
+      needsConfirmation: !confirmed };
+    if (dryRunRequested) {
       await ctx.db.recordChange({ account: account, mode: connection.mode,
         connection: ctx.connectionId ?? null, tool: name, summary, dryRun: true });
       return respond(preview);
     }
-    if (args.confirm !== true) {
+    if (!confirmed) {
       return respond({ ...preview, prompt: 'Review the preview and explicitly set confirm: true' });
     }
     const key = idempotency(connection, name, args);
