@@ -20,3 +20,16 @@ At 2026-10-11, reviewed Stripe main `60877ae0058262c09bbbe7bd48970dc1aca6334c`; 
 ## Required verification and rollback
 
 Run the source server's original OAuth, keys, profiles, registry, write-contract, write-core, and MCP tests **plus** relevant mock, Postgres and full CI. Conformance must pass for the actual server and two-instance locks. Compare before/after metadata, auth failures, confirmation prompts, change-log ordering, idempotency, large-result isolation and revocation. Verify zero live provider writes and unchanged money-out owner authorization. Record candidate SHA, release URL/checksum, test evidence, exact-head CI, unresolved reviews and reversible backout. If parity cannot be demonstrated, keep Stripe on its standalone source implementation and report the incompatibility as a K-3 follow-up instead of forcing import substitution.
+
+## K-3cg source-service security handoff — 2026-10-12
+
+At reviewed Stripe revision `4fedb344c732b806dae033f87e936350a1180b77`,
+`src/core/http.js` uses JSON.stringify on a framework-preparsed caller
+object to enforce 16 KiB. Hub's byte-identical candidate broke OAuth
+no-getter/no-toJSON regressions: crafted object accessors ran before refusal.
+Hub's **private** module was adapted to descriptor-only bounded inert JSON.
+The Stripe MCP service agent should inspect its **current** HTTP/RTC routes
+and implement equivalent getter-free preflight and original-service regressions
+under Stripe's cards/CI; retain byte-exact host framing and independent owner
+money-out/account SQL guards. This is a service-owned action; Hub does not
+edit the Stripe repository or claim it adopted the package.
