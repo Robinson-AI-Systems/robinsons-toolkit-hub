@@ -96,6 +96,23 @@ function copyClaim(value, seen, budget, depth = 0) {
     seen.delete(value);
   }
 }
+// These fields originate in service-owned SQL. Read own inert descriptors
+// instead of invoking client row getters or accepting a different client id.
+function safeClientBinding(row, expectedId) {
+  if (!row || typeof row !== 'object' || Array.isArray(row) ||
+      ![Object.prototype, null].includes(Object.getPrototypeOf(row))) return null;
+  const fields = Object.getOwnPropertyDescriptors(row);
+  const value = name => {
+    const field = fields[name];
+    return field?.enumerable && Object.hasOwn(field, 'value') ? field.value : null;
+  };
+  const id = value('client_id');
+  const hash = value('client_secret_hash');
+  const redirects = safeRedirectUris(value('redirect_uris'));
+  if (id !== expectedId || typeof hash !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(hash) || !redirects) return null;
+  return Object.freeze({ client_id: id, client_secret_hash: hash, redirect_uris: redirects });
+}
 function safeAccessBinding(row, expected) {
   if (!row || typeof row !== 'object' || Array.isArray(row) ||
       ![Object.prototype,null].includes(Object.getPrototypeOf(row))) return null;
@@ -148,7 +165,10 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     if (p.resource !== resource()) {
       return bad(res,400,'invalid_target','Token resource must be this MCP');
     }
-    const client=await db.getOAuthClient(str(p.client_id));
+    const dbClient = await db.getOAuthClient(str(p.client_id));
+    let client = null;
+    try { client = safeClientBinding(dbClient, p.client_id); }
+    catch { /* refuse malformed service SQL rows without invoking accessors */ }
     if (!client || typeof p.client_secret!=='string' || !p.client_secret ||
       !secretsMatch(hashToken(p.client_secret), client.client_secret_hash)) {
       return bad(res,401,'invalid_client','Client credentials rejected');
@@ -157,7 +177,14 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       if (!p.code || !client.redirect_uris.includes(p.redirect_uri) || !p.code_verifier) {
         return bad(res,400,'invalid_grant','Missing or invalid authorization details');
       }
-      const record=await db.consumeAuthCode(p.code);
+      const consumed = await db.consumeAuthCode(p.code);
+      let record = null;
+      try {
+        if (consumed && typeof consumed === 'object' && !Array.isArray(consumed) &&
+            [Object.prototype,null].includes(Object.getPrototypeOf(consumed))) {
+          record = copyClaim(consumed, new Set(), {left: 512});
+        }
+      } catch { /* malformed durable authorization codes cannot authorize credentials */ }
       if (!record || record.client_id!==p.client_id || record.redirect_uri!==p.redirect_uri ||
         !verifyPkce(p.code_verifier,record.code_challenge,record.code_challenge_method)) {
         return bad(res,400,'invalid_grant','Code is expired, used, or failed PKCE');
