@@ -145,7 +145,7 @@
       "sourceFile": "src/core/write.js",
       "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
       "target": "./src/write.js",
-      "coreBlob": "b24dc2adaf8ab735b236d23b553584f4b6e661e2",
+      "coreBlob": "8abd5ba01788a293b90b3168d6dc59f16ecc91f0",
       "kind": "adapted",
       "tests": [
         "packages/core/test/write.test.js",
@@ -156,7 +156,8 @@
         "owner-independent money consent, shared limits, live guard and retry key",
         "service-authenticated owner approval and durable shared per-account caps remain mandatory; portable money shape and classifier guards cannot grant consent",
         "confirm and dryRun require own Boolean data descriptors; no caller flag substitutes for independent owner money approval or SQL limits",
-        "guarded writes reject nested active args, money preview getter and executable approval decision; independent human authorization remains required"
+        "guarded writes reject nested active args, money preview getter and executable approval decision; independent human authorization remains required",
+        "portable account binding, inert ownership decision and printable retry key validation refuses malformed write intent; independent owner consent and SQL account/day guard remain exclusively service-owned"
       ]
     },
     "./mcp-dispatch": {

@@ -73,6 +73,51 @@ describe('source-equivalent private guarded write lifecycle',()=>{
     expect(f.hooks.apply).not.toHaveBeenCalled();
     expect(invalid.hooks.apply).not.toHaveBeenCalled();
   });
+  it('refuses unscoped, padded and control-character account identities before reads',async()=>{
+    for(const tenant of ['','  ',' tenant-a','tenant-a ','tenant\\nother',
+      'a'.repeat(257)]) {
+      const f=fixture();
+      const result=parse(await f.op.handler({confirm:true},{...f.ctx,
+        connection:{...f.ctx.connection,tenant}}));
+      expect(result.done).toBe(false);
+      expect(result.error).toMatch(/not allowed to change/);
+      expect(f.hooks.read).not.toHaveBeenCalled();
+      expect(f.hooks.apply).not.toHaveBeenCalled();
+      expect(f.log).toHaveLength(0);
+    }
+  });
+  it('refuses active and malformed service target authorization before preview or apply',async()=>{
+    let getters=0;
+    const active={};Object.defineProperty(active,'allowed',{enumerable:true,
+      get(){getters++;return true;}});
+    const nested={allowed:true,ownership:{id:'safe'}};
+    Object.defineProperty(nested.ownership,'ownerId',{enumerable:true,
+      get(){getters++;return 'private';}});
+    for(const result of [active,nested,{allowed:true,ownership:new Date()},
+      Object.assign(Object.create({allowed:true}),{ownership:{id:'x'}})]) {
+      const f=fixture({targetGuard:vi.fn(async()=>result)});
+      const response=parse(await f.op.handler({confirm:true},f.ctx));
+      expect(response.done).toBe(false);
+      expect(response.error).toMatch(/unsafe target/);
+      expect(f.hooks.summarize).not.toHaveBeenCalled();
+      expect(f.hooks.apply).not.toHaveBeenCalled();
+      expect(f.log).toHaveLength(0);
+    }
+    expect(getters).toBe(0);
+    const permitted=fixture({targetGuard:vi.fn(async()=>({allowed:true,
+      ownership:{id:'safe'}}))});
+    expect(parse(await permitted.op.handler({confirm:true},permitted.ctx)).done).toBe(true);
+  });
+  it('denies unsafe and oversized provider retry identifiers before applying changes',async()=>{
+    for(const key of ['rmcp_has space','rmcp_bad\\nkey','rmcp_bad\\tkey',
+      'rmcp_'+ 'x'.repeat(260)]) {
+      const f=fixture({idempotency:()=>key});
+      const result=parse(await f.op.handler({confirm:true},f.ctx));
+      expect(result.error).toMatch(/stable provider retry identifier/);
+      expect(f.hooks.apply).not.toHaveBeenCalled();
+      expect(f.log).toHaveLength(0);
+    }
+  });
   it('requires an independent money gate when a prepared action moves funds',async()=>{
     const prepared=()=>({previewLine:'Debit demo funds',amountCents:1000,currency:'usd',direction:'out'});
     const none=fixture({prepare:prepared});

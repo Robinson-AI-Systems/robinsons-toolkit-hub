@@ -49,8 +49,9 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     };
     let account = null;
     try { account = accountOf(connection); } catch { account = null; }
-    if (typeof account !== 'string' || !account || !modes.has(connection?.mode) ||
-      !profiles.has(connection?.profile)) {
+    if (typeof account !== 'string' || !account.trim() || account !== account.trim() ||
+      account.length > 256 || /[\x00-\x1f\x7f]/.test(account) ||
+      !modes.has(connection?.mode) || !profiles.has(connection?.profile)) {
       return respond({ done: false, error: 'This connection is not allowed to change provider records' }, true);
     }
     if (!ctx.db || typeof ctx.db.recordChange !== 'function') {
@@ -89,7 +90,13 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     let guardContext = null;
     if (targetGuard) {
       const allowed = await targetGuard(args, ctx, before);
-      if (allowed !== true && allowed?.allowed !== true) {
+      // A service-owned ownership decision is privileged input. Never read a
+      // getter or executable nested ownership record to authorize a write.
+      const accepted = allowed === true ||
+        (isInertJsonData(allowed) && allowed !== null &&
+          typeof allowed === 'object' && !Array.isArray(allowed) &&
+          allowed.allowed === true);
+      if (!accepted) {
         return respond({ done: false, error: 'App-owned record or unsafe target',
           reason: typeof allowed === 'string' ? allowed : undefined }, true);
       }
@@ -132,7 +139,8 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
       return respond({ ...preview, prompt: 'Review the preview and explicitly set confirm: true' });
     }
     const key = idempotency(connection, name, args);
-    if (typeof key !== 'string' || !key.startsWith(idempotencyPrefix)) {
+    if (typeof key !== 'string' || !key.startsWith(idempotencyPrefix) ||
+      !/^[\x21-\x7e]{1,255}$/.test(key)) {
       return respond({ done: false, error: 'Missing stable provider retry identifier' }, true);
     }
     // A safe preflight must complete before any provider write. If it fails
