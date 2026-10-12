@@ -9,6 +9,43 @@ const str = value => typeof value === 'string' ? value : '';
 const tokenResponse = (access, refresh) => ({
   access_token: access, token_type: 'Bearer', expires_in: 3600, refresh_token: refresh
 });
+
+function endpointParams(req) {
+  // OAuth input must be an unambiguous JSON data record, not active accessors or
+  // repeated form fields that different HTTP stacks may interpret differently.
+  if (typeof req?.body === 'string' &&
+      typeof req?.headers?.['content-type'] === 'string' &&
+      req.headers['content-type'].split(';')[0].trim().toLowerCase() === 'application/x-www-form-urlencoded') {
+    const seen = new Set();
+    for (const key of new URLSearchParams(req.body).keys()) {
+      if (seen.has(key)) throw new TypeError('Ambiguous OAuth form field');
+      seen.add(key);
+    }
+  }
+  const params = paramsOf(req);
+  const proto = Object.getPrototypeOf(params);
+  if (proto !== Object.prototype && proto !== null ||
+      Object.getOwnPropertySymbols(params).length) throw new TypeError('Unsafe OAuth input');
+  for (const [key, field] of Object.entries(Object.getOwnPropertyDescriptors(params))) {
+    if (!field.enumerable || !Object.hasOwn(field, 'value') ||
+        ['__proto__', 'prototype', 'constructor'].includes(key)) {
+      throw new TypeError('Unsafe OAuth input');
+    }
+  }
+  return params;
+}
+function safeRedirectUris(uris) {
+  if (!Array.isArray(uris) || uris.length < 1 || uris.length > 8 ||
+      Object.getPrototypeOf(uris) !== Array.prototype ||
+      Object.getOwnPropertySymbols(uris).length) return false;
+  for (let i = 0; i < uris.length; i++) {
+    const item = Object.getOwnPropertyDescriptor(uris, String(i));
+    if (!item || !Object.hasOwn(item, 'value') ||
+        typeof item.value !== 'string' || !validRedirectUri(item.value)) return false;
+  }
+  return new Set(uris).size === uris.length;
+}
+
 const defaultPaths = Object.freeze({ mcp: '/api/mcp', authorize: '/api/oauth/authorize',
   token: '/api/oauth/token', register: '/api/oauth/register' });
 
@@ -29,10 +66,8 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
   async function register(req, res) {
     if (!only(res, req, ['POST'])) return;
     let p;
-    try { p=paramsOf(req); } catch { return bad(res,400,'invalid_client_metadata','Malformed registration'); }
-    if (!Array.isArray(p.redirect_uris) || p.redirect_uris.length<1 || p.redirect_uris.length>8 ||
-      !p.redirect_uris.every(x=>typeof x==='string' && validRedirectUri(x)) ||
-      new Set(p.redirect_uris).size !== p.redirect_uris.length) {
+    try { p=endpointParams(req); } catch { return bad(res,400,'invalid_client_metadata','Malformed registration'); }
+    if (!safeRedirectUris(p.redirect_uris)) {
       return bad(res,400,'invalid_client_metadata','One to eight valid, distinct redirect URIs required');
     }
     if (p.token_endpoint_auth_method && p.token_endpoint_auth_method !== 'client_secret_post') {
@@ -48,7 +83,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
   async function token(req, res) {
     if (!only(res, req, ['POST'])) return;
     let p;
-    try { p=paramsOf(req); } catch { return bad(res,400,'invalid_request','Malformed token request'); }
+    try { p=endpointParams(req); } catch { return bad(res,400,'invalid_request','Malformed token request'); }
     if (p.resource !== resource()) {
       return bad(res,400,'invalid_target','Token resource must be this MCP');
     }

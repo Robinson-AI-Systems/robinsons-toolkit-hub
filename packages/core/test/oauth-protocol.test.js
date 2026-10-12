@@ -119,6 +119,42 @@ describe('portable OAuth protocol handlers',()=>{
     expect((await call(f.handlers.token,'POST',args)).value.error).toBe('invalid_grant');
     expect(f.db.rotateRefreshToken).toHaveBeenCalledTimes(2);
   });
+  it('refuses duplicate form selectors and unsafe OAuth request descriptors before service SQL', async()=>{
+    const f=fixture();
+    async function raw(handler, body, type='application/x-www-form-urlencoded') {
+      const res=response();
+      await handler({method:'POST',headers:{'content-type':type},body},res);
+      return {status:res.statusCode,value:JSON.parse(res.body)};
+    }
+    for (const body of [
+      'resource=https%3A%2F%2Fprovider.example.test%2Fapi%2Fmcp&client_id=a&client_id=b',
+      'client_id=a&%63lient_id=b',
+      'grant_type=refresh_token&grant_type=authorization_code',
+      'redirect_uris=x&redirect_uris=y'
+    ]) {
+      const response=await raw(f.handlers.token,body);
+      expect(response).toMatchObject({status:400,value:{error:'invalid_request'}});
+    }
+    let executed=0;
+    const active={};
+    Object.defineProperty(active,'resource',{enumerable:true,get(){executed++;return 'bad';}});
+    expect((await raw(f.handlers.token,active,'application/json')).status).toBe(400);
+    expect(executed).toBe(0);
+    const inherited=Object.create({resource:env.PUBLIC_BASE_URL+'/api/mcp'});
+    expect((await raw(f.handlers.token,inherited,'application/json')).status).toBe(400);
+    const polluted=JSON.parse('{"__proto__":{"resource":"bad"}}');
+    expect((await raw(f.handlers.token,polluted,'application/json')).status).toBe(400);
+    const redirects=[callback];
+    Object.defineProperty(redirects,'0',{enumerable:true,get(){executed++;return callback;}});
+    const invalid=await raw(f.handlers.register,{redirect_uris:redirects},'application/json');
+    expect(invalid).toMatchObject({status:400,value:{error:'invalid_client_metadata'}});
+    expect(executed).toBe(0);
+    expect(f.db.getOAuthClient).not.toHaveBeenCalled();
+    expect(f.db.createOAuthClient).not.toHaveBeenCalled();
+    expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+    expect(f.db.rotateRefreshToken).not.toHaveBeenCalled();
+  });
+
   it('requires storage, claim mapping and safe local paths, not implicit service defaults',()=>{
     const f=fixture();
     expect(()=>createOAuthProtocolHandlers({db:{},env,buildAccessRow:()=>({})})).toThrow(/storage/);
