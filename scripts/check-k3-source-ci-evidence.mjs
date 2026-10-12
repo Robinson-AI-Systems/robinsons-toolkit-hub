@@ -60,7 +60,7 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
     // independently reviewed Git blobs in each authentic source CI job.
     const evidence=job.steps.filter(step=>
       step.name==='Verify exact reviewed original Stripe OAuth/key test blobs');
-    if(evidence.length!==1||evidence[0].working-directory!=='source-stripe'){
+    if(evidence.length!==1||evidence[0]['working-directory']!=='source-stripe'){
       fail(name+': missing exact original suite blob verification');
     }
     for(const suite of ['tests/unit/oauth-handlers.test.js','tests/unit/keys.test.js']){
