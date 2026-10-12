@@ -65,8 +65,7 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
     }
     for(const suite of ['tests/unit/oauth-handlers.test.js','tests/unit/keys.test.js']){
       const expected='test "$(git hash-object '+suite+')" = "'+baseline.tests[suite]+'"';
-      if(!evidence[0].run?.split('\\n').includes(expected)&&
-         !evidence[0].run?.split('\n').map(x=>x.trim()).includes(expected)){
+      if(!evidence[0].run?.split('\n').map(line=>line.trim()).includes(expected)){
         fail(name+': reviewed original suite blob mismatch for '+suite);
       }
     }
