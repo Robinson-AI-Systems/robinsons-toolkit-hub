@@ -19,7 +19,7 @@ describe('read-only GitHub evidence transport',()=>{
   it('fails closed on missing transport, rejected fetch, bad response and malformed JSON',async()=>{
     await expect(githubEvidenceJson(null,'irrelevant',policies)).rejects.toThrow(/provider unavailable/);
     await expect(githubEvidenceJson(async()=>{throw Error('credential');},'irrelevant',policies))
-      .rejects.toThrow(/^Error: provider unavailable$/);
+      .rejects.toThrow(/^provider unavailable$/);
     await expect(githubEvidenceJson(async()=>({ok:false,status:403}),'irrelevant',policies))
       .rejects.toThrow(/provider failed 403/);
     await expect(githubEvidenceJson(async()=>({ok:true,json:async()=>{throw Error('leak');}}),
