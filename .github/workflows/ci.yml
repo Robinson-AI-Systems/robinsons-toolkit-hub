@@ -120,10 +120,40 @@ jobs:
           tests/db/money-reservation.test.js
           tests/db/owner-money-limit.test.js
 
+  stripe-source-owner-http:
+    name: stripe source owner HTTP (reviewed immutable commit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout original service HTTP and owner handlers without service writes
+        uses: actions/checkout@v5
+        with:
+          repository: Robinson-AI-Systems/stripe-mcp
+          ref: e3c5b34bccabec11328d62f4ca45145163772486
+          path: source-stripe
+          persist-credentials: false
+      - name: Verify immutable reviewed service revision
+        working-directory: source-stripe
+        run: test "$(git rev-parse HEAD)" = "e3c5b34bccabec11328d62f4ca45145163772486"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install original service lockfile
+        working-directory: source-stripe
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute source OAuth owner login and independent money approval HTTP tests
+        working-directory: source-stripe
+        run: >-
+          npx --no-install vitest run --config vitest.config.js
+          tests/unit/oauth-handlers.test.js
+          tests/unit/money-owner-approval.test.js
+          tests/unit/owner-money-limit.test.js
+          tests/unit/setup-page.test.js
+
   ci:
     name: ci
     if: always()
-    needs: [check, unit, db, stripe-source-sql]
+    needs: [check, unit, db, stripe-source-sql, stripe-source-owner-http]
     runs-on: ubuntu-latest
     steps:
       - name: Require every verification job to succeed
@@ -132,9 +162,11 @@ jobs:
           UNIT: ${{ needs.unit.result }}
           DB: ${{ needs.db.result }}
           STRIPE_SOURCE_SQL: ${{ needs.stripe-source-sql.result }}
+          STRIPE_SOURCE_OWNER_HTTP: ${{ needs.stripe-source-owner-http.result }}
         run: |
-          echo "check=$CHECK unit=$UNIT db=$DB stripe-source-sql=$STRIPE_SOURCE_SQL"
+          echo "check=$CHECK unit=$UNIT db=$DB stripe-source-sql=$STRIPE_SOURCE_SQL stripe-source-owner-http=$STRIPE_SOURCE_OWNER_HTTP"
           test "$CHECK" = success
           test "$UNIT" = success
           test "$DB" = success
           test "$STRIPE_SOURCE_SQL" = success
+          test "$STRIPE_SOURCE_OWNER_HTTP" = success
