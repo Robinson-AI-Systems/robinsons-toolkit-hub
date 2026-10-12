@@ -96,6 +96,9 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
           name: nextName, args: nextArgs, connection, db, services
         }, depth + 1)
       }), { mode: connection.mode });
+      // Adapter objects may contain active toJSON/getters. Never serialize,
+      // return, or page them before proving that all fields are inert JSON.
+      if (!isInertJsonData(raw)) return deny('Tool returned an invalid result');
       if (raw?.isError) return raw;
       if (!raw || !Array.isArray(raw.content)) {
         return deny('Tool returned an invalid result');
@@ -107,11 +110,16 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
           if (part?.type !== 'text' || typeof part.text !== 'string') return part;
           let value;
           try { value = JSON.parse(part.text); } catch { return part; }
-          return { ...part, text: JSON.stringify(readDetail(value, {
+          const projected = readDetail(value, {
             detail, fields: typeof args.fields === 'string' ? args.fields : undefined
-          })) };
+          });
+          if (!isInertJsonData(projected)) throw new TypeError('Unsafe detail projection');
+          return { ...part, text: JSON.stringify(projected) };
         }) };
       }
+      // readDetail may replace text with adapter-produced objects; validate
+      // the completed response as well, before JSON.stringify or storage.
+      if (!isInertJsonData(result)) return deny('Tool returned an invalid result');
       if (jsonBytes(result) <= MAX_INLINE_BYTES) return result;
       // Never clip provider output or store content before it passes service redaction.
       if (typeof connection.resultScope !== 'string' || !connection.resultScope ||
@@ -156,7 +164,7 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       // The service adapter may return a scrubbed error only; raw exceptions never escape.
       let safe = null;
       try { safe = await formatError(error, { mode: connection.mode }); } catch { /* deny */ }
-      if (safe?.isError && Array.isArray(safe.content)) return safe;
+      if (isInertJsonData(safe) && safe?.isError && Array.isArray(safe.content)) return safe;
       return deny('Could not read account details; check server setup');
     }
   }
