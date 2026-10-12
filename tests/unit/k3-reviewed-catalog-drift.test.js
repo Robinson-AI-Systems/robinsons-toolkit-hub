@@ -21,7 +21,7 @@ describe('K-3 reviewed current Stripe service catalog-only source delta',()=>{
   it('pins the entire eleven-file runtime source unchanged independently of current test counts',()=>{
     expect(manifest.source).toEqual(unchangedSource);
     expect(manifest.disposition).toBe('REVIEWED_SNAPSHOT_NOT_RELEASE');
-    expect(manifest.reviewedMain).toBe('f2de5160d94799d5425e838fa54c5702b5d93f34');
+    expect(manifest.reviewedMain).toBe('0e4ae2c873713e56de50d97af8e550d698eca0fe');
   });
   it('rejects any unseen core module drift even if service test SHA values are accepted',()=>{
     const tree={truncated:false,tree:Object.entries({...manifest.source,...manifest.tests})
