@@ -3,6 +3,7 @@
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {githubEvidenceJson} from './github-evidence-json.mjs';
 const repo='Robinson-AI-Systems/robinsons-toolkit-hub';
 const api='https://api.github.com/repos/'+repo;
 function fail(message){throw Error('K-3 remote Release proof: '+message);}
@@ -30,10 +31,12 @@ export async function verifyK3RemoteRelease(expected,{fetchImpl=globalThis.fetch
     if(!res?.ok)fail('remote request failed ('+String(res?.status||'unknown')+')');
     return res;
   }
-  async function getJson(url){
-    const res=await request(url,'application/vnd.github+json');
-    try{return await res.json();}catch{fail('unreadable GitHub REST JSON');}
-  }
+  const getJson=url=>githubEvidenceJson(fetchImpl,url,{
+    signal,
+    unavailable:'K-3 remote Release proof: remote request unavailable',
+    failed:status=>'K-3 remote Release proof: remote request failed ('+status+')',
+    malformed:'K-3 remote Release proof: unreadable GitHub REST JSON'
+  });
   const release=await getJson(api+'/releases/tags/'+encodeURIComponent(m.tag));
   if(release?.draft!==false||release?.prerelease!==false||
     release.tag_name!==m.tag||!release.published_at){

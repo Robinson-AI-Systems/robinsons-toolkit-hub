@@ -279,3 +279,9 @@ artifact and owner-run external proof. Never replace one with another. The merge
 gate remains `ci` (check + unit + db) from .github/workflows/ci.yml; publishing this
 guide adds no new required CI job and weakens none. Keep only affected sections
 fresh; future agents do not need to read this whole guide.
+
+## 8. Efficient bounded K-3 execution (K-3ar)
+
+For new approved K-3 slices use [DEVELOPMENT-EFFICIENCY](DEVELOPMENT-EFFICIENCY.md) for exact current
+helpers, five targeted fixtures and source/release compatibility acceptance. This augments §6; it does
+not revise any card, source version, financial control or independent service adoption gate.

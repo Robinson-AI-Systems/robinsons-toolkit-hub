@@ -149,3 +149,10 @@ commit and push them with the work, and say in one plain-English paragraph what 
 
 > Continue the Robinson's Toolkit work. Read `docs/SESSION-START.md` and do §0 first: finish any open PR of yours (fix red
 > CI, then merge) before starting the next card. Then keep going card after card; stop only for a real blocker (§6).
+## 7. Fast path (K-3ar)
+
+After §0 and the relevant card, use [DEVELOPMENT-EFFICIENCY](implementation-contracts/DEVELOPMENT-EFFICIENCY.md)
+for the verified code paths, targeted fixture groups, acceptance and safe PR batching. To avoid repeating
+research, read only the applicable row; run `npm run test:focus -- upstream`, `release`, `auth`, `adapter`
+or `core` while building. This never replaces final full gates. Preserve the two-lane conveyor and
+reconcile review findings before merging.
