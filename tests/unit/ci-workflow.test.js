@@ -27,11 +27,31 @@ describe('.github/workflows/ci.yml', () => {
   });
   it('the aggregate ci job always runs, needs every job and requires each to be success', () => {
     const jobs = Object.keys(wf.jobs).filter((n) => n !== 'ci');
-    expect(jobs.sort()).toEqual(['check', 'db', 'unit']);
+    expect(jobs.sort()).toEqual(['check', 'db', 'stripe-source-sql', 'unit']);
     expect(wf.jobs.ci.if).toBe('always()');
     expect([...wf.jobs.ci.needs].sort()).toEqual(jobs);
     const script = wf.jobs.ci.steps.map((s) => s.run).join('\n');
-    for (const j of jobs) expect(script).toContain(`test "$${j.toUpperCase()}" = success`);
+    for (const j of jobs) {
+      const resultVariable = j.replaceAll("-", "_").toUpperCase();
+      expect(script).toContain(`test "${resultVariable}" = success`);
+    }
+  });
+  it('pins real Stripe source and refuses unavailable source SQL evidence', () => {
+    const job = wf.jobs['stripe-source-sql'];
+    expect(job.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
+    const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout'));
+    expect(checkout.with.repository).toBe('Robinson-AI-Systems/stripe-mcp');
+    expect(checkout.with.ref).toMatch(/^[0-9a-f]{40}$/);
+    expect(checkout.with['persist-credentials']).toBe(false);
+    const compare = job.steps.find(s => typeof s.run === 'string' && s.run.includes('git rev-parse HEAD'));
+    expect(compare.run).toContain(checkout.with.ref);
+    const suite = job.steps.find(s => typeof s.run === 'string' && s.run.includes('npm run test:db'));
+    for (const path of [
+      'tests/db/oauth-persistent.test.js', 'tests/db/oauth.test.js',
+      'tests/db/money-owner-approval.test.js', 'tests/db/money-reservation.test.js',
+      'tests/db/owner-money-limit.test.js'
+    ]) expect(suite.run).toContain(path);
+    expect(suite.env.TEST_DATABASE_URL).toMatch(/@127\\.0\\.0\\.1:5432\\//);
   });
   it('the database job uses a throwaway localhost Postgres service', () => {
     expect(wf.jobs.db.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
