@@ -112,6 +112,18 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
       .with['persist-credentials']=true;
     expect(()=>validateK3SourceCIEvidence(unauthorizedCheckout)).toThrow(/checkout/);
   });
+  it('requires the real privately installed artifact comparison in source CI',()=>{
+    const absent=copy();
+    absent.workflow.jobs['stripe-source-owner-http'].steps=
+      absent.workflow.jobs['stripe-source-owner-http'].steps.filter(step=>
+        step.name!=='Pack core privately and compare installed leaves to original Stripe');
+    expect(()=>validateK3SourceCIEvidence(absent)).toThrow(/packed original-source/);
+    const spoof=copy();
+    spoof.workflow.jobs['stripe-source-owner-http'].steps.find(step=>
+      step.name==='Pack core privately and compare installed leaves to original Stripe')
+      .run='node -e "process.exit(0)"';
+    expect(()=>validateK3SourceCIEvidence(spoof)).toThrow(/packed original-source/);
+  });
   it('rejects fewer original source modules, suites or changed release disposition',()=>{
     const missing=copy();
     delete missing.baseline.source['src/core/oauth.js'];
