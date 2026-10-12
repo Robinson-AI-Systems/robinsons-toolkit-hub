@@ -2,6 +2,7 @@ import { loadServers, passFor, RouteError } from './config.js';
 import { byName, send } from './dispatch.js';
 import { contract } from './http.js';
 import { materialize } from './pages.js';
+import { belongsToRtcNamespace } from './rtc-tool-prefix.js';
 
 const local = url => ['localhost', '127.0.0.1', '[::1]'].includes(new URL(url).hostname);
 const goodEnvName = value => /^[A-Z][A-Z0-9_]{0,99}$/.test(value || '');
@@ -38,7 +39,7 @@ export async function checkAgent({ server, readTool, passEnv, argsEnv,
     if (passFor(server, scoped) !== pass) throw new Error();
     const manifest = await contract(target.url, pass, target.fallback);
     report.checks.push('rtc_1_manifest'); recordRoute();
-    if (!readTool.startsWith(manifest.prefix + '_')) {
+    if (!belongsToRtcNamespace(manifest.prefix, readTool)) {
       report.code = 'tool_prefix_mismatch'; throw new Error();
     }
     const who = await send(target, '/api/whoami');

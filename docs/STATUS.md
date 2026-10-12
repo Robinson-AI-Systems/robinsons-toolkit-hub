@@ -5,6 +5,21 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**D-4 safe TEST read tool namespace / PR #124 (as-if merged, CI pending):**
+GitHub-hosted public probe #123 established the actual Google Workspace
+contract advertises `prefix=workspace_`, while both Hub read-only TEST
+preflights incorrectly required `workspace__`. A shared delimiter-aware
+namespace checker now retains strict prefix ownership but permits valid
+service tool names; original safe metadata, TEST identity, pass and
+exact-route checks remain mandatory. CI fake-service proof only; real
+authenticated deployed read, relay, Sandbox and revocation unverified.
+#123 merged at `298cf3433ebde2baf6edaadda34bac2bfe8f4c02`:
+public Stripe RTC1, Google Workspace RTC1 and GitHub RTC0 (deployed
+implementation mismatch), while Neon/Vercel have no verified direct origin.
+Stripe K-3 adoption work is concurrent in service repo, Hub core NOT_READY.
+No D-4 owner approval re-request required.
+
+
 **D-4 public deployed fleet observation / PR #123 (as-if merged, CI pending):**
 the normal CI check job invokes pinned-inventory public-only RTC contract
 probes from a GitHub Actions runner, addressing this executor's DNS limitation.

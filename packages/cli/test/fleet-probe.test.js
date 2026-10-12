@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { REQUIRED_RTC_SERVERS, parseFleetOrigins, parseReadTests, probeRtcFleet } from '../src/fleet-probe.js';
+import { belongsToRtcNamespace } from '../src/rtc-tool-prefix.js';
 const origin = 'https://stripe-mcp-psi.vercel.app';
 const manifest = { rtc: 1, server: 'stripe', prefix: 'stripe' };
 const respond = (body, status = 200, type = 'application/json') =>
@@ -78,5 +79,22 @@ describe('standing RTC fleet deployment acceptance', () => {
       '{"stripe":{"readTool":"stripe_read"}}']) {
       expect(() => parseReadTests(bad)).toThrow();
     }
+  });
+});
+
+describe('RTC namespace preflight matches real service-advertised delimiter forms', () => {
+  it.each([
+    ['stripe','stripe_account_get',true],
+    ['workspace_','workspace_drive_list',true],
+    ['workspace_','workspace_',false],
+    ['workspace_','workspaceDrive',false],
+    ['stripe','stripeevil_account_get',false],
+    ['stripe','stripe_',false],
+    ['stripe','github_repo_get',false],
+    ['','stripe_get',false],
+    ['constructor','constructor_get',true],
+    ['stripe','stripe_bad-tool',false]
+  ])('%s / %s => %s', (prefix, tool, expected) => {
+    expect(belongsToRtcNamespace(prefix, tool)).toBe(expected);
   });
 });

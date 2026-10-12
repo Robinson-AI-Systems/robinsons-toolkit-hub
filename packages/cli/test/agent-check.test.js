@@ -1,4 +1,4 @@
-import { it, expect } from 'vitest';
+import { it, expect, vi } from 'vitest';
 import { startFakeServer } from '../../conformance/fake-server/server.js';
 import { checkAgent, parseAgentCheck } from '../src/agent-check.js';
 it('verifies real local reads without printing credentials or result data', async () => {
@@ -38,4 +38,28 @@ it('accepts only env-name credential options and explicit route expectations', (
     .toEqual({ server: 'fake', readTool: 'fake_read_record', passEnv: 'TEST_PASS' });
   expect(() => parseAgentCheck(['--pass', 'secret'])).toThrow();
   expect(() => parseAgentCheck(['--server', 'fake', '--server', 'fake'])).toThrow();
+});
+
+it('accepts a registered read with a manifest prefix that already ends in underscore', async () => {
+  const fake = await startFakeServer();
+  const originalFetch = globalThis.fetch;
+  const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args) => {
+    const response = await originalFetch(...args);
+    if (new URL(args[0]).pathname !== '/api/contract') return response;
+    const json = await response.json();
+    return new Response(JSON.stringify({ ...json, prefix: 'fake_' }), {
+      status: response.status, headers: { 'content-type': 'application/json' }
+    });
+  });
+  try {
+    let text = '';
+    const code = await checkAgent({
+      server: 'fake', readTool: 'fake_read_record', passEnv: 'TEST_PASS',
+      env: { RTOOL_SERVERS: 'fake=' + fake.url, TEST_PASS: fake.passes.readOnly },
+      write: value => { text = value; }
+    });
+    expect(code).toBe(0);
+    expect(JSON.parse(text)).toMatchObject({ ok: true, code: 'verified', route: 'direct' });
+    expect(fake.state.changes).toHaveLength(0);
+  } finally { spy.mockRestore(); await fake.close(); }
 });
