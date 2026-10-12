@@ -5,6 +5,8 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3am (PR #61, as-if-merged):** the hub CI now executes the authentic reviewed Stripe source's OAuth and money-out SQL suites against a disposable PostgreSQL 17 service. This adds original source-service SQL evidence without copying fixture SQL or touching the Stripe repo, and exact-head `ci` requires the source job. Pinned execution alone is not deployed adoption, authenticated human approval or release eligibility; K-3 remains IN_PROGRESS/private and D-4 WAITING_ON_OWNER. **Next:** reconcile fresh Stripe source drift and prove remaining owner UI/transport, service adoption, and release prerequisites.
+
 - **K-3al (PR #60, as-if-merged):** guarded-write confirmation and dry-run flags now require explicit own Boolean data properties on a plain or null-prototype argument record. Inherited confirmation, custom-prototype escalation and executable getters cannot initiate provider mutations or owner money preflight; tests prove denial before reads/audit/money and preserve ordinary previews/confirmed writes. Independent authenticated owner approval, provider idempotency, SQL target guards and LIVE safety remain service-owned, not inferred from confirmation. This closes five new PRs while K-3 stays IN_PROGRESS/private and D-4 WAITING_ON_OWNER. **Next:** actual source-service SQL and owner consent proof, adoption and complete release prerequisites (NO publication until ready).
 
 
