@@ -107,8 +107,9 @@ describe('portable OAuth protocol handlers',()=>{
   });
   it('never persists active or mismatched access row mappings after grant consumption',async()=>{
     const f=fixture(),c=await registered(f);
+    let sequence=0;
     const issue=async(build)=>{
-      const code='code_'+String(f.codes.size+1)+'_'+Math.random().toString(36).slice(2);
+      const code='code_'+(++sequence);
       f.codes.set(code,{client_id:c.client_id,redirect_uri:callback,code_challenge:challenge,
         code_challenge_method:'S256',tenant:'tenant-1',profile:'read_only',mode:'test'});
       f.buildAccessRow.mockImplementationOnce(build);
@@ -126,7 +127,7 @@ describe('portable OAuth protocol handlers',()=>{
       return row;
     });
     await issue(({grant,...base})=>({...base,clientId:'different',tenant:grant.tenant}));
-    await issue(({grant,...base})=>Object.assign(Object.create({inherited:true}),base));
+    await issue(({grant: _grant,...base})=>Object.assign(Object.create({inherited:true}),base));
     expect(getterCalls).toBe(0);
     expect(f.db.createAccessToken).not.toHaveBeenCalled();
   });
