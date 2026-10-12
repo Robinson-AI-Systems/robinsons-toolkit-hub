@@ -1,6 +1,7 @@
 // Owner-confirmed create-only local file output; no overwrite or shell.
 import { constants } from 'node:fs';
-import { open, realpath } from 'node:fs/promises';
+import { link, open, realpath, unlink } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import { basename, dirname, isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
 
@@ -47,17 +48,26 @@ export async function createConfirmedLocalFile(roots, args) {
   if (!within(root, parent)) fail();
   const target = resolve(parent, basename(relative));
   if (!within(root, target)) fail();
-  let handle;
+  // Write a private staging file first. A hard link atomically publishes
+  // complete content without ever replacing an existing destination.
+  const staged = resolve(parent, '.rtool-create-' + randomBytes(16).toString('hex'));
+  let handle, stageExists = false;
   try {
-    // Exclusive creation prevents clobbering and O_NOFOLLOW rejects leaf links.
-    handle = await open(target, constants.O_WRONLY | constants.O_CREAT |
+    handle = await open(staged, constants.O_WRONLY | constants.O_CREAT |
       constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
+    stageExists = true;
     await handle.writeFile(bytes);
     await handle.sync();
+    await handle.close();
+    handle = null;
+    await link(staged, target);
+    await unlink(staged);
+    stageExists = false;
   } catch {
     fail();
   } finally {
     if (handle) await handle.close();
+    if (stageExists) await unlink(staged).catch(() => {});
   }
   return { created: true, root: index, path: relative, bytes: bytes.length };
 }
