@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+- **K-3ca (#108, as-if-merged):** portable MCP dispatch now binds inert frozen catalog declarations before async authorization and denies accessor-based handler/name metadata, coerced tool IDs and oversized provider/formatted error envelopes. New adversarial tests prevent mutated permissions, executable handler properties and error data amplification. This is only the independent portable core: Stripe service still owns real RTC deployment, SQL, owner-money consent and source test adoption. K-3 IN_PROGRESS/private/NOT_READY, D-4 IN_PROGRESS. Next: K-3 source compatibility and D-4 owner-authorized connection acceptance.
+
+
 - **D-4g (#107, as-if-merged):** pinned public-domain RTC fleet inventory with tracked null (unconfigured) states and real start-of-session HTTP evidence; normal probe no longer requires agents to guess or independently supply deployed hostnames. Stripe public contract returned RTC 1; GitHub reachable advertised RTC 0; Google Workspace 404; Vercel and Neon remain unverified without owner-verified deploy URLs. No read_only pass, relay/Sandbox/revocation run was performed, and all D-4 acceptance stays open. Next: independent protected read_only/route acceptance and K-3 service parity.
 
 

@@ -6,6 +6,7 @@ const deny = message => ({ isError: true, content: [{ type: 'text', text: messag
 const jsonBytes = value => Buffer.byteLength(JSON.stringify(value), 'utf8');
 const MAX_INLINE_BYTES = 8192;
 const MAX_NESTED_READS = 8;
+const validName = /^[a-z][a-z0-9_]{0,199}$/;
 
 function safeDispatchArgs(args) {
   if (!args || typeof args !== 'object' || Array.isArray(args)) return false;
@@ -83,7 +84,8 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
     throw new TypeError('Explicit registry, policy, redaction and result adapters are required');
   }
   async function dispatch({ name, args = {}, connection, db, services = {} }, depth = 0) {
-    if (!connection || typeof connection !== 'object' || !name || depth > MAX_NESTED_READS ||
+    if (!connection || typeof connection !== 'object' || typeof name !== 'string' ||
+        !validName.test(name) || depth > MAX_NESTED_READS ||
         !safeDispatchArgs(args)) {
       return deny('Tool unavailable for this connection');
     }
@@ -98,9 +100,17 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       safeArgs = snapshotDispatchArgs(args);
       safeConnection = snapshotDispatchArgs(connection);
     } catch { return deny('Tool unavailable for this connection'); }
-    const item = registry.tools.find(t => t.name === name);
+    // Registry metadata can be amended by service/plugin code while policy
+    // awaits. Authorize and execute against one inert, frozen declaration.
+    let item;
+    try {
+      const registered = registry.tools.find(t => t && typeof t === 'object' &&
+        Object.getOwnPropertyDescriptor(t, 'name')?.value === name);
+      if (!registered || !isInertJsonData(registered)) return deny('Tool unavailable for this connection');
+      item = snapshotDispatchArgs(registered);
+    } catch { return deny('Tool unavailable for this connection'); }
     let permitted = false;
-    try { permitted = !!item && (await authorizeTool(item, safeConnection)) === true; }
+    try { permitted = (await authorizeTool(item, safeConnection)) === true; }
     catch { permitted = false; }
     if (!permitted) return deny('Tool unavailable for this connection');
     // runRead is a privileged convenience, never a route to execute a write.
@@ -110,8 +120,11 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
     }
     // Metadata alone cannot authorize inherited Object.prototype functions.
     // An executable handler must be an explicitly registered own property.
-    const handler = Object.hasOwn(registry.handlers, name) ?
-      registry.handlers[name] : undefined;
+    let handler;
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(registry.handlers, name);
+      handler = descriptor && Object.hasOwn(descriptor, 'value') ? descriptor.value : undefined;
+    } catch { return deny('Tool unavailable'); }
     if (typeof handler !== 'function') return deny('Tool unavailable');
     try {
       const raw = await shapeResult(await handler(safeArgs, {
@@ -123,7 +136,8 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       // Adapter objects may contain active toJSON/getters. Never serialize,
       // return, or page them before proving that all fields are inert JSON.
       if (!isInertJsonData(raw)) return deny('Tool returned an invalid result');
-      if (raw?.isError) return raw;
+      if (raw?.isError) return jsonBytes(raw) <= MAX_INLINE_BYTES ? raw :
+        deny('Tool returned an oversized error');
       if (!raw || !Array.isArray(raw.content)) {
         return deny('Tool returned an invalid result');
       }
@@ -198,7 +212,8 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       // The service adapter may return a scrubbed error only; raw exceptions never escape.
       let safe = null;
       try { safe = await formatError(error, { mode: safeConnection.mode }); } catch { /* deny */ }
-      if (isInertJsonData(safe) && safe?.isError && Array.isArray(safe.content)) return safe;
+      if (isInertJsonData(safe) && safe?.isError && Array.isArray(safe.content) &&
+          jsonBytes(safe) <= MAX_INLINE_BYTES) return safe;
       return deny('Could not read account details; check server setup');
     }
   }
