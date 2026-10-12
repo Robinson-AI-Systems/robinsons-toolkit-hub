@@ -1,5 +1,4 @@
 // Read-only local Git inspection; no git-supplied arguments or arbitrary shell.
-import { constants } from 'node:fs';
 import { lstat, realpath } from 'node:fs/promises';
 import { join, sep } from 'node:path';
 import { execFile } from 'node:child_process';
