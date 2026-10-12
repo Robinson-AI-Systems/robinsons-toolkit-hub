@@ -1,14 +1,39 @@
 // The pass belongs to the RTC server. Relay policy only narrows routing.
+import { isIP } from 'node:net';
 import { relayHttpRoute } from './routes.js';
 const MAX_RESULT_BYTES = 32 * 1024;
 const failure = (code) => ({ ok: false, error: { code, what: 'Relay service request failed' } });
+// Only fixed public HTTPS RTC origins may leave the hosted relay. Private
+// address literals and internal DNS names are never valid hosted destinations.
+const INTERNAL_DNS = /(?:^|\.)(?:localhost|local|internal|test|invalid|example)$/;
+function addressScope(host, allowLoopback) {
+  const unbracketed = host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
+  const kind = isIP(unbracketed);
+  if (kind === 6) return allowLoopback && unbracketed === '::1' ? 'loopback' : 'forbidden';
+  if (kind === 4) {
+    const [a, b, c] = unbracketed.split('.').map(Number);
+    if (a === 127) return allowLoopback ? 'loopback' : 'forbidden';
+    if (a === 0 || a === 10 || a >= 224 || a === 169 && b === 254 ||
+        a === 172 && b >= 16 && b <= 31 || a === 192 && (b === 168 ||
+          b === 0 && c === 0 || b === 0 && c === 2) ||
+        a === 100 && b >= 64 && b <= 127 || a === 198 && (b === 18 || b === 19 ||
+          b === 51 && c === 100) || a === 203 && b === 0 && c === 113)
+      return 'forbidden';
+    return 'public';
+  }
+  if (unbracketed === 'localhost') return allowLoopback ? 'loopback' : 'forbidden';
+  if (INTERNAL_DNS.test(unbracketed)) return 'forbidden';
+  return 'public';
+}
 export function validateServerUrl(value, allowLoopback = false) {
   let url;
   try { url = new URL(value); } catch { throw new Error('Invalid relay server URL'); }
-  const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
-  if (url.username || url.password || url.search || url.hash || url.pathname !== '/' ||
-      !(url.protocol === 'https:' || (allowLoopback && loopback && url.protocol === 'http:')) ||
-      (!allowLoopback && loopback)) throw new Error('Relay needs a fixed HTTPS server origin');
+  const scope = addressScope(url.hostname, allowLoopback);
+  if (scope === 'forbidden' || url.username || url.password || url.search || url.hash ||
+      url.pathname !== '/' || (url.port && !(allowLoopback && scope === 'loopback')) ||
+      !(url.protocol === 'https:' || (allowLoopback && scope === 'loopback' &&
+        url.protocol === 'http:')))
+    throw new Error('Relay needs a fixed public HTTPS server origin');
   return url.origin;
 }
 export async function boundedJson(response, cap = MAX_RESULT_BYTES) {
