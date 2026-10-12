@@ -81,7 +81,11 @@ Add a GitHub webhook on the private relay repository to
 **issue_comment only**, secret entered privately. The Web signature handler reads
 original bytes; body parsers must not rewrite them.
 
-## D-4 opt-in transport permission probe (post-IN-06)\n\nWith protected `RELAY_REPOSITORY`, `RELAY_GITHUB_TOKEN` and `RELAY_BINDINGS` environment values configured in an approved **private** execution environment, run `node scripts/relay-permission-probe.mjs --issue NUMBER --authorized-relay-test` against the assigned test issue. It checks the actual private repository and open, unlocked bound issue, posts a random text marker that **cannot** be decoded as a relay request, then immediately deletes it. Never run without consent to temporary transport comment create/delete. A failed or interrupted cleanup requires a manual issue inspection. No provider read or write, no pass, and no RTC service URL is used by this probe. The command reports only neutral outcome flags. A green result proves those operations on this issue, **not** that the token has no permissions on other repositories or contents; confirm exact fine-grained GitHub token configuration separately. Do not place real tokens in CI or PR logs.\n\n## Client configuration
+## D-4 opt-in transport permission probe (post-IN-06)
+
+With protected `RELAY_REPOSITORY`, `RELAY_GITHUB_TOKEN` and `RELAY_BINDINGS` environment values configured in an approved **private** execution environment, run `node scripts/relay-permission-probe.mjs --issue NUMBER --authorized-relay-test` against the assigned test issue. It checks the actual private repository and open, unlocked bound issue, posts a random text marker that **cannot** be decoded as a relay request, then immediately deletes it. Never run without consent to temporary transport comment create/delete. A failed or interrupted cleanup requires a manual issue inspection. No provider read or write, no pass, and no RTC service URL is used by this probe. The command reports only neutral outcome flags. A green result proves those operations on this issue, **not** that the token has no permissions on other repositories or contents; confirm exact fine-grained GitHub token configuration separately. Do not place real tokens in CI or PR logs.
+
+## Client configuration
 
 Keep `RTOOL_SERVERS` alias mappings and `RTOOL_PASS_ALIAS` as for direct access.
 `RTOOL_RELAY` is public JSON with `repo`, `publicKey`, and `servers` mapping
