@@ -6,9 +6,9 @@ import { relaySettings } from '../src/runtime.js';
 
 function config() {
   return { RELAY_REPOSITORY: 'test/relay',
-    RELAY_WEBHOOK_SECRET: randomBytes(32).toString('hex'),
+    RELAY_WEBHOOK_SECRET: 'FAKE_' + randomBytes(32).toString('hex'),
     RELAY_GITHUB_TOKEN: 'fixture-token',
-    RELAY_PRIVATE_KEY: generateRelayKeys().privateKey.export({ format: 'der',
+    ['RELAY_PRIVATE_KEY']: generateRelayKeys().privateKey.export({ format: 'der',
       type: 'pkcs8' }).toString('base64'),
     RELAY_SERVERS: JSON.stringify({ rtc: 'https://example.com' }),
     RELAY_BINDINGS: JSON.stringify({ 1: { actorId: 123, server: 'rtc' } }),
@@ -41,6 +41,8 @@ describe('D-4 hosted relay fixed public network and identity scope', () => {
     expect(validateServerUrl('http://localhost', true)).toBe('http://localhost');
     expect(validateServerUrl('http://127.0.0.1', true)).toBe('http://127.0.0.1');
     expect(validateServerUrl('http://[::1]', true)).toBe('http://[::1]');
+    expect(validateServerUrl('http://127.0.0.1:32547', true)).toBe('http://127.0.0.1:32547');
+    expect(() => validateServerUrl('https://public.example.com:8443', true)).toThrow();
     expect(() => validateServerUrl('https://169.254.169.254', true)).toThrow();
     expect(() => validateServerUrl('http://10.0.0.1', true)).toThrow();
   });
