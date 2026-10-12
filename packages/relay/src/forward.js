@@ -30,7 +30,7 @@ export function validateServerUrl(value, allowLoopback = false) {
   try { url = new URL(value); } catch { throw new Error('Invalid relay server URL'); }
   const scope = addressScope(url.hostname, allowLoopback);
   if (scope === 'forbidden' || url.username || url.password || url.search || url.hash ||
-      url.pathname !== '/' || url.port ||
+      url.pathname !== '/' || (url.port && !(allowLoopback && scope === 'loopback')) ||
       !(url.protocol === 'https:' || (allowLoopback && scope === 'loopback' &&
         url.protocol === 'http:')))
     throw new Error('Relay needs a fixed public HTTPS server origin');
