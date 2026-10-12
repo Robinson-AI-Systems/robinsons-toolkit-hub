@@ -41,6 +41,28 @@ describe('portable MCP bearer boundary', () => {
     expect(f.getAccessToken).not.toHaveBeenCalled();
     expect(f.projectConnection).not.toHaveBeenCalled();
   });
+  it('rejects throwing request and Authorization accessors without querying credentials', async () => {
+    const f = fixture();
+    const bad = [
+      { get headers() { throw new Error('private request getter'); } },
+      { headers: { get authorization() { throw new Error('private header getter'); } } },
+      new Proxy({}, { get() { throw new Error('private request proxy'); } }),
+      { headers: new Proxy({}, { get() { throw new Error('private header proxy'); } }) }
+    ];
+    for (const req of bad) {
+      const { res, headers } = response();
+      expect(await f.authenticate(req, res)).toBeNull();
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toEqual({
+        error: 'unauthorized', error_description: 'A valid connection is required'
+      });
+      expect(headers['Cache-Control']).toBe('no-store');
+      expect(headers['WWW-Authenticate']).toContain('resource_metadata=');
+      expect(JSON.stringify(res.body)).not.toContain('private');
+    }
+    expect(f.getAccessToken).not.toHaveBeenCalled();
+    expect(f.projectConnection).not.toHaveBeenCalled();
+  });
   it('checks storage and applies server policy before returning frozen projected identity', async () => {
     const f = fixture();
     const {res} = response();
