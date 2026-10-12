@@ -3,7 +3,7 @@
 D-3 implements and tests relay software. **Infrastructure has been provisioned,
 but no authenticated agent request has been delivered through it.** Owner
 IN-02/IN-03 are applied for infrastructure/repository creation; IN-04 is
-partially applied for protected Vercel env entries. D-4 remains blocked on
+partially applied for protected Vercel env entries. Owner IN-06 now approves only scoped D-4 relay configuration and temporary non-production testing; real route acceptance remains open on
 GitHub webhook/agent bindings and genuine custom RTC server compatibility.
 No real server pass is used by CI. Never paste credentials into chat, a PR, git
 or test logs. See docs/pr-cards/D-4.md and docs/OWNER-INPUTS.md.
@@ -81,7 +81,7 @@ Add a GitHub webhook on the private relay repository to
 **issue_comment only**, secret entered privately. The Web signature handler reads
 original bytes; body parsers must not rewrite them.
 
-## Client configuration
+## D-4 opt-in transport permission probe (post-IN-06)\n\nWith protected `RELAY_REPOSITORY`, `RELAY_GITHUB_TOKEN` and `RELAY_BINDINGS` environment values configured in an approved **private** execution environment, run `node scripts/relay-permission-probe.mjs --issue NUMBER --authorized-relay-test` against the assigned test issue. It checks the actual private repository and open, unlocked bound issue, posts a random text marker that **cannot** be decoded as a relay request, then immediately deletes it. Never run without consent to temporary transport comment create/delete. A failed or interrupted cleanup requires a manual issue inspection. No provider read or write, no pass, and no RTC service URL is used by this probe. The command reports only neutral outcome flags. A green result proves those operations on this issue, **not** that the token has no permissions on other repositories or contents; confirm exact fine-grained GitHub token configuration separately. Do not place real tokens in CI or PR logs.\n\n## Client configuration
 
 Keep `RTOOL_SERVERS` alias mappings and `RTOOL_PASS_ALIAS` as for direct access.
 `RTOOL_RELAY` is public JSON with `repo`, `publicKey`, and `servers` mapping
