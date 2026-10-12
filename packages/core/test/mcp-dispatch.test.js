@@ -135,6 +135,54 @@ describe('transport-independent MCP dispatch adapter',()=>{
     expect(v.isError).toBe(true);
     expect(JSON.stringify(v)).not.toContain('private-db-message');
   });
+  it('rejects active shaped responses before serialization, return or storage',async()=>{
+    let getterCalls=0,serializerCalls=0;
+    const poison=[
+      ()=>{const raw={content:[]};Object.defineProperty(raw.content,'0',{
+        configurable:true,enumerable:true,get(){getterCalls++;throw Error('private getter');}});
+        raw.content.length=1;return raw;},
+      ()=>({content:[{type:'text',text:'{}',toJSON(){serializerCalls++;throw Error('private serializer');}}]}),
+      ()=>({content:[Object.create({type:'text'})]}),
+      ()=>{const raw={content:[]};raw.content.push(raw);return raw;}
+    ];
+    for(const create of poison){
+      const f=fixture();
+      f.shapeResult.mockImplementationOnce(create);
+      const v=await f.dispatch();
+      expect(v.isError).toBe(true);
+      expect(JSON.stringify(v)).not.toMatch(/private getter|private serializer/);
+      expect(f.db.putScopedResult).not.toHaveBeenCalled();
+    }
+    expect(getterCalls).toBe(0);
+    expect(serializerCalls).toBe(0);
+  });
+  it('rejects unsafe detail projections and formatted errors without executing them',async()=>{
+    let callbacks=0;
+    const f=fixture();
+    f.readDetail.mockImplementationOnce(()=>({toJSON(){callbacks++;throw Error('secret');}}));
+    expect((await f.dispatch()).isError).toBe(true);
+    expect(callbacks).toBe(0);
+    expect(f.db.putScopedResult).not.toHaveBeenCalled();
+    const error=fixture();
+    error.handlers.example_read.mockRejectedValueOnce(Error('private source detail'));
+    error.formatError.mockImplementationOnce(()=>({isError:true,content:[{
+      type:'text',get text(){callbacks++;return 'private';}
+    }]}));
+    const result=await error.dispatch();
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/Could not read account details/);
+    expect(callbacks).toBe(0);
+    expect(error.db.putScopedResult).not.toHaveBeenCalled();
+  });
+  it('returns inert service-shaped errors without changing their status',async()=>{
+    const f=fixture();
+    f.shapeResult.mockImplementationOnce(()=>({
+      isError:true,content:[{type:'text',text:'Service rejected operation'}]
+    }));
+    expect(await f.dispatch()).toEqual({
+      isError:true,content:[{type:'text',text:'Service rejected operation'}]
+    });
+  });
   it('requires policy, redaction and result storage adapters on construction',()=>{
     const f=fixture();
     expect(()=>createGuardedMcpDispatcher({registry:f.registry})).toThrow(/adapters/);
