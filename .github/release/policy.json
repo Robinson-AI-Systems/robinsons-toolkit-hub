@@ -1,0 +1,7 @@
+{
+  "repository": "Robinson-AI-Systems/robinsons-toolkit-hub",
+  "requiredChecks": [
+    "release-policy",
+    "ci"
+  ]
+}
