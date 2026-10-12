@@ -4,6 +4,8 @@ import { createLocalMcp } from '../src/mcp.js';
 import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { PassThrough } from 'node:stream';
+import { runCLI } from '../src/commands.js';
 
 describe('local file grants', () => {
   it('refuses empty grant lists', async () => {
@@ -63,5 +65,26 @@ describe('folder-scoped local MCP reads', () => {
     withRoot(async ({ folder }) => {
       await expect(createLocalFiles([folder, folder])).rejects.toThrow();
       await expect(createLocalFiles([join(folder, 'not-found')])).rejects.toThrow();
+    }));
+});
+
+describe('rtool MCP local CLI integration', () => {
+  it('starts the real stdio door with three local tools and no remote server', async () =>
+    withRoot(async ({ folder }) => {
+      const input = new PassThrough();
+      let out = '', err = '';
+      const running = runCLI(['mcp', '--local', folder], {
+        env: {}, reader: async () => {
+          const failure = new Error('no config');
+          failure.code = 'ENOENT';
+          throw failure;
+        }, input,
+        out: { write: (value) => { out += value; } },
+        err: { write: (value) => { err += value; } }
+      });
+      input.end(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) + '\n');
+      expect(await running).toBe(0);
+      expect(JSON.parse(out).result.tools).toHaveLength(3);
+      expect(err).toBe('');
     }));
 });
