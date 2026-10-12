@@ -48,8 +48,8 @@ compare('form fields',mod=>mod.paramsOf({method:'POST',
 compare('reject oversized string',mod=>mod.paramsOf({method:'POST',
   headers:{'content-type':'application/json'},body:'x'.repeat(16385)}));
 
-// Do not call the portable extractor a drop-in replacement. Its original
-// pre-parsed body path lacks the source's independent size gate.
+// Do not call the portable extractor a drop-in replacement. Both current
+// modules enforce structured size, but only private core rejects active getters.
 const oversized={method:'POST',headers:{'content-type':'application/json'},
   body:{payload:'x'.repeat(16385)}};
 assert.equal(outcome(()=>source.paramsOf(oversized)).ok,false,
@@ -62,17 +62,25 @@ assert.equal(typeof core.incomingBodyWithinLimit,'function',
   'The current reviewed Stripe HTTP body validator must be ported verbatim');
 const inconsistent={method:'POST',headers:{'content-length':'9'},body:{
   payload:'x'.repeat(16385)}};
-assert.equal(source.incomingBodyWithinLimit(inconsistent),true,
-  'Pinned older Stripe helper is expected to lack the structured body bound');
+assert.equal(source.incomingBodyWithinLimit(inconsistent),false,
+  'Current reviewed Stripe source must reject oversized structured bodies');
 assert.equal(core.incomingBodyWithinLimit(inconsistent),false,
   'Private adapted helper must reject oversized parsed bodies');
 let getterCalls=0;
 const active={};
 Object.defineProperty(active,'data',{enumerable:true,get(){getterCalls++;return 'unsafe';}});
+// Source now bounds pre-parsed bodies, but its JSON.stringify touches active
+// getters. Only call it against this inert local fixture: the difference is
+// an explicit service-owned security handoff, never a reason to weaken core.
+assert.equal(source.incomingBodyWithinLimit({method:'POST',
+  headers:{'content-length':'50'},body:active}),true);
+assert.equal(getterCalls,1,'Current source invokes active getter before refusal');
+getterCalls=0;
 assert.equal(core.incomingBodyWithinLimit({method:'POST',
   headers:{'content-length':'50'},body:active}),false);
 assert.equal(getterCalls,0,'Adapted core must not invoke active body getters');
 console.log(JSON.stringify({source:'actual independently checked-out Stripe service',
-  compatibleCases:evidence.length,knownIncompatible:['old immutable source transport helper lacked the new bound'],
+  compatibleCases:evidence.length,
+  knownIncompatible:['current source invokes active getters from a framework-preparsed body'],
   currentSourceHttpAdapted:true,hostRawTransportStillServiceOwned:true,
   adopted:false,releaseReady:false}));

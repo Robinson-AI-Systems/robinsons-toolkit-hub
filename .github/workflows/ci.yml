@@ -100,25 +100,25 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: Robinson-AI-Systems/stripe-mcp
-          ref: de56af8199fee39b20c2a1ac733562f2622dfda7
+          ref: a38a325f07bdb993b46dc82d85e835d06281aff0
           path: source-stripe
           persist-credentials: false
       - name: Refuse source drift or substituted checkout
         working-directory: source-stripe
-        run: test "$(git rev-parse HEAD)" = "de56af8199fee39b20c2a1ac733562f2622dfda7"
+        run: test "$(git rev-parse HEAD)" = "a38a325f07bdb993b46dc82d85e835d06281aff0"
       - name: Verify exact reviewed original Stripe OAuth/key test blobs
         working-directory: source-stripe
         run: |
           test "$(git hash-object tests/unit/oauth-handlers.test.js)" = "217c0c18a0c427963fa374aa4c6fad570747865f"
           test "$(git hash-object tests/unit/keys.test.js)" = "05574eecb0d0f246f0ddfd9a9bddb673bd75c5f0"
           test "$(git hash-object src/core/rtc-route.js)" = "7833386fd04717dc137f06132c0caf3c375f6362"
-          test "$(git hash-object src/core/rtc-http.js)" = "47c1c66bdf5ef8c8b7544238344fedbe948267ac"
-          test "$(git hash-object src/core/rtc-passes.js)" = "81d10139ca1432afcead399b2e51c61b3b28d480"
+          test "$(git hash-object src/core/rtc-http.js)" = "a0744561ae0b4d0ad9a0b335a4ea9d992a5b6420"
+          test "$(git hash-object src/core/rtc-passes.js)" = "e5f261835b72266b575985b0fd8c7adf02c0d4bf"
           test "$(git hash-object src/core/browser-cors.js)" = "e4b5d948a83737344c53079912dc148b4227ef60"
           test "$(git hash-object tests/db/rtc-passes.test.js)" = "57b3a20bf2db9c2ae3eb55bcaac3a453cd70a655"
-          test "$(git hash-object tests/db/rtc-rate-limit.test.js)" = "d17d93ed4d270af440e0c07ef018c03243473865"
-          test "$(git hash-object tests/unit/rtc-http.test.js)" = "42409db17f65325efb8bc423250c8f523495352e"
-          test "$(git hash-object tests/unit/rtc-passes.test.js)" = "91bfb045e3f628d27f109c5041e6fbefc9b2271f"
+          test "$(git hash-object tests/db/rtc-rate-limit.test.js)" = "d38647eb208a6e80a3c04c5eb918720ada9b870f"
+          test "$(git hash-object tests/unit/rtc-http.test.js)" = "877944f80273fe3198a7a47471b91c56dd9ec8b4"
+          test "$(git hash-object tests/unit/rtc-passes.test.js)" = "a7414d868356745de0b6ba1572f649e13280a799"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -158,25 +158,25 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: Robinson-AI-Systems/stripe-mcp
-          ref: de56af8199fee39b20c2a1ac733562f2622dfda7
+          ref: a38a325f07bdb993b46dc82d85e835d06281aff0
           path: source-stripe
           persist-credentials: false
       - name: Verify immutable reviewed service revision
         working-directory: source-stripe
-        run: test "$(git rev-parse HEAD)" = "de56af8199fee39b20c2a1ac733562f2622dfda7"
+        run: test "$(git rev-parse HEAD)" = "a38a325f07bdb993b46dc82d85e835d06281aff0"
       - name: Verify exact reviewed original Stripe OAuth/key test blobs
         working-directory: source-stripe
         run: |
           test "$(git hash-object tests/unit/oauth-handlers.test.js)" = "217c0c18a0c427963fa374aa4c6fad570747865f"
           test "$(git hash-object tests/unit/keys.test.js)" = "05574eecb0d0f246f0ddfd9a9bddb673bd75c5f0"
           test "$(git hash-object src/core/rtc-route.js)" = "7833386fd04717dc137f06132c0caf3c375f6362"
-          test "$(git hash-object src/core/rtc-http.js)" = "47c1c66bdf5ef8c8b7544238344fedbe948267ac"
-          test "$(git hash-object src/core/rtc-passes.js)" = "81d10139ca1432afcead399b2e51c61b3b28d480"
+          test "$(git hash-object src/core/rtc-http.js)" = "a0744561ae0b4d0ad9a0b335a4ea9d992a5b6420"
+          test "$(git hash-object src/core/rtc-passes.js)" = "e5f261835b72266b575985b0fd8c7adf02c0d4bf"
           test "$(git hash-object src/core/browser-cors.js)" = "e4b5d948a83737344c53079912dc148b4227ef60"
           test "$(git hash-object tests/db/rtc-passes.test.js)" = "57b3a20bf2db9c2ae3eb55bcaac3a453cd70a655"
-          test "$(git hash-object tests/db/rtc-rate-limit.test.js)" = "d17d93ed4d270af440e0c07ef018c03243473865"
-          test "$(git hash-object tests/unit/rtc-http.test.js)" = "42409db17f65325efb8bc423250c8f523495352e"
-          test "$(git hash-object tests/unit/rtc-passes.test.js)" = "91bfb045e3f628d27f109c5041e6fbefc9b2271f"
+          test "$(git hash-object tests/db/rtc-rate-limit.test.js)" = "d38647eb208a6e80a3c04c5eb918720ada9b870f"
+          test "$(git hash-object tests/unit/rtc-http.test.js)" = "877944f80273fe3198a7a47471b91c56dd9ec8b4"
+          test "$(git hash-object tests/unit/rtc-passes.test.js)" = "a7414d868356745de0b6ba1572f649e13280a799"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
