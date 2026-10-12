@@ -5,6 +5,9 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3al (PR #60, as-if-merged):** guarded-write confirmation and dry-run flags now require explicit own Boolean data properties on a plain or null-prototype argument record. Inherited confirmation, custom-prototype escalation and executable getters cannot initiate provider mutations or owner money preflight; tests prove denial before reads/audit/money and preserve ordinary previews/confirmed writes. Independent authenticated owner approval, provider idempotency, SQL target guards and LIVE safety remain service-owned, not inferred from confirmation. This closes five new PRs while K-3 stays IN_PROGRESS/private and D-4 WAITING_ON_OWNER. **Next:** actual source-service SQL and owner consent proof, adoption and complete release prerequisites (NO publication until ready).
+
+
 - **K-3ak (PR #59, as-if-merged):** one-time encrypted-secret setup routes now must embed the newly issued 32-character identifier and cannot normalize through dot segments, encoded separators, backslashes or double-slash path ambiguity. Existing Stripe setup query routes retain compatibility. Tests verify refusal before encrypted row insertion; AES-GCM, expiry, consumption and source routes remain service-owned. K-3 private/IN_PROGRESS; actual source SQL, independent owner approval and release gates remain open. **Next:** hardened guarded-write confirmation context and outstanding service release prerequisites.
 
 
