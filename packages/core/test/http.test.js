@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { publicOrigin, send, escapeHtml, paramsOf, only } from '../src/http.js';
+import { publicOrigin, send, escapeHtml, paramsOf, only, incomingBodyWithinLimit, MAX_HTTP_BODY_BYTES } from '../src/http.js';
 
 function response() {
   const headers = {};
@@ -50,5 +50,33 @@ describe('extracted HTTP security utilities', () => {
     expect(headers.Allow).toBe('GET, POST');
     expect(JSON.parse(res.body)).toEqual({error:'method_not_allowed'});
     expect(only(res,{method:'GET'},['GET'])).toBe(true);
+  });
+});
+
+describe('current-source HTTP byte-limit safety and Vercel pre-parsing', () => {
+  it('checks the exact wire bytes when raw evidence exists and refuses contradictory lengths', () => {
+    const raw = '{"amount":1}';
+    const mk = (headers,rawBody) => ({method:'POST',headers,rawBody,body:{amount:1}});
+    expect(incomingBodyWithinLimit(mk({'content-length':String(Buffer.byteLength(raw))},raw))).toBe(true);
+    expect(incomingBodyWithinLimit(mk({'content-length':'2'},raw))).toBe(false);
+    for (const length of ['0002','-1','1.5','NaN','9007199254740992',String(MAX_HTTP_BODY_BYTES+1)]) {
+      expect(incomingBodyWithinLimit(mk({'content-length':length},raw))).toBe(false);
+    }
+    expect(incomingBodyWithinLimit(mk({},Buffer.alloc(MAX_HTTP_BODY_BYTES+1)))).toBe(false);
+    expect(incomingBodyWithinLimit(mk({'content-length':'0'},Buffer.alloc(0)))).toBe(true);
+  });
+  it('refuses missing exact byte evidence on a pre-parsed POST and preserves GET', () => {
+    expect(incomingBodyWithinLimit({method:'POST',body:{a:1},headers:{}})).toBe(false);
+    expect(incomingBodyWithinLimit({method:'POST',body:{a:1},headers:{'content-length':'7'}})).toBe(true);
+    expect(incomingBodyWithinLimit({method:'GET',body:{a:1},headers:{}})).toBe(true);
+    expect(incomingBodyWithinLimit({method:'POST',body:'a'.repeat(MAX_HTTP_BODY_BYTES+1),headers:{}})).toBe(false);
+  });
+  it('also caps parsed JSON objects and rejects cyclic or executable serialization', () => {
+    const req = body => ({method:'POST',body,headers:{'content-type':'application/json'}});
+    expect(paramsOf(req({amount:1}))).toEqual({amount:1});
+    expect(() => paramsOf(req({big:'x'.repeat(MAX_HTTP_BODY_BYTES)}))).toThrow(/Invalid request body/);
+    const cycle={};cycle.self=cycle;
+    expect(() => paramsOf(req(cycle))).toThrow(/Invalid request body/);
+    expect(() => paramsOf(req({toJSON(){throw new Error('private marker');}}))).toThrow(/Invalid request body/);
   });
 });
