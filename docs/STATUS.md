@@ -5,6 +5,19 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**L-1 confirmed create-only local files / PR #128 (as-if merged, CI pending):**
+After #126 and #127 merged with full exact-head CI, owner-enabled local MCP
+can now create new UTF-8 files only with explicit confirm, exclusive
+create-only access, canonical approved-directory checks, size caps and
+a metadata-only response. Existing content cannot be overwritten; no
+general shell, deployment change or external provider operation is enabled.
+Real temporary filesystem tests exercise successful create, refusal without
+confirm, traversal/outside symlink, Git metadata denial, existing-target
+refusal and Unicode byte cap. L-1 remains IN_PROGRESS until shell boundary
+and any approved full acceptance are genuinely satisfied. K-3 remains private,
+NOT_READY, unpublished; D-4 protected direct/relay/Sandbox/revocation is open.
+
+
 **L-1 Git inspection / PR #127 (as-if merged, CI pending):**
 PR #126's fully checked opt-in read-only file tools merged at
 `0d96459720b2fe28c88eaab9d2abcc4465ba99e2`.
