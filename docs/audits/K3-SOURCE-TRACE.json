@@ -127,7 +127,7 @@
       "sourceFile": "src/core/oauth-handlers.js",
       "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
       "target": "./src/oauth-protocol.js",
-      "coreBlob": "506ee856ed01249359fb327e2c5148b845dc3348",
+      "coreBlob": "1e78a8588cd39a35a1cfda7f19a62a4fa738fe03",
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
