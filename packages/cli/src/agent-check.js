@@ -45,7 +45,13 @@ export async function checkAgent({ server, readTool, passEnv, argsEnv,
     if (who?.result?.profile !== 'read_only') {
       report.code = 'read_only_pass_required'; throw new Error();
     }
-    report.checks.push('read_only_pass'); recordRoute();
+    // An owner-approved D-4 pass is TEST-only. A live account with a read-only
+    // profile is still outside that authorization. Deny before tool metadata,
+    // any tool POST, or a possible encrypted relay read is attempted.
+    if (who?.result?.mode !== 'test') {
+      report.code = 'test_mode_required'; throw new Error();
+    }
+    report.checks.push('read_only_pass', 'test_mode'); recordRoute();
     const metadata = await send(target, '/api/tools/' + readTool);
     if (metadata?.result?.name !== readTool || metadata.result.writes !== false ||
         metadata.result.money !== false || metadata.result.destructive !== false) {
