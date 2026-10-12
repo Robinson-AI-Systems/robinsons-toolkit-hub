@@ -5,6 +5,9 @@ the central hub server is not yet built; the relay's hosted **build is READY** b
 
 ## Next
 
+- **K-3bo (PR #90, as-if-merged):** portable OAuth now supports explicitly registered Basic and public PKCE-only clients with durable SQL method/hash binding, canonical Basic authentication and strict registration metadata validation. Retains legacy POST default intentionally; latest Stripe service defaults differently and needs independent adoption acceptance. Original Stripe SQL and owner HTTP CI stay immutable and mandatory. Current source HTTP body caps/CORS, updated source assertion parity, real authenticated owner TEST smoke and RTC interface adoption remain open. K-3 private/IN_PROGRESS/NOT_READY; D-4 WAITING_ON_OWNER. **Next:** reconcile current Stripe source compatibility and K-3 release prerequisites before any publication.
+
+
 - **K-3bn (PR #89, as-if-merged):** portable MCP dispatch now validates and freezes the service-projected connection snapshot before await; authorization, handler context, nested reads, redaction mode and oversized durable result scope cannot drift to another tenant under async mutation. Adversarial tests reject active connection getters and mutable policy attempts. This is not authenticated source-service or real SQL adoption. K-3 private/IN_PROGRESS/NOT_READY; D-4 WAITING_ON_OWNER. **Next:** reconcile current source Stripe HTTP/OAuth changes with original assertions and release gates, without replacing RTC endpoints with native MCP routes.
 
 

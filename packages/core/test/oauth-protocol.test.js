@@ -15,15 +15,18 @@ function response() {
 function req(method,body) {
   return {method,headers:{'content-type':'application/json'},body};
 }
-async function call(fn,method,body) {
-  const res=response();await fn(req(method,body),res);return {status:res.statusCode,headers:res.headers,
-    value:JSON.parse(res.body)};
+async function call(fn,method,body,headers={}) {
+  const res=response();
+  await fn({...req(method,body),headers:{...req(method,body).headers,...headers}},res);
+  return {status:res.statusCode,headers:res.headers,value:JSON.parse(res.body)};
 }
 function fixture() {
   const clients=new Map(),codes=new Map(),tokens=new Map(),refreshes=new Map();
   const db={
-    createOAuthClient:vi.fn(async ({clientId,clientSecret,redirectUris,clientName})=>
-      clients.set(clientId,{client_id:clientId,client_secret_hash:hashToken(clientSecret),
+    createOAuthClient:vi.fn(async ({clientId,clientSecret,redirectUris,clientName,tokenEndpointAuthMethod})=>
+      clients.set(clientId,{client_id:clientId,
+        client_secret_hash:clientSecret === null ? null : hashToken(clientSecret),
+        token_endpoint_auth_method:tokenEndpointAuthMethod,
         redirect_uris:redirectUris,client_name:clientName})),
     getOAuthClient:vi.fn(async id=>clients.get(id)),
     consumeAuthCode:vi.fn(async id=>{const v=codes.get(id);codes.delete(id);return v;}),
@@ -40,7 +43,7 @@ function fixture() {
   const buildAccessRow=vi.fn(({grant,...base})=>({...base,tenant:grant.tenant,
     profile:grant.profile,mode:grant.mode,listing:grant.listing}));
   const handlers=createOAuthProtocolHandlers({db,env,buildAccessRow});
-  return {db,codes,tokens,refreshes,buildAccessRow,handlers};
+  return {db,clients,codes,tokens,refreshes,buildAccessRow,handlers};
 }
 async function registered(f) {
   const a=await call(f.handlers.register,'POST',{redirect_uris:[callback],client_name:'Test Agent'});
@@ -66,7 +69,7 @@ describe('portable OAuth protocol handlers',()=>{
       expect(a.value.error).toBe('invalid_client_metadata');
     }
     expect((await call(f.handlers.register,'POST',{redirect_uris:[callback],
-      token_endpoint_auth_method:'none'})).status).toBe(400);
+      token_endpoint_auth_method:'client_credentials'})).status).toBe(400);
     expect(f.db.createOAuthClient).not.toHaveBeenCalled();
   });
   it('registers hashed storage via service, never returns storage hash to the caller',async()=>{
@@ -326,5 +329,122 @@ describe('portable OAuth protocol handlers',()=>{
     expect(()=>createOAuthProtocolHandlers({db:f.db,env})).toThrow(/mapping/);
     expect(()=>createOAuthProtocolHandlers({db:f.db,env,buildAccessRow:()=>({}),
       paths:{mcp:'https://unsafe.test'}})).toThrow(/paths/);
+  });
+  it('registers explicit Basic and PKCE-only public clients with durable method-scoped SQL rows',async()=>{
+    const f=fixture();
+    const basic=await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      client_name:'Private basic',token_endpoint_auth_method:'client_secret_basic'});
+    expect(basic.status).toBe(201);
+    expect(basic.value.client_secret).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(f.clients.get(basic.value.client_id)).toMatchObject({
+      token_endpoint_auth_method:'client_secret_basic',
+      client_secret_hash:hashToken(basic.value.client_secret)
+    });
+    const pub=await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      token_endpoint_auth_method:'none'});
+    expect(pub.status).toBe(201);
+    expect(pub.value).not.toHaveProperty('client_secret');
+    expect(f.clients.get(pub.value.client_id)).toMatchObject({
+      token_endpoint_auth_method:'none',client_secret_hash:null
+    });
+    expect(f.db.createOAuthClient).toHaveBeenCalledTimes(2);
+  });
+  it('authorizes Basic clients with only canonical headers and exact grant/refresh bindings',async()=>{
+    const f=fixture();
+    const basic=(await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      token_endpoint_auth_method:'client_secret_basic'})).value;
+    const auth='Basic '+Buffer.from(basic.client_id+':'+basic.client_secret).toString('base64');
+    const code='basic-once';
+    f.codes.set(code,{client_id:basic.client_id,redirect_uri:callback,code_challenge:challenge,
+      code_challenge_method:'S256',tenant:'owned-tenant',profile:'read_only',
+      mode:'test',listing:'compact'});
+    const input={grant_type:'authorization_code',code,redirect_uri:callback,
+      code_verifier:verifier,resource:env.PUBLIC_BASE_URL+'/api/mcp'};
+    expect((await call(f.handlers.token,'POST',{...input,client_secret:basic.client_secret},
+      {authorization:auth})).status).toBe(401);
+    expect(f.codes.has(code)).toBe(true);
+    const granted=await call(f.handlers.token,'POST',input,{authorization:auth});
+    expect(granted.status).toBe(200);
+    expect(f.tokens.get(granted.value.access_token)).toMatchObject({tenant:'owned-tenant',
+      mode:'test',profile:'read_only'});
+    const refresh=await call(f.handlers.token,'POST',{grant_type:'refresh_token',
+      refresh_token:granted.value.refresh_token,resource:input.resource},{authorization:auth});
+    expect(refresh.status).toBe(200);
+    expect((await call(f.handlers.token,'POST',{grant_type:'refresh_token',
+      refresh_token:granted.value.refresh_token,resource:input.resource},
+      {authorization:auth})).value.error).toBe('invalid_grant');
+  });
+  it('enforces PKCE on public clients and refuses accidental confidential credentials',async()=>{
+    const f=fixture();
+    const pub=(await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      token_endpoint_auth_method:'none'})).value;
+    const code='public-code';
+    f.codes.set(code,{client_id:pub.client_id,redirect_uri:callback,code_challenge:challenge,
+      code_challenge_method:'S256',tenant:'test-tenant',mode:'test',
+      profile:'read_only',listing:'compact'});
+    const input={grant_type:'authorization_code',client_id:pub.client_id,code,
+      code_verifier:verifier,redirect_uri:callback,resource:env.PUBLIC_BASE_URL+'/api/mcp'};
+    expect((await call(f.handlers.token,'POST',{...input,client_secret:'unwanted'})).status).toBe(401);
+    expect((await call(f.handlers.token,'POST',{...input,code_verifier:'invalid'})).status).toBe(400);
+    expect(f.codes.has(code)).toBe(false); // PKCE failure consumes code atomically.
+    f.codes.set(code,{client_id:pub.client_id,redirect_uri:callback,code_challenge:challenge,
+      code_challenge_method:'S256',tenant:'test-tenant',mode:'test',
+      profile:'read_only',listing:'compact'});
+    const good=await call(f.handlers.token,'POST',input);
+    expect(good.status).toBe(200);
+    expect(f.tokens.get(good.value.access_token).tenant).toBe('test-tenant');
+  });
+  it('denies conflicting, invalid and active Basic headers before code consumption',async()=>{
+    const f=fixture();
+    const client=(await call(f.handlers.register,'POST',{redirect_uris:[callback],
+      token_endpoint_auth_method:'client_secret_basic'})).value;
+    const input={grant_type:'authorization_code',client_id:client.client_id,
+      resource:env.PUBLIC_BASE_URL+'/api/mcp',code:'still-unused',
+      code_verifier:verifier,redirect_uri:callback};
+    const credential=Buffer.from(client.client_id+':'+client.client_secret).toString('base64');
+    const denied=['Bearer invalid','Basic '+credential.slice(0,-1),'Basic !!!',
+      'basic '+Buffer.from('other-client:wrong').toString('base64')];
+    for(const header of denied){
+      const out=await call(f.handlers.token,'POST',input,{authorization:header});
+      expect(out.status).toBe(401);
+      expect(out.headers['WWW-Authenticate']).toMatch(/^Basic realm=/);
+    }
+    const header={};
+    let invoked=0;
+    Object.defineProperty(header,'authorization',{enumerable:true,get(){invoked++;return 'Basic '+credential;}});
+    const res=response();
+    await f.handlers.token({...req('POST',input),headers:header},res);
+    expect(res.statusCode).toBe(401);
+    expect(invoked).toBe(0);
+    expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+  });
+  it('refuses malformed client method SQL metadata and conflicting registration fields',async()=>{
+    const f=fixture();
+    const badMetadata=[
+      {client_name:'has\ncontrol'}, {client_name:42},
+      {response_types:['token']},{grant_types:['refresh_token']},
+      {grant_types:['authorization_code','authorization_code']},
+      {redirect_uris:['https://agent.example.test/'+ 'x'.repeat(2100)]}
+    ];
+    for(const override of badMetadata){
+      expect((await call(f.handlers.register,'POST',{
+        redirect_uris:[callback],...override})).status).toBe(400);
+    }
+    expect(f.db.createOAuthClient).not.toHaveBeenCalled();
+    const client=await registered(f);
+    const data={grant_type:'authorization_code',client_id:client.client_id,
+      client_secret:client.client_secret,resource:env.PUBLIC_BASE_URL+'/api/mcp',
+      code:'never-consume',code_verifier:verifier,redirect_uri:callback};
+    const row=f.clients.get(client.client_id);
+    f.clients.set(client.client_id,{...row,token_endpoint_auth_method:'none'});
+    expect((await call(f.handlers.token,'POST',data)).status).toBe(401);
+    const active={...row};
+    let called=0;
+    Object.defineProperty(active,'token_endpoint_auth_method',{enumerable:true,
+      get(){called++;return 'client_secret_post';}});
+    f.clients.set(client.client_id,active);
+    expect((await call(f.handlers.token,'POST',data)).status).toBe(401);
+    expect(called).toBe(0);
+    expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
   });
 });

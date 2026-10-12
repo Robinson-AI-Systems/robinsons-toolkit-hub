@@ -85,21 +85,28 @@ describe('source OAuth HTTP vs transport-free protocol compatibility',()=>{
   });
   it('matches original fixed HTTPS OAuth and protected-resource metadata exactly',async()=>{
     const f=fixture();
+    // The original immutable source declares POST only. Modern Stripe source
+    // additionally advertises Basic and public PKCE, an intentional adaptation.
+    expect(await call('GET',f.portable.resourceMetadata))
+      .toEqual(await call('GET',f.upstream.resourceMetadata));
     for(const name of ['metadata','resourceMetadata']){
-      expect(await call('GET',f.portable[name])).toEqual(await call('GET',f.upstream[name]));
       const post=await call('POST',f.portable[name]);
       expect(post).toEqual(await call('POST',f.upstream[name]));
       expect(post.status).toBe(405);
     }
     const metadata=(await call('GET',f.upstream.metadata)).body;
+    const portable=(await call('GET',f.portable.metadata)).body;
     expect(metadata.code_challenge_methods_supported).toEqual(['S256']);
     expect(metadata.token_endpoint_auth_methods_supported).toEqual(['client_secret_post']);
+    expect(portable).toMatchObject({issuer:metadata.issuer,
+      token_endpoint:metadata.token_endpoint,
+      code_challenge_methods_supported:['S256'],
+      token_endpoint_auth_methods_supported:['client_secret_post','client_secret_basic','none']});
   });
   it('matches malformed/unsafe client registration HTTP rejection without persisting clients',async()=>{
     for(const input of [
       {redirect_uris:[]},{redirect_uris:['http://unsafe.example.test/cb']},
       {redirect_uris:[callback,callback]},
-      {redirect_uris:[callback],token_endpoint_auth_method:'none'},
       {redirect_uris:[callback+'#fragment']},
       {redirect_uris:'not-an-array'}
     ]){
@@ -109,6 +116,20 @@ describe('source OAuth HTTP vs transport-free protocol compatibility',()=>{
       expect(a.db.createOAuthClient).not.toHaveBeenCalled();
       expect(b.db.createOAuthClient).not.toHaveBeenCalled();
     }
+  });
+  it('retains original invalid-method denial while documenting adapted modern response',async()=>{
+    const invalid={redirect_uris:[callback],token_endpoint_auth_method:'unrecognized'};
+    const old=fixture(),next=fixture();
+    const source=await call('POST',old.upstream.register,invalid);
+    const portable=await call('POST',next.portable.register,invalid);
+    expect(source.status).toBe(400);
+    expect(source.body).toMatchObject({error:'invalid_client_metadata',
+      error_description:'Only client_secret_post is supported'});
+    expect(portable.status).toBe(400);
+    expect(portable.body).toMatchObject({error:'invalid_client_metadata',
+      error_description:'Unsupported client authentication'});
+    expect(old.db.createOAuthClient).not.toHaveBeenCalled();
+    expect(next.db.createOAuthClient).not.toHaveBeenCalled();
   });
   it('keeps source registration response schema and client secret private from later reads',async()=>{
     const f=fixture();
