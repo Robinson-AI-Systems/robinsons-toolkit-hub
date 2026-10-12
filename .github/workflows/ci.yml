@@ -96,12 +96,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: Robinson-AI-Systems/stripe-mcp
-          ref: e3c5b34bccabec11328d62f4ca45145163772486
+          ref: b2a1432fa6398b7f6848d84771e5af5b21d686e7
           path: source-stripe
           persist-credentials: false
       - name: Refuse source drift or substituted checkout
         working-directory: source-stripe
-        run: test "$(git rev-parse HEAD)" = "e3c5b34bccabec11328d62f4ca45145163772486"
+        run: test "$(git rev-parse HEAD)" = "b2a1432fa6398b7f6848d84771e5af5b21d686e7"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -129,12 +129,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: Robinson-AI-Systems/stripe-mcp
-          ref: e3c5b34bccabec11328d62f4ca45145163772486
+          ref: b2a1432fa6398b7f6848d84771e5af5b21d686e7
           path: source-stripe
           persist-credentials: false
       - name: Verify immutable reviewed service revision
         working-directory: source-stripe
-        run: test "$(git rev-parse HEAD)" = "e3c5b34bccabec11328d62f4ca45145163772486"
+        run: test "$(git rev-parse HEAD)" = "b2a1432fa6398b7f6848d84771e5af5b21d686e7"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
