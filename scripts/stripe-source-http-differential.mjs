@@ -54,12 +54,25 @@ const oversized={method:'POST',headers:{'content-type':'application/json'},
   body:{payload:'x'.repeat(16385)}};
 assert.equal(outcome(()=>source.paramsOf(oversized)).ok,false,
   'Pinned source must refuse oversized framework-preparsed JSON');
-assert.equal(outcome(()=>core.paramsOf(oversized)).ok,true,
-  'Known portable boundary must remain explicitly classified as incompatible');
+assert.equal(outcome(()=>core.paramsOf(oversized)).ok,false,
+  'Current reviewed portable source must now reject oversized framework bodies');
 assert.equal(typeof source.incomingBodyWithinLimit,'function',
   'The host-owned original transport validator must remain present');
-assert.equal(typeof core.incomingBodyWithinLimit,'undefined',
-  'Source transport length validator is not yet extracted');
+assert.equal(typeof core.incomingBodyWithinLimit,'function',
+  'The current reviewed Stripe HTTP body validator must be ported verbatim');
+const inconsistent={method:'POST',headers:{'content-length':'9'},body:{
+  payload:'x'.repeat(16385)}};
+assert.equal(source.incomingBodyWithinLimit(inconsistent),true,
+  'Pinned older Stripe helper is expected to lack the structured body bound');
+assert.equal(core.incomingBodyWithinLimit(inconsistent),false,
+  'Private adapted helper must reject oversized parsed bodies');
+let getterCalls=0;
+const active={};
+Object.defineProperty(active,'data',{enumerable:true,get(){getterCalls++;return 'unsafe';}});
+assert.equal(core.incomingBodyWithinLimit({method:'POST',
+  headers:{'content-length':'50'},body:active}),false);
+assert.equal(getterCalls,0,'Adapted core must not invoke active body getters');
 console.log(JSON.stringify({source:'actual independently checked-out Stripe service',
-  compatibleCases:evidence.length,knownIncompatible:['oversized pre-parsed body',
-    'host-owned raw wire-length validation'],adopted:false,releaseReady:false}));
+  compatibleCases:evidence.length,knownIncompatible:['old immutable source transport helper lacked the new bound'],
+  currentSourceHttpAdapted:true,hostRawTransportStillServiceOwned:true,
+  adopted:false,releaseReady:false}));

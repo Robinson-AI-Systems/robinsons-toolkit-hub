@@ -39,7 +39,7 @@ describe('K-3 unpublished offline artifact integrity',()=>{
       'src/one-time-secrets.js','src/profiles.js','src/registry.js',
       'src/write-contract-check.js','src/write.js'
     ].sort());
-    expect(artifact).toMatchObject({verbatim:5,adapted:6,
+    expect(artifact).toMatchObject({verbatim:4,adapted:7,
       published:false,releaseReady:false});
     expect(artifact.note).toMatch(/Unpublished/);
   });

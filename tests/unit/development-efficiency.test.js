@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {describe,it,expect,vi} from 'vitest';
 import {githubEvidenceJson} from '../../scripts/github-evidence-json.mjs';
 import {focusPlan,focusGroups} from '../../scripts/dev-focus.mjs';
@@ -35,5 +36,17 @@ describe('repeatable focused development test recipes',()=>{
   it('refuses missing and arbitrary groups before launching any command',()=>{
     expect(()=>focusPlan([])).toThrow(/choose/);
     expect(()=>focusPlan(['../../shell'])).toThrow(/unknown/);
+  });
+});
+
+describe('outcome-first owner workflow remains authoritative',()=>{
+  it('requires a milestone, blocker re-entry and independent acceptance',()=>{
+    const agents=readFileSync(new URL('../../AGENTS.md',import.meta.url),'utf8');
+    const start=readFileSync(new URL('../../docs/SESSION-START.md',import.meta.url),'utf8');
+    for(const word of ['Outcome-first autonomous development','re-entry trigger',
+      'deployed exact','authenticated end-to-end','permanent handoff'])
+      expect(agents).toContain(word);
+    expect(start).toContain('## 0b. Outcome and blocker triage');
+    expect(start).toContain('five PRs');
   });
 });

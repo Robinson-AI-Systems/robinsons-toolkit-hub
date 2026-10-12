@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { publicOrigin, send, escapeHtml, paramsOf, only } from '../src/http.js';
+import { publicOrigin, send, escapeHtml, paramsOf, only,
+  incomingBodyWithinLimit, MAX_HTTP_BODY_BYTES } from '../src/http.js';
 
 function response() {
   const headers = {};
@@ -42,6 +43,45 @@ describe('extracted HTTP security utilities', () => {
       expect(() => paramsOf({method:'POST',headers:{'content-type':'application/json'},body})).toThrow();
     }
     expect(() => paramsOf({method:'POST',headers:{'content-type':'application/json'},body:'a'.repeat(16385)})).toThrow(/Invalid/);
+  });
+  it('bounds framework-preparsed requests in the reviewed current Stripe HTTP leaf', () => {
+    expect(MAX_HTTP_BODY_BYTES).toBe(16384);
+    const oversized={method:'POST',headers:{'content-type':'application/json',
+      'content-length':'9'},body:{content:'x'.repeat(16385)}};
+    expect(incomingBodyWithinLimit(oversized)).toBe(false);
+    expect(() => paramsOf(oversized)).toThrow(/Invalid request body/);
+    expect(incomingBodyWithinLimit({method:'POST',headers:{},body:{ok:true}})).toBe(false);
+    expect(incomingBodyWithinLimit({method:'POST',
+      headers:{'content-length':'11'},rawBody:'{"ok":true}',body:{ok:true}})).toBe(true);
+    expect(incomingBodyWithinLimit({method:'POST',
+      headers:{'content-length':'4','content-type':'application/json'},
+      rawBody:'12345',body:'12345'})).toBe(false);
+    const cyclic={};cyclic.loop=cyclic;
+    expect(() => paramsOf({method:'POST',headers:{},body:cyclic})).toThrow(/Invalid request body/);
+  });
+  it('rejects hostile parsed JSON without executing getters or serializers', () => {
+    let getter=0,serializer=0;
+    const active={};
+    Object.defineProperty(active,'resource',{enumerable:true,get(){getter++;return 'unsafe';}});
+    const bodies=[active,{metadata:{toJSON(){serializer++;return 'secret';}}},
+      new Date(),Object.create({inherited:true})];
+    const cycle={};cycle.self=cycle;bodies.push(cycle);
+    const proxy=new Proxy({safe:true},{get(){getter++;return 'unsafe';}});
+    bodies.push(proxy);
+    for(const body of bodies){
+      const req={method:'POST',headers:{'content-type':'application/json',
+        'content-length':'50'},body};
+      expect(incomingBodyWithinLimit(req)).toBe(false);
+      expect(()=>paramsOf(req)).toThrow(/Invalid request body/);
+    }
+    expect(getter).toBe(0);expect(serializer).toBe(0);
+  });
+  it('detaches safe JSON parameters from subsequent caller mutation', () => {
+    const body={nested:{customer:'before'},items:['a','b']};
+    const params=paramsOf({method:'POST',
+      headers:{'content-type':'application/json'},body});
+    body.nested.customer='after';body.items[0]='changed';
+    expect(params).toEqual({nested:{customer:'before'},items:['a','b']});
   });
   it('refuses unallowed methods with 405 and Allow header', () => {
     const {res,headers}=response();

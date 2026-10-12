@@ -84,6 +84,46 @@ Never present partial work as done — Chris has been burned by overclaiming.
 Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner decisions live in `docs/OWNER-INPUTS.md`
 (`IN-xx`). New service servers are started when Chris needs them (`docs/kit/SERVER-ROADMAP.md`), never speculatively.
 
+## Outcome-first autonomous development (owner policy, 2026-10-12)
+
+**Optimize for an accepted user/developer capability, not for counting pull requests.**
+Five substantial PRs is the normal session planning boundary, never proof of
+completion. After §0 and the bounded RTC fleet check, verify live main, concurrent
+branches, CI, unresolved reviews and owner inputs. Name the highest-priority
+**eligible milestone**, the useful capability it should produce and a **finite
+acceptance matrix**. Group coherent PRs around that milestone. Fix demonstrated
+security/correctness/CI/review issues before adding functionality; do not invent
+unrelated hardening slices or pad a batch just to reach five.
+
+Track deferred work in existing STATUS/cards with **blocker**, **owner/dependency**,
+**specific missing evidence or decision**, **re-entry trigger**, and **next action**.
+Recheck at session start and whenever owner input, service merges, deployment
+or environment changes; automatically return newly eligible items to the queue.
+Never re-request already-approved IN-xx authority. Owner-approved configuration
+is distinct from engineering proof that authentication/resources work.
+
+For each milestone, report separately **implemented source**, **meaningful tests**
+(including real original service SQL/HTTP vs fake reference), **deployed exact
+commit**, and **authenticated end-to-end acceptance** (including refusal and
+revocation when relevant). Green CI, mocks, reference conformance, a Vercel
+READY build or a configured origin alone are not accepted integration.
+Close only when actual mandatory gates are independently satisfied.
+The approved work index blocks H-1 until K-3; continue eligible K-3/D-4 work
+instead of skipping that dependency. Maintain service autonomy and all owner
+money-out approvals, credentials, tenancy, relay, hosting and review gates.
+
+PRs should be coherent and sized under existing limits; fewer than five is
+correct if no more substantive, safe, eligible work exists. On genuine blockage,
+record the exact reason and continue independent approved work.
+End with a capability-level result, proof/remaining acceptance, verified SHA,
+PRs/CI/reviews, finite blockers and next action. Post a permanent handoff on
+the final merged PR and supply a **compact self-contained continuation prompt**
+telling the next agent to verify live main/concurrency, read AGENTS, SESSION-START,
+STATUS, approved cards and the permanent handoff, recheck deferred work and
+owner/dependency inputs, resume the highest-priority eligible milestone, aim
+for the normal five coherent PRs without padding, and repeat this same handoff
+and continuation policy. Do not duplicate this policy in another instruction file.
+
 ## How work is organized
 
 - **Approved designs, just-in-time cards** (`docs/designs/BATCH-*.md`, `docs/pr-cards/`). A missing card means write it.

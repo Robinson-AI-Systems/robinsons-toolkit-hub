@@ -4,7 +4,7 @@
   "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
   "verifiedAt": "2026-10-11",
   "status": "PARTIAL_PRIVATE_NOT_RELEASED",
-  "note": "Git blob hashes for source files are pinned evidence; adapted files require independent server adoption and original source regression suites. This manifest does not certify release readiness.",
+  "note": "Git blob hashes for source files are pinned evidence; adapted files require independent server adoption and original source regression suites. This manifest does not certify release readiness. The HTTP leaf is now security-adapted from independently inspected newer Stripe SHA 4fedb344, recorded in its sourceRevision; sourceMain remains the historical extraction baseline for other unchanged and adapted modules, not a claim that all exports were refreshed together. Per-module source is independently pinned; its extracted helper is intentionally adapted to preserve getter-free OAuth input security. This is not current-source parity or service adoption.",
   "modules": {
     "./oauth": {
       "sourceFile": "src/core/oauth.js",
@@ -47,16 +47,19 @@
     },
     "./http": {
       "sourceFile": "src/core/http.js",
-      "sourceBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
+      "sourceBlob": "cc4be02fe0a1ae00a286800a571030a7f57ceb26",
       "target": "./src/http.js",
-      "coreBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
-      "kind": "verbatim",
+      "coreBlob": "5308089d46ca42a07106975de580f8df378f7d8b",
+      "kind": "adapted",
       "tests": [
         "packages/core/test/http.test.js"
       ],
       "serverOwned": [
-        "host transport"
-      ]
+        "host transport",
+        "Exact raw HTTP framing remains host/service-owned; pure pre-parsed size bound is now byte-identical to reviewed newer Stripe source.",
+        "Service must independently review pre-parsed accessor/toJSON safety without relaxing raw wire-body length. Private core refuses active JSON body fields; no provider routing is adopted."
+      ],
+      "sourceRevision": "4fedb344c732b806dae033f87e936350a1180b77"
     },
     "./write-contract-check": {
       "sourceFile": "src/core/write-contract-check.js",

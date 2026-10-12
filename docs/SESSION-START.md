@@ -63,6 +63,16 @@ Keep repeating at both boundaries until every applicable server has **all**
 required real acceptance evidence. A failed check does not block unrelated
 approved implementation.
 
+## 0b. Outcome and blocker triage
+
+Follow AGENTS' **Outcome-first autonomous development** policy before choosing
+new PRs: identify the next eligible capability milestone and finite remaining
+acceptance, recheck deferred items after owner/service/deployment changes, and
+keep code, original-source tests, deployed exact commit and authenticated real
+acceptance separate. Do not mistake five PRs for milestone completion. Update
+the permanent final-PR handoff and generate the same concise outcome-first
+continuation prompt every session.
+
 ## 1. Find your place (2 minutes)
 
 Work happens in whatever workspace you were given (a cloud agent workspace, a Vercel Sandbox, a laptop). Code reaches
