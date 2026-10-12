@@ -32,6 +32,7 @@ describe('confirmed local file creation', () => {
       });
       expect(JSON.stringify(created)).not.toContain('hello');
       expect(await readFile(join(root, 'nested/new.txt'), 'utf8')).toBe('hello');
+      expect(await readdir(join(root, 'nested'))).toEqual(['new.txt']);
       const duplicate = await call(mcp, { path: 'nested/new.txt', content: 'changed', confirm: true });
       expect(duplicate.result.isError).toBe(true);
       expect(await readFile(join(root, 'nested/new.txt'), 'utf8')).toBe('hello');
