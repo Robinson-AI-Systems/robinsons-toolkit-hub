@@ -82,6 +82,20 @@ describe('private one-time secret adapter', () => {
     expect(f.db.addOneTimeSecret).not.toHaveBeenCalled();
     await expect(f.store.issue({kind:'',secret:'fixture'})).rejects.toThrow(/required/);
   });
+  it('binds each issuance route to its opaque id and denies path/authority escapes',async()=>{
+    const f=fixture();
+    for(const route of ['/api/stripe/setup?show=other', '/api/../admin?show=id',
+      '/api/%2e%2e/admin?show=id', '/api/%2Fhidden?show=id',
+      '/api\\evil?show=id', '/api//hidden?show=id']){
+      const store=createOneTimeSecretStore({...f.adapters,
+        setupPathFor:id=>route.replaceAll('id',id)});
+      await expect(store.issue({kind:'setup',secret:'synthetic-data'})).rejects.toThrow(/route/);
+    }
+    expect(f.db.addOneTimeSecret).not.toHaveBeenCalled();
+    // Real source's single-use query convention remains compatible.
+    const successful=await f.store.issue({kind:'setup',secret:'fixture-data'});
+    expect(successful.setupPath).toBe('/api/stripe/setup?show='+successful.id);
+  });
   it('refuses missing durability, missing AAD mappings or an unconfigured key', () => {
     const f=fixture();
     expect(()=>createOneTimeSecretStore({...f.adapters,db:{}})).toThrow(/Durable/);

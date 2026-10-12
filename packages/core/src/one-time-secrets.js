@@ -3,6 +3,24 @@
 import { randomBytes } from 'node:crypto';
 import { encryptSecret, decryptSecret } from './crypto.js';
 
+// A service chooses the route shape, but must link to this newly issued secret.
+// Never normalize a service-provided setup link to another path/authority.
+function safeSetupPath(path, id) {
+  if (typeof path !== 'string' || !/^\/(?!\/)[^\s#]*$/.test(path) || !path.includes(id)) {
+    return false;
+  }
+  const pathname = path.split('?')[0];
+  if (pathname.includes('\\') || pathname.includes('//') ||
+      /%(?:2e|2f|5c)/i.test(pathname) ||
+      pathname.split('/').some(segment => segment === '.' || segment === '..')) {
+    return false;
+  }
+  try {
+    const url = new URL(path, 'https://core.invalid');
+    return url.origin === 'https://core.invalid' && url.pathname === pathname;
+  } catch { return false; }
+}
+
 export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupPathFor, accountFromRow,
   now = Date.now }) {
   if (typeof db?.addOneTimeSecret !== 'function' || typeof db?.consumeOneTimeSecret !== 'function' ||
@@ -22,8 +40,7 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
       const bound = { id, account, mode, kind };
       const aad = contextFor(bound);
       const path = setupPathFor(id);
-      if (typeof aad !== 'string' || !aad || typeof path !== 'string' ||
-          !/^\/(?!\/)[^\s#]*$/.test(path)) {
+      if (typeof aad !== 'string' || !aad || !safeSetupPath(path, id)) {
         throw new TypeError('A service-bound encryption context and relative setup route are required');
       }
       const ciphertext = encryptSecret(secret, { aad, key: encryptionKey });

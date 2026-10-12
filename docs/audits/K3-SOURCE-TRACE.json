@@ -105,14 +105,15 @@
       "sourceFile": "src/core/one-time-secrets.js",
       "sourceBlob": "071900c19db7d77a608c7bb65574b12b24c080fb",
       "target": "./src/one-time-secrets.js",
-      "coreBlob": "2e05c803725c76cba20d241619a271f6bf8e5274",
+      "coreBlob": "97b479b572ce8e65d18162032d6f417d55bdb807",
       "kind": "adapted",
       "tests": [
         "packages/core/test/one-time-secrets.test.js",
         "tests/db/core-storage-adapters.test.js"
       ],
       "serverOwned": [
-        "service-specific ciphertext AAD and atomic SQL row ownership"
+        "service-specific ciphertext AAD and atomic SQL row ownership",
+        "setup paths must include new issuance id without traversal; source service owns routing, SQL, account access and atomic expiry"
       ]
     },
     "./oauth-protocol": {

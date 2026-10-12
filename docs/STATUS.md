@@ -5,6 +5,9 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3ak (PR #59, as-if-merged):** one-time encrypted-secret setup routes now must embed the newly issued 32-character identifier and cannot normalize through dot segments, encoded separators, backslashes or double-slash path ambiguity. Existing Stripe setup query routes retain compatibility. Tests verify refusal before encrypted row insertion; AES-GCM, expiry, consumption and source routes remain service-owned. K-3 private/IN_PROGRESS; actual source SQL, independent owner approval and release gates remain open. **Next:** hardened guarded-write confirmation context and outstanding service release prerequisites.
+
+
 - **K-3aj (PR #58, as-if-merged):** reconciled live Stripe main e3c5b34 with the pinned 19-path K-3 source/test inventory: all 11 core source module blobs unchanged; registry and profile unit-suite blobs changed only catalog counts/tool names following new G-5 features. Reviewed and pinned both updated test suites, preserving the 21 portable original assertion bodies and four source-owned HTTP bodies. Drift checker now differentiates source-file changes, test-suite changes and missing files without treating test-only drift as release permission; CI regression covers each classification. K-3 IN_PROGRESS/private, D-4 WAITING_ON_OWNER. **Next:** actual SQL/service adapter proof and remaining release prerequisites.
 
 
