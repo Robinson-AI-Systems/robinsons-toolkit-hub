@@ -96,12 +96,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: Robinson-AI-Systems/stripe-mcp
-          ref: f2de5160d94799d5425e838fa54c5702b5d93f34
+          ref: 0e4ae2c873713e56de50d97af8e550d698eca0fe
           path: source-stripe
           persist-credentials: false
       - name: Refuse source drift or substituted checkout
         working-directory: source-stripe
-        run: test "$(git rev-parse HEAD)" = "f2de5160d94799d5425e838fa54c5702b5d93f34"
+        run: test "$(git rev-parse HEAD)" = "0e4ae2c873713e56de50d97af8e550d698eca0fe"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -129,12 +129,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: Robinson-AI-Systems/stripe-mcp
-          ref: f2de5160d94799d5425e838fa54c5702b5d93f34
+          ref: 0e4ae2c873713e56de50d97af8e550d698eca0fe
           path: source-stripe
           persist-credentials: false
       - name: Verify immutable reviewed service revision
         working-directory: source-stripe
-        run: test "$(git rev-parse HEAD)" = "f2de5160d94799d5425e838fa54c5702b5d93f34"
+        run: test "$(git rev-parse HEAD)" = "0e4ae2c873713e56de50d97af8e550d698eca0fe"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -149,6 +149,7 @@ jobs:
           tests/unit/money-owner-approval.test.js
           tests/unit/owner-money-limit.test.js
           tests/unit/setup-page.test.js
+          tests/unit/owner-test-smoke.test.js
 
   ci:
     name: ci
