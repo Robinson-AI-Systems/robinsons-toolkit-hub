@@ -175,7 +175,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       return bad(res,400,'invalid_client_metadata','One to eight valid, distinct redirect URIs required');
     }
     if (p.client_name !== undefined && (typeof p.client_name !== 'string' ||
-        p.client_name.length > 100 || /[\\x00-\\x1f\\x7f]/.test(p.client_name))) {
+        p.client_name.length > 100 || /[\x00-\x1f\x7f]/.test(p.client_name))) {
       return bad(res,400,'invalid_client_metadata','Client name must be printable and at most 100 characters');
     }
     if (p.response_types !== undefined && (!Array.isArray(p.response_types) ||
@@ -211,6 +211,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     }
     const auth = basicCredentials(req);
     if (!auth || auth.present && !auth.basic) {
+      if (auth?.present) res.setHeader('WWW-Authenticate', 'Basic realm="MCP OAuth"');
       return bad(res,401,'invalid_client','Client credentials rejected');
     }
     const clientId = auth.basic?.id || str(p.client_id);
