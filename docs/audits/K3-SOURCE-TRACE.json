@@ -49,14 +49,13 @@
       "sourceFile": "src/core/http.js",
       "sourceBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
       "target": "./src/http.js",
-      "coreBlob": "9b2ca1afe16a3b8f5ae6a7db8a7b6b521997324e",
-      "kind": "adapted",
+      "coreBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
+      "kind": "verbatim",
       "tests": [
         "packages/core/test/http.test.js"
       ],
       "serverOwned": [
-        "host transport",
-        "Current Stripe source adds 16 KiB HTTP body caps and a wire-length preflight; this portable helper matches source utility but the service owns enforcing preflight before credential or SQL access. Original reviewed source snapshot remains independently pinned until all 19 changed/unchanged blobs are reconciled."
+        "host transport"
       ]
     },
     "./write-contract-check": {
@@ -128,7 +127,7 @@
       "sourceFile": "src/core/oauth-handlers.js",
       "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
       "target": "./src/oauth-protocol.js",
-      "coreBlob": "1093779ee01dc6444f9d70ba97f0360fe5c57803",
+      "coreBlob": "be5c536e151f4837288e3f84124b167f197a0cbd",
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
@@ -141,7 +140,8 @@
         "core rejects mapped or rotated token IDs that differ from issued IDs; service SQL must return matching durable claims",
         "portable OAuth requests reject duplicate form keys and active or inherited top-level fields; redirect URI accessors cannot execute; source HTTP parsing stays independently unchanged",
         "portable grant mappings and refresh receipts require inert own data token-identity bindings; service SQL still owns atomic code/refresh lifecycle",
-        "new Basic and public PKCE methods use service-authored SQL method/hash, no combined header/body credentials; owner login, request transport caps, current source parity, SQL migration and RTC service adoption remain open"
+        "new Basic and public PKCE methods use service-authored SQL method/hash, no combined header/body credentials; owner login, request transport caps, current source parity, SQL migration and RTC service adoption remain open",
+        "Current Stripe raw HTTP length preflight is exposed as a portable OAuth transport helper; the adopting service must supply wire evidence and enforce all endpoint preflights without accessing owner SQL on failure."
       ]
     },
     "./write": {
