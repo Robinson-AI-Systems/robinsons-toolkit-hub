@@ -8,10 +8,10 @@ const reviewedSource={
   'src/core/oauth.js':'2e2fa72529869d7f2320661a641cdaa1d5de9841',
   'src/core/crypto.js':'34dce85cd4ca32553bfa2512778e68f819558de5',
   'src/core/registry.js':'a92f4f36987b73a02bcc32c1d98902cc3b6ef7ca',
-  'src/core/http.js':'9b2ca1afe16a3b8f5ae6a7db8a7b6b521997324e',
+  'src/core/http.js':'cc4be02fe0a1ae00a286800a571030a7f57ceb26',
   'src/core/write-contract-check.js':'c604cf99d6d2b5fbbcf7ca77306b2c383079b146',
   'src/core/profiles.js':'654d1dedbc244a6f0e799793d7b41e89bf92304e',
-  'src/core/mcp-auth.js':'eea535069b2179dfa74ed4ad101abacd5789dea0',
+  'src/core/mcp-auth.js':'7577f619dc3776071d871d9f6616289dfeb9e94f',
   'src/core/one-time-secrets.js':'071900c19db7d77a608c7bb65574b12b24c080fb',
   'src/core/oauth-handlers.js':'3ba84fb8f0080b19271b4df8b72334469cfedb21',
   'src/core/write.js':'82157d03a818a60d6a9ae6e28dd798e0e7ca2a86',
@@ -33,12 +33,12 @@ describe('K-3 current Stripe original runtime/source-suite drift evidence',()=>{
     expect(manifest.tests).toEqual(reviewedTests);
     expect(manifest.serviceOwnedCore).toEqual({
       'src/core/browser-cors.js':'e4b5d948a83737344c53079912dc148b4227ef60',
-      'src/core/rtc-passes.js':'81d10139ca1432afcead399b2e51c61b3b28d480',
-      'src/core/rtc-http.js':'47c1c66bdf5ef8c8b7544238344fedbe948267ac',
+      'src/core/rtc-passes.js':'e5f261835b72266b575985b0fd8c7adf02c0d4bf',
+      'src/core/rtc-http.js':'a0744561ae0b4d0ad9a0b335a4ea9d992a5b6420',
       'src/core/rtc-route.js':'7833386fd04717dc137f06132c0caf3c375f6362'
     });
     expect(manifest.disposition).toBe('REVIEWED_SNAPSHOT_NOT_RELEASE');
-    expect(manifest.reviewedMain).toBe('de56af8199fee39b20c2a1ac733562f2622dfda7');
+    expect(manifest.reviewedMain).toBe('a38a325f07bdb993b46dc82d85e835d06281aff0');
   });
   it('retains a fixed accounting of five real upstream changes, not silently treating changed suites as unchanged',()=>{
     const historical={
