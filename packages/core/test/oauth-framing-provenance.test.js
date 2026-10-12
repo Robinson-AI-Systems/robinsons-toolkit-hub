@@ -60,8 +60,7 @@ describe('portable OAuth verified HTTP framing provenance',()=>{
         rawHeaders:['Content-Length','2','content-length','2','Content-Type','application/json']},
       {...base(),headers:{...base().headers,'content-length':'2'},
         rawHeaders:['Content-Length','3','Content-Type','application/json']},
-      {...base(),headers:{...base().headers,'content-length':'2'},
-        rawHeaders:['Content-Type','application/json']},
+      {...base(),rawHeaders:['Content-Type','application/json','Content-Length','3']},
       {...base(),headers:{...base().headers,'content-length':'02'}},
       {...base(),headers:{...base().headers,'content-length':String(MAX_OAUTH_BODY_BYTES+1)}}
     ];
