@@ -155,8 +155,16 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       if (result.content.length === 1) {
         try { safeValue = JSON.parse(result.content[0].text); } catch { /* shaped wrapper */ }
       }
-      const body = splitResult(safeValue);
-      if (!body || !Number.isSafeInteger(body.totalBytes) || body.totalBytes < 0) {
+      // Service pagination is privileged, but its returned objects are not
+      // trusted metadata or mutable references for durable scoped storage.
+      // Snapshot before invoking the page adapter so late provider mutation
+      // cannot change the data that was authorized for this connection.
+      let body = splitResult(safeValue);
+      if (!isInertJsonData(body) || !body || Array.isArray(body)) {
+        return deny('Result cannot be securely stored for this connection.');
+      }
+      body=snapshotDispatchArgs(body);
+      if (!Number.isSafeInteger(body.totalBytes) || body.totalBytes < 0) {
         return deny('Result cannot be securely stored for this connection.');
       }
       const records = Array.isArray(safeValue) ? safeValue.length :
@@ -165,11 +173,13 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       const handle = 'res_' + randomBytes(18).toString('base64url');
       const summary = 'Saved ' + records + ' result record(s) from ' + name +
         ', ' + body.totalBytes + ' bytes (scoped connection only)';
-      const page = resultPage(body, 0);
+      let page = resultPage(body, 0);
       if (!page || typeof page !== 'object' || Array.isArray(page) ||
           !isInertJsonData(page)) {
         return deny('Result cannot be securely paged for this connection.');
       }
+      // The returned page must not change after the protected metadata check.
+      page=snapshotDispatchArgs(page);
       // A paging adapter may append page data, but may never replace the core's
       // scoped handle, immutable byte count, retention or audit summary.
       if (['handle','summary','totalBytes','records','expiresInHours'].some(key =>
