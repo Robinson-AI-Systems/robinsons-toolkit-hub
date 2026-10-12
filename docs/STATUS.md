@@ -5,7 +5,16 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
-**K-3ci / PR #121 as-if-merged (exact-head proof required):** the original
+**K-3cj / PR #122 as-if-merged (exact-head CI required):** Source/test
+baseline is now the reviewed original Stripe `a38a325f07bdb993b46dc82d85e835d06281aff0`.
+Both mandatory original-service CI jobs and the #121 real service
+seven-suite PostgreSQL replay through four installed private imports run at
+this newer immutable revision. Reviewed changed source HTTP/bearer/RTC pass
+and RTC HTTP semantics and three changed real RTC suites; the four imported
+verbatim leaves and eight tracked original unit suites are unchanged.
+The upstream HTTP `JSON.stringify(req.body)` getter risk remains a
+separate service-owned security handoff, not copied into Hub.
+**K-3ci / PR #121 merged:** the original
 Stripe service's seven unchanged OAuth, money-approval/limit/reservation and RTC
 PostgreSQL tests now run a second time **through four private installed core
 imports** in the disposable source checkout. The same job still requires
