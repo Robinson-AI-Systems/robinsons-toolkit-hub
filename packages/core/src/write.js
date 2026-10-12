@@ -1,5 +1,7 @@
 // Source-equivalent guarded write lifecycle with required server-owned account and key adapters.
 // Independently authenticated money approval and shared limits MUST be supplied by each service.
+import { isInertJsonData } from './mcp-dispatch.js';
+
 const reply = (value, isError = false) => ({
   ...(isError ? { isError: true } : {}),
   content: [{ type: 'text', text: JSON.stringify(value) }]
@@ -54,7 +56,7 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     if (!ctx.db || typeof ctx.db.recordChange !== 'function') {
       return respond({ done: false, error: 'Audit database unavailable: action refused' }, true);
     }
-    if (!args || typeof args !== 'object' || Array.isArray(args)) {
+    if (!args || typeof args !== 'object' || Array.isArray(args) || !isInertJsonData(args)) {
       return respond({ done: false, error: 'Invalid write arguments or confirmation flags' }, true);
     }
     let confirmed = false, dryRunRequested = false;
@@ -95,6 +97,9 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
       guardContext = allowed === true ? null : { ownership:allowed.ownership };
     }
     const prepared = prepare ? await prepare(args, ctx, before) : null;
+    if (prepared !== null && !isInertJsonData(prepared)) {
+      return respond({ done: false, error: 'Invalid provider-derived money preview: action refused' }, true);
+    }
     // Even a partially populated money preview is monetary, not an ordinary write.
     // Reject malformed provider-derived amounts before consulting approval or sending a write.
     const moneyIntent = prepared !== null && typeof prepared === 'object' &&
@@ -136,7 +141,7 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
       let decision;
       try { decision = await beforeApply({ ctx, args, before, key, prepared, tool: name }); }
       catch { return respond({ done: false, error: 'Money safety check unavailable: action refused' }, true); }
-      if (decision?.accepted !== true) {
+      if (!isInertJsonData(decision) || decision?.accepted !== true) {
         return respond({ done: false, error: decision?.reason || 'Safety check denied this action' }, true);
       }
     }
