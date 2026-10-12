@@ -179,7 +179,7 @@
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "75d23003d66a74df08e8f70c631c561b27318991",
+      "coreBlob": "827d19c928ffc625deab4014cd7a08e699d952e2",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
@@ -197,7 +197,8 @@
         "portable shaped responses, detail projections and scrubbed error objects must be inert before serialization, return or storage; the service owns provider redaction and tenant-scoped SQL",
         "validated caller args are detached and frozen before asynchronous authorizeTool/handler execution, preserving confirmed write flags and requested detail; source server still owns authorization, HTTP and provider guards",
         "portable dispatcher copies and freezes service-projected JSON connection identity before policy, handlers and tenant-scoped result storage; source owns authoritative SQL identity and issuance",
-        "Portable scoped split and page adapter outputs are inert, frozen and detached before tenant-scoped storage; source service still owns result-store SQL and retention"
+        "Portable scoped split and page adapter outputs are inert, frozen and detached before tenant-scoped storage; source service still owns result-store SQL and retention",
+        "Portable dispatcher now snapshots inert tool declarations before asynchronous authorization, refuses active handlers/invalid names, and caps service-shaped error output; provider/service policy remains source owned"
       ]
     }
   }
