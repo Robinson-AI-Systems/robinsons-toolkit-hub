@@ -133,10 +133,17 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
         done: false, error: 'LIVE changes are not enabled: owner approval, account settings and confirmation are required'
       }, true);
     }
-    const before = await read(args, ctx);
+    // An upstream read error is not safe to expose: the provider may include
+    // account identifiers, authorization headers or other private details.
+    // Refuse before any provider mutation or audit intent is created.
+    let before;
+    try { before = await read(args, ctx); }
+    catch { return respond({ done: false, error: 'Provider preflight unavailable: change refused' }, true); }
     let guardContext = null;
     if (targetGuard) {
-      const allowed = await targetGuard(args, ctx, before);
+      let allowed;
+      try { allowed = await targetGuard(args, ctx, before); }
+      catch { return respond({ done: false, error: 'Ownership check unavailable: change refused' }, true); }
       // A service-owned ownership decision is privileged input. Never read a
       // getter or executable nested ownership record to authorize a write.
       const accepted = allowed === true ||
@@ -158,7 +165,9 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
         }
       }
     }
-    let prepared = prepare ? await prepare(args, ctx, before) : null;
+    let prepared;
+    try { prepared = prepare ? await prepare(args, ctx, before) : null; }
+    catch { return respond({ done: false, error: 'Provider preview unavailable: action refused' }, true); }
     if (prepared !== null) {
       if (!isInertJsonData(prepared)) {
         return respond({ done: false, error: 'Invalid provider-derived money preview: action refused' }, true);
@@ -182,7 +191,9 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     if (moneyIntent && typeof beforeApply !== 'function') {
       return respond({ done: false, error: 'Independent server money authorization is required' }, true);
     }
-    const summaryText = await summarize(before, args, ctx, guardContext);
+    let summaryText;
+    try { summaryText = await summarize(before, args, ctx, guardContext); }
+    catch { return respond({ done: false, error: 'Safe preview unavailable: action refused' }, true); }
     if (typeof summaryText !== 'string' || !summaryText || summaryText.length > 1024 ||
       (prepared !== null && (typeof prepared?.previewLine !== 'string' || !prepared.previewLine ||
        prepared.previewLine.length > 240))) {
@@ -199,7 +210,9 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     if (!confirmed) {
       return respond({ ...preview, prompt: 'Review the preview and explicitly set confirm: true' });
     }
-    const key = idempotency(connection, name, args);
+    let key;
+    try { key = idempotency(connection, name, args); }
+    catch { return respond({ done: false, error: 'Missing stable provider retry identifier' }, true); }
     if (typeof key !== 'string' || !key.startsWith(idempotencyPrefix) ||
       !/^[\x21-\x7e]{1,255}$/.test(key)) {
       return respond({ done: false, error: 'Missing stable provider retry identifier' }, true);

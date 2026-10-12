@@ -157,13 +157,14 @@
       "sourceFile": "src/core/write.js",
       "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
       "target": "./src/write.js",
-      "coreBlob": "8e8d074566eeaf438b5d042416df98cf4d8a47ae",
+      "coreBlob": "0de63a8e48ebb4ea82c7c5633ffa65c34b1ef26d",
       "kind": "adapted",
       "tests": [
         "packages/core/test/write.test.js",
         "packages/core/test/integration-boundary.test.js",
         "packages/core/test/write-safety-parity.test.js",
-        "packages/core/test/write-context-snapshot.test.js"
+        "packages/core/test/write-context-snapshot.test.js",
+        "packages/core/test/write-preflight-failure.test.js"
       ],
       "serverOwned": [
         "owner-independent money consent, shared limits, live guard and retry key",
@@ -172,7 +173,8 @@
         "guarded writes reject nested active args, money preview getter and executable approval decision; independent human authorization remains required",
         "portable account binding, inert ownership decision and printable retry key validation refuses malformed write intent; independent owner consent and SQL account/day guard remain exclusively service-owned",
         "write arguments are cloned and deeply frozen before asynchronous read, ownership, money authorization and provider hooks; adopting service still owns owner approval and SQL policy",
-        "Portable guarded write clones and freezes service-projected connection identity and audit context before any async hooks; independent owner money approval, limits and durable target ownership remain service-owned"
+        "Portable guarded write clones and freezes service-projected connection identity and audit context before any async hooks; independent owner money approval, limits and durable target ownership remain service-owned",
+        "Portable pre-provider read, ownership, money-preview, summary and idempotency callback exceptions return sanitized fail-closed errors before any provider apply or audit reservation; service retains authentic owner financial approval and source SQL"
       ]
     },
     "./mcp-dispatch": {
