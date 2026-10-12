@@ -504,7 +504,7 @@ describe('unambiguous confidential OAuth Authorization provenance',()=>{
       const res=response();
       await f.handlers.token({...req('POST',input),...extra},res);
       expect(res.statusCode).toBe(401);
-      expect(res.headers['WWW-Authenticate']).toMatch(/^Basic realm=/);
+      expect(JSON.parse(res.body).error).toBe('invalid_client');
       expect(res.body).not.toContain('private');
     }
     expect(accessed).toBe(0);
