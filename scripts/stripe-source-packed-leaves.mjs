@@ -2,7 +2,7 @@
 // Both come from distinct CI-controlled trees; no remote package, pass or provider.
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {randomBytes,createHash} from 'node:crypto';
+import {randomBytes} from 'node:crypto';
 import {mkdtempSync,mkdirSync,rmSync,statSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
