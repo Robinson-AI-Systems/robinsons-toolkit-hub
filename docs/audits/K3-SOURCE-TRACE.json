@@ -107,7 +107,7 @@
       "sourceFile": "src/core/one-time-secrets.js",
       "sourceBlob": "071900c19db7d77a608c7bb65574b12b24c080fb",
       "target": "./src/one-time-secrets.js",
-      "coreBlob": "29c6b86c2f811fc5513738607c29ff19fe5fa342",
+      "coreBlob": "95af4ea50ae0c967ed245ff8e3d0f01ae5da853c",
       "kind": "adapted",
       "tests": [
         "packages/core/test/one-time-secrets.test.js",

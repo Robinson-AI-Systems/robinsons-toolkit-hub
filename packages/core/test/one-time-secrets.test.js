@@ -102,7 +102,7 @@ describe('private one-time secret adapter', () => {
     const bad=[
       {account:{id:'acct_fake'},mode:'test',kind:'setup',secret:'synthetic'},
       {account:' ',mode:'test',kind:'setup',secret:'synthetic'},
-      {account:'acct\\nforged',mode:'test',kind:'setup',secret:'synthetic'},
+      {account:'acct\nforged',mode:'test',kind:'setup',secret:'synthetic'},
       {account:'a'.repeat(257),mode:'test',kind:'setup',secret:'synthetic'},
       {account:null,mode:'production',kind:'setup',secret:'synthetic'},
       {account:null,mode:{toString(){throw Error('active mode');}},kind:'setup',secret:'synthetic'},

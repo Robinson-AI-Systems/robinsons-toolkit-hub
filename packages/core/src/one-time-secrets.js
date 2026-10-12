@@ -51,7 +51,7 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
         throw new TypeError('Secret type and value are required');
       }
       if ((account !== null && (typeof account !== 'string' ||
-          !account.trim() || account.length > 256 || /[\\x00-\\x1f\\x7f]/.test(account))) ||
+          !account.trim() || account.length > 256 || /[\x00-\x1f\x7f]/.test(account))) ||
           !['test', 'live'].includes(mode)) {
         throw new TypeError('Valid service account and test/live mode are required');
       }
