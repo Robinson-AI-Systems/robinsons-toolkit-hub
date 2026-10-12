@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { REQUIRED_RTC_SERVERS, parseFleetOrigins, parseReadTests, probeRtcFleet } from '../src/fleet-probe.js';
 import { belongsToRtcNamespace } from '../src/rtc-tool-prefix.js';
+import { matchesDeploymentPin, publicDeploymentClaim } from '../src/deployment-identity.js';
 const origin = 'https://stripe-mcp-psi.vercel.app';
 const manifest = { rtc: 1, server: 'stripe', prefix: 'stripe' };
 const respond = (body, status = 200, type = 'application/json') =>
@@ -71,8 +72,15 @@ describe('standing RTC fleet deployment acceptance', () => {
     expect(() => parseFleetOrigins('{"../bad":"https://ok.org"}')).toThrow();
   });
   it('never accepts raw pass bytes or unsolicited read-test settings', () => {
-    expect(parseReadTests('{"stripe":{"readTool":"stripe_admin_overview","passEnv":"READ_ONLY_PASS"}}'))
-      .toEqual({stripe:{readTool:'stripe_admin_overview',passEnv:'READ_ONLY_PASS'}});
+    const pin = { sha: 'a'.repeat(40), ref: 'live', environment: 'production' };
+    const plan = {stripe:{readTool:'stripe_admin_overview',passEnv:'READ_ONLY_PASS',
+      expectedDeployment: pin}};
+    expect(parseReadTests(JSON.stringify(plan))).toEqual(plan);
+    expect(() => parseReadTests(JSON.stringify({stripe: {
+      ...plan.stripe, expectedDeployment: { ...pin, extra: 'forbidden' }
+    }}))).toThrow();
+    expect(() => parseReadTests('{"stripe":{"readTool":"stripe_admin_overview","passEnv":"READ_ONLY_PASS"}}'))
+      .toThrow();
     for (const bad of ['{"stripe":{"readTool":"stripe_read","pass":"rtc_pass_unsafe"}}',
       '{"stripe":{"readTool":"stripe_read","passEnv":"test-bad"}}',
       '{"stripe":{"readTool":"../bad","passEnv":"GOOD"}}',
@@ -96,5 +104,40 @@ describe('RTC namespace preflight matches real service-advertised delimiter form
     ['stripe','stripe_bad-tool',false]
   ])('%s / %s => %s', (prefix, tool, expected) => {
     expect(belongsToRtcNamespace(prefix, tool)).toBe(expected);
+  });
+});
+
+describe('independently pinned deployed revision before authorized TEST pass use', () => {
+  const pin = { sha: 'a'.repeat(40), ref: 'live', environment: 'production' };
+  it('requires all 3 validated exact claims, not a branch guess or absent metadata', () => {
+    expect(matchesDeploymentPin(pin, pin)).toBe(true);
+    expect(matchesDeploymentPin({ ...pin, harmlessRemoteField: 42 }, pin)).toBe(true);
+    expect(matchesDeploymentPin(pin, { ...pin, unrecognizedOperatorField: 42 })).toBe(false);
+    for (const bad of [undefined, null, {}, { ...pin, sha: 'b'.repeat(40) },
+      { ...pin, ref: 'main' }, { ...pin, environment: 'preview' },
+      { ...pin, sha: 'not-sha' },
+      { ref: pin.ref, environment: pin.environment }]) {
+      expect(matchesDeploymentPin(bad, pin)).toBe(false);
+    }
+  });
+  it('never evaluates active public metadata getters or toJSON', () => {
+    let calls = 0;
+    const malicious = { get sha() { calls++; throw Error('leak'); },
+      ref: 'live', environment: 'production', toJSON() { calls++; } };
+    expect(publicDeploymentClaim(malicious)).toBeNull();
+    expect(matchesDeploymentPin(malicious, pin)).toBe(false);
+    expect(calls).toBe(0);
+    expect(publicDeploymentClaim(Object.assign(Object.create(null), pin))).toBeNull();
+  });
+  it('retains only validated neutral public claims, not credentials or provider response fields', async () => {
+    const fake = { ...manifest, deployment: { ...pin, bearer: 'not exported',
+      extra: { sensitive: 'not exported' } } };
+    const result = await probe(async () => respond(fake));
+    const stripe = result.checks.find(c => c.server === 'stripe');
+    expect(stripe).toMatchObject({ state: 'unverified', reason: 'read_only_auth_unverified',
+      deploymentClaim: pin, authenticatedReadOnly: false, fullAcceptance: false });
+    expect(JSON.stringify(result)).not.toContain('not exported');
+    expect((await probe(async () => respond(manifest))).checks.find(c => c.server === 'stripe')
+      .deploymentClaim).toBeNull();
   });
 });

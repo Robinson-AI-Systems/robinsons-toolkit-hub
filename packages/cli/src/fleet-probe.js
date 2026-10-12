@@ -1,6 +1,7 @@
 // An observation is never a certification: record hosted contract, read-only and route gates separately.
 import { validateServerUrl, boundedJson } from '../../relay/src/forward.js';
 import { assertDistinctCredentialSlots, credentialSlot } from './config.js';
+import { publicDeploymentClaim } from './deployment-identity.js';
 export const REQUIRED_RTC_SERVERS = Object.freeze([
   'stripe', 'github', 'vercel', 'neon', 'google-workspace'
 ]);
@@ -28,10 +29,13 @@ export function parseReadTests(raw) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid RTC fleet read tests');
   for (const [name, value] of Object.entries(data)) {
     if (!namePattern.test(name) || !value || Array.isArray(value) ||
-        Object.keys(value).some(k => !['readTool', 'passEnv', 'argsEnv'].includes(k)) ||
+        Object.keys(value).some(k => !['readTool', 'passEnv', 'argsEnv', 'expectedDeployment'].includes(k)) ||
         !/^[a-z][a-z0-9_]{0,199}$/.test(value.readTool || '') ||
         !/^[A-Z][A-Z0-9_]{0,99}$/.test(value.passEnv || '') ||
-        (value.argsEnv && !/^[A-Z][A-Z0-9_]{0,99}$/.test(value.argsEnv)))
+        (value.argsEnv && !/^[A-Z][A-Z0-9_]{0,99}$/.test(value.argsEnv)) ||
+        !publicDeploymentClaim(value.expectedDeployment) ||
+        Object.keys(value.expectedDeployment).some(k =>
+          !['sha', 'ref', 'environment'].includes(k)))
       throw new Error('Invalid RTC fleet read-test plan');
   }
   return data;
@@ -98,7 +102,8 @@ export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize
     pending.push({ index: checks.length, name, origin, manifest,
       httpStatus: response.status });
     checks.push(report(name, origin, 'unverified', 'read_only_auth_unverified',
-      { httpStatus: response.status, contract: true, prefix: manifest.prefix }));
+      { httpStatus: response.status, contract: true, prefix: manifest.prefix,
+        deploymentClaim: publicDeploymentClaim(manifest.deployment) }));
   }
   const byOrigin = new Map();
   const byPrefix = new Map();
@@ -120,7 +125,8 @@ export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize
       checks[entry.index] = report(entry.name, entry.origin, 'blocked',
         originCollision ? 'duplicate_deployed_origin' : 'rtc_prefix_identity_collision',
         { httpStatus: entry.httpStatus, contract: true,
-          prefix: entry.manifest.prefix });
+          prefix: entry.manifest.prefix,
+          deploymentClaim: publicDeploymentClaim(entry.manifest.deployment) });
       continue;
     }
     if (!authorize) continue;
@@ -132,7 +138,9 @@ export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize
       authorized ? 'ready' : 'unverified',
       authorized ? 'authenticated_direct_read_only' : 'read_only_auth_unverified',
       { httpStatus: entry.httpStatus, contract: true,
-        prefix: entry.manifest.prefix, authenticatedReadOnly: authorized,
+        prefix: entry.manifest.prefix,
+        deploymentClaim: publicDeploymentClaim(entry.manifest.deployment),
+        authenticatedReadOnly: authorized,
         direct: authorized });
   }
   return { schema: 1, allAccepted: false, checks };

@@ -5,6 +5,22 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**D-4 pinned TEST deployment preflight / PR #125 (as-if merged, CI pending):**
+the public CI fleet report now retains only valid nonsecret deployment
+SHA/ref/environment claims; the opt-in credential-backed fleet runner
+requires a separately verified exact pin before dispatching a TEST bearer
+to the existing agent-check. No pin, stale SHA, source-vs-live, preview,
+or malformed public claim is accepted. This remedies real previous
+absence of an exact deployed identity gate after #123 revealed RTC1
+public endpoints without authenticated acceptance. Public claims are
+self-reported, not verification of owner-controlled Vercel deployment,
+actual credentials or route. CI synthetic verification only; keep D-4
+direct/relay/Sandbox/same-pass revoke and K-3 adoption/release open.
+#124 merged at `c789dcfc4b52bebf49a69dda76f16ace32dd36e5`
+with exact-head CI green. Four substantial PRs (#121–#124) merged in
+the resumed batch; this substantive #125 is the fifth if CI passes.
+
+
 **D-4 safe TEST read tool namespace / PR #124 (as-if merged, CI pending):**
 GitHub-hosted public probe #123 established the actual Google Workspace
 contract advertises `prefix=workspace_`, while both Hub read-only TEST
