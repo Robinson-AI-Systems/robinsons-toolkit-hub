@@ -47,7 +47,7 @@ describe('K-3 authentic-upstream drift probe (offline transport fixture)',()=>{
     expect(both.testMissing).toEqual(['tests/unit/oauth-core.test.js']);
   });
   it('pins reviewed Stripe source and changed service catalog suite SHA values',()=>{
-    expect(baseline.reviewedMain).toBe('b2a1432fa6398b7f6848d84771e5af5b21d686e7');
+    expect(baseline.reviewedMain).toBe('f2de5160d94799d5425e838fa54c5702b5d93f34');
     expect(baseline.tests['tests/unit/registry.test.js']).toBe('93fbbf8e575d25f6431e27e71db48d2368a27c35');
     expect(baseline.tests['tests/unit/profiles.test.js']).toBe('716e26c5f4de9f6b7fdf894a01b1c755ba72ad06');
     expect(compareK3UpstreamTree(baseline,main,tree())).toMatchObject({unchanged:true,sourceUnchanged:true,examined:19});
