@@ -56,7 +56,8 @@ describe('.github/workflows/ci.yml', () => {
   });
   it('runs original Stripe owner HTTP suites without substituting a fake hub owner session', () => {
     const job = wf.jobs['stripe-source-owner-http'];
-    const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout'));
+    const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout') &&
+      s.with?.path === 'source-stripe');
     const sqlCheckout = wf.jobs['stripe-source-sql'].steps.find(s =>
       s.uses?.startsWith('actions/checkout'));
     expect(checkout.with.repository).toBe('Robinson-AI-Systems/stripe-mcp');
