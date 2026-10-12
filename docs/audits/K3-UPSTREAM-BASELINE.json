@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
-  "reviewedMain": "7c9e981b75806e7fbfdbfdc84622ed11ca2185a2",
+  "reviewedMain": "de56af8199fee39b20c2a1ac733562f2622dfda7",
   "reviewedAt": "2026-10-12",
   "disposition": "REVIEWED_SNAPSHOT_NOT_RELEASE",
-  "note": "Read-only authenticated GitHub tree verification at immutable Stripe main 7c9e981b75806e7fbfdbfdc84622ed11ca2185a2: exactly five of nineteen tracked reviewed blobs changed since 0e4ae2c873713e56de50d97af8e550d698eca0fe (HTTP input/wire body limits; OAuth registration Basic/public PKCE and owner suites; MCP browser CORS; source key fixture). Remaining fourteen tracked blobs were confirmed unchanged. Both mandatory authentic source SQL and owner HTTP jobs run this exact reviewed service revision. These new source changes are not certified as full portable adapter parity or real custom RTC adoption. Original portable 21-assertion fixture snapshots remain separately immutable and are NOT silently substituted with the refreshed service suite. No deployed human owner approval or shared-core release.",
+  "note": "Complete read-only nontruncated upstream Stripe Git tree inspected at immutable de56af8199fee39b20c2a1ac733562f2622dfda7: 15 direct src/core JS files total. All 11 original extracted source and 8 tracked original assertion-suite blobs are byte-identical to previously reviewed 7c9e981. Four newer service-owned core files are independently blob pinned: browser-cors.js, rtc-passes.js, rtc-http.js and rtc-route.js. They provide source transport/TEST pass/RTC routes and are NOT portable core exports or live RTC acceptance. The drift verifier rejects unreviewed new src/core modules and changed service-owned blobs. Both mandatory original Stripe SQL and owner HTTP CI jobs pin this immutable source and preserve all existing original suites. Actual TEST pass issuance/revocation and hub's three real D-4 routes, source adoption, independent human money-out approval and shared-core GitHub Release remain unverified.",
   "source": {
     "src/core/oauth.js": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
     "src/core/crypto.js": "34dce85cd4ca32553bfa2512778e68f819558de5",
@@ -27,5 +27,11 @@
     "tests/unit/write-metadata.test.js": "46cf601b1dffee8bfc23ced5bbed3be9fd8cc0ef",
     "tests/unit/write-core.test.js": "f74d93b67748b23c660ddb0425c7ca48f9721d6d",
     "tests/unit/write-contract.test.js": "7c36ab9733d1d46e728984524cf20f3aeb558924"
+  },
+  "serviceOwnedCore": {
+    "src/core/browser-cors.js": "e4b5d948a83737344c53079912dc148b4227ef60",
+    "src/core/rtc-passes.js": "81d10139ca1432afcead399b2e51c61b3b28d480",
+    "src/core/rtc-http.js": "47c1c66bdf5ef8c8b7544238344fedbe948267ac",
+    "src/core/rtc-route.js": "7833386fd04717dc137f06132c0caf3c375f6362"
   }
 }

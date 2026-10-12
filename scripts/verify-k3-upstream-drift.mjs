@@ -14,7 +14,14 @@ export function compareK3UpstreamTree(manifest,head,tree){
   }
   const changed=[],missing=[];
   const paths=new Map(tree.tree.filter(x=>x.type==='blob').map(x=>[x.path,x.sha]));
-  const expected={...manifest.source,...manifest.tests};
+  // Explicitly account for source-only modules without extracting provider policy.
+  const owned=manifest.serviceOwnedCore;
+  if(!owned||Object.keys(owned).length!==4)fail('service-owned core inventory missing');
+  for(const [path,blob] of Object.entries(owned)){
+    if(!/^src\/core\/[a-z0-9-]+\.js$/.test(path)||!sha.test(blob)||
+       Object.hasOwn(manifest.source,path))fail('invalid separately owned core module');
+  }
+  const expected={...manifest.source,...manifest.tests,...owned};
   if(Object.keys(manifest.source).length!==11||Object.keys(manifest.tests).length<8){
     fail('source or original test suite coverage was reduced');
   }
@@ -27,15 +34,23 @@ export function compareK3UpstreamTree(manifest,head,tree){
   }
   // Runtime-module drift demands adapter/source review; test-only drift demands
   // assertion and catalog reconciliation. Neither may silently count as clean.
+  // Additional new source modules are a compatibility review event, not 'clean'.
+  const sourceAdded=tree.tree.filter(x=>x.type==='blob'&&
+    /^src\/core\/[a-z0-9-]+\.js$/.test(x.path)&&!Object.hasOwn(expected,x.path))
+    .map(x=>x.path).sort();
+  const serviceOwnedChanged=changed.filter(x=>Object.hasOwn(owned,x.path));
+  const serviceOwnedMissing=missing.filter(path=>Object.hasOwn(owned,path));
   const sourceChanged=changed.filter(x=>Object.hasOwn(manifest.source,x.path));
   const testChanged=changed.filter(x=>Object.hasOwn(manifest.tests,x.path));
   const sourceMissing=missing.filter(path=>Object.hasOwn(manifest.source,path));
   const testMissing=missing.filter(path=>Object.hasOwn(manifest.tests,path));
   return Object.freeze({reviewedMain:manifest.reviewedMain,currentMain:head,
-    unchanged:missing.length===0&&changed.length===0,
-    sourceUnchanged:sourceChanged.length===0&&sourceMissing.length===0,
+    unchanged:missing.length===0&&changed.length===0&&sourceAdded.length===0,
+    sourceUnchanged:sourceChanged.length===0&&sourceMissing.length===0&&
+      serviceOwnedChanged.length===0&&serviceOwnedMissing.length===0&&sourceAdded.length===0,
     ahead:head!==manifest.reviewedMain,examined:Object.keys(expected).length,
-    missing,changed,sourceChanged,testChanged,sourceMissing,testMissing});
+    missing,changed,sourceChanged,testChanged,sourceMissing,testMissing,
+    serviceOwnedChanged,serviceOwnedMissing,sourceAdded,serviceOwnedExamined:Object.keys(owned).length});
 }
 export async function verifyK3UpstreamDrift(manifest,{fetchImpl=globalThis.fetch,signal}={}){
   if(typeof fetchImpl!=='function')fail('fetch transport unavailable');
@@ -57,7 +72,7 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
   const timer=setTimeout(()=>controller.abort(),15000);
   try{
     const report=await verifyK3UpstreamDrift(manifest,{signal:controller.signal});
-    if(!report.unchanged)fail('review required: '+JSON.stringify({missing:report.missing,changed:report.changed}));
+    if(!report.unchanged)fail('review required: '+JSON.stringify({missing:report.missing,changed:report.changed,sourceAdded:report.sourceAdded}));
     console.log('Upstream checked at '+report.currentMain+': '+report.examined+
       ' source/test blobs unchanged; still private, not release-certified.');
   }catch(error){console.error(error.message);process.exitCode=1;}
