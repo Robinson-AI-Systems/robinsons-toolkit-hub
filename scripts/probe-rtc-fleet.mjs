@@ -2,6 +2,7 @@
 // RTC fleet checks are opt-in and do not read ambient keychain credentials.
 import { readFile } from 'node:fs/promises';
 import { checkAgent } from '../packages/cli/src/agent-check.js';
+import { belongsToRtcNamespace } from '../packages/cli/src/rtc-tool-prefix.js';
 import { parseFleetOrigins, parsePinnedFleetInventory, parseReadTests, probeRtcFleet } from '../packages/cli/src/fleet-probe.js';
 async function main() {
   // Public observation is safe in CI: it reads only reviewed inventory and
@@ -23,7 +24,7 @@ async function main() {
     origins,
     authorize: authorized ? async (server, origin, manifest) => {
       const test = tests[server];
-      if (!test || !test.readTool.startsWith(manifest.prefix + '_')) return false;
+      if (!test || !belongsToRtcNamespace(manifest.prefix, test.readTool)) return false;
       const env = { ...process.env, RTOOL_SERVERS: server + '=' + origin };
       let snapshot;
       const code = await checkAgent({ server, readTool: test.readTool,
