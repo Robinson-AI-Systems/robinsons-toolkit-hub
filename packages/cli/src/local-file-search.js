@@ -20,7 +20,7 @@ const refuse = () => { throw new ToolError('Local source search refused', -32602
 
 export const LOCAL_FILE_SEARCH_TOOL = Object.freeze({
   name: 'local.file_search',
-  description: 'Bounded literal source text search in an approved folder (no symlinks, secrets or dependencies).',
+  description: 'Bounded literal source text search in an approved folder (skips symlinks and common private/dependency paths).',
   inputSchema: {
     type: 'object', additionalProperties: false,
     properties: {
@@ -35,7 +35,7 @@ export const LOCAL_FILE_SEARCH_TOOL = Object.freeze({
     idempotentHint: true, openWorldHint: false }
 });
 function skipName(name, directory) {
-  if (IGNORED.has(name) || name === '.env' || name.startsWith('.env.') ||
+  if (name.startsWith('.') || IGNORED.has(name) || name === '.env' || name.startsWith('.env.') ||
       name === '.npmrc' || name.startsWith('.rtool-create-')) return true;
   if (directory) return name.startsWith('.');
   return !ALLOWED.has(extname(name).toLowerCase());
@@ -88,6 +88,7 @@ export async function searchLocalSources({ root, dir, query, limit = 20 }) {
       }
       const data = await readSource(canonical);
       if (!data) continue;
+      if (bytes + data.bytes > MAX_BYTES) { truncated = true; break search; }
       bytes += data.bytes;
       const lines = data.body.split(/\r?\n/);
       for (let i = 0; i < lines.length; i++) {
