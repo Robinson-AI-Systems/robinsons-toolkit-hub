@@ -63,7 +63,14 @@ export function createMcpBearerAuthenticator({ getAccessToken, projectConnection
     const challenge = 'Bearer resource_metadata="' +
       publicOrigin(env) + '/.well-known/oauth-protected-resource"';
     // Never coerce duplicate/array/object headers into a valid bearer credential.
-    const header = req?.headers?.authorization;
+    let header;
+    try {
+      // Node headers may be ordinary own fields or supplied through a request
+      // getter. Hostile accessors/proxies are untrusted input, not a server 500.
+      header = req?.headers?.authorization;
+    } catch {
+      header = null;
+    }
     const match = typeof header === 'string' ? bearer.exec(header) : null;
     if (!match) {
       res.setHeader('WWW-Authenticate', challenge);
