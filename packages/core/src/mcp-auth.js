@@ -55,6 +55,60 @@ function isolatedClaims(raw,submittedToken){
   return claims;
 }
 
+
+// A single inert Node Authorization header proof used by bearer and OAuth
+// Basic flows. Reject duplicate/mixed-case normalized, distinct or raw evidence.
+// Never choose one credential among conflicting HTTP representations.
+export function authorizationHeaderEvidence(req) {
+  const invalid = {valid:false,value:null};
+  try {
+    const headers=req?.headers;
+    if(!headers || ![Object.prototype,null].includes(Object.getPrototypeOf(headers))) return invalid;
+    const descriptors=Object.getOwnPropertyDescriptors(headers);
+    let header;
+    for(const key of Reflect.ownKeys(descriptors)) {
+      if(typeof key==='string' && key.toLowerCase()==='authorization') {
+        if(key!=='authorization' || header!==undefined ||
+            !Object.hasOwn(descriptors[key],'value') ||
+            typeof descriptors[key].value!=='string') return invalid;
+        header=descriptors[key].value;
+      }
+    }
+    const distinct=req?.headersDistinct;
+    if(distinct!==undefined) {
+      if(!distinct || ![Object.prototype,null].includes(Object.getPrototypeOf(distinct))) return invalid;
+      const d=Object.getOwnPropertyDescriptors(distinct);
+      if(Reflect.ownKeys(d).some(key=>typeof key==='string' &&
+          key.toLowerCase()==='authorization' && key!=='authorization')) return invalid;
+      const auth=d.authorization;
+      if(header!==undefined) {
+        if(!auth || !Object.hasOwn(auth,'value') || !Array.isArray(auth.value) ||
+            auth.value.length!==1 || Object.getPrototypeOf(auth.value)!==Array.prototype) return invalid;
+        const one=Object.getOwnPropertyDescriptor(auth.value,'0');
+        if(!one || !Object.hasOwn(one,'value') || one.value!==header) return invalid;
+      } else if(auth!==undefined) return invalid;
+    }
+    const raw=req?.rawHeaders;
+    if(raw!==undefined) {
+      if(!Array.isArray(raw) || Object.getPrototypeOf(raw)!==Array.prototype ||
+          raw.length%2!==0 || raw.length>256) return invalid;
+      let count=0;
+      for(let i=0;i<raw.length;i+=2) {
+        const k=Object.getOwnPropertyDescriptor(raw,String(i));
+        const v=Object.getOwnPropertyDescriptor(raw,String(i+1));
+        if(!k || !v || !Object.hasOwn(k,'value') || !Object.hasOwn(v,'value') ||
+            typeof k.value!=='string' || typeof v.value!=='string') return invalid;
+        if(k.value.toLowerCase()==='authorization') {
+          count++;
+          if(v.value!==header || count>1) return invalid;
+        }
+      }
+      if((header===undefined && count!==0) || (header!==undefined && count!==1)) return invalid;
+    }
+    return {valid:true,value:header};
+  } catch { return invalid; }
+}
+
 export function createMcpBearerAuthenticator({ getAccessToken, projectConnection, env = process.env }) {
   if (typeof getAccessToken !== 'function' || typeof projectConnection !== 'function') {
     throw new TypeError('A token lookup and server-owned connection policy are required');
@@ -62,67 +116,9 @@ export function createMcpBearerAuthenticator({ getAccessToken, projectConnection
   return async function authenticate(req, res) {
     const challenge = 'Bearer resource_metadata="' +
       publicOrigin(env) + '/.well-known/oauth-protected-resource"';
-    // Never coerce duplicate/array/object headers into a valid bearer credential.
-    let header, ambiguous = false;
-    try {
-      // Node headers may be ordinary fields or request getters. Some Node
-      // transports silently collapse duplicate Authorization headers into one.
-      // Refuse contradictory headersDistinct/rawHeaders evidence even if the
-      // normalized header appears valid; do not select a preferred credential.
-      const headers = req?.headers;
-      // Header maps supplied by Node are plain own-data records. Do not
-      // invoke arbitrary normalized header getters or inherited credentials.
-      if (!headers || ![Object.prototype, null].includes(Object.getPrototypeOf(headers))) {
-        ambiguous = true;
-      } else {
-        const auth = Object.getOwnPropertyDescriptor(headers, 'authorization');
-        if (auth && !Object.hasOwn(auth, 'value')) ambiguous = true;
-        header = auth?.value;
-      }
-      const distinctHeaders = req?.headersDistinct;
-      if (distinctHeaders !== undefined) {
-        if (!distinctHeaders || ![Object.prototype, null].includes(
-          Object.getPrototypeOf(distinctHeaders))) {
-          ambiguous = true;
-        } else {
-          const auth = Object.getOwnPropertyDescriptor(distinctHeaders, 'authorization');
-          if (!auth || !Object.hasOwn(auth, 'value') || !Array.isArray(auth.value) ||
-              auth.value.length !== 1) ambiguous = true;
-          else {
-            const single = Object.getOwnPropertyDescriptor(auth.value, '0');
-            if (!single || !Object.hasOwn(single, 'value') || single.value !== header) {
-              ambiguous = true;
-            }
-          }
-        }
-      }
-      const raw = req?.rawHeaders;
-      if (raw !== undefined) {
-        if (!Array.isArray(raw) || raw.length % 2 !== 0) ambiguous = true;
-        else {
-          let count = 0;
-          for (let i = 0; i < raw.length; i += 2) {
-            const name = Object.getOwnPropertyDescriptor(raw, String(i));
-            const value = Object.getOwnPropertyDescriptor(raw, String(i + 1));
-            if (!name || !value || !Object.hasOwn(name, 'value') ||
-                !Object.hasOwn(value, 'value') || typeof name.value !== 'string' ||
-                typeof value.value !== 'string') {
-              ambiguous = true;
-              break;
-            }
-            if (name.value.toLowerCase() === 'authorization') {
-              count++;
-              if (value.value !== header) ambiguous = true;
-            }
-          }
-          if (count > 1) ambiguous = true;
-        }
-      }
-    } catch {
-      header = null;
-      ambiguous = true;
-    }
-    const match = !ambiguous && typeof header === 'string' ? bearer.exec(header) : null;
+    const evidence=authorizationHeaderEvidence(req);
+    const match=evidence.valid && typeof evidence.value==='string'
+      ? bearer.exec(evidence.value) : null;
     if (!match) {
       res.setHeader('WWW-Authenticate', challenge);
       send(res, 401, { error: 'unauthorized', error_description: 'A valid connection is required' });
