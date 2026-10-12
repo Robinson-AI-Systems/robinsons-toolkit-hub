@@ -5,6 +5,9 @@ the central hub server is not yet built; the relay's hosted **build is READY** b
 
 ## Next
 
+- **K-3bn (PR #89, as-if-merged):** portable MCP dispatch now validates and freezes the service-projected connection snapshot before await; authorization, handler context, nested reads, redaction mode and oversized durable result scope cannot drift to another tenant under async mutation. Adversarial tests reject active connection getters and mutable policy attempts. This is not authenticated source-service or real SQL adoption. K-3 private/IN_PROGRESS/NOT_READY; D-4 WAITING_ON_OWNER. **Next:** reconcile current source Stripe HTTP/OAuth changes with original assertions and release gates, without replacing RTC endpoints with native MCP routes.
+
+
 - **K-3bm (PR #88, as-if-merged):** portable guarded writes copy and recursively freeze the validated request before asynchronous reads, preview/target guards, money authorization or provider hooks. Synthetic adversarial tests prove caller mutation cannot substitute a larger amount, different target, changed confirmation or dry-run decision. No independent human approval or source-service adoption is claimed. Stripe current-source HTTP/OAuth drift still needs review. K-3 IN_PROGRESS/private/NOT_READY; D-4 WAITING_ON_OWNER. **Next:** stabilize connection identity and durable result scope across dispatch authorization boundaries.
 
 

@@ -165,7 +165,7 @@
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "144891b7126d867a1d4294ecf70dd6cac326bc38",
+      "coreBlob": "92388e288b2b430558f62c4ffb485a8ab3f2c329",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
@@ -180,7 +180,8 @@
         "portable scoped result paging refuses executable nested data, cycles and prototype-control payloads before persistence; service retains shape/redaction/SQL ownership",
         "shared inert JSON checker rejects nested active argument data before policy and handler; original provider boundary remains service-owned",
         "portable shaped responses, detail projections and scrubbed error objects must be inert before serialization, return or storage; the service owns provider redaction and tenant-scoped SQL",
-        "validated caller args are detached and frozen before asynchronous authorizeTool/handler execution, preserving confirmed write flags and requested detail; source server still owns authorization, HTTP and provider guards"
+        "validated caller args are detached and frozen before asynchronous authorizeTool/handler execution, preserving confirmed write flags and requested detail; source server still owns authorization, HTTP and provider guards",
+        "portable dispatcher copies and freezes service-projected JSON connection identity before policy, handlers and tenant-scoped result storage; source owns authoritative SQL identity and issuance"
       ]
     }
   }

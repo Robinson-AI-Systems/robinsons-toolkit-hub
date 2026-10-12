@@ -214,4 +214,39 @@ describe('transport-independent MCP dispatch adapter',()=>{
     expect(parse(await f.dispatch('example_read',args))).toEqual({value:'safe',fields:'value'});
     expect(f.readDetail).toHaveBeenCalledWith({value:'safe'},{detail:'summary',fields:'value'});
   });
+  it('binds authorization and scoped storage to the original connection across async mutations',async()=>{
+    const f=fixture({payload:{value:'X'.repeat(10000)},scope:'owned-tenant'});
+    f.authorizeTool.mockImplementationOnce(async()=>{
+      f.connection.profile='full';
+      f.connection.resultScope='unowned-tenant';
+      f.connection.mode='live';
+      return true;
+    });
+    const outcome=parse(await f.dispatch());
+    expect(outcome.handle).toMatch(/^res_/);
+    expect(f.db.putScopedResult.mock.calls[0][0].connection).toBe('owned-tenant');
+    expect(f.handlers.example_read).toHaveBeenCalledTimes(1);
+    const observed=f.handlers.example_read.mock.calls[0][1].connection;
+    expect(observed).toMatchObject({profile:'read_only',mode:'test',resultScope:'owned-tenant'});
+    expect(Object.isFrozen(observed)).toBe(true);
+    expect(observed).not.toBe(f.connection);
+  });
+  it('refuses active identities and policy attempts to modify the validated connection',async()=>{
+    const f=fixture();
+    const forged={profile:'read_only',mode:'test'};
+    let getterCalls=0;
+    Object.defineProperty(forged,'resultScope',{enumerable:true,get(){
+      getterCalls++; return 'unowned-tenant';
+    }});
+    const invalid=await f.dispatch('example_read',{}, {connection:forged});
+    expect(invalid.isError).toBe(true);
+    expect(getterCalls).toBe(0);
+    expect(f.authorizeTool).not.toHaveBeenCalled();
+    f.authorizeTool.mockImplementationOnce(async(_tool,conn)=>{
+      conn.resultScope='unowned-tenant';
+      return true;
+    });
+    expect((await f.dispatch()).isError).toBe(true);
+    expect(f.handlers.example_read).not.toHaveBeenCalled();
+  });
 });
