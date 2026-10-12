@@ -26,7 +26,7 @@ export const LOCAL_FILE_TOOLS = Object.freeze([
       properties: { root: { type: 'integer', minimum: 0 }, path: { type: 'string' } } } }
 ].map((tool) => Object.freeze({ ...tool, annotations: {
   readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false
-} })), LOCAL_FILE_CREATE_TOOL]);
+} })).concat(LOCAL_FILE_CREATE_TOOL));
 
 function relativeInput(value) {
   if (value === undefined || value === '') return '';
