@@ -2,7 +2,7 @@
 // No access to a provider, no default profile/mode and no access-token use outside the service.
 import { randomToken, hashToken, secretsMatch, verifyPkce, validRedirectUri } from './oauth.js';
 import { publicOrigin, send, paramsOf, only } from './http.js';
-import { authorizationHeaderEvidence } from './mcp-auth.js';
+import { authorizationHeaderEvidence, allowBrowserProtocol } from './mcp-auth.js';
 
 
 export const MAX_OAUTH_BODY_BYTES = 16 * 1024;
@@ -200,6 +200,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
   function resource() { return publicOrigin(env) + paths.mcp; }
   function origin() { return publicOrigin(env); }
   async function register(req, res) {
+    if (allowBrowserProtocol(req,res,{methods:['POST']})) return;
     if (!only(res, req, ['POST'])) return;
     let p;
     try { p=endpointParams(req); } catch { return bad(res,400,'invalid_client_metadata','Malformed registration'); }
@@ -236,6 +237,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       grant_types:['authorization_code','refresh_token'],response_types:['code']});
   }
   async function token(req, res) {
+    if (allowBrowserProtocol(req,res,{methods:['POST']})) return;
     if (!only(res, req, ['POST'])) return;
     let p;
     try { p=endpointParams(req); } catch { return bad(res,400,'invalid_request','Malformed token request'); }
@@ -306,6 +308,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     return bad(res,400,'unsupported_grant_type','Supported grants: authorization_code and refresh_token');
   }
   function metadata(req,res) {
+    if (allowBrowserProtocol(req,res,{methods:['GET']})) return;
     if (!only(res,req,['GET'])) return;
     const base=origin();
     return send(res,200,{issuer:base,authorization_endpoint:base+paths.authorize,
@@ -314,6 +317,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       code_challenge_methods_supported:['S256'],token_endpoint_auth_methods_supported:['client_secret_post','client_secret_basic','none']});
   }
   function resourceMetadata(req,res) {
+    if (allowBrowserProtocol(req,res,{methods:['GET']})) return;
     if (!only(res,req,['GET'])) return;
     return send(res,200,{resource:resource(),authorization_servers:[origin()]});
   }
