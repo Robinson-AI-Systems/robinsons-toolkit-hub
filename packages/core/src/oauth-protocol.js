@@ -34,16 +34,21 @@ function endpointParams(req) {
   }
   return params;
 }
+// Snapshot only ordinary indexed data. Never pass a caller-owned, mutable
+// redirect array through service SQL and echo the same reference to the client.
 function safeRedirectUris(uris) {
   if (!Array.isArray(uris) || uris.length < 1 || uris.length > 8 ||
-      Object.getPrototypeOf(uris) !== Array.prototype ||
-      Object.getOwnPropertySymbols(uris).length) return false;
+      Object.getPrototypeOf(uris) !== Array.prototype) return null;
+  const fields = Object.getOwnPropertyDescriptors(uris);
+  if (Reflect.ownKeys(fields).length !== uris.length + 1) return null;
+  const clean = [];
   for (let i = 0; i < uris.length; i++) {
-    const item = Object.getOwnPropertyDescriptor(uris, String(i));
-    if (!item || !Object.hasOwn(item, 'value') ||
-        typeof item.value !== 'string' || !validRedirectUri(item.value)) return false;
+    const item = fields[String(i)];
+    if (!item || !item.enumerable || !Object.hasOwn(item, 'value') ||
+        typeof item.value !== 'string' || !validRedirectUri(item.value)) return null;
+    clean.push(item.value);
   }
-  return new Set(uris).size === uris.length;
+  return new Set(clean).size === clean.length ? Object.freeze(clean) : null;
 }
 
 // An adapter must not persist an active/mutable OAuth row with credential
@@ -86,17 +91,18 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     if (!only(res, req, ['POST'])) return;
     let p;
     try { p=endpointParams(req); } catch { return bad(res,400,'invalid_client_metadata','Malformed registration'); }
-    if (!safeRedirectUris(p.redirect_uris)) {
+    const redirects = safeRedirectUris(p.redirect_uris);
+    if (!redirects) {
       return bad(res,400,'invalid_client_metadata','One to eight valid, distinct redirect URIs required');
     }
     if (p.token_endpoint_auth_method && p.token_endpoint_auth_method !== 'client_secret_post') {
       return bad(res,400,'invalid_client_metadata','Only client_secret_post is supported');
     }
     const id=randomToken(24), secret=randomToken(32);
-    await db.createOAuthClient({clientId:id,clientSecret:secret,redirectUris:p.redirect_uris,
+    await db.createOAuthClient({clientId:id,clientSecret:secret,redirectUris:[...redirects],
       clientName:str(p.client_name).slice(0,100)});
     return send(res,201,{client_id:id,client_secret:secret,client_secret_expires_at:0,
-      redirect_uris:p.redirect_uris,token_endpoint_auth_method:'client_secret_post',
+      redirect_uris:[...redirects],token_endpoint_auth_method:'client_secret_post',
       grant_types:['authorization_code','refresh_token'],response_types:['code']});
   }
   async function token(req, res) {
