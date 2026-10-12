@@ -52,6 +52,11 @@ export function verifyCoreSourceTrace(root,{manifest='docs/audits/K3-SOURCE-TRAC
       }
       regular(root,t);
     }
+    // Mixed revisions are allowed only when an individual source module carries
+    // an explicit immutable source commit; sourceMain remains extraction provenance.
+    if(unit.sourceRevision!==undefined && !hex40.test(unit.sourceRevision)) {
+      throw new Error('Invalid independently reviewed source revision for '+name);
+    }
     if(unit.kind==='verbatim') {
       if(unit.sourceBlob!==unit.coreBlob) {
         throw new Error('Verbatim extraction differs from pinned upstream source: '+name);

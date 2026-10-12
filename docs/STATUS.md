@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+- **K-3cg / pending PR #119:** close demonstrated portable HTTP structured-body mismatch from #116 by importing the exact byte-identical pure HTTP module from reviewed Stripe source `4fedb344c732b806dae033f87e936350a1180b77` (`src/core/http.js` blob `cc4be02...`) into the private core, including the original service's 16 KiB pre-parsed payload check and explicit raw framing helper. Pin the per-module immutable source revision in the K-3 trace rather than misrepresenting historical global extraction revision. Update genuine old-source HTTP comparison and isolated packed original HTTP consumer tests. The *host* must still enforce actual pre-parse wire length, and the upstream RTC pass modules and other adapted source have NOT been adopted or security-reviewed for current-source parity. K-3 stays private/NOT_READY, D-4 remains IN_PROGRESS.
+
+
 - **K-3cf / D-4 original RTC suites (#118, as-if-merged):** pinned original Stripe source at de56af8 now runs two genuine RTC pass/revocation/shared-rate Postgres suites and two original service RTC HTTPS/owner pass unit suites, in addition to all ten previously required original source SQL/owner HTTP suites. Each new test file has a separately enforced immutable Git blob; no fake reference substitute. These are *source-only* disposable tests, not hosted TEST connectivity, full conformance, real owner-pass revocation, service adoption or publication. K-3 private/NOT_READY, D-4 IN_PROGRESS.
 
 

@@ -43,10 +43,10 @@ try{
   const loadSource=async name=>import(pathToFileURL(
     resolve(cwd,'source-stripe/src/core/'+name+'.js')).href);
   const [original,packed]=await Promise.all([
-    Promise.all(['oauth','crypto','registry','write-contract-check'].map(loadSource)),
-    Promise.all(['oauth','crypto','registry','write-contract-check'].map(loadPacked))]);
-  const [oauth,crypto,registry,write]=original;
-  const [poauth,pcrypto,pregistry,pwrite]=packed;
+    Promise.all(['oauth','crypto','registry','write-contract-check','http'].map(loadSource)),
+    Promise.all(['oauth','crypto','registry','write-contract-check','http'].map(loadPacked))]);
+  const [oauth,crypto,registry,write,http]=original;
+  const [poauth,pcrypto,pregistry,pwrite,phttp]=packed;
   const pair=async(name,left,right)=>{
     assert.deepEqual(await outcome(right),await outcome(left),
       'Original Stripe / private package compatibility mismatch: '+name);
@@ -103,8 +103,13 @@ try{
     ()=>catalog({mergeNamespaces:()=>pregistry.mergeNamespaces([
       {tools:[declaration],handlers:{original_read:()=>sample}},
       {tools:[declaration],handlers:{original_read:()=>sample}}])}));
+  await pair('source HTTP oversized pre-parsed refusal',
+    ()=>outcome(()=>http.paramsOf({method:'POST',headers:{},body:{x:'y'.repeat(16385)}})),
+    ()=>outcome(()=>phttp.paramsOf({method:'POST',headers:{},body:{x:'y'.repeat(16385)}})));
+  assert.equal(typeof phttp.incomingBodyWithinLimit,'function');
+  comparisons++;
   console.log(JSON.stringify({source:'original independently pinned Stripe checkout',
-    artifact:'unpublished private local tarball',originalModules:4,
+    artifact:'unpublished private local tarball',originalModules:5,
     comparisons,sourceServiceAdopted:false,sqlOwnerProven:false,
     independentlyAuthenticatedMoneyConsent:false,releaseReady:false}));
 }finally{rmSync(directory,{recursive:true,force:true});}
