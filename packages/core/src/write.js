@@ -74,6 +74,10 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
     if (!args || typeof args !== 'object' || Array.isArray(args) || !isInertJsonData(args)) {
       return respond({ done: false, error: 'Invalid write arguments or confirmation flags' }, true);
     }
+    // All policy, preview, retry and provider hooks must see one immutable
+    // request. Otherwise async read/approval can rewrite args after consent.
+    try { args = frozenJsonCopy(args); }
+    catch { return respond({ done: false, error: 'Invalid write arguments or confirmation flags' }, true); }
     let confirmed = false, dryRunRequested = false;
     try {
       // Own data descriptors are required: prototype pollution and accessor
