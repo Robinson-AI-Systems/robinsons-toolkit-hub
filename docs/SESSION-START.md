@@ -27,8 +27,9 @@ Your session can end at any moment (the chat stops between actions), so the next
 ## 0a. Mandatory RTC fleet check — every session, until all custom servers pass real acceptance
 
 After §0 and **again before the five-PR handoff**, run the hosted
-`node scripts/probe-rtc-fleet.mjs` using owner-verified pinned HTTPS origins in
-`RTC_FLEET_ORIGINS` (JSON alias-to-origin map). Probe Stripe, GitHub, Vercel,
+`node scripts/probe-rtc-fleet.mjs` using the reviewed `docs/rtc-fleet-origins.json` public-host inventory.
+`RTC_FLEET_ORIGINS` (JSON alias-to-origin map) may temporarily add a **verified**
+new host, but add permanent changes to the tracked inventory in a reviewed PR. Probe Stripe, GitHub, Vercel,
 Neon, Google Workspace and any newly added custom MCP server; missing origins
 are **unverified**, not omitted. This only performs real deployed
 `GET /api/contract` requests. Never substitute GitHub source, a standard

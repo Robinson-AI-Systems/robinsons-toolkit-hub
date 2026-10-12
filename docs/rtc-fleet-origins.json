@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "servers": {
+    "stripe": "https://stripe-mcp-psi.vercel.app",
+    "github": "https://github-mcp-xi.vercel.app",
+    "vercel": null,
+    "neon": null,
+    "google-workspace": "https://google-workspace-mcp-five.vercel.app"
+  }
+}

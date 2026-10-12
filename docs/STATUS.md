@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+- **D-4g (#107, as-if-merged):** pinned public-domain RTC fleet inventory with tracked null (unconfigured) states and real start-of-session HTTP evidence; normal probe no longer requires agents to guess or independently supply deployed hostnames. Stripe public contract returned RTC 1; GitHub reachable advertised RTC 0; Google Workspace 404; Vercel and Neon remain unverified without owner-verified deploy URLs. No read_only pass, relay/Sandbox/revocation run was performed, and all D-4 acceptance stays open. Next: independent protected read_only/route acceptance and K-3 service parity.
+
+
 - **D-4f (#106, as-if-merged):** mandatory start/end deployed RTC fleet checks for Stripe, GitHub, Vercel, Neon, Google Workspace and added custom servers; executable public manifest probe and opt-in test-only direct read_only check with secret-free output. Missing deployed origins, RTC:0, 404, protected ingress, full D-4 route/revocation all remain distinct. This is not a connectivity acceptance or K-3 publication. Continue genuine protected owner-authorized tests and K-3 release dependencies.
 
 
