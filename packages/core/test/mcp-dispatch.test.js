@@ -188,4 +188,30 @@ describe('transport-independent MCP dispatch adapter',()=>{
     expect(()=>createGuardedMcpDispatcher({registry:f.registry})).toThrow(/adapters/);
     expect(()=>createGuardedMcpDispatcher({})).toThrow(/adapters/);
   });
+  it('keeps original write flags and nested data when policy mutates the caller object',async()=>{
+    const f=fixture();
+    const submitted={confirm:false,dryRun:true,nested:{amountCents:500}};
+    f.authorizeTool.mockImplementationOnce(async()=>{
+      submitted.confirm=true;
+      submitted.dryRun=false;
+      submitted.nested.amountCents=9000;
+      return true;
+    });
+    await f.dispatch('example_read',submitted);
+    const received=f.handlers.example_read.mock.calls[0][0];
+    expect(received).toEqual({confirm:false,dryRun:true,nested:{amountCents:500}});
+    expect(Object.isFrozen(received)).toBe(true);
+    expect(Object.isFrozen(received.nested)).toBe(true);
+    expect(received).not.toBe(submitted);
+  });
+  it('keeps originally approved result detail selection when the handler mutates caller input',async()=>{
+    const f=fixture();
+    const args={detail:'summary',fields:'value'};
+    f.handlers.example_read.mockImplementationOnce(async()=>{
+      args.detail='full'; args.fields='secret';
+      return {value:'safe'};
+    });
+    expect(parse(await f.dispatch('example_read',args))).toEqual({value:'safe',fields:'value'});
+    expect(f.readDetail).toHaveBeenCalledWith({value:'safe'},{detail:'summary',fields:'value'});
+  });
 });
