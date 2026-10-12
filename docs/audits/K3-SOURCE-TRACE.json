@@ -49,13 +49,14 @@
       "sourceFile": "src/core/http.js",
       "sourceBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
       "target": "./src/http.js",
-      "coreBlob": "1b2078afb1bccbb576bfb493c623067871866b7f",
-      "kind": "verbatim",
+      "coreBlob": "9b2ca1afe16a3b8f5ae6a7db8a7b6b521997324e",
+      "kind": "adapted",
       "tests": [
         "packages/core/test/http.test.js"
       ],
       "serverOwned": [
-        "host transport"
+        "host transport",
+        "Current Stripe source adds 16 KiB HTTP body caps and a wire-length preflight; this portable helper matches source utility but the service owns enforcing preflight before credential or SQL access. Original reviewed source snapshot remains independently pinned until all 19 changed/unchanged blobs are reconciled."
       ]
     },
     "./write-contract-check": {
