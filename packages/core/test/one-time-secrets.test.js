@@ -54,6 +54,40 @@ describe('private one-time secret adapter', () => {
     f.advance(600000);
     expect(await f.store.consume(id)).toBeNull();
   });
+  it('fails closed on malformed consumed SQL rows before any active field or AAD adapter', async()=>{
+    const f=fixture();
+    const {id}=await f.store.issue({account:'acct_fixture',mode:'test',kind:'setup',secret:'synthetic'});
+    const good=f.rows.get(id);
+    let accessed=0,contextCalls=0,accountCalls=0;
+    const store=createOneTimeSecretStore({...f.adapters,
+      contextFor:binding=>{contextCalls++;return f.adapters.contextFor(binding);},
+      accountFromRow:row=>{accountCalls++;return f.adapters.accountFromRow(row);}});
+    const poisoned={...good};
+    Object.defineProperty(poisoned,'mode',{enumerable:true,get(){accessed++;throw Error('private getter');}});
+    const wrong=[poisoned,{...good,id:'different'},{...good,mode:'production'},
+      {...good,kind:'setup/other'},{...good,ciphertext:{}},
+      Object.assign(Object.create({id}),good)];
+    for(const row of wrong){
+      f.db.consumeOneTimeSecret.mockResolvedValueOnce(row);
+      await expect(store.consume(id)).rejects.toThrow(/binding/);
+    }
+    expect(accessed).toBe(0);
+    expect(contextCalls).toBe(0);
+    expect(accountCalls).toBe(0);
+  });
+  it('rejects invalid consumed account and mutable AAD binding without decryption',async()=>{
+    const f=fixture();
+    const {id}=await f.store.issue({account:'acct_fixture',kind:'setup',secret:'synthetic'});
+    const returned=f.rows.get(id);
+    const bad=createOneTimeSecretStore({...f.adapters,accountFromRow:()=> 'acct\\ninvalid'});
+    await expect(bad.consume(id)).rejects.toThrow(/account/);
+    const {id:next}=await f.store.issue({account:'acct_fixture',kind:'setup',secret:'synthetic'});
+    const mutation=createOneTimeSecretStore({...f.adapters,contextFor:binding=>{
+      binding.kind='wrong';return 'unreachable';
+    }});
+    await expect(mutation.consume(next)).rejects.toThrow();
+    expect(returned).toBeTruthy();
+  });
   it('binds existing Stripe AAD to exact id, account, mode and kind; altered row fails closed', async () => {
     const f=fixture();
     const {id}=await f.store.issue({account:'acct_one',mode:'test',kind:'api',secret:'not-a-real-pass'});

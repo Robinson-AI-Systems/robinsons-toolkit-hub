@@ -107,7 +107,7 @@
       "sourceFile": "src/core/one-time-secrets.js",
       "sourceBlob": "071900c19db7d77a608c7bb65574b12b24c080fb",
       "target": "./src/one-time-secrets.js",
-      "coreBlob": "95af4ea50ae0c967ed245ff8e3d0f01ae5da853c",
+      "coreBlob": "ab6e35e31191b48cf054be732caea23cdfcf2bd9",
       "kind": "adapted",
       "tests": [
         "packages/core/test/one-time-secrets.test.js",
@@ -118,7 +118,8 @@
         "setup paths must include new issuance id without traversal; source service owns routing, SQL, account access and atomic expiry",
         "setup link must carry exactly one complete issued id as a path segment or query value; only the owning service can verify its precise parameter and access control",
         "ambiguous same-name or encoded duplicate one-time setup query selectors are denied before inserting encrypted secrets; service still validates the exact route name and atomic SQL ownership",
-        "one-time issuance validates account, TEST/LIVE mode, kind and finite ten-minute expiry clock before storage; frozen AAD bindings prevent adapter mutation while source service retains SQL and access control"
+        "one-time issuance validates account, TEST/LIVE mode, kind and finite ten-minute expiry clock before storage; frozen AAD bindings prevent adapter mutation while source service retains SQL and access control",
+        "portable consume now checks own inert SQL row fields and scalar AAD binding before decrypt; service keeps atomic expiry, row ownership and authenticated reveal"
       ]
     },
     "./oauth-protocol": {

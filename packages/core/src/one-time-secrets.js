@@ -34,6 +34,31 @@ function safeSetupPath(path, id) {
   } catch { return false; }
 }
 
+// SQL must consume atomically, but a returned row must not be executable or
+// silently refer to another secret. Normalize own data descriptors before AAD.
+function consumedRow(row, id) {
+  if (!row || typeof row !== 'object' || Array.isArray(row) ||
+      ![Object.prototype, null].includes(Object.getPrototypeOf(row)) ||
+      Object.getOwnPropertySymbols(row).length) {
+    throw new TypeError('Invalid consumed secret binding');
+  }
+  const plain=Object.create(null);
+  for (const [key, field] of Object.entries(Object.getOwnPropertyDescriptors(row))) {
+    if (['__proto__','constructor','prototype'].includes(key) ||
+        !field.enumerable || !Object.hasOwn(field,'value')) {
+      throw new TypeError('Invalid consumed secret binding');
+    }
+    plain[key]=field.value;
+  }
+  if ((plain.id !== undefined && plain.id !== id) ||
+      typeof plain.ciphertext !== 'string' || !plain.ciphertext.startsWith('v1.') ||
+      !['test','live'].includes(plain.mode) ||
+      typeof plain.kind !== 'string' || !/^[a-z][a-z0-9_-]{0,63}$/.test(plain.kind)) {
+    throw new TypeError('Invalid consumed secret binding');
+  }
+  return Object.freeze(plain);
+}
+
 export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupPathFor, accountFromRow,
   now = Date.now }) {
   if (typeof db?.addOneTimeSecret !== 'function' || typeof db?.consumeOneTimeSecret !== 'function' ||
@@ -73,9 +98,16 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
     async consume(id) {
       if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{32}$/.test(id)) return null;
       // The durable store must atomically consume only an unexpired row.
-      const row = await db.consumeOneTimeSecret(id);
-      if (!row) return null;
-      const aad = contextFor({ id, account: accountFromRow(row), mode: row.mode, kind: row.kind });
+      const returned = await db.consumeOneTimeSecret(id);
+      if (!returned) return null;
+      const row = consumedRow(returned,id);
+      const account = accountFromRow(row);
+      if (account !== null && (typeof account !== 'string' ||
+          !account.trim() || account.length > 256 || /[\x00-\x1f\x7f]/.test(account))) {
+        throw new TypeError('Invalid consumed secret account');
+      }
+      const aad = contextFor(Object.freeze({ id, account, mode:row.mode, kind:row.kind }));
+      if (typeof aad !== 'string' || !aad) throw new TypeError('Invalid consumed secret context');
       return decryptSecret(row.ciphertext, { aad, key: encryptionKey });
     }
   });
