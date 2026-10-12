@@ -129,13 +129,14 @@
       "sourceFile": "src/core/oauth-handlers.js",
       "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
       "target": "./src/oauth-protocol.js",
-      "coreBlob": "9cd42639b2252e980894c19f68f1ca75586122c2",
+      "coreBlob": "b7c3301fb2e8841946b3007c0398e1bec4f9bdf7",
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
         "packages/core/test/integration-boundary.test.js",
         "packages/core/test/oauth-compat.test.js",
-        "packages/core/test/source-oauth-http-differential.test.js"
+        "packages/core/test/source-oauth-http-differential.test.js",
+        "packages/core/test/oauth-framing-provenance.test.js"
       ],
       "serverOwned": [
         "owner login UI, account grants and refresh settings SQL",
@@ -146,7 +147,8 @@
         "Current Stripe raw HTTP length preflight is exposed as a portable OAuth transport helper; the adopting service must supply wire evidence and enforce all endpoint preflights without accessing owner SQL on failure.",
         "Confidential OAuth Basic reuses the same strict normalized/distinct/raw Authorization proof, refusing competing credentials before service-owned client SQL.",
         "Portable OAuth registration, token and public metadata expose read-only browser preflight without durable SQL; private service owner authorization page retains separate no-CORS policy.",
-        "Pre-parsed OAuth requests are inert, detached and bounded to 16 KiB semantic JSON before async SQL; actual wire length and authenticated owner approval remain service-owned."
+        "Pre-parsed OAuth requests are inert, detached and bounded to 16 KiB semantic JSON before async SQL; actual wire length and authenticated owner approval remain service-owned.",
+        "Portable handler now checks inert content framing, raw header agreement and non-duplicated body lengths before SQL; source service must independently supply authentic wire bytes and retain original HTTP assertions"
       ]
     },
     "./write": {
