@@ -141,6 +141,33 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
     const missing=copy();delete missing.baseline.rtcTests['tests/unit/rtc-passes.test.js'];
     expect(()=>validateK3SourceCIEvidence(missing)).toThrow(/inventory/);
   });
+  it('requires original SQL to run again through the private installed core',()=>{
+    const drop=copy();
+    drop.workflow.jobs['stripe-source-sql'].steps=
+      drop.workflow.jobs['stripe-source-sql'].steps.filter(step=>
+        step.name!=='Rehearse original Stripe SQL with privately installed core imports');
+    expect(()=>validateK3SourceCIEvidence(drop)).toThrow(/installed-core SQL adoption/);
+    const fake=copy();
+    fake.workflow.jobs['stripe-source-sql'].steps.find(step=>
+      step.name==='Rehearse original Stripe SQL with privately installed core imports')
+      .run='echo fake';
+    expect(()=>validateK3SourceCIEvidence(fake)).toThrow(/installed-core SQL adoption/);
+    const remote=copy();
+    remote.workflow.jobs['stripe-source-sql'].steps.find(step=>
+      step.name==='Rehearse original Stripe SQL with privately installed core imports')
+      .env.TEST_DATABASE_URL='postgresql://not-local/production';
+    expect(()=>validateK3SourceCIEvidence(remote)).toThrow(/installed-core SQL adoption/);
+    const noHub=copy();
+    noHub.workflow.jobs['stripe-source-sql'].steps=
+      noHub.workflow.jobs['stripe-source-sql'].steps.filter(step=>
+        step.name!=='Checkout private Toolkit source for installed-core SQL rehearsal');
+    expect(()=>validateK3SourceCIEvidence(noHub)).toThrow(/checkout/);
+    const noInstall=copy();
+    noInstall.workflow.jobs['stripe-source-sql'].steps=
+      noInstall.workflow.jobs['stripe-source-sql'].steps.filter(step=>
+        step.name!=='Install Toolkit private package tooling without lifecycle scripts');
+    expect(()=>validateK3SourceCIEvidence(noInstall)).toThrow(/package tooling/);
+  });
   it('requires an actual original Stripe handler-import substitution test',()=>{
     const missing=copy();
     missing.workflow.jobs['stripe-source-owner-http'].steps=
