@@ -68,9 +68,14 @@ export async function searchLocalSources({ root, dir, query, limit = 20 }) {
   search: while (queue.length) {
     if (++dirs > MAX_DIRS) { truncated = true; break; }
     const current = queue.shift();
-    let names;
-    try { names = await readdir(current, { withFileTypes: true }); }
-    catch { truncated = true; continue; }
+    const names = [];
+    try {
+      const directory = await opendir(current);
+      for await (const entry of directory) {
+        if (names.length >= MAX_ENTRIES_PER_DIR) { truncated = true; break; }
+        names.push(entry);
+      }
+    } catch { truncated = true; continue; }
     names.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of names) {
       const directory = entry.isDirectory();
