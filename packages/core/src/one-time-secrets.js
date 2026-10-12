@@ -59,6 +59,29 @@ function consumedRow(row, id) {
   return Object.freeze(plain);
 }
 
+// Defensive second-line expiry guard for source SQL rows that include an
+// expiration. The service must still atomically consume only unexpired rows:
+// absence of a timestamp here is NOT proof that its SQL policy ran.
+function assertConsumedExpiry(row, now) {
+  const names=['expiresAt','expires_at'].filter(name=>Object.hasOwn(row,name));
+  if (!names.length) return;
+  const clock=now();
+  if (!Number.isSafeInteger(clock) || clock<0 || clock>8640000000000000) {
+    throw new TypeError('Invalid consumed secret clock');
+  }
+  let expected=null;
+  for (const name of names) {
+    let stamp;
+    try { stamp=Date.prototype.getTime.call(row[name]); }
+    catch { throw new TypeError('Invalid consumed secret expiry'); }
+    if (!Number.isSafeInteger(stamp) || stamp<=clock ||
+        expected!==null && stamp!==expected) {
+      throw new TypeError('Expired or inconsistent consumed secret expiry');
+    }
+    expected=stamp;
+  }
+}
+
 export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupPathFor, accountFromRow,
   now = Date.now }) {
   if (typeof db?.addOneTimeSecret !== 'function' || typeof db?.consumeOneTimeSecret !== 'function' ||
@@ -69,6 +92,9 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
   if (!Buffer.isBuffer(encryptionKey) || encryptionKey.length !== 32) {
     throw new TypeError('Explicit 32-byte encryption key required');
   }
+  // Never retain an alias to an owner-owned mutable Buffer. Key rotation is a
+  // new authenticated store instance, not mutation of an active key handle.
+  const key=Buffer.from(encryptionKey);
   return Object.freeze({
     async issue({ account = null, mode = 'test', kind, secret }) {
       if (typeof kind !== 'string' || !/^[a-z][a-z0-9_-]{0,63}$/.test(kind) ||
@@ -91,7 +117,7 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
       if (typeof aad !== 'string' || !aad || !safeSetupPath(path, id)) {
         throw new TypeError('A service-bound encryption context and relative setup route are required');
       }
-      const ciphertext = encryptSecret(secret, { aad, key: encryptionKey });
+      const ciphertext = encryptSecret(secret, { aad, key });
       await db.addOneTimeSecret({ ...bound, ciphertext, expiresAt: new Date(clock + 600000) });
       return { id, setupPath: path };
     },
@@ -101,6 +127,7 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
       const returned = await db.consumeOneTimeSecret(id);
       if (!returned) return null;
       const row = consumedRow(returned,id);
+      assertConsumedExpiry(row, now);
       const account = accountFromRow(row);
       if (account !== null && (typeof account !== 'string' ||
           !account.trim() || account.length > 256 || /[\x00-\x1f\x7f]/.test(account))) {
@@ -108,7 +135,7 @@ export function createOneTimeSecretStore({ db, encryptionKey, contextFor, setupP
       }
       const aad = contextFor(Object.freeze({ id, account, mode:row.mode, kind:row.kind }));
       if (typeof aad !== 'string' || !aad) throw new TypeError('Invalid consumed secret context');
-      return decryptSecret(row.ciphertext, { aad, key: encryptionKey });
+      return decryptSecret(row.ciphertext, { aad, key });
     }
   });
 }
