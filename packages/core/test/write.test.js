@@ -131,6 +131,35 @@ describe('source-equivalent private guarded write lifecycle',()=>{
     expect(parse(await allow.op.handler({confirm:true},allow.ctx)).confirmed).toBe(true);
     expect(allow.log.at(-1)).toMatchObject({amountCents:1000,currency:'usd',direction:'out'});
   });
+  it('uses detached immutable ownership and money preview across asynchronous service hooks',async()=>{
+    const decision={allowed:true,ownership:{tenant:'tenant-a',resource:{id:'owned'}}};
+    const money={previewLine:'Debit fixture funds',amountCents:1000,currency:'usd',direction:'out'};
+    const beforeApply=vi.fn(async ({prepared})=>{
+      expect(prepared.amountCents).toBe(1000);
+      expect(prepared.previewLine).toBe('Debit fixture funds');
+      expect(Object.isFrozen(prepared)).toBe(true);
+      return {accepted:true};
+    });
+    const f=fixture({
+      targetGuard:vi.fn(async()=>decision),
+      prepare:vi.fn(async()=>money),
+      summarize:vi.fn(async(_before,_args,_ctx,guard)=>{
+        expect(Object.isFrozen(guard.ownership.resource)).toBe(true);
+        expect(guard.ownership.resource.id).toBe('owned');
+        decision.ownership.resource.id='different-account';
+        money.amountCents=999999;
+        money.previewLine='Tampered';
+        return 'Verified fixture change';
+      }),
+      beforeApply,afterApply:vi.fn(async()=>{})
+    });
+    const outcome=parse(await f.op.handler({confirm:true},f.ctx));
+    expect(outcome).toMatchObject({done:true,confirmed:true});
+    expect(outcome.summary).toContain('Debit fixture funds');
+    expect(beforeApply).toHaveBeenCalledTimes(1);
+    expect(f.log.at(-1)).toMatchObject({amountCents:1000,currency:'usd',direction:'out'});
+    expect(f.hooks.apply).toHaveBeenCalledTimes(1);
+  });
   it('does not call provider if intent record fails; uncertain outcomes are not successes',async()=>{
     const f=fixture();
     f.ctx.db.recordChange.mockRejectedValueOnce(new Error('database down'));
