@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
-  "reviewedMain": "587ad2e9eb7cb2a1e8f3a567c4ec8c827a8ae2f6",
+  "reviewedMain": "e3c5b34bccabec11328d62f4ca45145163772486",
   "reviewedAt": "2026-10-11",
   "disposition": "REVIEWED_SNAPSHOT_NOT_RELEASE",
-  "note": "Eleven source modules match the older K-3 extraction provenance exactly. Test suites pinned here are additional drift surfaces; this is not original-suite execution or source-service adoption.",
+  "note": "Stripe main e3c5b34 reviewed: all 11 core source blobs byte-unchanged; two original service unit suites changed only tool-catalog expectations (registry 186 -> 192 tools / 92 -> 94 writes; homepage 90/91/94 -> 94/95/98). No original portable assertion bodies or shared-core semantics changed. This is not service SQL, authenticated owner approval or release evidence.",
   "source": {
     "src/core/oauth.js": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
     "src/core/crypto.js": "34dce85cd4ca32553bfa2512778e68f819558de5",
@@ -22,8 +22,8 @@
     "tests/unit/oauth-core.test.js": "fb3a616a02f775f94a9d5b9f06caff465dc1f712",
     "tests/unit/oauth-handlers.test.js": "10cf67ca0da2a608c5e7f70d3931b68bef6683ba",
     "tests/unit/keys.test.js": "b05a1fa49019d9bbcdfac23fb0ebcc286a7a23a9",
-    "tests/unit/registry.test.js": "ee0fa4ccbae9d685be7fd9d8bacf11cfeb27b948",
-    "tests/unit/profiles.test.js": "b24803fc0d276556ae04fc526cb19a83ce831cf8",
+    "tests/unit/registry.test.js": "9fca18c3f8180018c42e3f99b1f825622d215984",
+    "tests/unit/profiles.test.js": "e3732a61059d11095a6441e8e3538f799bc7924d",
     "tests/unit/write-metadata.test.js": "46cf601b1dffee8bfc23ced5bbed3be9fd8cc0ef",
     "tests/unit/write-core.test.js": "f74d93b67748b23c660ddb0425c7ca48f9721d6d",
     "tests/unit/write-contract.test.js": "7c36ab9733d1d46e728984524cf20f3aeb558924"

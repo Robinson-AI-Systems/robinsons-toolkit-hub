@@ -24,10 +24,17 @@ export function compareK3UpstreamTree(manifest,head,tree){
     if(!actual)missing.push(path);
     else if(actual!==blob)changed.push({path,expected:blob,actual});
   }
+  // Runtime-module drift demands adapter/source review; test-only drift demands
+  // assertion and catalog reconciliation. Neither may silently count as clean.
+  const sourceChanged=changed.filter(x=>Object.hasOwn(manifest.source,x.path));
+  const testChanged=changed.filter(x=>Object.hasOwn(manifest.tests,x.path));
+  const sourceMissing=missing.filter(path=>Object.hasOwn(manifest.source,path));
+  const testMissing=missing.filter(path=>Object.hasOwn(manifest.tests,path));
   return Object.freeze({reviewedMain:manifest.reviewedMain,currentMain:head,
     unchanged:missing.length===0&&changed.length===0,
-    ahead:head!==manifest.reviewedMain,
-    examined:Object.keys(expected).length,missing,changed});
+    sourceUnchanged:sourceChanged.length===0&&sourceMissing.length===0,
+    ahead:head!==manifest.reviewedMain,examined:Object.keys(expected).length,
+    missing,changed,sourceChanged,testChanged,sourceMissing,testMissing});
 }
 export async function verifyK3UpstreamDrift(manifest,{fetchImpl=globalThis.fetch,signal}={}){
   if(typeof fetchImpl!=='function')fail('fetch transport unavailable');
