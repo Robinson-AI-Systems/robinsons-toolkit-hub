@@ -500,7 +500,8 @@
         "#126 (opt-in bounded local file reads, partial)",
         "#127 (opt-in bounded read-only Git inspection, partial)",
         "#128 (confirmed create-only file output, partial)",
-        "#129 (bounded owner-scoped source search partial)"
+        "#129 (bounded owner-scoped source search partial)",
+        "#130 (confirmed hash-verified local file edits, partial)"
       ]
     },
     {
