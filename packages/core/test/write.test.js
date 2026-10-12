@@ -74,7 +74,7 @@ describe('source-equivalent private guarded write lifecycle',()=>{
     expect(invalid.hooks.apply).not.toHaveBeenCalled();
   });
   it('refuses unscoped, padded and control-character account identities before reads',async()=>{
-    for(const tenant of ['','  ',' tenant-a','tenant-a ','tenant\\nother',
+    for(const tenant of ['','  ',' tenant-a','tenant-a ','tenant\nother',
       'a'.repeat(257)]) {
       const f=fixture();
       const result=parse(await f.op.handler({confirm:true},{...f.ctx,
@@ -109,7 +109,7 @@ describe('source-equivalent private guarded write lifecycle',()=>{
     expect(parse(await permitted.op.handler({confirm:true},permitted.ctx)).done).toBe(true);
   });
   it('denies unsafe and oversized provider retry identifiers before applying changes',async()=>{
-    for(const key of ['rmcp_has space','rmcp_bad\\nkey','rmcp_bad\\tkey',
+    for(const key of ['rmcp_has space','rmcp_bad\nkey','rmcp_bad\tkey',
       'rmcp_'+ 'x'.repeat(260)]) {
       const f=fixture({idempotency:()=>key});
       const result=parse(await f.op.handler({confirm:true},f.ctx));
