@@ -179,3 +179,22 @@ describe('portable MCP bearer boundary', () => {
     expect(() => createMcpBearerAuthenticator({getAccessToken:()=>null})).toThrow(/required/);
   });
 });
+
+describe('shared source-bound Authorization header evidence',()=>{
+  it('rejects case-aliased normalized and inconsistent raw headers before bearer lookup',async()=>{
+    const f=fixture(),auth='Bearer '+token;
+    for(const req of [
+      {headers:{authorization:auth,Authorization:auth}},
+      {headers:{Authorization:auth}},
+      {headers:{authorization:auth},headersDistinct:{Authorization:[auth]}},
+      {headers:{authorization:auth},rawHeaders:[]},
+      {headers:{authorization:auth},rawHeaders:['Authorization',auth,'AUTHORIZATION',auth]},
+      {headers:{authorization:auth},rawHeaders:new Array(258).fill('Authorization')}
+    ]){
+      const {res}=response();
+      expect(await f.authenticate(req,res)).toBeNull();
+      expect(res.statusCode).toBe(401);
+    }
+    expect(f.getAccessToken).not.toHaveBeenCalled();
+  });
+});
