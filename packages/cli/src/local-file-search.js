@@ -1,13 +1,14 @@
 // Literal source search under an owner-opted-in canonical local root.
 // No external grep process, regex execution, symlink traversal or network.
 import { constants } from 'node:fs';
-import { open, readdir, realpath, stat } from 'node:fs/promises';
+import { open, opendir, realpath, stat } from 'node:fs/promises';
 import { extname, join, relative, sep } from 'node:path';
 import { ToolError } from './http.js';
 
 const MAX_MATCHES = 25;
 const MAX_FILES = 400;
 const MAX_DIRS = 200;
+const MAX_ENTRIES_PER_DIR = 500;
 const MAX_BYTES = 512 * 1024;
 const PER_FILE = 64 * 1024;
 const IGNORED = new Set(['.git', 'node_modules', '.next', 'dist', 'build',
