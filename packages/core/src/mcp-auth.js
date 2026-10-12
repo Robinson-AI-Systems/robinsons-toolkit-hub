@@ -62,6 +62,12 @@ function isolatedClaims(raw,submittedToken){
 export function authorizationHeaderEvidence(req) {
   const invalid = {valid:false,value:null};
   try {
+    // Node can expose inherited transport getters, but an adversarial caller
+    // must not install own executable request transport properties.
+    for(const field of ['headers','headersDistinct','rawHeaders']) {
+      const descriptor=Object.getOwnPropertyDescriptor(req,field);
+      if(descriptor && !Object.hasOwn(descriptor,'value')) return invalid;
+    }
     const headers=req?.headers;
     if(!headers || ![Object.prototype,null].includes(Object.getPrototypeOf(headers))) return invalid;
     const descriptors=Object.getOwnPropertyDescriptors(headers);
