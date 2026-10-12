@@ -90,3 +90,22 @@ export async function probeRtcFleet({ origins = {}, fetchImpl = fetch, authorize
   }
   return { schema: 1, allAccepted: false, checks };
 }
+
+/** Pinned public endpoints are data, never credentials or attestations. */
+export function parsePinnedFleetInventory(raw) {
+  let data;
+  try { data = JSON.parse(raw); } catch { throw new Error('Invalid pinned fleet inventory'); }
+  if (data?.version !== 1 || !data.servers || typeof data.servers !== 'object' ||
+      Array.isArray(data.servers) ||
+      Object.keys(data).some(k => !['version', 'servers'].includes(k)))
+    throw new Error('Invalid pinned fleet inventory schema');
+  for (const name of REQUIRED_RTC_SERVERS)
+    if (!Object.hasOwn(data.servers, name)) throw new Error('Missing mandatory custom RTC server');
+  const targets = {};
+  for (const [name, url] of Object.entries(data.servers)) {
+    if (!namePattern.test(name) || (url !== null && typeof url !== 'string'))
+      throw new Error('Invalid pinned fleet entry');
+    if (url !== null) targets[name] = validateServerUrl(url);
+  }
+  return targets;
+}

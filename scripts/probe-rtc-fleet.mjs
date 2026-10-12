@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 // RTC fleet checks are opt-in and do not read ambient keychain credentials.
+import { readFile } from 'node:fs/promises';
 import { checkAgent } from '../packages/cli/src/agent-check.js';
-import { parseFleetOrigins, parseReadTests, probeRtcFleet } from '../packages/cli/src/fleet-probe.js';
+import { parseFleetOrigins, parsePinnedFleetInventory, parseReadTests, probeRtcFleet } from '../packages/cli/src/fleet-probe.js';
 async function main() {
   if (process.argv.length > 3 ||
       (process.argv.length === 3 && process.argv[2] !== '--authorized-read-only'))
     throw new Error('Invalid options');
   const authorized = process.argv[2] === '--authorized-read-only';
-  const origins = parseFleetOrigins(process.env.RTC_FLEET_ORIGINS);
+  const pinned = parsePinnedFleetInventory(await readFile(
+    new URL('../docs/rtc-fleet-origins.json', import.meta.url), 'utf8'));
+  // Environment only adds or overrides fixed owner-verified HTTPS endpoints;
+  // it never drops mandatory servers from the snapshot.
+  const origins = { ...pinned, ...parseFleetOrigins(process.env.RTC_FLEET_ORIGINS) };
   const tests = authorized ? parseReadTests(process.env.RTC_FLEET_READ_TESTS) : {};
   const result = await probeRtcFleet({
     origins,
