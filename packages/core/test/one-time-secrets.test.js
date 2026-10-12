@@ -96,6 +96,40 @@ describe('private one-time secret adapter', () => {
     const successful=await f.store.issue({kind:'setup',secret:'fixture-data'});
     expect(successful.setupPath).toBe('/api/stripe/setup?show='+successful.id);
   });
+
+  it('refuses invalid context bindings and clocks before crypto, setup route or durable storage', async()=>{
+    const f=fixture();
+    const bad=[
+      {account:{id:'acct_fake'},mode:'test',kind:'setup',secret:'synthetic'},
+      {account:' ',mode:'test',kind:'setup',secret:'synthetic'},
+      {account:'acct\nforged',mode:'test',kind:'setup',secret:'synthetic'},
+      {account:'a'.repeat(257),mode:'test',kind:'setup',secret:'synthetic'},
+      {account:null,mode:'production',kind:'setup',secret:'synthetic'},
+      {account:null,mode:{toString(){throw Error('active mode');}},kind:'setup',secret:'synthetic'},
+      {account:null,mode:'test',kind:'setup/other',secret:'synthetic'},
+      {account:null,mode:'test',kind:'UPPER',secret:'synthetic'}
+    ];
+    for(const input of bad) await expect(f.store.issue(input)).rejects.toThrow();
+    expect(f.db.addOneTimeSecret).not.toHaveBeenCalled();
+    for(const timestamp of [NaN,Infinity,-1,8640000000000000,1.5]) {
+      const store=createOneTimeSecretStore({...f.adapters,now:()=>timestamp});
+      await expect(store.issue({kind:'setup',secret:'synthetic'})).rejects.toThrow(/clock/);
+    }
+    expect(f.db.addOneTimeSecret).not.toHaveBeenCalled();
+  });
+  it('freezes the exact AAD binding against adapter mutation before persistence',async()=>{
+    const f=fixture();
+    const tampering=createOneTimeSecretStore({...f.adapters,
+      contextFor:bound=>{bound.account='changed';return 'synthetic-aad';}});
+    await expect(tampering.issue({account:'acct_fixture',kind:'setup',secret:'synthetic'}))
+      .rejects.toThrow();
+    expect(f.db.addOneTimeSecret).not.toHaveBeenCalled();
+    const issued=await f.store.issue({account:'acct_fixture',mode:'live',
+      kind:'provider_key',secret:'synthetic-live-context'});
+    expect(await f.store.consume(issued.id)).toBe('synthetic-live-context');
+    // Encrypted context binding alone does not authorize LIVE account operations.
+  });
+
   it('requires one exact issued identifier in a path segment or query value', async () => {
     const f=fixture();
     const invalid=[
