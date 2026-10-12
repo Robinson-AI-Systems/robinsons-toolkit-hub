@@ -19,11 +19,14 @@ export function verifyCoreAssertionCoverage(dir=root) {
     ledger.sourceMain!==trace.sourceMain||ledger.status!=='INCOMPLETE_SERVER_ADOPTION'){
     throw new Error('Unreviewed source assertion baseline or completion claim');
   }
-  const verbatim=Object.entries(trace.modules).filter(([,v])=>v.kind==='verbatim');
+  const pinned=Object.entries(trace.modules).filter(([name,unit])=>
+    unit.kind==='verbatim'||name==='./http'&&unit.kind==='adapted'&&
+    /^[0-9a-f]{40}$/.test(unit.sourceRevision||'')&&
+    unit.sourceBlob!==unit.coreBlob);
   const covered=Object.keys(ledger.modules||{});
-  if(verbatim.length!==covered.length||verbatim.some(([name])=>!covered.includes(name))||
-      covered.some(name=>trace.modules[name]?.kind!=='verbatim')){
-    throw new Error('Assertion ledger must cover every and only verbatim core export');
+  if(pinned.length!==covered.length||pinned.some(([name])=>!covered.includes(name))||
+      covered.some(name=>!pinned.some(([entry])=>entry===name))){
+    throw new Error('Assertion ledger must cover all verbatim and explicitly reviewed HTTP exports');
   }
   let portable=0,serverOwned=0;
   for(const [name,entry] of Object.entries(ledger.modules)){
@@ -63,7 +66,7 @@ export function verifyCoreAssertionCoverage(dir=root) {
       sourceTitles.add(c.title);serverOwned++;
     }
   }
-  return {portable,serverOwned,modules:verbatim.length,
+  return {portable,serverOwned,modules:pinned.length,
     releaseReady:false,sourceMain:ledger.sourceMain};
 }
 if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)){

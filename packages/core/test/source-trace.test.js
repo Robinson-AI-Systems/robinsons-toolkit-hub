@@ -33,8 +33,8 @@ function fixture(run){
 describe('pinned K-3 source provenance and incomplete-release gate',()=>{
   it('pins real Stripe source hashes across every public core module',()=>{
     const result=verifyCoreSourceTrace(repo);
-    expect(result.verbatim).toBe(5);
-    expect(result.adapted).toBe(6);
+    expect(result.verbatim).toBe(4);
+    expect(result.adapted).toBe(7);
     expect(result.releaseReady).toBe(false);
   });
   it('hashes exact Git blobs rather than normalized JS text',()=>{

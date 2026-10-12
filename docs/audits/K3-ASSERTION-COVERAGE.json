@@ -3,7 +3,7 @@
   "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
   "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
   "status": "INCOMPLETE_SERVER_ADOPTION",
-  "note": "Literal upstream case titles and conservative expect-count floors reviewed at pinned source. This gate prevents silently dropping portable cases; it does not prove identical assertion bodies, SQL semantics or server adoption. Source files themselves are not downloaded by CI. HTTP has no dedicated upstream unit suite; its helper assertions are locally derived and upstream entrypoint tests remain a service-owned gap.",
+  "note": "Literal upstream case titles and conservative expect-count floors reviewed at pinned source. This gate prevents silently dropping portable cases; it does not prove identical assertion bodies, SQL semantics or server adoption. Source files themselves are not downloaded by CI. HTTP has no dedicated upstream unit suite; its helper assertions are locally derived and upstream entrypoint tests remain a service-owned gap. Five security assertion-bearing exports remain tracked (four verbatim and one explicitly reviewed, safety-adapted HTTP leaf). The HTTP local tests intentionally do not claim copied original suite bodies; original Stripe HTTP suites remain mandatory.",
   "modules": {
     "./oauth": {
       "sourceTest": "tests/unit/oauth-core.test.js",
@@ -119,7 +119,7 @@
     "./http": {
       "sourceTest": "tests/unit/oauth-handlers.test.js",
       "coreTest": "packages/core/test/http.test.js",
-      "note": "No direct upstream HTTP helper suite: local helper behavior tests exercise protocol invariants observed through source OAuth endpoints; case bodies are not claimed to be upstream copies.",
+      "note": "No direct upstream HTTP helper suite: local helper behavior tests exercise protocol invariants observed through source OAuth endpoints; case bodies are not claimed to be upstream copies. Reviewed source blob is separate from safety-adapted core blob. Keep all five baseline helper cases and added active-input denials.",
       "portable": [
         {
           "title": "accepts only configured HTTPS origins, never caller Host headers",

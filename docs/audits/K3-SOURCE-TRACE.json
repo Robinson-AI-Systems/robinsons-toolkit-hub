@@ -49,7 +49,7 @@
       "sourceFile": "src/core/http.js",
       "sourceBlob": "cc4be02fe0a1ae00a286800a571030a7f57ceb26",
       "target": "./src/http.js",
-      "coreBlob": "6d278ee9e1904f283131c61a98a52842a958344c",
+      "coreBlob": "5308089d46ca42a07106975de580f8df378f7d8b",
       "kind": "adapted",
       "tests": [
         "packages/core/test/http.test.js"

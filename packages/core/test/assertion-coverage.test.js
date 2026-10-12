@@ -23,7 +23,7 @@ function fixture(run){
   }finally{rmSync(dir,{recursive:true,force:true});}
 }
 describe('offline original source assertion inventory',()=>{
-  it('covers five verbatim exports without claiming server adoption or release',()=>{
+  it('covers four verbatim and one reviewed adapted HTTP export without claiming release',()=>{
     expect(verifyCoreAssertionCoverage(repo)).toMatchObject({
       modules:5,portable:21,serverOwned:4,releaseReady:false
     });

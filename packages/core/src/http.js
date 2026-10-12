@@ -45,7 +45,7 @@ function boundedParsedJson(body) {
     const count=array?value.length:0;
     if(array&&(count>1024||Object.keys(descriptors).length!==count+1))
       throw new TypeError('Unsafe JSON array');
-    const output=array?[]:Object.create(null);
+    const output=array?[]:{};
     for(const [name,field] of Object.entries(descriptors)){
       if(array&&name==='length')continue;
       if(++fields>2048||!field.enumerable||!Object.hasOwn(field,'value')||
