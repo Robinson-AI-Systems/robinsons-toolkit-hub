@@ -29,6 +29,29 @@ describe('K-3 authentic-upstream drift probe (offline transport fixture)',()=>{
     expect(result.missing).toEqual(['tests/unit/oauth-handlers.test.js']);
     expect(result.unchanged).toBe(false);
   });
+  it('classifies upstream runtime drift separately from service-catalog assertion drift',()=>{
+    const source=Object.keys(baseline.source)[0];
+    const suite='tests/unit/registry.test.js';
+    const t=tree();
+    t.tree.find(x=>x.path===suite).sha='a'.repeat(40);
+    const onlyCatalog=compareK3UpstreamTree(baseline,main,t);
+    expect(onlyCatalog).toMatchObject({unchanged:false,sourceUnchanged:true,
+      sourceChanged:[],sourceMissing:[],testMissing:[]});
+    expect(onlyCatalog.testChanged.map(x=>x.path)).toEqual([suite]);
+    t.tree.find(x=>x.path===source).sha='b'.repeat(40);
+    t.tree=t.tree.filter(x=>x.path!=='tests/unit/oauth-core.test.js');
+    const both=compareK3UpstreamTree(baseline,main,t);
+    expect(both.sourceUnchanged).toBe(false);
+    expect(both.sourceChanged.map(x=>x.path)).toEqual([source]);
+    expect(both.testChanged.map(x=>x.path)).toEqual([suite]);
+    expect(both.testMissing).toEqual(['tests/unit/oauth-core.test.js']);
+  });
+  it('pins reviewed Stripe source and changed service catalog suite SHA values',()=>{
+    expect(baseline.reviewedMain).toBe('e3c5b34bccabec11328d62f4ca45145163772486');
+    expect(baseline.tests['tests/unit/registry.test.js']).toBe('9fca18c3f8180018c42e3f99b1f825622d215984');
+    expect(baseline.tests['tests/unit/profiles.test.js']).toBe('e3732a61059d11095a6441e8e3538f799bc7924d');
+    expect(compareK3UpstreamTree(baseline,main,tree())).toMatchObject({unchanged:true,sourceUnchanged:true,examined:19});
+  });
   it('rejects truncated trees, invalid baseline, reduced inventory and transport failures',async()=>{
     expect(()=>compareK3UpstreamTree(baseline,main,{...tree(),truncated:true})).toThrow(/incomplete/);
     expect(()=>compareK3UpstreamTree({...baseline,tests:{}},main,tree())).toThrow(/reduced/);

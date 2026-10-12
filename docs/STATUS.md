@@ -5,6 +5,9 @@ the central hub server is not yet built; the relay server is built but not deplo
 
 ## Next
 
+- **K-3aj (PR #58, as-if-merged):** reconciled live Stripe main e3c5b34 with the pinned 19-path K-3 source/test inventory: all 11 core source module blobs unchanged; registry and profile unit-suite blobs changed only catalog counts/tool names following new G-5 features. Reviewed and pinned both updated test suites, preserving the 21 portable original assertion bodies and four source-owned HTTP bodies. Drift checker now differentiates source-file changes, test-suite changes and missing files without treating test-only drift as release permission; CI regression covers each classification. K-3 IN_PROGRESS/private, D-4 WAITING_ON_OWNER. **Next:** actual SQL/service adapter proof and remaining release prerequisites.
+
+
 - **K-3ai (PR #57, as-if-merged):** bearer gate now refuses non-string/duplicate Authorization headers without invoking the lookup and catches durable-token database outages before any identity reaches dispatch, returning generic HTTP 503 rather than leaking provider SQL errors or falsely labeling credentials revoked. Tests prove no policy call, no tokens in replies and preserved invalid-token 401 for ordinary denials. This intentionally strengthens the portable transport seam; source-service outages and authorization remain service-owned. K-3 IN_PROGRESS/private; D-4 WAITING_ON_OWNER. **Next:** source-owned SQL query parity and OAuth claim compatibility.
 
 
