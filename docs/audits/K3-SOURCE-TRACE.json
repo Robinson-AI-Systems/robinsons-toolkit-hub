@@ -88,7 +88,7 @@
       "sourceFile": "src/core/mcp-auth.js",
       "sourceBlob": "eea535069b2179dfa74ed4ad101abacd5789dea0",
       "target": "./src/mcp-auth.js",
-      "coreBlob": "34525c7f6fbecb6cbd98a4bf082bc27c4fc33825",
+      "coreBlob": "7adebc2c3992b4073e3d84de48f65891f46f24f5",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-auth.test.js",
@@ -100,7 +100,8 @@
         "adapter projection remains service-authored; core now refuses credential-named fields, echoed bearer, active getters, mutable nested identities and oversized claims",
         "core rejects coerced duplicate bearer headers and treats token-store outage as sanitized 503; source transport adapts independently",
         "untrusted Authorization request/header getters or proxies are sanitized to bearer 401 before store access; service transport still owns actual parsed Node headers",
-        "portable bearer guard rejects duplicate or contradictory Authorization headers from Node headersDistinct/rawHeaders without durable token lookup; source owns actual HTTP transport and authorization policy"
+        "portable bearer guard rejects duplicate or contradictory Authorization headers from Node headersDistinct/rawHeaders without durable token lookup; source owns actual HTTP transport and authorization policy",
+        "portable normalized, distinct and raw bearer header fields require own data descriptors; source Node transport and token SQL remain service-owned"
       ]
     },
     "./one-time-secrets": {
