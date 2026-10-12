@@ -21,3 +21,18 @@ Run through `.github/workflows/ci.yml` on PR and main. The job fails on inaccess
 **K-3az reviewed source refresh (2026-10-11):** independently compared Stripe main `f2de5160d94799d5425e838fa54c5702b5d93f34` to reviewed `b2a1432f`: 13 subsequent commits changed service-owned admin tools/tests, documentation and CI, but no bytes in the tracked eleven runtime modules or eight original assertion suites. Both authentic source SQL and owner HTTP CI jobs now pin `f2de5160` and continue to demand the exact reviewed SHA. This is original source regression proof, not a deployed human approval, service migration/adoption or release.
 
 **K-3bq, 2026-10-12:** original source refreshed at immutable 7c9e981b75806e7fbfdbfdc84622ed11ca2185a2, after a complete 19-blob GitHub source/test tree review. Five tracked paths changed since 0e4ae2c873713e56de50d97af8e550d698eca0fe (HTTP, OAuth handler, MCP transport, original OAuth suite, key fixture); fourteen unchanged. Both authentic original SQL and owner HTTP jobs now run this newer reviewed revision, and the 21 older exact portable assertion bodies stay separately immutable. This does not claim deployed custom RTC service adoption, human consent or release.
+
+## K-3cj newer genuine original-service source (PR #122)
+
+The original `stripe-source-sql` and `stripe-source-owner-http` jobs now
+pin reviewed Stripe `a38a325f07bdb993b46dc82d85e835d06281aff0`.
+The prior immutable `de56af8` revision had unchanged four pure module
+leaves and original eight tracked unit suite blobs; newer code changes
+affect HTTP structured-body bounding, MCP bearer parsing, RTC HTTP
+contract/scope, RTC pass area/lifetime and three RTC assertion suites.
+Every changed module/test is a separate pinned Git blob in the updated
+source inventory; both jobs still verify exact repo, commit, original
+suite blobs, disposable local SQL and old mandatory tests, and SQL now
+also runs seven real original suites while core archive imports are active.
+No unreviewed moving-ref checkout or release/adoption declaration.
+
