@@ -197,6 +197,29 @@ describe('portable OAuth protocol handlers',()=>{
     expect(f.db.rotateRefreshToken).not.toHaveBeenCalled();
   });
 
+  it('rejects exotic redirect arrays and snapshots service mutations independently of responses', async()=>{
+    const f=fixture();
+    const extra=[callback];
+    Object.defineProperty(extra,'hidden',{value:'service-owned',enumerable:false});
+    const keyed=[callback];
+    keyed.unexpected='data';
+    const holed=[callback,'https://agent.example.test/other'];
+    delete holed[1];
+    for (const redirect_uris of [extra,keyed,holed]) {
+      const denied=await call(f.handlers.register,'POST',{redirect_uris});
+      expect(denied).toMatchObject({status:400,value:{error:'invalid_client_metadata'}});
+    }
+    expect(f.db.createOAuthClient).not.toHaveBeenCalled();
+    const original=[callback];
+    f.db.createOAuthClient.mockImplementationOnce(async ({redirectUris})=>{
+      expect(redirectUris).not.toBe(original);
+      redirectUris.push('https://mutated.example.test/cb');
+    });
+    const accepted=await call(f.handlers.register,'POST',{redirect_uris:original});
+    expect(accepted.status).toBe(201);
+    expect(accepted.value.redirect_uris).toEqual([callback]);
+    expect(original).toEqual([callback]);
+  });
   it('requires storage, claim mapping and safe local paths, not implicit service defaults',()=>{
     const f=fixture();
     expect(()=>createOAuthProtocolHandlers({db:{},env,buildAccessRow:()=>({})})).toThrow(/storage/);
