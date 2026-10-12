@@ -74,10 +74,56 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://postgres:ci-only-not-a-secret@127.0.0.1:5432/postgres
 
+  stripe-source-sql:
+    name: stripe source SQL (reviewed immutable commit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-not-a-secret
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout independently reviewed Stripe service source (no service writes)
+        uses: actions/checkout@v5
+        with:
+          repository: Robinson-AI-Systems/stripe-mcp
+          ref: e3c5b34bccabec11328d62f4ca45145163772486
+          path: source-stripe
+          persist-credentials: false
+      - name: Refuse source drift or substituted checkout
+        working-directory: source-stripe
+        run: test "$(git rev-parse HEAD)" = "e3c5b34bccabec11328d62f4ca45145163772486"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install exact source lockfile without lifecycle scripts
+        working-directory: source-stripe
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute authentic source OAuth and money SQL against throwaway PostgreSQL
+        working-directory: source-stripe
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:ci-only-not-a-secret@127.0.0.1:5432/postgres
+        run: >-
+          npm run test:db --
+          tests/db/oauth-persistent.test.js
+          tests/db/oauth.test.js
+          tests/db/money-owner-approval.test.js
+          tests/db/money-reservation.test.js
+          tests/db/owner-money-limit.test.js
+
   ci:
     name: ci
     if: always()
-    needs: [check, unit, db]
+    needs: [check, unit, db, stripe-source-sql]
     runs-on: ubuntu-latest
     steps:
       - name: Require every verification job to succeed
@@ -85,8 +131,10 @@ jobs:
           CHECK: ${{ needs.check.result }}
           UNIT: ${{ needs.unit.result }}
           DB: ${{ needs.db.result }}
+          STRIPE_SOURCE_SQL: ${{ needs.stripe-source-sql.result }}
         run: |
-          echo "check=$CHECK unit=$UNIT db=$DB"
+          echo "check=$CHECK unit=$UNIT db=$DB stripe-source-sql=$STRIPE_SOURCE_SQL"
           test "$CHECK" = success
           test "$UNIT" = success
           test "$DB" = success
+          test "$STRIPE_SOURCE_SQL" = success
