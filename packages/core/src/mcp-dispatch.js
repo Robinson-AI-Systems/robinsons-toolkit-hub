@@ -7,6 +7,22 @@ const jsonBytes = value => Buffer.byteLength(JSON.stringify(value), 'utf8');
 const MAX_INLINE_BYTES = 8192;
 const MAX_NESTED_READS = 8;
 
+function safeDispatchArgs(args) {
+  if (!args || typeof args !== 'object' || Array.isArray(args)) return false;
+  try {
+    const prototype = Object.getPrototypeOf(args);
+    if (prototype !== Object.prototype && prototype !== null ||
+        Object.getOwnPropertySymbols(args).length) return false;
+    // The HTTP/MCP boundary uses JSON data records. A local plugin must not
+    // smuggle active getters, inherited control flags or executable objects.
+    for (const [key, field] of Object.entries(Object.getOwnPropertyDescriptors(args))) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype' ||
+          !field.enumerable || !Object.hasOwn(field, 'value')) return false;
+    }
+    return true;
+  } catch { return false; }
+}
+
 export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResult,
   readDetail, splitResult, resultPage, formatError, skipDetailFor = () => false }) {
   if (!Array.isArray(registry?.tools) || !registry?.handlers ||
@@ -18,7 +34,7 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
   }
   async function dispatch({ name, args = {}, connection, db, services = {} }, depth = 0) {
     if (!connection || typeof connection !== 'object' || !name || depth > MAX_NESTED_READS ||
-        !args || typeof args !== 'object' || Array.isArray(args)) {
+        !safeDispatchArgs(args)) {
       return deny('Tool unavailable for this connection');
     }
     const item = registry.tools.find(t => t.name === name);

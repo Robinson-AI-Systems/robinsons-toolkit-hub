@@ -107,3 +107,9 @@ WAITING_ON_OWNER independently.
 **K-3ap exact single-use link identifier:** portable one-time setup path validation now requires exactly one full issued 32-character id either as a pathname segment or parsed query value. Substrings in values/keys and duplicated IDs cannot pass. Existing `/api/stripe/setup?show=<id>` routes remain supported. This does not independently prove that the service uses the correct query name, grants access to the right owner, or enforces expiry/atomic SQL; authenticated service integration remains gated.
 
 **K-3aq original CI evidence preservation:** the new CI provenance guard binds both original Stripe source jobs to the independent reviewed upstream baseline and the nine source DB/HTTP suites. It fails on moving checkout refs, drifted source owners, missing assertions, non-local source SQL or dropped aggregate checks. This complements actual original source execution (#61/#62), without making a **NOT READY** service adapter or GitHub Release ready.
+
+**K-3at stricter dispatch input boundary:** source native MCP requests decode JSON into own-data records;
+portable `createGuardedMcpDispatcher` may also be imported directly, so it now rejects active/inherited,
+non-enumerable, symbol and prototype-sensitive top-level argument descriptors before authorization or side
+effects. Regression verifies plain and null-prototype compatible requests, denied getters and no provider
+calls. This is deliberate fail-closed adaptation, not a claim about source HTTP transport adoption.
