@@ -92,3 +92,5 @@ registry/profiles service-catalog tests now include four G-6 admin tools (196 to
 98/99/102; 94 writes). Both required original source SQL/owner HTTP jobs move together to this
 immutable reviewed SHA. This is source-drift reconciliation only. No service adoption, independently
 authenticated human money-out consent or publication approval; K-3 release remains NOT READY.
+
+**K-3az post-review Stripe source refresh (PR #74):** immutable Stripe SHA `f2de5160d94799d5425e838fa54c5702b5d93f34` has all 19 tracked original blobs unchanged from the previously reviewed baseline. Required source SQL and owner HTTP CI jobs now exercise this refreshed source and reject mismatched checkout SHA. This does not satisfy independent Stripe deployment, authenticated human owner money-out approval, service adoption or actual uploaded Release evidence; K-3 remains NOT_READY.

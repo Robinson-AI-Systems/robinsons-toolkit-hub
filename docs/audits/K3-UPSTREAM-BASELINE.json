@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "sourceRepository": "Robinson-AI-Systems/stripe-mcp",
-  "reviewedMain": "b2a1432fa6398b7f6848d84771e5af5b21d686e7",
+  "reviewedMain": "f2de5160d94799d5425e838fa54c5702b5d93f34",
   "reviewedAt": "2026-10-11",
   "disposition": "REVIEWED_SNAPSHOT_NOT_RELEASE",
-  "note": "Stripe main b2a1432f reviewed after 12 service commits: all eleven tracked core modules retain their verified blob SHAs. Only tracked tests/unit/registry.test.js and tests/unit/profiles.test.js changed: four new G-6 admin catalog operations, write-contract count stays 94; owner homepage catalog total 192 -> 196 and profile read_only/everyday/full 94/95/98 -> 98/99/102. These are service-catalog test assertion changes, not copied core assertions or independent owner-money consent. Immutable source SQL/owner HTTP CI now executes this newer reviewed commit; no release or service adoption.",
+  "note": "Read-only verified Stripe main f2de5160 (13 commits beyond immutable b2a1432f): all 11 original portable core source blobs and all eight tracked original source-suite blobs match the previously independently reviewed baseline exactly. Upstream changed service admin implementation/tests, documentation and CI only. Both authentic SQL and owner HTTP suites now use the immutable f2de5160 reviewed commit. This is not adoption, independent deployed human money approval, a released artifact or K-3 completion.",
   "source": {
     "src/core/oauth.js": "2e2fa72529869d7f2320661a641cdaa1d5de9841",
     "src/core/crypto.js": "34dce85cd4ca32553bfa2512778e68f819558de5",
