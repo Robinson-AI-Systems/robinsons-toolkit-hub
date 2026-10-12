@@ -31,8 +31,14 @@ describe('K-3 current Stripe original runtime/source-suite drift evidence',()=>{
   it('pins each original source blob including three reviewed changed modules',()=>{
     expect(manifest.source).toEqual(reviewedSource);
     expect(manifest.tests).toEqual(reviewedTests);
+    expect(manifest.serviceOwnedCore).toEqual({
+      'src/core/browser-cors.js':'e4b5d948a83737344c53079912dc148b4227ef60',
+      'src/core/rtc-passes.js':'81d10139ca1432afcead399b2e51c61b3b28d480',
+      'src/core/rtc-http.js':'47c1c66bdf5ef8c8b7544238344fedbe948267ac',
+      'src/core/rtc-route.js':'7833386fd04717dc137f06132c0caf3c375f6362'
+    });
     expect(manifest.disposition).toBe('REVIEWED_SNAPSHOT_NOT_RELEASE');
-    expect(manifest.reviewedMain).toBe('7c9e981b75806e7fbfdbfdc84622ed11ca2185a2');
+    expect(manifest.reviewedMain).toBe('de56af8199fee39b20c2a1ac733562f2622dfda7');
   });
   it('retains a fixed accounting of five real upstream changes, not silently treating changed suites as unchanged',()=>{
     const historical={
@@ -51,10 +57,10 @@ describe('K-3 current Stripe original runtime/source-suite drift evidence',()=>{
     expect(Object.keys({...manifest.source,...manifest.tests})).toHaveLength(19);
   });
   it('rejects any unseen core module drift even if service test SHA values are accepted',()=>{
-    const tree={truncated:false,tree:Object.entries({...manifest.source,...manifest.tests})
+    const tree={truncated:false,tree:Object.entries({...manifest.source,...manifest.tests,...manifest.serviceOwnedCore})
       .map(([path,sha])=>({type:'blob',path,sha}))};
     expect(compareK3UpstreamTree(manifest,manifest.reviewedMain,tree)).toMatchObject({
-      unchanged:true,sourceUnchanged:true,examined:19
+      unchanged:true,sourceUnchanged:true,examined:23
     });
     tree.tree.find(x=>x.path==='src/core/write.js').sha='f'.repeat(40);
     const changed=compareK3UpstreamTree(manifest,manifest.reviewedMain,tree);

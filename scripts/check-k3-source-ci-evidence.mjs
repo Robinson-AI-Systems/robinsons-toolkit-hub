@@ -30,7 +30,10 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
      !sha.test(baseline.reviewedMain||'')||
      Object.keys(baseline.source||{}).length!==11||
      Object.keys(baseline.tests||{}).length!==8||
-     Object.values({...baseline.source,...baseline.tests}).some(value=>!sha.test(value))){
+     Object.keys(baseline.serviceOwnedCore||{}).length!==4||
+     Object.keys(baseline.serviceOwnedCore||{}).some(path=>
+       !/^src\/core\/[a-z0-9-]+\.js$/.test(path)||Object.hasOwn(baseline.source,path))||
+     Object.values({...baseline.source,...baseline.tests,...baseline.serviceOwnedCore}).some(value=>!sha.test(value))){
     fail('reviewed original source inventory is incomplete or invalid');
   }
   const jobs=workflow?.jobs;
@@ -69,6 +72,11 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
         fail(name+': reviewed original suite blob mismatch for '+suite);
       }
     }
+    for(const [module,blob] of Object.entries(baseline.serviceOwnedCore)){
+      const expected='test "$(git hash-object '+module+')" = "'+blob+'"';
+      if(!evidence[0].run?.split('\n').map(line=>line.trim()).includes(expected))
+        fail(name+': reviewed service-owned module blob mismatch for '+module);
+    }
     const command=runs(job);
     if(!command.includes('git rev-parse HEAD')||
        !command.includes(baseline.reviewedMain)||!command.includes(runner)){
@@ -88,7 +96,7 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
     }else if(job.services)fail(name+': source owner HTTP should not use a live database');
   }
   return Object.freeze({reviewedMain:baseline.reviewedMain,originalSourceModules:11,
-    originalTrackedSuites:8,sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,
+    originalTrackedSuites:8,serviceOwnedModules:4,sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,
     releaseReady:false});
 }
 

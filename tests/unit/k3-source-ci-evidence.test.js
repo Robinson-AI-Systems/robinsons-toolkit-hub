@@ -12,7 +12,7 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
   it('requires all nine original source suites and keeps the private release incomplete',()=>{
     expect(validateK3SourceCIEvidence(copy())).toMatchObject({
       reviewedMain:baseline.reviewedMain,originalSourceModules:11,
-      originalTrackedSuites:8,sqlSuites:5,ownerHttpSuites:5,releaseReady:false
+      originalTrackedSuites:8,serviceOwnedModules:4,sqlSuites:5,ownerHttpSuites:5,releaseReady:false
     });
   });
   it('rejects moving refs, mismatched SQL and owner sources and persistent tokens',()=>{
@@ -67,6 +67,20 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
       changed.baseline.tests[suite]='f'.repeat(40);
       expect(()=>validateK3SourceCIEvidence(changed)).toThrow(/reviewed original suite blob mismatch/);
     }
+  });
+  it('requires exact new source-owned RTC and browser blobs in both original CI jobs',()=>{
+    for(const job of ['stripe-source-sql','stripe-source-owner-http']){
+      for(const blob of Object.values(baseline.serviceOwnedCore)){
+        const bad=copy();
+        const item=bad.workflow.jobs[job].steps.find(
+          step=>step.name==='Verify exact reviewed original Stripe OAuth/key test blobs');
+        item.run=item.run.replace(blob,'a'.repeat(40));
+        expect(()=>validateK3SourceCIEvidence(bad))
+          .toThrow(/reviewed service-owned module blob mismatch/);
+      }
+    }
+    const missing=copy();delete missing.baseline.serviceOwnedCore['src/core/rtc-http.js'];
+    expect(()=>validateK3SourceCIEvidence(missing)).toThrow(/inventory/);
   });
   it('rejects a removed, substituted or skipped original Git blob verification step',()=>{
     for(const job of ['stripe-source-sql','stripe-source-owner-http']){
