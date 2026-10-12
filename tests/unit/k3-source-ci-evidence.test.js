@@ -61,6 +61,26 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
       'postgresql://example.invalid/test';
     expect(()=>validateK3SourceCIEvidence(url)).toThrow(/localhost/);
   });
+  it('rejects silent 40-character replacement of either exact reviewed original suite hash',()=>{
+    for(const suite of ['tests/unit/oauth-handlers.test.js','tests/unit/keys.test.js']){
+      const changed=copy();
+      changed.baseline.tests[suite]='f'.repeat(40);
+      expect(()=>validateK3SourceCIEvidence(changed)).toThrow(/reviewed original suite blob mismatch/);
+    }
+  });
+  it('rejects a removed, substituted or skipped original Git blob verification step',()=>{
+    for(const job of ['stripe-source-sql','stripe-source-owner-http']){
+      const absent=copy();
+      absent.workflow.jobs[job].steps=absent.workflow.jobs[job].steps.filter(
+        s=>s.name!=='Verify exact reviewed original Stripe OAuth/key test blobs');
+      expect(()=>validateK3SourceCIEvidence(absent)).toThrow(/missing exact original suite blob/);
+      const wrong=copy();
+      const check=wrong.workflow.jobs[job].steps.find(
+        s=>s.name==='Verify exact reviewed original Stripe OAuth/key test blobs');
+      check.run=check.run.replace('217c0c18a0c427963fa374aa4c6fad570747865f','a'.repeat(40));
+      expect(()=>validateK3SourceCIEvidence(wrong)).toThrow(/reviewed original suite blob mismatch/);
+    }
+  });
   it('rejects fewer original source modules, suites or changed release disposition',()=>{
     const missing=copy();
     delete missing.baseline.source['src/core/oauth.js'];
