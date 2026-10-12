@@ -18,6 +18,26 @@ and any approved full acceptance are genuinely satisfied. K-3 remains private,
 NOT_READY, unpublished; D-4 protected direct/relay/Sandbox/revocation is open.
 
 
+**D-4 owner Vercel deployment-source cross-check (2026-10-12; provider read only):**
+The owner-connected Vercel deployment metadata establishes the actual
+production-alias build revisions (not merely a service self-report):
+Stripe `stripe-mcp-psi.vercel.app` READY at
+`b45c2478d6407071b29a61680f437c012ee6aa84` (reported build ref
+`ai/gpt6/daily-live-promotion-166`), Google Workspace
+`google-workspace-mcp-five.vercel.app` READY at
+`171144d223f878b2541a055337ece845b591b998` (main), and GitHub
+`github-mcp-xi.vercel.app` READY at
+`e52a6708beb2aca1c1c194b892a965c06fd37cb1` (main).
+These differ from newer October 12 source revisions. No verified
+Vercel/Neon RTC deployment origin was discovered in the inspected Vercel
+project list; their tracked origins stay null, not guessed.
+The provider metadata does **not** prove the service manifests' own
+claimed revision, verified TEST pass identity, authenticated direct read,
+private GitHub relay, Vercel Sandbox, or same-pass revocation.
+Under #125 rules, any pass-bearing fleet read remains refused until an
+independent exact deployed SHA/ref/environment match is established.
+Do not manually deploy in place of the scheduled checked live workflow.
+
 **L-1 Git inspection / PR #127 (as-if merged, CI pending):**
 PR #126's fully checked opt-in read-only file tools merged at
 `0d96459720b2fe28c88eaab9d2abcc4465ba99e2`.
