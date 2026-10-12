@@ -5,7 +5,7 @@
   "packageVersion": "0.1.0",
   "sourceMain": "60877ae0058262c09bbbe7bd48970dc1aca6334c",
   "originalBodiesVerified": 21,
-  "note": "Only local assertions, package isolation and synthetic adapter proofs are available. This is an explicit blocker inventory, not a candidate or an authenticated GitHub Release.",
+  "note": "CI now runs pinned original Stripe source SQL and owner HTTP suites and verifies provenance, in addition to local package assertions. This does not certify deployed owner consent, current-source drift, independent service adoption, or a remotely verified release.",
   "requirements": [
     {
       "id": "package-isolation",
@@ -28,7 +28,7 @@
       "status": "PARTIAL",
       "owner": "stripe-service",
       "evidence": "docs/audits/upstream/oauth-handlers.test.js.b64",
-      "reason": "Twenty-one exact portable assertion bodies pass; four OAuth HTTP cases require original source service execution.",
+      "reason": "The original OAuth owner HTTP suites run in CI at reviewed Stripe source, while twenty-one portable bodies are checked separately; actual post-adoption source-handler parity is still pending.",
       "next": "Execute and retain the remaining original source-owned HTTP cases in the Stripe service."
     },
     {
@@ -44,7 +44,7 @@
       "status": "OPEN",
       "owner": "stripe-service",
       "evidence": "docs/adoption/stripe-mcp.md",
-      "reason": "Throwaway PostgreSQL fixtures are not the original service schema, migrations or multiple-instance behavior.",
+      "reason": "Original Stripe OAuth and money SQL test suites now run in isolated CI at an immutable reviewed source revision; actual deployed migrations, service-owned adapter adoption and multi-instance read-back remain unverified.",
       "next": "Verify actual service migrations, expiry, revocation, audit and concurrent account-scoped SQL."
     },
     {
@@ -52,7 +52,7 @@
       "status": "OPEN",
       "owner": "stripe-service",
       "evidence": "docs/adoption/stripe-mcp.md",
-      "reason": "Synthetic approval fixtures never establish independent authenticated owner consent or shared account/day limits.",
+      "reason": "Original Stripe HTTP and SQL tests cover synthetic independent owner consent and account/day limits; no actual deployed authenticated human owner approval or adopter end-to-end run is certified.",
       "next": "Verify the owner's independent consent, account/day cap, provider idempotency and read-back in source service tests."
     },
     {
