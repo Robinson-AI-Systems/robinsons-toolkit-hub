@@ -19,12 +19,12 @@ function safeDispatchArgs(args) {
       if (key === '__proto__' || key === 'constructor' || key === 'prototype' ||
           !field.enumerable || !Object.hasOwn(field, 'value')) return false;
     }
-    return true;
+    return isInertJsonData(args);
   } catch { return false; }
 }
 
 
-function safePageData(value, seen = new WeakSet(), depth = 0) {
+export function isInertJsonData(value, seen = new WeakSet(), depth = 0) {
   // Adapter-produced page data is serialized and returned to callers; reject
   // executable toJSON/getters, custom prototypes and cycles before spreading it.
   if (depth > 16) return false;
@@ -45,7 +45,7 @@ function safePageData(value, seen = new WeakSet(), depth = 0) {
       for (let i = 0; i < value.length; i++) {
         const descriptor = descriptors[i];
         if (!descriptor || !Object.hasOwn(descriptor, 'value') ||
-            !safePageData(descriptor.value, seen, depth + 1)) return false;
+            !isInertJsonData(descriptor.value, seen, depth + 1)) return false;
       }
     } else {
       const descriptors = Object.getOwnPropertyDescriptors(value);
@@ -53,7 +53,7 @@ function safePageData(value, seen = new WeakSet(), depth = 0) {
       for (const [key, descriptor] of Object.entries(descriptors)) {
         if (['__proto__', 'constructor', 'prototype', 'toJSON'].includes(key) ||
             !descriptor.enumerable || !Object.hasOwn(descriptor, 'value') ||
-            !safePageData(descriptor.value, seen, depth + 1)) return false;
+            !isInertJsonData(descriptor.value, seen, depth + 1)) return false;
       }
     }
     return true;
@@ -135,7 +135,7 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
         ', ' + body.totalBytes + ' bytes (scoped connection only)';
       const page = resultPage(body, 0);
       if (!page || typeof page !== 'object' || Array.isArray(page) ||
-          !safePageData(page)) {
+          !isInertJsonData(page)) {
         return deny('Result cannot be securely paged for this connection.');
       }
       // A paging adapter may append page data, but may never replace the core's

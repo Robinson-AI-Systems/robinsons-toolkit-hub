@@ -70,6 +70,19 @@ describe('transport-independent MCP dispatch adapter',()=>{
     expect((await f.dispatch('example_read',nullRecord)).isError).toBeUndefined();
     expect(f.handlers.example_read).toHaveBeenCalledTimes(1);
   });
+  it('refuses nested executable and cyclic argument JSON before policy or handlers',async()=>{
+    const f=fixture();let getterCalls=0;
+    const nested={confirm:true,payload:{}};
+    Object.defineProperty(nested.payload,'id',{enumerable:true,get(){getterCalls++;return 'private';}});
+    const cyclic={confirm:true};cyclic.detail=cyclic;
+    for (const args of [nested,cyclic,{detail:{toJSON(){return 'private';}}},
+      {items:[1,undefined]},{items:[new Date()]}]) {
+      expect((await f.dispatch('example_read',args)).isError).toBe(true);
+    }
+    expect(getterCalls).toBe(0);
+    expect(f.authorizeTool).not.toHaveBeenCalled();
+    expect(f.handlers.example_read).not.toHaveBeenCalled();
+  });
   it('fails closed when injected policy throws or handler is missing',async()=>{
     const f=fixture();
     f.authorizeTool.mockImplementationOnce(()=>{throw new Error('private-policy-error');});

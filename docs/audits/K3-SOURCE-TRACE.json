@@ -141,7 +141,7 @@
       "sourceFile": "src/core/write.js",
       "sourceBlob": "82157d03a818a60d6a9ae6e28dd798e0e7ca2a86",
       "target": "./src/write.js",
-      "coreBlob": "653a862743a1d8dd9c9f0383073f9ce5a40ae618",
+      "coreBlob": "b24dc2adaf8ab735b236d23b553584f4b6e661e2",
       "kind": "adapted",
       "tests": [
         "packages/core/test/write.test.js",
@@ -151,14 +151,15 @@
       "serverOwned": [
         "owner-independent money consent, shared limits, live guard and retry key",
         "service-authenticated owner approval and durable shared per-account caps remain mandatory; portable money shape and classifier guards cannot grant consent",
-        "confirm and dryRun require own Boolean data descriptors; no caller flag substitutes for independent owner money approval or SQL limits"
+        "confirm and dryRun require own Boolean data descriptors; no caller flag substitutes for independent owner money approval or SQL limits",
+        "guarded writes reject nested active args, money preview getter and executable approval decision; independent human authorization remains required"
       ]
     },
     "./mcp-dispatch": {
       "sourceFile": "src/core/mcp-server.js",
       "sourceBlob": "51309da34c8aab8f44c67411fe83c89367d664b6",
       "target": "./src/mcp-dispatch.js",
-      "coreBlob": "b9a677bb69082062c51aa4fda81ec315b7f27f88",
+      "coreBlob": "2bd9c4ef479ac23f828c91acf842449464184bbb",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-dispatch.test.js",
@@ -170,7 +171,8 @@
         "core refuses prototype-inherited handlers and page metadata override; server still owns MCP transport, scoped result SQL and redaction",
         "nested runRead explicitly denies writes and metadata-unknown tools even under otherwise permissive service policy",
         "portable dispatcher now rejects inherited, accessor, symbol and dangerous top-level argument descriptors before policy, handlers, result storage or provider effects; service must retain JSON-only input validation",
-        "portable scoped result paging refuses executable nested data, cycles and prototype-control payloads before persistence; service retains shape/redaction/SQL ownership"
+        "portable scoped result paging refuses executable nested data, cycles and prototype-control payloads before persistence; service retains shape/redaction/SQL ownership",
+        "shared inert JSON checker rejects nested active argument data before policy and handler; original provider boundary remains service-owned"
       ]
     }
   }

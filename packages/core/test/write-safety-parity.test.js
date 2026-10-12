@@ -87,6 +87,28 @@ describe('adapted write source failure and monetary preview parity',()=>{
     expect(dryGetter).not.toHaveBeenCalled();
     expect(c.hooks.beforeApply).not.toHaveBeenCalled();
   });
+  it('refuses active nested arguments, money previews and owner decisions without provider effects',async()=>{
+    let calls=0;
+    const arg=fixture(),nested={confirm:true,details:{}};
+    Object.defineProperty(nested.details,'amount',{enumerable:true,get(){calls++;return 5;}});
+    expect(parse(await arg.call(nested)).error).toMatch(/Invalid write arguments/);
+    expect(arg.hooks.read).not.toHaveBeenCalled();
+    expect(arg.hooks.beforeApply).not.toHaveBeenCalled();
+    const suspicious={previewLine:'Move synthetic funds',currency:'usd',direction:'out'};
+    Object.defineProperty(suspicious,'amountCents',{enumerable:true,get(){calls++;return 5;}});
+    const poisoned=fixture({spec:suspicious});
+    expect(parse(await poisoned.call()).error).toMatch(/Invalid provider-derived money preview/);
+    expect(poisoned.hooks.beforeApply).not.toHaveBeenCalled();
+    const approval=fixture();
+    approval.hooks.beforeApply.mockImplementationOnce(async()=>{
+      const decision={};Object.defineProperty(decision,'accepted',{enumerable:true,
+        get(){calls++;return true;}});return decision;
+    });
+    expect(parse(await approval.call()).error).toMatch(/Safety check denied/);
+    expect(approval.hooks.apply).not.toHaveBeenCalled();
+    expect(approval.logs).toHaveLength(0);
+    expect(calls).toBe(0);
+  });
   it('requires explicitly owned Boolean confirmation and retains ordinary preview flow',async()=>{
     const noConfirm=fixture();
     const args=Object.create(null);args.requestKey='isolated';
