@@ -124,6 +124,12 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
      packed[0].run?.trim()!=='node scripts/stripe-source-packed-leaves.mjs'){
     fail('private packed original-source adapter comparison is required');
   }
+  const adoption=jobs['stripe-source-owner-http'].steps.filter(step=>
+    step.name==='Rehearse actual original Stripe handler imports through installed private core');
+  if(adoption.length!==1||
+     adoption[0].run?.trim()!=='node scripts/stripe-original-service-adopter.mjs'){
+    fail('original adopting-service package import test is required');
+  }
   return Object.freeze({reviewedMain:baseline.reviewedMain,originalSourceModules:11,
     originalTrackedSuites:8,serviceOwnedModules:4,rtcSuites:Object.keys(baseline.rtcTests).length,
     sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,

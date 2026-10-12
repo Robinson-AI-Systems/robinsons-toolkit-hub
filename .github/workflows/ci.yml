@@ -188,6 +188,8 @@ jobs:
         run: node scripts/stripe-source-http-differential.mjs
       - name: Pack core privately and compare installed leaves to original Stripe
         run: node scripts/stripe-source-packed-leaves.mjs
+      - name: Rehearse actual original Stripe handler imports through installed private core
+        run: node scripts/stripe-original-service-adopter.mjs
 
   ci:
     name: ci
