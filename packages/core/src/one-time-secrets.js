@@ -17,7 +17,13 @@ function safeSetupPath(path, id) {
   }
   try {
     const url = new URL(path, 'https://core.invalid');
-    return url.origin === 'https://core.invalid' && url.pathname === pathname;
+    if (url.origin !== 'https://core.invalid' || url.pathname !== pathname) return false;
+    // The issued identifier must be an entire route segment or an entire query
+    // value. A prefix/suffix/key-name hit is not a usable one-time reveal URL.
+    // Multiple matches also make the service's selector ambiguous.
+    const pathMatches = pathname.split('/').filter(segment => segment === id).length;
+    const queryMatches = [...url.searchParams.values()].filter(value => value === id).length;
+    return pathMatches + queryMatches === 1;
   } catch { return false; }
 }
 

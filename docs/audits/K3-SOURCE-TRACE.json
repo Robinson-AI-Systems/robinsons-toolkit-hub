@@ -106,7 +106,7 @@
       "sourceFile": "src/core/one-time-secrets.js",
       "sourceBlob": "071900c19db7d77a608c7bb65574b12b24c080fb",
       "target": "./src/one-time-secrets.js",
-      "coreBlob": "97b479b572ce8e65d18162032d6f417d55bdb807",
+      "coreBlob": "8081d7d462fb15fa4101796538f6210723b4ba37",
       "kind": "adapted",
       "tests": [
         "packages/core/test/one-time-secrets.test.js",
@@ -114,7 +114,8 @@
       ],
       "serverOwned": [
         "service-specific ciphertext AAD and atomic SQL row ownership",
-        "setup paths must include new issuance id without traversal; source service owns routing, SQL, account access and atomic expiry"
+        "setup paths must include new issuance id without traversal; source service owns routing, SQL, account access and atomic expiry",
+        "setup link must carry exactly one complete issued id as a path segment or query value; only the owning service can verify its precise parameter and access control"
       ]
     },
     "./oauth-protocol": {
