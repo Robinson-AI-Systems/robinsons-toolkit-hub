@@ -32,7 +32,7 @@ export async function createConfirmedLocalFile(roots, args) {
   const index = args.root === undefined ? 0 : args.root;
   if (!Number.isInteger(index) || index < 0 || index >= roots.length) fail();
   const relative = args.path;
-  if (!relative || relative.length > 1024 || relative.includes('\\\\') || isAbsolute(relative) ||
+  if (!relative || relative.length > 1024 || relative.includes(String.fromCharCode(92)) || isAbsolute(relative) ||
       /^[a-zA-Z]:/.test(relative) || relative.startsWith('\\\\') ||
       /[\u0000-\u001f\u007f]/.test(relative)) fail();
   const parts = relative.split(/[\\/]/);
