@@ -88,7 +88,7 @@
       "sourceFile": "src/core/mcp-auth.js",
       "sourceBlob": "eea535069b2179dfa74ed4ad101abacd5789dea0",
       "target": "./src/mcp-auth.js",
-      "coreBlob": "c9bd53d87c42e8e3ecf9b808a5aa7f0c151bf7d2",
+      "coreBlob": "81daef94c29c3a4a3162d2d65ab634a82779b0e2",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-auth.test.js",
