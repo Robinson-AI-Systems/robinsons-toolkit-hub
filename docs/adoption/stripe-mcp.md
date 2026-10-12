@@ -68,3 +68,24 @@ remain stable. The current-service agent must review these service-owned
 security differences before adoption rather than treating historical green CI
 as proof of current compatibility. Release remains blocked.
 
+## K-3cj current-service source/test compatibility handoff (2026-10-12)
+
+Hub source CI replays original Stripe SQL, owner HTTP and RTC suites at
+immutable reviewed Stripe `a38a325f07bdb993b46dc82d85e835d06281aff0`;
+private archive import rehearsal reruns the original PostgreSQL tests
+against unchanged four pure core leaves. The original service-owned RTC
+tests now include restrictive TEST-pass area selection, batch-atomic
+rate accounting, denial-status accuracy and read-only money-tool
+exclusion. Those changed RTC modules are **not** imported into the Hub
+library: the service must prove its own actual deployed RTC identity and
+TEST-only protected calls before D-4 can accept it.
+
+**Service-owned security review remains:** current original
+`src/core/http.js` computes JSON.stringify on framework-preparsed
+untrusted objects; Hub's security-adapted portable HTTP rejects
+getters/toJSON before serialization. Do not silently substitute the
+portable HTTP, and do not claim original-service parity until Stripe's
+own HTTP/owner-route tests prove safe inert framing. Human-approved
+financial consent, actual account isolation and adoption of an immutable
+released package remain mandatory. Current CI source pin is not a release.
+
