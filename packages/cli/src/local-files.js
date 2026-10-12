@@ -3,6 +3,7 @@ import { constants } from 'node:fs';
 import { open, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
+import { inspectLocalGit } from './local-git.js';
 
 const MAX_READ = 4096;
 const MAX_ENTRIES = 100;
@@ -65,6 +66,10 @@ export async function createLocalFiles(folders) {
   const invoke = async (name, args = {}) => {
     const { path, rootIndex, relative } = await access(args);
     try {
+      if (name.startsWith('local.git_')) {
+        if (relative) bad('Git inspection uses only the exact enabled folder');
+        return await inspectLocalGit(name, path);
+      }
       if (name === 'local.file_list') {
         if (!(await stat(path)).isDirectory()) bad('Local path is not a directory');
         const entries = (await readdir(path, { withFileTypes: true }))

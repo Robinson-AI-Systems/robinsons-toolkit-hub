@@ -4,6 +4,7 @@ import { StringDecoder } from 'node:string_decoder';
 import { ToolError } from './http.js';
 import { byName, send } from './dispatch.js';
 import { LOCAL_FILE_TOOLS } from './local-files.js';
+import { LOCAL_GIT_TOOLS } from './local-git.js';
 
 const VERSION = '2025-11-25';
 const MAX_LINE = 1024 * 1024;
@@ -48,7 +49,7 @@ export function localToolCatalog(servers, env = process.env, localFiles = null) 
     }
   }
   if (localFiles) {
-    for (const tool of LOCAL_FILE_TOOLS) {
+    for (const tool of [...LOCAL_FILE_TOOLS, ...LOCAL_GIT_TOOLS]) {
       routes.set(tool.name, { local: true, action: tool.name });
       tools.push(tool);
     }

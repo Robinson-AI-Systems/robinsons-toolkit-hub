@@ -5,6 +5,18 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**L-1 Git inspection / PR #127 (as-if merged, CI pending):**
+PR #126's fully checked opt-in read-only file tools merged at
+`0d96459720b2fe28c88eaab9d2abcc4465ba99e2`.
+This coherent next slice adds fixed, bounded, no-shell Git status/diff/log
+only inside a canonical owner-enabled folder with an actual local .git
+directory; linked/external metadata, arbitrary commands, oversized
+output and alternative roots are refused. The complete shell execution
+capability remains unimplemented pending an adequate folder confinement
+boundary and confirmation policy. This is still L-1 IN_PROGRESS.
+K-3 private/NOT_READY and D-4 authenticated routes remain separately open.
+
+
 **L-1 read-only local file tools (PR #126, as-if merged):** D-2 is
 merged; source/deployment evidence still gates K-3/D-4 acceptance.
 Opt-in `rtool mcp --local FOLDER[,FOLDER...]` adds canonical-folder-scoped
