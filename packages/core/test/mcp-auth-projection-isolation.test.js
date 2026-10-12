@@ -59,6 +59,26 @@ describe('service projection isolation before MCP dispatch',()=>{
     inherited.account='x';
     expect(await fixture(inherited).authenticate(req,res())).toBeNull();
   });
+  it('rejects duplicate or nonstring Authorization headers before storage or policy',async()=>{
+    for(const authorization of [['Bearer '+token],{'0':'Bearer '+token},42,
+      'Bearer '+token+', Bearer '+token]){
+      const f=fixture({account:'x'}),answer=res();
+      expect(await f.authenticate({headers:{authorization}},answer)).toBeNull();
+      expect(answer.statusCode).toBe(401);
+      expect(f.getAccessToken).not.toHaveBeenCalled();
+      expect(f.projectConnection).not.toHaveBeenCalled();
+    }
+  });
+  it('fails closed on unavailable durable lookup with generic 503 and no misleading invalid-token challenge',async()=>{
+    const f=fixture({account:'x'}),answer=res();
+    f.getAccessToken.mockRejectedValueOnce(new Error('private connection string and query'));
+    expect(await f.authenticate(req,answer)).toBeNull();
+    expect(answer.statusCode).toBe(503);
+    expect(answer.body).toEqual({error:'temporarily_unavailable'});
+    expect(answer.headers['WWW-Authenticate']).toBeUndefined();
+    expect(f.projectConnection).not.toHaveBeenCalled();
+    expect(JSON.stringify(answer)).not.toContain('private connection string');
+  });
   it('rejects cycles, functions, exotic identities and oversized values',async()=>{
     const cyclic={account:'x'};cyclic.self=cyclic;
     const oversized={account:'x',metadata:'x'.repeat(9000)};
