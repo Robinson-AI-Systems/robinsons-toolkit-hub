@@ -22,8 +22,15 @@ function safeSetupPath(path, id) {
     // value. A prefix/suffix/key-name hit is not a usable one-time reveal URL.
     // Multiple matches also make the service's selector ambiguous.
     const pathMatches = pathname.split('/').filter(segment => segment === id).length;
-    const queryMatches = [...url.searchParams.values()].filter(value => value === id).length;
-    return pathMatches + queryMatches === 1;
+    const queryEntries = [...url.searchParams.entries()];
+    const queryMatches = queryEntries.filter(([, value]) => value === id);
+    // A single matching value inside two values of the same parameter is not
+    // an unambiguous service selector (URLSearchParams.get picks the first).
+    // Decode names before comparison, so %73how and show cannot bypass it.
+    if (queryMatches.some(([key]) => url.searchParams.getAll(key).length !== 1)) {
+      return false;
+    }
+    return pathMatches + queryMatches.length === 1;
   } catch { return false; }
 }
 
