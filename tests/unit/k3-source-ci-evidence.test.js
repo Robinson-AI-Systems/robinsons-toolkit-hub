@@ -12,7 +12,7 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
   it('requires all nine original source suites and keeps the private release incomplete',()=>{
     expect(validateK3SourceCIEvidence(copy())).toMatchObject({
       reviewedMain:baseline.reviewedMain,originalSourceModules:11,
-      originalTrackedSuites:8,sqlSuites:5,ownerHttpSuites:4,releaseReady:false
+      originalTrackedSuites:8,sqlSuites:5,ownerHttpSuites:5,releaseReady:false
     });
   });
   it('rejects moving refs, mismatched SQL and owner sources and persistent tokens',()=>{
@@ -39,6 +39,11 @@ describe('K-3 authentic source CI is tied to reviewed evidence, not release perm
       command(http.workflow,'stripe-source-owner-http','vitest run').run.replace(
         'tests/unit/oauth-handlers.test.js','');
     expect(()=>validateK3SourceCIEvidence(http)).toThrow(/missing original suite/);
+    const smoke=copy();
+    command(smoke.workflow,'stripe-source-owner-http','vitest run').run=
+      command(smoke.workflow,'stripe-source-owner-http','vitest run').run.replace(
+        'tests/unit/owner-test-smoke.test.js','');
+    expect(()=>validateK3SourceCIEvidence(smoke)).toThrow(/missing original suite/);
     const pin=copy();
     command(pin.workflow,'stripe-source-sql','git rev-parse HEAD').run='true';
     expect(()=>validateK3SourceCIEvidence(pin)).toThrow(/revision assertion/);
