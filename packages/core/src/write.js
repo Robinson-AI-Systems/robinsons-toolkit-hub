@@ -74,15 +74,14 @@ export function defineWrite({ name, read, summarize, apply, readAfter, verify, i
       }
       const id=descriptors.connectionId?.value;
       if (id!==undefined && id!==null && (typeof id!=='string' ||
-          id.length>256 || /[\\x00-\\x1f\\x7f]/.test(id))) {
+          id.length>256 || /[\x00-\x1f\x7f]/.test(id))) {
         throw new TypeError('Invalid connection audit identifier');
       }
       connection=frozenJsonCopy(descriptors.connection.value);
       ctx=Object.freeze(Object.fromEntries(fields.map(([key,field])=>[
         key,key==='connection'?connection:field.value
       ])));
-    } catch (error) {
-      console.error('write context refused: '+error?.message);
+    } catch {
       return reply({done:false,error:'This connection is not allowed to change provider records'},true);
     }
     const respond = (value, isError = false) => {
