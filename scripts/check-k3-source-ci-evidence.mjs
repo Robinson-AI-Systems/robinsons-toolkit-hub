@@ -107,6 +107,12 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
      differential[0].run?.trim()!=='node scripts/stripe-source-http-differential.mjs'){
     fail('authentic source HTTP differential must execute after original source suites');
   }
+  const packed=jobs['stripe-source-owner-http'].steps.filter(step=>
+    step.name==='Pack core privately and compare installed leaves to original Stripe');
+  if(packed.length!==1||
+     packed[0].run?.trim()!=='node scripts/stripe-source-packed-leaves.mjs'){
+    fail('private packed original-source adapter comparison is required');
+  }
   return Object.freeze({reviewedMain:baseline.reviewedMain,originalSourceModules:11,
     originalTrackedSuites:8,serviceOwnedModules:4,sqlSuites:sourceSql.length,ownerHttpSuites:ownerHttp.length,
     releaseReady:false});

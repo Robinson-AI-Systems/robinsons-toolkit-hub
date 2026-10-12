@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+- **K-3ce / pending PR #117:** the original immutable Stripe CI checkout now runs an independently packaged, **private offline tarball** through an isolated consumer, comparing four actual source leaf modules (OAuth, encryption, registry, write declarations) with the installed archive. Cross-decryption proves old ciphertext interoperates; source HTTP incompatibility remains explicitly tracked in #116. This is an authentic source+artifact **local rehearsal** but not a service-owned adapter, actual Stripe adoption, SQL/authenticated owner approval or publication. K-3 remains NOT_READY; D-4 hosted acceptance remains open.
+
+
 - **K-3cd / pending PR #116:** added a bounded, executable CI comparison importing the authentic immutable Stripe service HTTP module beside the private core's extracted HTTP module. The original OAuth owner HTTP and SQL suites remain required. Safe issuer, response, method and body behavior must agree; an oversized pre-parsed-body incompatibility and the missing host raw-wire validator are deliberately reported, not hidden. Current Stripe main was independently inspected at `57703a29e98c776015c751b6b3d8130fa831fd58`: `src/core/http.js`, `rtc-passes.js` and `rtc-http.js` have changed from the CI's reviewed immutable `de56af8` snapshot (all eight pinned unit suite blobs unchanged). **Do not repin those changed auth/RTC modules without completing source and security review.** No actual service adoption, owner money approval, D-4 authenticated route, source-current parity or public release is certified.
 
 

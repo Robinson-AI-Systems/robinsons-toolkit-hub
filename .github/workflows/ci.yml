@@ -174,6 +174,8 @@ jobs:
           tests/unit/owner-test-smoke.test.js
       - name: Compare authentic source HTTP with the private portable boundary
         run: node scripts/stripe-source-http-differential.mjs
+      - name: Pack core privately and compare installed leaves to original Stripe
+        run: node scripts/stripe-source-packed-leaves.mjs
 
   ci:
     name: ci
