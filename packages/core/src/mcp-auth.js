@@ -63,15 +63,41 @@ export function createMcpBearerAuthenticator({ getAccessToken, projectConnection
     const challenge = 'Bearer resource_metadata="' +
       publicOrigin(env) + '/.well-known/oauth-protected-resource"';
     // Never coerce duplicate/array/object headers into a valid bearer credential.
-    let header;
+    let header, ambiguous = false;
     try {
-      // Node headers may be ordinary own fields or supplied through a request
-      // getter. Hostile accessors/proxies are untrusted input, not a server 500.
+      // Node headers may be ordinary fields or request getters. Some Node
+      // transports silently collapse duplicate Authorization headers into one.
+      // Refuse contradictory headersDistinct/rawHeaders evidence even if the
+      // normalized header appears valid; do not select a preferred credential.
       header = req?.headers?.authorization;
+      const distinct = req?.headersDistinct?.authorization;
+      if (distinct !== undefined &&
+          (!Array.isArray(distinct) || distinct.length !== 1 || distinct[0] !== header)) {
+        ambiguous = true;
+      }
+      const raw = req?.rawHeaders;
+      if (raw !== undefined) {
+        if (!Array.isArray(raw) || raw.length % 2 !== 0) ambiguous = true;
+        else {
+          let count = 0;
+          for (let i = 0; i < raw.length; i += 2) {
+            if (typeof raw[i] !== 'string' || typeof raw[i + 1] !== 'string') {
+              ambiguous = true;
+              break;
+            }
+            if (raw[i].toLowerCase() === 'authorization') {
+              count++;
+              if (raw[i + 1] !== header) ambiguous = true;
+            }
+          }
+          if (count > 1) ambiguous = true;
+        }
+      }
     } catch {
       header = null;
+      ambiguous = true;
     }
-    const match = typeof header === 'string' ? bearer.exec(header) : null;
+    const match = !ambiguous && typeof header === 'string' ? bearer.exec(header) : null;
     if (!match) {
       res.setHeader('WWW-Authenticate', challenge);
       send(res, 401, { error: 'unauthorized', error_description: 'A valid connection is required' });
