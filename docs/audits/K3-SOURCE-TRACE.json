@@ -88,7 +88,7 @@
       "sourceFile": "src/core/mcp-auth.js",
       "sourceBlob": "eea535069b2179dfa74ed4ad101abacd5789dea0",
       "target": "./src/mcp-auth.js",
-      "coreBlob": "81daef94c29c3a4a3162d2d65ab634a82779b0e2",
+      "coreBlob": "dc541b5f3259ee2394f024983bbf059882c76b21",
       "kind": "adapted",
       "tests": [
         "packages/core/test/mcp-auth.test.js",
@@ -102,7 +102,8 @@
         "untrusted Authorization request/header getters or proxies are sanitized to bearer 401 before store access; service transport still owns actual parsed Node headers",
         "portable bearer guard rejects duplicate or contradictory Authorization headers from Node headersDistinct/rawHeaders without durable token lookup; source owns actual HTTP transport and authorization policy",
         "portable normalized, distinct and raw bearer header fields require own data descriptors; source Node transport and token SQL remain service-owned",
-        "Shared inert HTTP Authorization evidence rejects duplicate/mixed-case raw/distinct aliases before bearer store lookup; service still owns actual Node transport and SQL."
+        "Shared inert HTTP Authorization evidence rejects duplicate/mixed-case raw/distinct aliases before bearer store lookup; service still owns actual Node transport and SQL.",
+        "Portable CORS helper for public bearer-only OAuth/MCP doors omits ambient cookie credentials; only each adopting service can safely expose its true route."
       ]
     },
     "./one-time-secrets": {
@@ -128,7 +129,7 @@
       "sourceFile": "src/core/oauth-handlers.js",
       "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
       "target": "./src/oauth-protocol.js",
-      "coreBlob": "f524f382201317a8d07ea08b2f98315a6f06d056",
+      "coreBlob": "c6a9e4a5982fcd64ba8741bfc3b5815a3b7feca3",
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
@@ -143,7 +144,8 @@
         "portable grant mappings and refresh receipts require inert own data token-identity bindings; service SQL still owns atomic code/refresh lifecycle",
         "new Basic and public PKCE methods use service-authored SQL method/hash, no combined header/body credentials; owner login, request transport caps, current source parity, SQL migration and RTC service adoption remain open",
         "Current Stripe raw HTTP length preflight is exposed as a portable OAuth transport helper; the adopting service must supply wire evidence and enforce all endpoint preflights without accessing owner SQL on failure.",
-        "Confidential OAuth Basic reuses the same strict normalized/distinct/raw Authorization proof, refusing competing credentials before service-owned client SQL."
+        "Confidential OAuth Basic reuses the same strict normalized/distinct/raw Authorization proof, refusing competing credentials before service-owned client SQL.",
+        "Portable OAuth registration, token and public metadata expose read-only browser preflight without durable SQL; private service owner authorization page retains separate no-CORS policy."
       ]
     },
     "./write": {

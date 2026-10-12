@@ -10,7 +10,7 @@ function response() {
   return {statusCode:200,headers:{},body:null,
     setHeader(k,v){this.headers[k]=v;return this;},
     status(c){this.statusCode=c;return this;},
-    send(v){this.body=v;return this;}};
+    send(v){this.body=v;return this;},end(){this.ended=true;return this;}};
 }
 function req(method,body) {
   return {method,headers:{'content-type':'application/json'},body};
@@ -532,5 +532,52 @@ describe('unambiguous confidential OAuth Authorization provenance',()=>{
     }
     expect(f.db.getOAuthClient).toHaveBeenCalledTimes(2);
     expect(f.db.consumeAuthCode).not.toHaveBeenCalled();
+  });
+});
+
+describe('public OAuth CORS and OPTIONS owner-boundary isolation',()=>{
+  it('answers bearer-only preflight without registering a client or reading authorization SQL',async()=>{
+    const f=fixture();
+    for(const handler of ['register','token','metadata','resourceMetadata']){
+      const res=response();
+      await f.handlers[handler]({method:'OPTIONS',headers:{origin:'https://agent.example'}},res);
+      expect(res.statusCode).toBe(204);
+      expect(res.ended).toBe(true);
+      expect(res.headers['Access-Control-Allow-Origin']).toBe('*');
+      expect(res.headers['Access-Control-Allow-Credentials']).toBeUndefined();
+      expect(res.headers['Allow']).toMatch(/OPTIONS/);
+      expect(res.body).toBeNull();
+    }
+    for(const method of ['createOAuthClient','getOAuthClient','consumeAuthCode','createAccessToken','rotateRefreshToken']){
+      expect(f.db[method]).not.toHaveBeenCalled();
+    }
+  });
+  it('retains normal POST flow with browser CORS and no ambient cookie permission',async()=>{
+    const f=fixture(),res=response();
+    await f.handlers.register({method:'POST',headers:{origin:'https://agent.example',
+      'content-type':'application/json'},body:{redirect_uris:[callback]}},res);
+    expect(res.statusCode).toBe(201);
+    expect(res.headers['Access-Control-Allow-Origin']).toBe('*');
+    expect(res.headers['Access-Control-Allow-Credentials']).toBeUndefined();
+    expect(JSON.parse(res.body).client_id).toBeTruthy();
+    expect(f.db.createOAuthClient).toHaveBeenCalledTimes(1);
+  });
+  it('does not silently allow OPTIONS from non-browser clients or active origins',async()=>{
+    const f=fixture();
+    for(const headers of [{}, {'content-type':'application/json'}]){
+      const res=response();
+      await f.handlers.register({method:'OPTIONS',headers},res);
+      expect(res.statusCode).toBe(405);
+      expect(res.headers['Access-Control-Allow-Origin']).toBeUndefined();
+    }
+    let calls=0;
+    const headers={};
+    Object.defineProperty(headers,'origin',{enumerable:true,
+      get(){calls++;return 'https://agent.example';}});
+    const res=response();
+    await f.handlers.token({method:'OPTIONS',headers},res);
+    expect(res.statusCode).toBe(405);
+    expect(calls).toBe(0);
+    expect(f.db.getOAuthClient).not.toHaveBeenCalled();
   });
 });
