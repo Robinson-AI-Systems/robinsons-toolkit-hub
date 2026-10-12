@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Authorized D-4 private-transport probe. Never prints credentials or comment bodies.
+import { pathToFileURL } from 'node:url';
 import { githubCommentTransport } from '../packages/cli/src/relay.js';
 
 export async function relayPermissionProbe({ args = process.argv.slice(2), env = process.env,
@@ -34,5 +35,5 @@ export async function relayPermissionProbe({ args = process.argv.slice(2), env =
   } catch { return fail('transport_probe_failed_or_cleanup_required'); }
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).href)
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   process.exitCode = await relayPermissionProbe();
