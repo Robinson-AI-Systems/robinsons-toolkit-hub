@@ -9,6 +9,7 @@ import { routeSummary, writeAgentSetup, writeSkill, SKILL } from './setup.js';
 import { makeKeychain, addStoredPasses } from './keychain.js';
 import { readHiddenPass } from './input.js';
 import { serveLocalStdio } from './mcp.js';
+import { createLocalFiles } from './local-files.js';
 
 const usage = [
   'rtool servers',
@@ -23,7 +24,7 @@ const usage = [
   'rtool skill [--out PROJECT_DIRECTORY]',
   'rtool login <server> (hidden stdin, OS keychain)',
   'rtool logout <server> (remove local keychain entry)',
-  'rtool mcp (JSON-RPC 2025-11-25 over stdio)'
+  'rtool mcp [--local FOLDER[,FOLDER...]] (JSON-RPC 2025-11-25 over stdio)'
 ].join('\n');
 const optionsWithValue = new Set(['--args', '--fields', '--detail', '--out', '--area', '--limit']);
 const flags = new Set(['--dry-run', '--confirm']);
@@ -135,8 +136,10 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
     }
     env = await addStoredPasses(servers, env, vault);
     if (command === 'mcp') {
-      if (words.length) throw new ToolError('Usage: rtool mcp');
-      await serveLocalStdio({ servers, env, input, output: out });
+      if (words.length && (words.length !== 2 || words[0] !== '--local'))
+        throw new ToolError('Usage: rtool mcp [--local FOLDER[,FOLDER...]]');
+      const localFiles = words.length ? await createLocalFiles(words[1].split(',')) : null;
+      await serveLocalStdio({ servers, env, input, output: out, localFiles });
       return 0;
     }
     if (command === 'servers') {

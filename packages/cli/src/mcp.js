@@ -3,6 +3,7 @@
 import { StringDecoder } from 'node:string_decoder';
 import { ToolError } from './http.js';
 import { byName, send } from './dispatch.js';
+import { LOCAL_FILE_TOOLS } from './local-files.js';
 
 const VERSION = '2025-11-25';
 const MAX_LINE = 1024 * 1024;
@@ -31,7 +32,7 @@ const META = [
     inputSchema: shape() }
 ];
 const okName = /^[A-Za-z0-9_.-]{1,200}$/;
-export function localToolCatalog(servers, env = process.env) {
+export function localToolCatalog(servers, env = process.env, localFiles = null) {
   const tools = [];
   const routes = new Map();
   for (const [name] of servers) {
@@ -44,6 +45,12 @@ export function localToolCatalog(servers, env = process.env) {
           readOnlyHint: !['call'].includes(meta.suffix),
           destructiveHint: false, idempotentHint: false, openWorldHint: true
         } });
+    }
+  }
+  if (localFiles) {
+    for (const tool of LOCAL_FILE_TOOLS) {
+      routes.set(tool.name, { local: true, action: tool.name });
+      tools.push(tool);
     }
   }
   if (JSON.stringify(tools).length / 4 >= 5000)
@@ -66,6 +73,16 @@ function safeResult(data) {
 export async function invokeLocalTool({ servers, env, routes }, name, args = {}) {
   const route = routes.get(name);
   if (!route) throw new ToolError('Unknown local MCP broker tool: ' + name, -32602);
+  if (route.local) {
+    try {
+      if (!args || typeof args !== 'object' || Array.isArray(args))
+        throw new ToolError('Local arguments must be an object', -32602);
+      return safeResult(await route.localFiles.invoke(route.action, args));
+    } catch (error) {
+      return { isError: true, content: [{ type: 'text', text:
+        error instanceof ToolError ? error.message : 'Local file operation failed' }] };
+    }
+  }
   const server = byName(servers, env, route.name);
   if (!args || typeof args !== 'object' || Array.isArray(args))
     throw new ToolError('Tool arguments must be an object', -32602);
@@ -117,8 +134,13 @@ export async function invokeLocalTool({ servers, env, routes }, name, args = {})
 function rpcError(id, code, message) {
   return { jsonrpc: '2.0', id, error: { code, message } };
 }
-export function createLocalMcp({ servers, env = process.env } = {}) {
-  const catalog = localToolCatalog(servers, env);
+export function createLocalMcp({ servers = new Map(), env = process.env, localFiles = null } = {}) {
+  const catalog = localToolCatalog(servers, env, localFiles);
+  if (localFiles) {
+    for (const route of catalog.routes.values()) {
+      if (route.local) route.localFiles = localFiles;
+    }
+  }
   const dispatch = async (req) => {
     const id = req?.id;
     const respond = id !== undefined && id !== null;
@@ -151,8 +173,8 @@ export function createLocalMcp({ servers, env = process.env } = {}) {
   return { dispatch, catalog };
 }
 export async function serveLocalStdio({ servers, env = process.env,
-  input = process.stdin, output = process.stdout } = {}) {
-  const server = createLocalMcp({ servers, env });
+  input = process.stdin, output = process.stdout, localFiles = null } = {}) {
+  const server = createLocalMcp({ servers, env, localFiles });
   const decoder = new StringDecoder('utf8');
   let buffer = '';
   const emit = (message) => { if (message) output.write(JSON.stringify(message) + '\n'); };
