@@ -91,7 +91,7 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
     }
     for(const [suite,blob] of Object.entries(baseline.rtcTests)){
       const expected='test "$(git hash-object '+suite+')" = "'+blob+'"';
-      if(!evidence[0].run?.split('\\n').map(line=>line.trim()).includes(expected))
+      if(!evidence[0].run?.split('\n').map(line=>line.trim()).includes(expected))
         fail(name+': reviewed source RTC suite blob mismatch for '+suite);
     }
     const command=runs(job);
