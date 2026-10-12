@@ -6,7 +6,7 @@ import { basename, dirname, isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
 
 const MAX_WRITE = 16384;
-const fail = () => { throw new ToolError('Local file creation refused', -32602); };
+const fail = () => { throw new ToolError('Local file write refused', -32602); };
 const within = (root, child) => child === root || child.startsWith(root + sep);
 export const LOCAL_FILE_CREATE_TOOL = Object.freeze({
   name: 'local.file_create',
@@ -27,7 +27,7 @@ export const LOCAL_FILE_CREATE_TOOL = Object.freeze({
   }
 });
 
-export async function createConfirmedLocalFile(roots, args) {
+export async function resolveLocalWriteTarget(roots, args) {
   if (!args || typeof args !== 'object' || Array.isArray(args) || args.confirm !== true ||
       typeof args.content !== 'string' || typeof args.path !== 'string') fail();
   const index = args.root === undefined ? 0 : args.root;
@@ -48,6 +48,11 @@ export async function createConfirmedLocalFile(roots, args) {
   if (!within(root, parent)) fail();
   const target = resolve(parent, basename(relative));
   if (!within(root, target)) fail();
+  return { target, parent, bytes, index, relative };
+}
+
+export async function createConfirmedLocalFile(roots, args) {
+  const { target, parent, bytes, index, relative } = await resolveLocalWriteTarget(roots, args);
   // Write a private staging file first. A hard link atomically publishes
   // complete content without ever replacing an existing destination.
   const staged = resolve(parent, '.rtool-create-' + randomBytes(16).toString('hex'));
