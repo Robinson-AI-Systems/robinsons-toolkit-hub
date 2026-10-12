@@ -127,3 +127,5 @@ a normal single header still accepts. This is deliberately stricter fail-closed 
 the source utility; the adopting service must verify its actual HTTP adapter separately.
 
 **K-3aw OAuth request integrity:** Portable OAuth handler parsing now rejects repeated URL-encoded parameter names (including encoded aliases), inherited/accessor/prototype-control request records and accessor redirect URI entries before DB access. The shared HTTP helper remains an exact original-source copy; source service transport/parity and human owner consent are separate, unfinished gates.
+
+**K-3ax scoped page integrity:** After service redaction, the portable MCP layer validates each adapter-produced page as plain inert JSON data. No getter, `toJSON` function, unsafe prototype or cycle can be used during response spread/serialization or before issuing a scoped durable handle. This does not prove the service's original result SQL/retention or real provider response sanitization.
