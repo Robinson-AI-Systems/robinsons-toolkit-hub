@@ -23,6 +23,43 @@ function safeDispatchArgs(args) {
   } catch { return false; }
 }
 
+
+function safePageData(value, seen = new WeakSet(), depth = 0) {
+  // Adapter-produced page data is serialized and returned to callers; reject
+  // executable toJSON/getters, custom prototypes and cycles before spreading it.
+  if (depth > 16) return false;
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'object') return false;
+  try {
+    if (seen.has(value)) return false;
+    seen.add(value);
+    const array = Array.isArray(value);
+    const proto = Object.getPrototypeOf(value);
+    if (array ? proto !== Array.prototype : proto !== Object.prototype && proto !== null) return false;
+    if (Object.getOwnPropertySymbols(value).length) return false;
+    if (array) {
+      if (value.length > 2048) return false;
+      const descriptors = Object.getOwnPropertyDescriptors(value);
+      if (Object.keys(descriptors).length !== value.length + 1) return false;
+      for (let i = 0; i < value.length; i++) {
+        const descriptor = descriptors[i];
+        if (!descriptor || !Object.hasOwn(descriptor, 'value') ||
+            !safePageData(descriptor.value, seen, depth + 1)) return false;
+      }
+    } else {
+      const descriptors = Object.getOwnPropertyDescriptors(value);
+      if (Object.keys(descriptors).length > 2048) return false;
+      for (const [key, descriptor] of Object.entries(descriptors)) {
+        if (['__proto__', 'constructor', 'prototype', 'toJSON'].includes(key) ||
+            !descriptor.enumerable || !Object.hasOwn(descriptor, 'value') ||
+            !safePageData(descriptor.value, seen, depth + 1)) return false;
+      }
+    }
+    return true;
+  } catch { return false; }
+}
+
 export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResult,
   readDetail, splitResult, resultPage, formatError, skipDetailFor = () => false }) {
   if (!Array.isArray(registry?.tools) || !registry?.handlers ||
@@ -97,7 +134,8 @@ export function createGuardedMcpDispatcher({ registry, authorizeTool, shapeResul
       const summary = 'Saved ' + records + ' result record(s) from ' + name +
         ', ' + body.totalBytes + ' bytes (scoped connection only)';
       const page = resultPage(body, 0);
-      if (!page || typeof page !== 'object' || Array.isArray(page)) {
+      if (!page || typeof page !== 'object' || Array.isArray(page) ||
+          !safePageData(page)) {
         return deny('Result cannot be securely paged for this connection.');
       }
       // A paging adapter may append page data, but may never replace the core's

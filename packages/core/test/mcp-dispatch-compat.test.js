@@ -109,6 +109,29 @@ describe('portable MCP dispatcher source adapter integrity',()=>{
     expect(parsed(result)).toMatch(/exceeds the allowed response size/);
     expect(f.db.putScopedResult).not.toHaveBeenCalled();
   });
+  it('denies executable, polluted, or cyclic paging payloads before storing a handle', async()=>{
+    for (const makePage of [
+      () => {const p={offset:0};Object.defineProperty(p,'private',{enumerable:true,
+        get(){throw Error('must-not-run');}});return p;},
+      () => ({offset:0,data:[{toJSON(){throw Error('must-not-run');}}]}),
+      () => ({offset:0,data:[Object.create({inherited:true})]}),
+      () => ({offset:0,data:[{constructor:'shadow'}]}),
+      () => {const page={offset:0};page.data=page;return page;},
+      () => ({offset:0,data:[1,undefined]}),
+      () => ({offset:0,data:[Number.POSITIVE_INFINITY]})
+    ]) {
+      const f=fixture({handlers:{fixture_read:async()=>text(longValue())},page:makePage});
+      const result=await f.call();
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result)).not.toContain('must-not-run');
+      expect(f.db.putScopedResult).not.toHaveBeenCalled();
+    }
+    const valid=fixture({handlers:{fixture_read:async()=>text(longValue())},
+      page:()=>({offset:0,nextOffset:1,data:[{id:1,ok:true}]})});
+    expect(parsed(await valid.call())).toMatchObject({offset:0,data:[{id:1,ok:true}]});
+    expect(valid.db.putScopedResult).toHaveBeenCalledTimes(1);
+  });
+
   it('rechecks authorization on nested dispatch with the same identity and no privilege escalation',async()=>{
     const privateFn=vi.fn(async()=>text({secret:'private'}));
     const f=fixture({
