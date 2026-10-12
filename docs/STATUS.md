@@ -5,12 +5,13 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
-**L-1 read-only local file tools (active implementation PR):** D-2 is
+**L-1 read-only local file tools (PR #126, as-if merged):** D-2 is
 merged; source/deployment evidence still gates K-3/D-4 acceptance.
 Opt-in `rtool mcp --local FOLDER[,FOLDER...]` adds canonical-folder-scoped
 file_list, file_stat, file_read; no local tools in default MCP or hosted Hub.
 Shell and Git remain distinct unimplemented guarded slices. The new
-source/tests are pending exact-head CI and review, not an accepted milestone.
+source/tests include a real CLI stdio opt-in smoke. Exact-head CI/review are
+required before #126 merge; the whole L-1 shell/git milestone remains open.
 Stripe #188 merged in its service repo, adding original OAuth/private-core
 proof; service write/dispatch, adoption, package release and all genuine
 protected D-4 routes/revocation remain independently pending.
