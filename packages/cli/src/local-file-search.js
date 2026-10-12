@@ -46,9 +46,10 @@ async function readSource(path) {
   try {
     file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
     const info = await file.stat();
-    if (!info.isFile() || info.size > PER_FILE) return null;
+    if (!info.isFile()) return null;
+    if (info.size > PER_FILE) return { skipped: 'size-limit' };
     const raw = await file.readFile();
-    if (raw.length > PER_FILE) return null;
+    if (raw.length > PER_FILE) return { skipped: 'size-limit' };
     const body = new TextDecoder('utf-8', { fatal: true }).decode(raw);
     if (body.includes('\0')) return null;
     return { body, bytes: raw.length };
@@ -88,6 +89,7 @@ export async function searchLocalSources({ root, dir, query, limit = 20 }) {
       }
       const data = await readSource(canonical);
       if (!data) continue;
+      if (data.skipped) { truncated = true; continue; }
       if (bytes + data.bytes > MAX_BYTES) { truncated = true; break search; }
       bytes += data.bytes;
       const lines = data.body.split(/\r?\n/);
