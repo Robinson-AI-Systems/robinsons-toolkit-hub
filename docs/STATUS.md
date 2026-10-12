@@ -5,6 +5,9 @@ the central hub server is not yet built; relay deployments have varied between R
 
 ## Next
 
+**L-1 confirmed conditional local file updates, PR #130 (as-if merged; CI pending):** Four earlier useful slices #126–#129 merged with required gates. A locally opted-in agent may read a bounded SHA-256 and request a confirmed text-file replacement only if the supplied expected hash matches, a cooperative lock is acquired, and the unchanged file is rechecked before staged atomic rename. Real filesystem regressions cover success, stale hashes, lock conflicts, symlink escapes, invalid roots, Git metadata refusal and oversized input. This is not a kernel-atomic CAS against noncooperating writers and does not enable general shell. K-3 remains PRIVATE/NOT_READY and D-4 protected TEST is unverified; new upstream Stripe #190 must be rechecked after its merge, not treated as adopted from an open PR.
+
+
 **L-1 local source search / PR #129 (as-if merged, CI pending):** Owner-opted-in local MCP adds bounded literal code search without external shell or network. Real temporary-filesystem tests cover matching lines, symlink avoidance, ignored private/dependency paths, scope refusal, match caps and incomplete-result signaling. Existing #126–#128 already merged. L-1 general shell remains pending safe confinement and confirmation; K-3 release and D-4 authenticated acceptance remain independent and unverified.
 
 
