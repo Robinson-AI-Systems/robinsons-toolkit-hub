@@ -46,6 +46,25 @@ function safeRedirectUris(uris) {
   return new Set(uris).size === uris.length;
 }
 
+// An adapter must not persist an active/mutable OAuth row with credential
+// getters or token identities that differ from the server-issued credentials.
+// Preserve service-specific claim fields (including Date timestamps) as data.
+function safeAccessBinding(row, expected) {
+  if (!row || typeof row !== 'object' || Array.isArray(row) ||
+      ![Object.prototype,null].includes(Object.getPrototypeOf(row)) ||
+      Object.getOwnPropertySymbols(row).length) return null;
+  const out=Object.create(null);
+  for (const [name, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(row))) {
+    if (['__proto__','constructor','prototype'].includes(name) ||
+        !descriptor.enumerable || !Object.hasOwn(descriptor,'value')) return null;
+    out[name]=descriptor.value;
+  }
+  for (const [name, expectedValue] of Object.entries(expected)) {
+    if (!Object.hasOwn(out,name) || out[name]!==expectedValue) return null;
+  }
+  return Object.freeze(out);
+}
+
 const defaultPaths = Object.freeze({ mcp: '/api/mcp', authorize: '/api/oauth/authorize',
   token: '/api/oauth/token', register: '/api/oauth/register' });
 
@@ -103,12 +122,11 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       }
       const accessToken=randomToken(32),refreshToken=randomToken(32);
       const mapped=await buildAccessRow({accessToken,refreshToken,clientId:p.client_id,grant:record});
-      if (!mapped || typeof mapped!=='object' || Array.isArray(mapped) ||
-        mapped.accessToken!==accessToken || mapped.refreshToken!==refreshToken ||
-        mapped.clientId!==p.client_id) {
-        return bad(res,400,'invalid_grant','Connection settings cannot be issued');
-      }
-      await db.createAccessToken(mapped);
+      let bound=null;
+      try { bound=safeAccessBinding(mapped,{accessToken,refreshToken,clientId:p.client_id}); }
+      catch { /* malformed service mapping cannot become a durable credential */ }
+      if (!bound) return bad(res,400,'invalid_grant','Connection settings cannot be issued');
+      await db.createAccessToken(bound);
       return send(res,200,tokenResponse(accessToken,refreshToken));
     }
     if (p.grant_type==='refresh_token') {
@@ -117,10 +135,10 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       // Only the durable store may rotate a token; it must copy account/profile/mode/listing.
       const rotated=await db.rotateRefreshToken({refreshToken:p.refresh_token,clientId:p.client_id,
         accessToken,newRefreshToken:refreshToken});
-      if (!rotated || rotated.accessToken!==accessToken ||
-        rotated.refreshToken!==refreshToken || rotated.clientId!==p.client_id) {
-        return bad(res,400,'invalid_grant','Refresh credential is expired, used, or revoked');
-      }
+      let verified=null;
+      try { verified=safeAccessBinding(rotated,{accessToken,refreshToken,clientId:p.client_id}); }
+      catch { /* preserve a generic OAuth denial */ }
+      if (!verified) return bad(res,400,'invalid_grant','Refresh credential is expired, used, or revoked');
       return send(res,200,tokenResponse(accessToken,refreshToken));
     }
     return bad(res,400,'unsupported_grant_type','Supported grants: authorization_code and refresh_token');

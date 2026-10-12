@@ -126,7 +126,7 @@
       "sourceFile": "src/core/oauth-handlers.js",
       "sourceBlob": "3aa62cf055e28dc4fcda6affa3a52dc0381be94e",
       "target": "./src/oauth-protocol.js",
-      "coreBlob": "fca046034a025ed1bd924b4d56c98de0b40bdf8d",
+      "coreBlob": "506ee856ed01249359fb327e2c5148b845dc3348",
       "kind": "adapted",
       "tests": [
         "packages/core/test/oauth-protocol.test.js",
@@ -136,7 +136,8 @@
       "serverOwned": [
         "owner login UI, account grants and refresh settings SQL",
         "core rejects mapped or rotated token IDs that differ from issued IDs; service SQL must return matching durable claims",
-        "portable OAuth requests reject duplicate form keys and active or inherited top-level fields; redirect URI accessors cannot execute; source HTTP parsing stays independently unchanged"
+        "portable OAuth requests reject duplicate form keys and active or inherited top-level fields; redirect URI accessors cannot execute; source HTTP parsing stays independently unchanged",
+        "portable grant mappings and refresh receipts require inert own data token-identity bindings; service SQL still owns atomic code/refresh lifecycle"
       ]
     },
     "./write": {

@@ -137,3 +137,5 @@ the source utility; the adopting service must verify its actual HTTP adapter sep
 **K-3bb inert shaped-result boundary (PR #76):** before returning a compact response or serializing/retaining a large one, the portable dispatcher verifies the complete service-shaped payload and post-detail projection as inert JSON. It also refuses active formatted-error objects. This does not replace service-owned redaction, SQL retention, owner approval, or independent adoption.
 
 **K-3bc consumed secret SQL-row validation (PR #77):** portable consume guards own descriptors, selected row identity and scalar AAD inputs before processing ciphertext. Original Stripe SQL still owns atomic consume/expiry, service authorization and correct accountFromRow mapping; no deployed service adoption is claimed.
+
+**K-3bd OAuth credential binding (PR #78):** portable grant→access persistence rejects active/inherited token record descriptors and mismatched issued token IDs; rotated database receipts must provide identical own identity fields. The source service still controls atomic SQL rotation, owner login/account choices, token expiry and authenticated approvals.
