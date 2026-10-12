@@ -26,7 +26,7 @@ export function verifyCoreAssertionCoverage(dir=root) {
   const covered=Object.keys(ledger.modules||{});
   if(pinned.length!==covered.length||pinned.some(([name])=>!covered.includes(name))||
       covered.some(name=>!pinned.some(([entry])=>entry===name))){
-    throw new Error('Assertion ledger must cover all verbatim and explicitly reviewed HTTP exports');
+    throw new Error('Assertion ledger must cover every and only verbatim or explicitly reviewed HTTP exports');
   }
   let portable=0,serverOwned=0;
   for(const [name,entry] of Object.entries(ledger.modules)){
