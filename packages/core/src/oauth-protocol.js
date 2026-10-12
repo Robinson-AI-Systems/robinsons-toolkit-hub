@@ -45,7 +45,8 @@ function safeRedirectUris(uris) {
   for (let i = 0; i < uris.length; i++) {
     const item = fields[String(i)];
     if (!item || !item.enumerable || !Object.hasOwn(item, 'value') ||
-        typeof item.value !== 'string' || !validRedirectUri(item.value)) return null;
+        typeof item.value !== 'string' ||
+        Buffer.byteLength(item.value, 'utf8') > 2048 || !validRedirectUri(item.value)) return null;
     clean.push(item.value);
   }
   return new Set(clean).size === clean.length ? Object.freeze(clean) : null;
@@ -98,6 +99,24 @@ function copyClaim(value, seen, budget, depth = 0) {
 }
 // These fields originate in service-owned SQL. Read own inert descriptors
 // instead of invoking client row getters or accepting a different client id.
+// Header credentials are an alternate client authentication mechanism, never
+// a second body secret. Reject noncanonical encodings before durable SQL reads.
+function basicCredentials(req) {
+  const headers = req?.headers;
+  if (!headers || typeof headers !== 'object' ||
+      ![Object.prototype, null].includes(Object.getPrototypeOf(headers))) return null;
+  const descriptor = Object.getOwnPropertyDescriptor(headers, 'authorization');
+  if (!descriptor) return { present: false, basic: null };
+  if (!Object.hasOwn(descriptor, 'value') || typeof descriptor.value !== 'string') return null;
+  const match = /^Basic ([A-Za-z0-9+/]+={0,2})$/i.exec(descriptor.value);
+  if (!match) return { present: true, basic: null };
+  const bytes = Buffer.from(match[1], 'base64');
+  const value = bytes.toString('utf8'), colon = value.indexOf(':');
+  if (bytes.toString('base64') !== match[1] || !Buffer.from(value, 'utf8').equals(bytes) ||
+      colon < 1 || colon !== value.lastIndexOf(':')) return { present: true, basic: null };
+  return { present: true, basic: { id: value.slice(0, colon), secret: value.slice(colon + 1) } };
+}
+
 function safeClientBinding(row, expectedId) {
   if (!row || typeof row !== 'object' || Array.isArray(row) ||
       ![Object.prototype, null].includes(Object.getPrototypeOf(row))) return null;
@@ -109,9 +128,16 @@ function safeClientBinding(row, expectedId) {
   const id = value('client_id');
   const hash = value('client_secret_hash');
   const redirects = safeRedirectUris(value('redirect_uris'));
-  if (id !== expectedId || typeof hash !== 'string' ||
-      !/^[a-f0-9]{64}$/.test(hash) || !redirects) return null;
-  return Object.freeze({ client_id: id, client_secret_hash: hash, redirect_uris: redirects });
+  const methodField = fields.token_endpoint_auth_method;
+  if (methodField && (!methodField.enumerable || !Object.hasOwn(methodField, 'value'))) return null;
+  // Legacy source SQL clients defaulted to POST; public clients deliberately have no hash.
+  const method = methodField ? methodField.value : 'client_secret_post';
+  if (id !== expectedId || !redirects ||
+      !['client_secret_post', 'client_secret_basic', 'none'].includes(method) ||
+      (method === 'none' ? hash !== null :
+        typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash))) return null;
+  return Object.freeze({ client_id: id, client_secret_hash: hash,
+    token_endpoint_auth_method: method, redirect_uris: redirects });
 }
 function safeAccessBinding(row, expected) {
   if (!row || typeof row !== 'object' || Array.isArray(row) ||
@@ -148,14 +174,32 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     if (!redirects) {
       return bad(res,400,'invalid_client_metadata','One to eight valid, distinct redirect URIs required');
     }
-    if (p.token_endpoint_auth_method && p.token_endpoint_auth_method !== 'client_secret_post') {
-      return bad(res,400,'invalid_client_metadata','Only client_secret_post is supported');
+    if (p.client_name !== undefined && (typeof p.client_name !== 'string' ||
+        p.client_name.length > 100 || /[\\x00-\\x1f\\x7f]/.test(p.client_name))) {
+      return bad(res,400,'invalid_client_metadata','Client name must be printable and at most 100 characters');
     }
-    const id=randomToken(24), secret=randomToken(32);
-    await db.createOAuthClient({clientId:id,clientSecret:secret,redirectUris:[...redirects],
-      clientName:str(p.client_name).slice(0,100)});
-    return send(res,201,{client_id:id,client_secret:secret,client_secret_expires_at:0,
-      redirect_uris:[...redirects],token_endpoint_auth_method:'client_secret_post',
+    if (p.response_types !== undefined && (!Array.isArray(p.response_types) ||
+        p.response_types.length !== 1 || p.response_types[0] !== 'code')) {
+      return bad(res,400,'invalid_client_metadata','Only authorization code response type is supported');
+    }
+    if (p.grant_types !== undefined && (!Array.isArray(p.grant_types) ||
+        !p.grant_types.includes('authorization_code') || p.grant_types.length > 2 ||
+        new Set(p.grant_types).size !== p.grant_types.length ||
+        !p.grant_types.every(x => ['authorization_code','refresh_token'].includes(x)))) {
+      return bad(res,400,'invalid_client_metadata','Unsupported or duplicate grant types');
+    }
+    // Explicit BASIC and public PKCE are supported. Existing portable clients
+    // default to POST pending independent service-owned migration/acceptance.
+    const method = p.token_endpoint_auth_method ?? 'client_secret_post';
+    if (!['client_secret_post','client_secret_basic','none'].includes(method)) {
+      return bad(res,400,'invalid_client_metadata','Unsupported client authentication');
+    }
+    const id=randomToken(24), secret=method==='none' ? null : randomToken(32);
+    await db.createOAuthClient({clientId:id,clientSecret:secret,
+      tokenEndpointAuthMethod:method,redirectUris:[...redirects],clientName:str(p.client_name)});
+    return send(res,201,{client_id:id,
+      ...(secret ? {client_secret:secret,client_secret_expires_at:0} : {}),
+      redirect_uris:[...redirects],token_endpoint_auth_method:method,
       grant_types:['authorization_code','refresh_token'],response_types:['code']});
   }
   async function token(req, res) {
@@ -165,12 +209,27 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     if (p.resource !== resource()) {
       return bad(res,400,'invalid_target','Token resource must be this MCP');
     }
-    const dbClient = await db.getOAuthClient(str(p.client_id));
+    const auth = basicCredentials(req);
+    if (!auth || auth.present && !auth.basic) {
+      return bad(res,401,'invalid_client','Client credentials rejected');
+    }
+    const clientId = auth.basic?.id || str(p.client_id);
+    const dbClient = await db.getOAuthClient(clientId);
     let client = null;
-    try { client = safeClientBinding(dbClient, p.client_id); }
+    try { client = safeClientBinding(dbClient, clientId); }
     catch { /* refuse malformed service SQL rows without invoking accessors */ }
-    if (!client || typeof p.client_secret!=='string' || !p.client_secret ||
-      !secretsMatch(hashToken(p.client_secret), client.client_secret_hash)) {
+    const method = client?.token_endpoint_auth_method;
+    const publicOk = method === 'none' && !auth.present &&
+      (p.client_secret === undefined || p.client_secret === '');
+    const postOk = method === 'client_secret_post' && !auth.present &&
+      typeof p.client_secret === 'string' && !!p.client_secret &&
+      secretsMatch(hashToken(p.client_secret), client.client_secret_hash);
+    const basicOk = method === 'client_secret_basic' && !!auth.basic &&
+      (p.client_id === undefined || p.client_id === clientId) &&
+      p.client_secret === undefined && !!auth.basic.secret &&
+      secretsMatch(hashToken(auth.basic.secret), client.client_secret_hash);
+    if (!client || !(publicOk || postOk || basicOk)) {
+      if (auth.present) res.setHeader('WWW-Authenticate', 'Basic realm="MCP OAuth"');
       return bad(res,401,'invalid_client','Client credentials rejected');
     }
     if (p.grant_type === 'authorization_code') {
@@ -185,14 +244,14 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
           record = copyClaim(consumed, new Set(), {left: 512});
         }
       } catch { /* malformed durable authorization codes cannot authorize credentials */ }
-      if (!record || record.client_id!==p.client_id || record.redirect_uri!==p.redirect_uri ||
+      if (!record || record.client_id!==clientId || record.redirect_uri!==p.redirect_uri ||
         !verifyPkce(p.code_verifier,record.code_challenge,record.code_challenge_method)) {
         return bad(res,400,'invalid_grant','Code is expired, used, or failed PKCE');
       }
       const accessToken=randomToken(32),refreshToken=randomToken(32);
-      const mapped=await buildAccessRow({accessToken,refreshToken,clientId:p.client_id,grant:record});
+      const mapped=await buildAccessRow({accessToken,refreshToken,clientId,grant:record});
       let bound=null;
-      try { bound=safeAccessBinding(mapped,{accessToken,refreshToken,clientId:p.client_id}); }
+      try { bound=safeAccessBinding(mapped,{accessToken,refreshToken,clientId}); }
       catch { /* malformed service mapping cannot become a durable credential */ }
       if (!bound) return bad(res,400,'invalid_grant','Connection settings cannot be issued');
       await db.createAccessToken(bound);
@@ -202,10 +261,10 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
       if (!str(p.refresh_token)) return bad(res,400,'invalid_grant','Missing refresh token');
       const accessToken=randomToken(32),refreshToken=randomToken(32);
       // Only the durable store may rotate a token; it must copy account/profile/mode/listing.
-      const rotated=await db.rotateRefreshToken({refreshToken:p.refresh_token,clientId:p.client_id,
+      const rotated=await db.rotateRefreshToken({refreshToken:p.refresh_token,clientId,
         accessToken,newRefreshToken:refreshToken});
       let verified=null;
-      try { verified=safeAccessBinding(rotated,{accessToken,refreshToken,clientId:p.client_id}); }
+      try { verified=safeAccessBinding(rotated,{accessToken,refreshToken,clientId}); }
       catch { /* preserve a generic OAuth denial */ }
       if (!verified) return bad(res,400,'invalid_grant','Refresh credential is expired, used, or revoked');
       return send(res,200,tokenResponse(accessToken,refreshToken));
@@ -218,7 +277,7 @@ export function createOAuthProtocolHandlers({ db, env = process.env, paths = def
     return send(res,200,{issuer:base,authorization_endpoint:base+paths.authorize,
       token_endpoint:base+paths.token,registration_endpoint:base+paths.register,
       response_types_supported:['code'],grant_types_supported:['authorization_code','refresh_token'],
-      code_challenge_methods_supported:['S256'],token_endpoint_auth_methods_supported:['client_secret_post']});
+      code_challenge_methods_supported:['S256'],token_endpoint_auth_methods_supported:['client_secret_post','client_secret_basic','none']});
   }
   function resourceMetadata(req,res) {
     if (!only(res,req,['GET'])) return;
