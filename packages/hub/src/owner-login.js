@@ -28,15 +28,18 @@ function validOwner(env) {
     /^[A-Za-z0-9:_-]{1,120}$/.test(env.HUB_OWNER_ID);
 }
 export async function verifyOwnerLogin(db, req, password, {env=process.env}={}) {
-  if (!validOwner(env) || !env.HUB_OWNER_SCRYPT || !env.HUB_TOKEN_PEPPER)
+  if (!validOwner(env) || !env.HUB_TOKEN_PEPPER)
     throw new Error('Hub owner authentication not configured');
+  const stored=env.HUB_OWNER_SCRYPT || (await db.query(
+    'SELECT verifier FROM hub_owner_credentials WHERE owner_id=$1',[env.HUB_OWNER_ID])).rows[0]?.verifier;
+  if(!stored)throw new Error('Hub owner authentication not configured');
   // Only the trusted transport peer is used; client-supplied IP headers cannot
   // bypass the database-backed 5 attempts / 15 minutes lockout.
   const peer=req.socket?.remoteAddress || 'unknown';
   const budget=await takeBudget(db,{scope:'owner-login:'+env.HUB_OWNER_ID+':'+peer,
     pepper:env.HUB_TOKEN_PEPPER,max:5,seconds:900});
   if (!budget.allowed) return {approved:false,retryAfter:budget.retryAfter};
-  return {approved:verifyOwnerPassword(password,env.HUB_OWNER_SCRYPT)};
+  return {approved:verifyOwnerPassword(password,stored)};
 }
 export function formFields(req) {
   const body=req.method==='GET' ? req.query : req.body;
@@ -76,7 +79,8 @@ export function htmlForm(action,fields) {
     '<input type="hidden" name="'+escapeHtml(key)+'" value="'+escapeHtml(value)+'">').join('');
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
     '<title>Robinson Toolkit Hub owner approval</title><main>'+
-    '<h1>Authorize a TEST read-only Toolkit Hub connection</h1>'+
+    '<h1>Authorize a TEST Toolkit Hub connection</h1>'+
+    '<p>Requested profile: '+escapeHtml(fields.profile||'read_only')+'</p>'+
     '<p>Only this Hub is authorized. Upstream provider access requires separate scoped grants.</p>'+
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
     '<label>Owner passphrase <input type="password" name="password" autocomplete="current-password" required></label>'+

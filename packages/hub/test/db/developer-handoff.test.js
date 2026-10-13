@@ -1,0 +1,52 @@
+import {beforeAll,afterAll,it,expect} from 'vitest';
+import pg from 'pg';
+import {readFile} from 'node:fs/promises';
+import {randomBytes,createHash,generateKeyPairSync,privateDecrypt,constants} from 'node:crypto';
+import {registerDeveloperClient,developerClientValid,developerHandoff,developerConsent,ownerSetup} from '../../src/developer-handoff.js';
+import {exchangeOAuthCode,rotateOAuthRefresh,authenticateOAuth} from '../../src/oauth.js';
+import {verifyOwnerLogin} from '../../src/owner-login.js';
+let db,schema;const origin='https://hub.example';const setup=randomBytes(32).toString('base64url');
+const env={HUB_OWNER_ID:'test-owner',HUB_TOKEN_PEPPER:'synthetic-database-pepper-never-live',HUB_PUBLIC_ORIGIN:origin,HUB_OWNER_SETUP_HASH:createHash('sha256').update(setup).digest('hex'),HUB_OWNER_SETUP_EXPIRES:new Date(Date.now()+600000).toISOString()};
+const password='synthetic-owner-passphrase-never-live';
+beforeAll(async()=>{
+ const url=new URL(process.env.TEST_DATABASE_URL);if(!['localhost','127.0.0.1'].includes(url.hostname))throw Error('Only disposable localhost');
+ db=new pg.Client({connectionString:url.href});await db.connect();schema='hub_developer_'+process.pid;await db.query('CREATE SCHEMA "'+schema+'"');await db.query('SET search_path TO "'+schema+'"');
+ for(const f of ['001-hub-foundation.sql','002-hub-oauth.sql','007-hub-developer.sql'])await db.query(await readFile(new URL('../../migrations/'+f,import.meta.url),'utf8'));
+});
+afterAll(async()=>{if(db){await db.query('DROP SCHEMA "'+schema+'" CASCADE');await db.end();}});
+it('consumes first-time setup once, stores only a verifier and rejects reset/replay',async()=>{
+ const req={method:'POST',body:{setup_token:setup,password,confirmation:password}};
+ const results=await Promise.all([ownerSetup(db,req,{env}),ownerSetup(db,req,{env})]);
+ expect(results.map(r=>r.status).sort()).toEqual([201,409]);
+ const row=(await db.query('SELECT verifier FROM hub_owner_credentials')).rows[0];expect(row.verifier).not.toContain(password);
+ expect((await verifyOwnerLogin(db,{socket:{remoteAddress:'127.0.0.1'}},password,{env})).approved).toBe(true);
+ expect((await ownerSetup(db,{method:'GET',query:{setup_token:setup}},{env})).status).toBe(409);
+ expect((await ownerSetup(db,{method:'GET',query:{setup_token:'x'.repeat(43)}},{env})).status).toBe(403);
+});
+it('runs an original Hub full developer grant, encrypted polling, exchange and refresh',async()=>{
+ const registered=await registerDeveloperClient(db,{redirect_uris:[origin+'/api/developer/connect'],grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'client_secret_post'},{env});
+ expect(registered.status).toBe(201);const {client_id,client_secret}=registered.json;
+ expect(await developerClientValid(db,client_id,client_secret,{env})).toBe(true);expect(await developerClientValid(db,client_id,'w'.repeat(43),{env})).toBe(false);
+ const keys=generateKeyPairSync('rsa',{modulusLength:2048}),verifier=randomBytes(32).toString('base64url'),poll=randomBytes(32).toString('base64url');
+ const input={client_id,challenge:createHash('sha256').update(verifier).digest('base64url'),poll_hash:createHash('sha256').update(poll).digest('hex'),public_key:keys.publicKey.export({type:'spki',format:'pem'}),profile:'full'};
+ const begun=await developerHandoff(db,{method:'POST',body:input},{env});expect(begun.status).toBe(201);
+ expect((await developerHandoff(db,{method:'POST',body:input},{env})).status).toBe(409);
+ const url=new URL(begun.json.authorization_url),fields=Object.fromEntries(url.searchParams);
+ const pending=await developerHandoff(db,{method:'GET',query:{state:fields.state},headers:{authorization:'Bearer '+poll}},{env});expect(pending.status).toBe(202);
+ expect((await developerConsent(db,{method:'POST',socket:{remoteAddress:'127.0.0.2'}},{...fields,password:'wrong'},{env})).status).toBe(401);
+ expect((await developerConsent(db,{method:'GET'},{...fields,profile:'read_only'},{env})).status).toBe(400);
+ const consent=await developerConsent(db,{method:'POST',socket:{remoteAddress:'127.0.0.2'}},{...fields,password},{env});expect(consent.status).toBe(303);
+ const callback=new URL(consent.redirect);const code=callback.searchParams.get('code');
+ expect((await developerHandoff(db,{method:'GET',query:Object.fromEntries(callback.searchParams),headers:{}},{env})).status).toBe(200);
+ const request={method:'GET',query:{state:fields.state},headers:{authorization:'Bearer '+poll}};
+ const delivered=await developerHandoff(db,request,{env});expect(delivered.status).toBe(200);
+ const opened=privateDecrypt({key:keys.privateKey,oaepHash:'sha256',padding:constants.RSA_PKCS1_OAEP_PADDING},Buffer.from(delivered.json.sealed_code,'base64url')).toString();expect(opened).toBe(code);
+ expect((await developerHandoff(db,request,{env})).json.sealed_code).toBe(delivered.json.sealed_code);
+ const issued=await exchangeOAuthCode(db,{clientId:client_id,code:opened,verifier,redirectUri:origin+'/api/developer/connect'},{pepper:env.HUB_TOKEN_PEPPER});
+ expect(await authenticateOAuth(db,issued.access_token,{pepper:env.HUB_TOKEN_PEPPER})).toMatchObject({profile:'full',mode:'test'});
+ const refreshed=await rotateOAuthRefresh(db,{clientId:client_id,refreshToken:issued.refresh_token},{pepper:env.HUB_TOKEN_PEPPER});expect(refreshed.refresh_token).not.toBe(issued.refresh_token);
+ expect((await developerHandoff(db,{...request,headers:{authorization:'Bearer '+'w'.repeat(43)}},{env})).status).toBe(410);
+});
+it('refuses dynamic redirects outside the fixed Hub handoff',async()=>{
+ const r=await registerDeveloperClient(db,{redirect_uris:['https://attacker.example/callback'],grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'client_secret_post'},{env});expect(r.status).toBe(400);
+});

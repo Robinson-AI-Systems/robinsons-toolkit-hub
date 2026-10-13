@@ -76,3 +76,8 @@ owned cleanup. The immediate server-side metadata confirmation still needs corre
 helpers require separate TEST authority; native full-profile provider tools retain their
 original functionality. No GitHub repository was created because current default-label
 cleanup restrictions would risk leaving an uncleanable fixture.
+
+## Hub connection and durable runner recovery
+Migration 007 supports fixed callback developer clients and encrypted PKCE polling. Hub owner consent retains the requested developer profile in TEST mode; ordinary OAuth remains unchanged. The server has no added production/provider operations. Initial owner setup uses a private, expiring activation link configured through the owner-authorized control plane; once saved, the verifier cannot be replaced through that link.
+
+For this Repo Management runner, the protected checkpoint lives in the existing Hub Vercel project (the verified chris-projects-de6cd1bf team), Development-only encrypted RTOOL_BUILDER_SESSION. Retrieve only that named variable through authorized Vercel control-plane tools, hydrate a new private vault using restoreDeveloperCheckpoint with independently configured exact origins, run one serialized runner, then saveDeveloperCheckpoint through the same protected store after credential mutations. Never display its value, commit it, save it in Library, treat a checkpoint as proof of consent, or let concurrent runners share rotating tokens. Record nonsecret status only. The store adapter is required to fail rather than claim persistence if it cannot save.
