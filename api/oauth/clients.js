@@ -1,5 +1,5 @@
 import { withHubDb } from '../../packages/hub/src/runtime.js';
-import { registerOwnerClient, formFields, htmlForm, htmlHeaders,
+import { registerOwnerClient, formFields, htmlHeaders,
   publicHubOrigin } from '../../packages/hub/src/owner-login.js';
 export default async function handler(req,res) {
   htmlHeaders(res);
