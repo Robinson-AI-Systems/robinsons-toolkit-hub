@@ -43,12 +43,14 @@ function assertManifest(manifest,{name,prefix}) {
 // Node HTTPS retains the hostname for TLS SNI/certificate verification, while
 // this one request resolves and pins its connect address through lookup.
 // agent:false prevents pooled socket reuse; no redirects or proxies are used.
-export async function probeStagedRtcContract(origin,identity,
-  {lookup=systemLookup,request=httpsRequest}={}) {
+export async function pinnedRtcJsonGet(origin,route,
+  {pass,lookup=systemLookup,request=httpsRequest}={}) {
   validateStagedOrigin(origin);
-  if (!identity||!/^[a-z][a-z0-9_]{1,59}$/.test(identity.name||'')||
-    !/^[a-z][a-z0-9_]{1,59}$/.test(identity.prefix||''))
-    throw new TypeError('Invalid expected RTC service identity');
+  if (!['/api/contract','/api/whoami'].includes(route)||
+    (route==='/api/contract' && pass!==undefined)||
+    (route==='/api/whoami' && (typeof pass!=='string'||
+      !/^rtc_pass_[A-Za-z0-9_-]{43}$/.test(pass))))
+    throw new TypeError('Invalid pinned RTC read request');
   const hostname=new URL(origin).hostname;
   const manifest=await new Promise((resolve,reject)=>{
     let complete=false;
@@ -58,8 +60,9 @@ export async function probeStagedRtcContract(origin,identity,
     let req;
     try {
       req=request({protocol:'https:',hostname,port:443,method:'GET',
-        path:'/api/contract',agent:false,rejectUnauthorized:true,
-        headers:{accept:'application/json'},
+        path:route,agent:false,rejectUnauthorized:true,
+        headers:{accept:'application/json',
+          ...(pass===undefined?{}:{authorization:'Bearer '+pass})},
         lookup:(asked,_options,callback)=>{
           if(asked!==hostname) return callback(new Error('Unexpected RTC hostname'));
           // DNS is resolved in the socket's connection lookup, not as an
@@ -103,5 +106,11 @@ export async function probeStagedRtcContract(origin,identity,
       req.end();
     } catch {fail('RTC contract connection failed');}
   });
-  return assertManifest(manifest,identity);
+  return manifest;
+}
+export async function probeStagedRtcContract(origin,identity,transport={}) {
+  if (!identity||!/^[a-z][a-z0-9_]{1,59}$/.test(identity.name||'')||
+    !/^[a-z][a-z0-9_]{1,59}$/.test(identity.prefix||''))
+    throw new TypeError('Invalid expected RTC service identity');
+  return assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);
 }
