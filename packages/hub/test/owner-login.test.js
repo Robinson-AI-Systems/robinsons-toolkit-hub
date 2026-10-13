@@ -53,3 +53,10 @@ it('owner-only client registration refuses incorrect passphrase',async()=>{
     redirect_uri:'https://agent.example/cb',password:'wrong'},{env,register})).status).toBe(401);
   expect(register).not.toHaveBeenCalled();
 });
+it('retains safe Node-parsed owner form fields without accepting arrays or inherited values',async()=>{
+ const {parse}=await import('node:querystring');
+ const body=parse('setup_token=FAKE_ACTIVATION&password=FAKE_PASSWORD&confirmation=FAKE_PASSWORD');
+ expect(formFields({method:'POST',body})).toBe(body);
+ expect(formFields({method:'POST',body:parse('password=first&password=second')})).toBeNull();
+ expect(formFields({method:'POST',body:Object.assign(Object.create({password:'inherited'}),{setup_token:'FAKE'})})).toBeNull();
+});

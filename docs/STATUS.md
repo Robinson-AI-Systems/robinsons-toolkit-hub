@@ -1,3 +1,7 @@
+## Browser form parsing recovery — 2026-10-13
+
+The released owner setup link still returned HTTP 200 with the expected form, and no owner credential was saved. Local reproduction found that Node querystring-parsed browser forms have a null prototype, which the owner and OAuth parsers incorrectly rejected. Accept that safe dictionary shape while rejecting inherited prototypes, duplicate arrays and oversized values. A real setup-route unit regression reaches ordinary validation without inserting a credential. No production POST diagnostic or owner mutation was performed; the workspace automatic reviewer rejected that proposed test. Live submission remains for the owner after checked corrective release.
+
 ## Developer connection recovery — 2026-10-13
 
 Source adds fixed-callback dynamic developer registration, RSA/PKCE mobile handoff, explicit TEST profile consent and authenticated JSON token exchange while preserving existing public OAuth clients. First-time Hub owner setup consumes a short-lived activation once and stores a scrypt verifier; existing configured owner authentication wins. Migration 007 is additive. No deployment or hosted acceptance is claimed before checked release and genuine owner consent.

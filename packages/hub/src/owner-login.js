@@ -53,7 +53,7 @@ export function formFields(req) {
     return result;
   }
   if (!body || typeof body!=='object' || Array.isArray(body) ||
-    Object.getPrototypeOf(body)!==Object.prototype) return null;
+    ![Object.prototype,null].includes(Object.getPrototypeOf(body))) return null;
   const keys=Object.keys(body);
   if (keys.length>12 || keys.some(k=> k.length>40 || typeof body[k]!=='string' ||
       body[k].length>2048)) return null;
