@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-12",
+  "updated": "2026-10-13",
   "order": [
     "K",
     "D",
@@ -391,13 +391,16 @@
         "H-1"
       ],
       "card": "docs/pr-cards/H-2.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "H-2"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
+      "note": "PR #142 starts noncallable staged registry only; H-1 authenticated acceptance, H-2 encryption, owner setup, connection-time SSRF defence and granted routing remain OPEN.",
+      "pr": [
+        "#142 (pending server registry SQL and strict owner staging partial)"
+      ]
     },
     {
       "id": "H-3",

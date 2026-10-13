@@ -206,17 +206,32 @@ python3 docs/pr-cards/validate-index.py
 `npm run test:conformance` is implemented by K-2 (reference fake server and real probes). Added later:
 `npm run test:doors` (D-1, real CLI door tests against localhost fake servers; D-2 and D-3 add their own door checks).
 
-## Session batches and handoff (Chris, 2026-10-11)
+## Session batches, dynamic alignment and mandatory pause (Chris, updated 2026-10-13)
 
-Complete and merge five substantial production-quality PRs per chat, then stop
-implementation and provide a concise ready-to-copy continuation prompt. An explicit
-session cutoff from Chris overrides that count (the 2026-10-11 session stops at #20).
-Count only newly merged PRs. Keep the ~500-line production target and 800-line hard
-maximum; genuinely smaller coherent/gated work is allowed, never pad it.
-The handoff names the repository, verified main SHA, merged PRs, outstanding work
-and next card; preserve this five-PR contract and refer to these repository rules
-instead of repeating them. Each future session repeats the same concise handoff.
-At project completion supply final verification instead. Owner gates still apply.
+Normally implement five substantial production-quality PRs per chat, and end completed sessions
+at an actually merged PR number divisible by five. At session start inspect the actual latest
+allocated repository PR number (including concurrently opened PRs). Target the **next greater**
+multiple of five: from #141 aim for #145 (four coherent PRs); from a multiple of five normally
+aim for five. Recalculate if other agents allocate new PR numbers. Numbers are a scheduling
+boundary, never evidence of capability acceptance: do not manufacture/pad/split unrelated work,
+weaken checks or mark an unverified milestone complete to reach one.
+
+**Do not terminate an incomplete batch by generating a continuation prompt.** Investigate
+code, CI, access, dependency and review failures and attempt authorized fixes; isolate an
+external blocker to its affected operation and continue the highest-priority eligible independent
+work. If no authorized work remains possible, give the owner the exact smallest actionable
+missing permission/decision/configuration/evidence, attempts, remaining work and resume point;
+pause in **this conversation**, awaiting owner input, without claiming asynchronous execution.
+Never request secrets in chat. When the condition is resolved, resume the same session and
+recalculate numbering. Prior approvals in OWNER-INPUTS are not to be requested again.
+
+After finishing the aligned substantial PR batch with exact-head and final-main required checks,
+post a permanent PR handoff, update STATUS/cards/index/acceptance, then supply a concise
+ready-to-copy prompt that references AGENTS, SESSION-START, STATUS and latest handoff.
+Every successor prompt must preserve the same **normal five + next-multiple-of-five dynamic
+alignment and mandatory incomplete-batch pause/resume** policies. An explicit owner session
+cutoff takes priority; no artificial fillers. Existing per-PR ~500-line target/~800-line hard
+maximum, owner gates and checked scheduled-release policy remain unchanged.
 
 ## Ending a session
 
