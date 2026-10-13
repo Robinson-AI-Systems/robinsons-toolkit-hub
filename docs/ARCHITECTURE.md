@@ -204,3 +204,6 @@ Without both local fixtures the extended suite reports skips and cannot certify 
 Shared `packages/core` extraction (K-3), new-server scaffold (K-4), hosted hub (H),
 workflows (C) and local tools (L). D-4 real environment proof and native OS credential
 smokes remain unverified. Owner relay resources/secrets are not provisioned here.
+
+## H-1 hosted partial gateway (PR #134 proposed)
+Hosted Node entrypoints `api/mcp.js` (OAuth-only, fixed two functional tools), `api/whoami.js` (Hub pass only), `api/oauth/token.js` (pre-authorized PKCE exchange and refresh), and `api/contract.js` (RTC 0 until full conformance). Runtime requires separately provisioned `HUB_DATABASE_URL` and `HUB_TOKEN_PEPPER`, uses small PostgreSQL pool and shared SQL rate counters. Owner consent, HTTPS API completeness, H-2 upstream grants, H-3 federation and actual deployed tests are incomplete; no client-facing ability to issue an owner's OAuth code is exposed. Scheduled-only live deployment policy unchanged.
