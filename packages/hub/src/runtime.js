@@ -8,7 +8,7 @@ export function hubSettings(env=process.env) {
     typeof env.HUB_TOKEN_PEPPER!=='string' || env.HUB_TOKEN_PEPPER.length<32)
     throw new Error('Hub storage/authentication not configured');
   return {url:env.HUB_DATABASE_URL,pepper:env.HUB_TOKEN_PEPPER,
-    resultsKey:env.HUB_RESULTS_KEY};
+    resultsKey:env.HUB_RESULTS_KEY,grantsKey:env.HUB_GRANTS_KEY};
 }
 export async function withHubDb(fn,env=process.env) {
   const settings=hubSettings(env);

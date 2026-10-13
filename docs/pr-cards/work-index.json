@@ -397,9 +397,10 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "PR #142 starts noncallable staged registry only; H-1 authenticated acceptance, H-2 encryption, owner setup, connection-time SSRF defence and granted routing remain OPEN.",
+      "note": "Source staged registry and per-caller encryption in #142–#143, both noncallable. Owner setup, connection-time DNS safety, grant activation and real authenticated acceptance OPEN.",
       "pr": [
-        "#142 (pending server registry SQL and strict owner staging partial)"
+        "#142 (pending server registry SQL and strict owner staging partial)",
+        "#143 (encrypted caller/session-bound RTC grant staging partial)"
       ]
     },
     {
