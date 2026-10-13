@@ -21,9 +21,10 @@ export default async function handler(req,res) {
     return res.status(400).json({error:'invalid_request'});
   try {
     return await withHubDb(async(db,settings)=>{
-      if(json&&!await developerClientValid(db,clientId,form.get('client_secret')))
+      const dynamic=(await db.query('SELECT 1 FROM hub_developer_clients WHERE client_id=$1',[clientId])).rows.length>0;
+      if((json||dynamic)&&!await developerClientValid(db,clientId,form.get('client_secret')))
         return res.status(401).json({error:'invalid_client'});
-      if(json&&form.get('resource')!==process.env.HUB_PUBLIC_ORIGIN+'/api/mcp')
+      if((json||dynamic)&&form.get('resource')!==process.env.HUB_PUBLIC_ORIGIN+'/api/mcp')
         return res.status(400).json({error:'invalid_target'});
       const limit=await takeBudget(db,{scope:'oauth-token:'+clientId,pepper:settings.pepper,max:30});
       if (!limit.allowed) {
