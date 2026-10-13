@@ -1,5 +1,6 @@
+import {spawn} from 'node:child_process';
 import {describe,it,expect} from 'vitest';
-import {mkdtemp,readFile,rm,lstat,symlink,mkdir,chmod} from 'node:fs/promises';
+import {mkdtemp,readFile,rm,lstat,symlink,mkdir,chmod,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {makeDeveloperVault} from '../src/developer-vault.js';
@@ -21,6 +22,25 @@ describe('protected managed-runner OAuth vault',()=>{
    const vault=await makeDeveloperVault(root);await expect(vault.getOAuth('../escape')).rejects.toThrow();
    await symlink(join(root,'vault.key'),join(root,'custom.oauth.enc'));await expect(vault.getOAuth('custom')).rejects.toThrow();
   }finally{await rm(root,{recursive:true,force:true});}
+ });
+ it('ignores abandoned lock files from crashed runners',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'developer-stale-'));try{
+   await writeFile(join(root,'custom.oauth.enc.lock'),'',{mode:0o600});const vault=await makeDeveloperVault(root);
+   expect(await vault.withOAuthLock('custom',async()=>42)).toBe(42);
+  }finally{await rm(root,{recursive:true,force:true});}
+ });
+ it('releases a real cross-process lock after the owning runner is killed',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'developer-crash-'));
+  const moduleUrl=new URL('../src/developer-vault.js',import.meta.url).href;
+  const script=`import {makeDeveloperVault} from ${JSON.stringify(moduleUrl)}; const vault=await makeDeveloperVault(process.argv[1]);await vault.withOAuthLock('custom',async()=>{process.stdout.write('ready');await new Promise(()=>{});});`;
+  const child=spawn(process.execPath,['--input-type=module','-e',script,root],{stdio:['ignore','pipe','pipe']});
+  try{
+   await new Promise((resolve,reject)=>{child.stdout.once('data',resolve);child.once('error',reject);child.once('exit',()=>reject(Error('runner exited before locking')));});
+   const vault=await makeDeveloperVault(root);await expect(vault.withOAuthLock('custom',async()=>{})).rejects.toThrow('refresh_in_progress');
+   const exited=new Promise(resolve=>child.once('exit',resolve));child.kill('SIGKILL');await exited;
+   // The pipe closes and the orphan helper exits, releasing the kernel lock.
+   for(let attempt=0;;attempt++){try{expect(await vault.withOAuthLock('custom',async()=>42)).toBe(42);break;}catch(e){if(attempt===9)throw e;await new Promise(resolve=>setTimeout(resolve,20));}}
+  }finally{child.kill();await rm(root,{recursive:true,force:true});}
  });
  it('serializes refresh across processes and releases the lock after failure',async()=>{
   const root=await mkdtemp(join(tmpdir(),'developer-lock-'));try{

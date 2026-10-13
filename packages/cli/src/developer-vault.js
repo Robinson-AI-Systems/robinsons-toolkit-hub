@@ -1,5 +1,6 @@
 // Explicit managed-runner vault. AES-GCM files and a separate private local key;
 // filesystem ownership is the trust boundary. Never use a repo/Library artifact folder.
+import {spawn} from 'node:child_process';
 import {open,mkdir,lstat,rename,unlink} from 'node:fs/promises';
 import {resolve,dirname,join} from 'node:path';
 import {constants} from 'node:fs';
@@ -57,10 +58,23 @@ export async function makeDeveloperVault(directory){
   },
   async deleteOAuth(name){const file=path(name);if(!await safeFile(file,{missing:true}))return false;await unlink(file);return true;},
   async withOAuthLock(name,fn){
-   const file=path(name)+'.lock';let f;
-   try{f=await open(file,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);}
-   catch(e){if(e.code==='EEXIST')throw new RouteError('developer_refresh_in_progress_retry_later');throw e;}
-   try{return await fn();}finally{await f.close();await unlink(file);}
+   // Kernel lock survives an abandoned filename and releases on process/pipe exit.
+   const file=path(name)+'.lock';await safeFile(file,{missing:true});
+   const f=await open(file,constants.O_RDWR|constants.O_CREAT|constants.O_NOFOLLOW,0o600);
+   let child;
+   try{
+    const st=await f.stat();if(st.uid!==process.getuid()||(st.mode&0o077)!==0)deny();
+    await new Promise((resolve,reject)=>{
+     child=spawn('sh',['-c','flock -n 3 || exit 1; printf "locked\\n"; cat >/dev/null'],{env:{PATH:'/usr/bin:/bin'},stdio:['pipe','pipe','ignore',f.fd]});
+     child.once('error',()=>reject(new RouteError('Protected developer vault requires flock')));
+     child.once('exit',()=>reject(new RouteError('developer_refresh_in_progress_retry_later')));
+     child.stdout.once('data',()=>resolve());
+    });
+    return await fn();
+   }finally{
+    if(child){const closed=new Promise(resolve=>child.once('close',resolve));child.stdin.end();if(child.exitCode===null)await closed;}
+    await f.close();
+   }
   }
  };
 }
