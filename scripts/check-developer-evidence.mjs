@@ -24,6 +24,15 @@ export function validateEvidence(document){
    if(row.layer==='revocation'&&!row.observations.includes('same_credential_revoked_denial'))errors.push('A generic denial is not revocation proof');
   }
  }
+ // Standalone observations document partial client checks, never close hosted Hub layers.
+ if(document.upstream_observations!==undefined&&!Array.isArray(document.upstream_observations))errors.push('Upstream observations must be an array');
+ for(const row of Array.isArray(document.upstream_observations)?document.upstream_observations:[]){
+  if(!row||row.status!=='partial'||row.source!=='custom_service'||row.transport!=='native_mcp'||row.closes_hosted_hub_layers!==false||row.full_provider_acceptance!==false){errors.push('Partial upstream checks cannot certify hosted Hub or full provider acceptance');continue;}
+  if(typeof row.service!=='string'||row.service===document.service||!/^Robinson-AI-Systems\/[a-z0-9-]+$/.test(row.repository||''))errors.push('Upstream checks must identify a separate custom service repository');
+  if(!/^[a-f0-9]{40}$/.test(row.commit||'')||!/^[a-f0-9]{40}$/.test(row.client_commit||''))errors.push('Upstream checks require exact server and client revisions');
+  try{const u=new URL(row.origin);if(u.protocol!=='https:'||u.origin!==row.origin||u.username||u.password)throw Error();}catch{errors.push('Upstream checks need a canonical HTTPS origin');}
+  if(!Array.isArray(row.observations)||!row.observations.length||row.observations.some(x=>typeof x!=='string'||!x.trim()))errors.push('Upstream checks need concrete observations');
+ }
  return errors;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){

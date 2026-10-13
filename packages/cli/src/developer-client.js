@@ -85,9 +85,12 @@ export async function developerConnect({name,origin,vault,profile='full',fetchIm
  return {status:'connected',requestedProfile:record.profile,reused:false,grant:'Owner selections are enforced by the service; verify native whoami.'};
 }
 function connected(record,issued,now){
- if(!token(issued.access_token)||!token(issued.refresh_token)||!Number.isInteger(issued.expires_in)||issued.expires_in<1||issued.expires_in>2592000||issued.token_type!=='Bearer')fail('developer_token_response_invalid');
+ // A refresh response may retain the original refresh token (RFC 6749 section 6).
+ // Initial authorization still requires a renewable credential; malformed rotations fail.
+ const refreshToken=Object.hasOwn(issued,'refresh_token')?issued.refresh_token:(record.status==='connected'?record.refreshToken:undefined);
+ if(!token(issued.access_token)||!token(refreshToken)||!Number.isInteger(issued.expires_in)||issued.expires_in<1||issued.expires_in>2592000||issued.token_type!=='Bearer')fail('developer_token_response_invalid');
  return {version:1,status:'connected',origin:record.origin,clientId:record.clientId,clientSecret:record.clientSecret,
-   profile:record.profile,accessToken:issued.access_token,refreshToken:issued.refresh_token,expiresAt:now+issued.expires_in*1000};
+   profile:record.profile,accessToken:issued.access_token,refreshToken,expiresAt:now+issued.expires_in*1000};
 }
 const refreshVaults=new WeakMap();
 export async function developerAccess({name,origin,vault,fetchImpl=fetch,now=()=>Date.now()}){

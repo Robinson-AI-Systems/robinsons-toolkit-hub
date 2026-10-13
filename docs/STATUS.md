@@ -1,3 +1,17 @@
+## Authentic developer connection and refresh — October 13
+
+Provenance: see `docs/developer-evidence.json` upstream_observations for exact standalone
+origins, deployed commits, checked client revision and concrete observations. These are
+CLI-to-standalone-service checks; they do not close the hosted Hub runtime layers.
+
+GitHub and Google native OAuth consent/token exchange and authenticated MCP initialize
+passed against their own deployed servers. GitHub provider reads and scope denial passed;
+Google Gmail identity matched the selected account. Live testing found Google omits a
+rotated refresh token; the CLI preserves the existing renewable grant in that case.
+Regression tests cover omission, rotation, malformed responses and initial authorization.
+Credentials remain in the private runner vault. Full provider/Hub/revocation/cleanup
+acceptance is not inferred from these checks.
+
 ## Hub proof correction — 2026-10-13
 
 The evidence gate now rejects standalone native MCP calls and bare RTC calls as Hub acceptance. A verified Hub layer needs an actual Hub-mediated RTC route and readback. Regression checks passed. Real provider and hosted Hub acceptance remain unverified; this schema does not manufacture proof.

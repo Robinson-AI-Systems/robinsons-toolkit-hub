@@ -29,3 +29,9 @@ test('standalone MCP and bare RTC calls cannot close Hub acceptance',()=>{
  assert.ok(validateEvidence(doc({...verified,layer:'hub',transport:'rtc_direct'})).length);
  assert.deepEqual(validateEvidence(doc({...verified,layer:'hub',transport:'rtc_direct',observations:['hub_route_readback']})),[]);
 });
+
+const upstream={service:'robinson-google-workspace-mcp',repository:'Robinson-AI-Systems/google-workspace-mcp',status:'partial',source:'custom_service',transport:'native_mcp',commit:'a'.repeat(40),client_commit:'b'.repeat(40),origin:'https://upstream.example',closes_hosted_hub_layers:false,full_provider_acceptance:false,observations:['authenticated_initialize']};
+test('partial upstream provenance remains distinct from this service acceptance',()=>assert.deepEqual(validateEvidence({...doc(verified),upstream_observations:[upstream]}),[]));
+test('upstream records cannot smuggle standard-connector or full-Hub claims',()=>{
+ for(const patch of [{source:'standard_connector'},{closes_hosted_hub_layers:true},{full_provider_acceptance:true},{commit:'main'},{client_commit:'main'},{origin:'https://user:secret@upstream.example'}])assert.ok(validateEvidence({...doc(verified),upstream_observations:[{...upstream,...patch}]}).length);
+});
