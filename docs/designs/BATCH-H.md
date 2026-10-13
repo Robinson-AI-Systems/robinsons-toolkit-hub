@@ -16,16 +16,21 @@ Depends on K-1, K-2 and D-2. K-3 is optional reuse, not a prerequisite. Two inde
 refresh and rate limits live in its database, contract §2), passes, HTTPS API,
 manifest and meta-tools. So every agent door (connector, HTTPS, `rtool`, local MCP, relay) works with it unchanged.
 
-**H2. Backends are registered, not built in.** `hub_servers` holds each server's name, URL, RTC version (from
-`GET /api/contract`) and the hub's pass for it, stored encrypted (AES-256-GCM, `TOKEN_ENCRYPTION_KEY`), added only on the
-hub's setup page (never in chat). A server pass for the hub is created by Chris on that server, marked "for Robinson's
-Toolkit".
+**H2. Backends are registered, not built in.** `hub_servers` holds service name, approved origin,
+RTC version/prefix, bounded public counts and health. A separate `hub_server_grants` row binds one separately
+issued encrypted service pass to the authenticated Hub owner/caller grant and selected service profile/areas.
+Only secure owner setup writes those grants, never chat. Do not put one broad pass on the registry row and
+reuse it for every caller. Actual identity foreign keys follow H-1's reviewed database model; schema below is
+target structure, not implemented infrastructure. Revocation invalidates that grant's caches/handles.
 
-**H3. Federated tools.** `hub_search_tools(query, server?)` fans out to each server's search and merges results (ranked,
-server-labelled); `hub_describe_tool(name)`, `hub_call(name, args)` (full prefixed tool names are unique across servers, contract §3;
-`server.name` also accepted), `hub_batch` route to the server's
-HTTPS API. The hub never duplicates a server's guards; it passes through `dryRun`/`confirm` and returns the server's
-result as-is, plus its own `server` label.
+**H3. Federated tools.** Fixed `hub_search_tools(query, server?)` searches an authorized, bounded
+selection of servers and returns paged metadata, explicit partial failures and incomplete-search cursors;
+never unbounded all-server fan-out. `hub_describe_tool(name)`, `hub_call(name, args)` and read-only `hub_batch`
+route to the selected service's RTC HTTPS API. Normalize the advertised prefix consistently; qualify ambiguous
+names as `server.name`, never guess. Retrieve schemas on demand in a grant/revision-scoped bounded cache.
+Pass through `dryRun`/`confirm` and service refusals; add a server label without dropping log IDs. Both text and
+structured results are bounded by UTF-8 bytes; oversized results need an opaque caller/grant-bound routing
+handle and pages. No silent slicing or automatic retry after uncertain POST outcomes.
 
 **H4. Hub profiles and passes.** A hub connection or pass chooses which servers and which server-profiles it may reach;
 the hub can only narrow what its stored server pass allows, never widen it.
@@ -40,8 +45,12 @@ are registered.
 ## 2. Schema
 
 ```sql
-CREATE TABLE IF NOT EXISTS hub_servers (name TEXT PRIMARY KEY, url TEXT NOT NULL, rtc INTEGER, pass_enc TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS hub_servers (name TEXT PRIMARY KEY, url TEXT NOT NULL, rtc INTEGER, prefix TEXT,
   added_at TIMESTAMPTZ NOT NULL DEFAULT now(), checked_at TIMESTAMPTZ, status TEXT, counts JSONB);
+-- Scope/identity FK details must be fixed in H-2 against H-1's actual schema before implementation.
+CREATE TABLE IF NOT EXISTS hub_server_grants (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL,
+  caller_grant_id TEXT NOT NULL, server TEXT NOT NULL REFERENCES hub_servers(name), pass_enc TEXT NOT NULL,
+  profile TEXT NOT NULL, areas JSONB NOT NULL, expires_at TIMESTAMPTZ NOT NULL, revoked_at TIMESTAMPTZ);
 CREATE TABLE IF NOT EXISTS hub_change_log (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now(),
   connection TEXT, server TEXT NOT NULL, tool TEXT NOT NULL, summary TEXT, server_log_id TEXT, dry_run BOOLEAN NOT NULL DEFAULT FALSE);
 ```
