@@ -1,6 +1,6 @@
 import { it, expect, vi } from 'vitest';
 import { brokerCatalog, mcpReply, handleMcp } from '../src/http-door.js';
-const actor={id:'local-actor',profile:'read_only',mode:'test',areas:['testing']};
+const actor={id:'local-actor',profile:'read_only',mode:'test',areas:['gateway']};
 function reply() {
   return {headers:{},statusCode:0,body:null,setHeader(k,v){this.headers[k]=v;return this;},
     status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;},end(){return this;}};
@@ -26,6 +26,9 @@ it('authenticates before menu listing and denies shared-budget overrun',async()=
   authorize.mockResolvedValue({actor});
   res=reply();await handleMcp(req,res,{withDb,authorize});
   expect(res.body.result.tools).toHaveLength(2);
+  authorize.mockResolvedValue({actor:{...actor,areas:['other']}});
+  res=reply();await handleMcp(req,res,{withDb,authorize});
+  expect(res.statusCode).toBe(403);
 });
 it('rejects unbounded and malformed requests without authorization lookup',async()=>{
   const withDb=vi.fn();

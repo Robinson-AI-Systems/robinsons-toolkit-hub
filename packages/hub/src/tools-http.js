@@ -71,12 +71,12 @@ export async function handleHubTools(req, res, { withDb, authorize }, route) {
   try {
     return await withDb(async (db, settings) => {
       const state = await authorize(db, settings, req.headers?.authorization, 'pass');
-      if (!state || (state.actor && !inScope(state.actor)))
-        return res.status(401).json(deny('permission'));
+      if (!state) return res.status(401).json(deny('permission'));
       if (state.retryAfter) {
         res.setHeader('Retry-After', String(state.retryAfter));
         return res.status(429).json(deny('rate_limited'));
       }
+      if (!inScope(state.actor)) return res.status(403).json(deny('outside_scope'));
       const actor = state.actor;
       if (route === 'list') return res.status(200).json({ ok: true, result: filtered });
       if (route === 'item' && req.method === 'GET') {

@@ -1,8 +1,10 @@
 const meta=Object.freeze([
-  {name:'hub_whoami',description:'Read authenticated Toolkit Hub connection identity',
+  {name:'hub_whoami',area:'gateway',profiles:['read_only','everyday','full'],
+    writes:false,money:false,destructive:false,audience:['owner','builder','operator'],description:'Read authenticated Toolkit Hub connection identity',
     inputSchema:{type:'object',properties:{},additionalProperties:false},
     annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
-  {name:'hub_health',description:'Read Toolkit Hub foundation and federation readiness',
+  {name:'hub_health',area:'gateway',profiles:['read_only','everyday','full'],
+    writes:false,money:false,destructive:false,audience:['owner','builder','operator'],description:'Read Toolkit Hub foundation and federation readiness',
     inputSchema:{type:'object',properties:{},additionalProperties:false},
     annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
 ]);
@@ -62,6 +64,10 @@ export async function handleMcp(req,res,{withDb,authorize}) {
         res.setHeader('Retry-After',String(state.retryAfter));
         return res.status(429).json({error:'rate_limited'});
       }
+      if (!state.actor || state.actor.mode!=='test' ||
+        !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway') ||
+        state.actor.allowWrites===true)
+        return res.status(403).json({error:'outside_scope'});
       const reply=mcpReply(body,state.actor);
       if (!reply) return res.status(202).end();
       return res.status(200).json(reply);

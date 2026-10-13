@@ -43,7 +43,7 @@ it('denies missing, live, out-of-area and writing actors before any tool result'
   for (const state of [null, { actor: { ...actor, mode: 'live' } },
     { actor: { ...actor, areas: ['other'] } }, { actor: { ...actor, allowWrites: true } }]) {
     const auth = vi.fn(async () => state);
-    expect((await send('list', 'GET', {}, undefined, auth)).code).toBe(401);
+    expect((await send('list', 'GET', {}, undefined, auth)).code).toBe(state ? 403 : 401);
     expect(auth).toHaveBeenCalledTimes(1);
   }
   const throttled = await send('list', 'GET', {}, undefined,
