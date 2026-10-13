@@ -91,8 +91,11 @@ export async function probeStagedRtcContract(origin,identity,
         response.on('error',()=>fail('RTC contract transport failed'));
         response.on('end',()=>{
           if(complete) return;
-          try {complete=true;resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));}
-          catch {fail('Invalid RTC JSON manifest');}
+          try {
+            const decoded=JSON.parse(Buffer.concat(chunks).toString('utf8'));
+            complete=true;
+            resolve(decoded);
+          } catch {fail('Invalid RTC JSON manifest');}
         });
       });
       req.setTimeout(5000,()=>{fail('RTC contract timeout');req.destroy();});
