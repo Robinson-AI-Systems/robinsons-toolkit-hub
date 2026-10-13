@@ -104,7 +104,7 @@ export function validateK3SourceCIEvidence({baseline,workflow}) {
       if(!words.includes(suite))fail(name+': missing original suite '+suite);
     }
     if(name==='stripe-source-sql'){
-      if(job.services?.postgres?.image!=='public.ecr.aws/docker/library/postgres:17'||
+      if(job.services?.postgres?.image!=='postgres:17'||
          !execute[0].env?.TEST_DATABASE_URL?.includes('@127.0.0.1:5432/')){
         fail(name+': source SQL must use disposable localhost PostgreSQL');
       }

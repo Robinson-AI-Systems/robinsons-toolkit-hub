@@ -38,7 +38,7 @@ describe('.github/workflows/ci.yml', () => {
   });
   it('pins real Stripe source and refuses unavailable source SQL evidence', () => {
     const job = wf.jobs['stripe-source-sql'];
-    expect(job.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
+    expect(job.services.postgres.image).toBe('postgres:17');
     const checkout = job.steps.find(s => s.uses?.startsWith('actions/checkout') &&
       s.with?.path === 'source-stripe');
     expect(checkout.with.repository).toBe('Robinson-AI-Systems/stripe-mcp');
@@ -83,7 +83,7 @@ describe('.github/workflows/ci.yml', () => {
     expect(wf.jobs.ci.needs).toContain('check');
   });
   it('the database job uses a throwaway localhost Postgres service', () => {
-    expect(wf.jobs.db.services.postgres.image).toBe('public.ecr.aws/docker/library/postgres:17');
+    expect(wf.jobs.db.services.postgres.image).toBe('postgres:17');
     expect(wf.jobs.db.steps.at(-1).env.TEST_DATABASE_URL).toMatch(/@127\.0\.0\.1:5432\//);
   });
 });

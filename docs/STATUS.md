@@ -1,3 +1,11 @@
+**CI reliability correction:** Hub run 38428765220 failed before any SQL test because the
+public ECR PostgreSQL mirror returned toomanyrequests/Data limit exceeded. Use the same
+official PostgreSQL 17 Docker Hub image in both isolated service jobs; retain reviewed
+immutable Stripe source, all original tests/healthchecks and every aggregate CI requirement.
+GitHub documents public Docker Hub pulls on hosted runners as exempt from pull rate limits:
+https://docs.github.com/en/actions/reference/limits#docker-hubs-rate-limit-for-github-actions
+Generated rtool agent instructions now distinguish native developer access and product use.
+
 **Developer hosting access repair:** Several production-hosted MCP services retain Vercel
 SSO (all-except-custom-domains). Native OAuth alone cannot reach them. The developer client
 now supports an existing short-lived workload identity scoped to explicit Vercel origins,
