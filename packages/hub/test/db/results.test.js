@@ -51,7 +51,8 @@ it('binds each handle to exact caller/owner and expiry, refusing tampered cipher
   await db.query('UPDATE hub_result_handles SET tag=$1 WHERE handle_digest=$2',
     [Buffer.alloc(16,1),digest.rows[0].handle_digest]);
   await expect(readHubResult(db,actor,saved.handle,0,settings)).rejects.toThrow();
-  await db.query("UPDATE hub_result_handles SET expires_at=now()-interval '1 second' "+
+  await db.query("UPDATE hub_result_handles SET created_at=now()-interval '2 days', "+
+    "expires_at=now()-interval '1 day' "+
     'WHERE handle_digest=$1',[digest.rows[0].handle_digest]);
   expect(await readHubResult(db,actor,saved.handle,0,settings)).toBeNull();
 });
