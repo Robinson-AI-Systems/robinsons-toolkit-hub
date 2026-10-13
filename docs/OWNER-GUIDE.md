@@ -28,3 +28,12 @@ resumes. OS credential managers remain the desktop default. Neither option place
 in chats, prompts, Git or shared artifacts. Initial provider consent or an expired/revoked
 underlying authorization can still require a new owner sign-in. Source/tests are not
 proof that the new deployed workflow has been exercised against the real provider.
+
+Protected Vercel endpoints additionally require an already authorized hosting identity.
+Run the developer CLI in a Vercel-authenticated environment that supplies VERCEL_OIDC_TOKEN,
+and pin exact target Vercel origins in RTOOL_PROTECTED_ORIGINS. The client forwards that
+short-lived identity only to those origins and still separately sends native service OAuth.
+A target Trusted Sources rule must allow the caller's development environment to reach the
+protected production-hosted MCP; app TEST/preview remains a separate service grant. Never
+disable protection or copy a static bypass secret as a workaround. A missing hosting grant
+is a concrete infrastructure prerequisite, not evidence the custom service is broken.

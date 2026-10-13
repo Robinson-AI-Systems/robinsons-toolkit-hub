@@ -1,3 +1,11 @@
+**Developer hosting access repair:** Several production-hosted MCP services retain Vercel
+SSO (all-except-custom-domains). Native OAuth alone cannot reach them. The developer client
+now supports an existing short-lived workload identity scoped to explicit Vercel origins,
+without disabling protection or replacing service authentication. Appropriate Trusted
+Sources caller/environment rules and actual protected client execution remain unverified.
+The CI fleet test was stale: it asserted Neon/Vercel were unconfigured; update it for the
+verified host inventory while retaining a synthetic missing-origin regression.
+
 ## Reusable developer OAuth and evidence boundary — 2026-10-13
 
 Owner authorized replacing repeated manual pass setup with renewable implementing-agent

@@ -12,6 +12,7 @@ import { serveLocalStdio } from './mcp.js';
 import { createLocalFiles } from './local-files.js';
 import {developerConnect,nativeMcp} from './developer-client.js';
 import {makeDeveloperVault} from './developer-vault.js';
+import {developerFetch} from './developer-protection.js';
 
 const usage = [
   'rtool developer-connect <server> [--profile read_only|everyday|full]',
@@ -148,7 +149,7 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       if(!['developer-connect','developer-check','developer-tools','developer-describe','developer-call','developer-logout'].includes(command))throw new ToolError('Unknown developer command');
       const server=byName(servers,env,args[0]);
       if(typeof developerVault.getOAuth!=='function'||typeof developerVault.setOAuth!=='function')throw new RouteError('Protected OAuth credential storage unavailable');
-      const base={name:server.name,origin:server.url,vault:developerVault};
+      const base={name:server.name,origin:server.url,vault:developerVault,fetchImpl:developerFetch(env)};
       if(command==='developer-connect'){
         ensureCount(args,1,'rtool developer-connect <server> [--profile full]');
         if(Object.keys(options).some(k=>k!=='--profile'))throw new ToolError('Unexpected connect option');

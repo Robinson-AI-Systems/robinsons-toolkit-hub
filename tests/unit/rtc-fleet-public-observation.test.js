@@ -10,9 +10,11 @@ const inventory = readFileSync('docs/rtc-fleet-origins.json', 'utf8');
 describe('CI RTC public observation is intentionally weaker than D-4 TEST acceptance', () => {
   it('reads only reviewed pinned public origins and preserves unconfigured servers', () => {
     const hosts = parsePinnedFleetInventory(inventory);
-    expect(Object.keys(hosts).sort()).toEqual(['github', 'google-workspace', 'stripe']);
+    expect(Object.keys(hosts).sort()).toEqual(['github', 'google-workspace', 'neon', 'stripe', 'vercel']);
     expect(REQUIRED_RTC_SERVERS.filter(name => !Object.hasOwn(hosts, name)).sort())
-      .toEqual(['neon', 'vercel']);
+      .toEqual([]);
+    const missing=JSON.parse(inventory);missing.servers.neon=null;
+    expect(Object.hasOwn(parsePinnedFleetInventory(JSON.stringify(missing)),'neon')).toBe(false);
     expect(script).toContain('const origins = publicObserve ? pinned :');
     expect(script).toContain('const tests = authorized ? parseReadTests');
   });
