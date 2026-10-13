@@ -1,24 +1,14 @@
 import { exchangeOAuthCode, rotateOAuthRefresh } from '../../packages/hub/src/oauth.js';
 import { withHubDb } from '../../packages/hub/src/runtime.js';
 import { takeBudget } from '../../packages/hub/src/limits.js';
-function safeForm(req) {
-  if (typeof req.body==='string' && Buffer.byteLength(req.body)<=4096)
-    return new URLSearchParams(req.body);
-  if (req.body && typeof req.body==='object' && !Array.isArray(req.body) &&
-    Object.getPrototypeOf(req.body)===Object.prototype) {
-    const items=Object.entries(req.body);
-    if (items.length<=8 && items.every(([k,v])=>k.length<=40 &&
-      typeof v==='string' && v.length<=1024)) return new URLSearchParams(items);
-  }
-  return null;
-}
+import { parseOAuthForm } from '../../packages/hub/src/oauth-form.js';
 export default async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
   if (req.method!=='POST') return res.status(405).json({error:'method_not_allowed'});
   if (!String(req.headers['content-type']||'').startsWith('application/x-www-form-urlencoded'))
     return res.status(415).json({error:'unsupported_media_type'});
-  const form=safeForm(req);
+  const form=parseOAuthForm(req);
   if (!form) return res.status(400).json({error:'invalid_request'});
   const grant=form.get('grant_type'),clientId=form.get('client_id');
   if (!/^[A-Za-z0-9_-]{8,100}$/.test(clientId||'') ||
