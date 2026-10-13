@@ -50,7 +50,14 @@ export async function handleMcp(req,res,{withDb,authorize}) {
   try {
     return await withDb(async(db,settings)=>{
       const state=await authorize(db,settings,req.headers.authorization,'mcp');
-      if (!state) return res.status(401).json({error:'unauthorized'});
+      if (!state) {
+        const origin=process.env.HUB_PUBLIC_ORIGIN;
+        if (typeof origin==='string' && /^https:\/\/[A-Za-z0-9.-]+(?::443)?$/.test(origin))
+          res.setHeader('WWW-Authenticate',
+            'Bearer resource_metadata="'+origin+'/.well-known/oauth-protected-resource"');
+        else res.setHeader('WWW-Authenticate','Bearer');
+        return res.status(401).json({error:'unauthorized'});
+      }
       if (state.retryAfter) {
         res.setHeader('Retry-After',String(state.retryAfter));
         return res.status(429).json({error:'rate_limited'});

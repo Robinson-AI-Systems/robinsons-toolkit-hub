@@ -369,7 +369,13 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "PR #132 proposal: SQL caller identity, shared rate limit and audit foundation. Public OAuth/RTC MCP, hosted identity and actual TEST acceptance remain open."
+      "note": "Source H-1 partially implemented; RTC 0 manifest until remaining RTC1 doors and owner-provisioned hosted acceptance. H-2/H-3 approved but dependent on complete H-1/H-2 respectively. K-3 optional; real two-service TEST/denial/revocation and scale are unverified.",
+      "pr": [
+        "#132 (Hub caller identity SQL partial)",
+        "#133 (OAuth PKCE scopes partial)",
+        "#134 (hosted MCP/HTTPS partial)",
+        "#135 (verified-owner OAuth bootstrap partial)"
+      ]
     },
     {
       "id": "H-2",
