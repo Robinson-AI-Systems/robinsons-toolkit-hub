@@ -1,3 +1,15 @@
+## 2026-10-13 H-2 caller-specific encrypted grant staging — PR #143 proposed
+
+Building on #142's noncallable pending server registry, #143 adds a distinct
+HUB_GRANTS_KEY gated, AES-256-GCM encrypted RTC pass per exact Hub caller or OAuth
+session and service, requiring a valid TEST/read_only gateway identity. Owner-only
+metadata and revocation are source implemented; SQL prohibits duplicate live grant.
+No active registry states exist: all grant resolution for network calls stays closed.
+Independent service-issued credentials, deployment env configuration, real owner
+TEST issuance, live host proof, H-2 origin pinning and H-3 routing are OPEN.
+One additive 005 migration with disposable PostgreSQL tests; no production DB
+change is made in this development PR. Exact-head CI/review required.
+
 ## 2026-10-13 H-2 registered-origin staging — PR #142 proposed, source only
 
 Verified live start: main/live 6584b18a7a810895021aaeb3f9c6343a5f7ca514; Vercel production READY at this revision. H-1 owner `HUB_OWNER_SCRYPT` remains absent, login fails closed. H-2 now stages untrusted RTC1 manifest claims and public DNS origins in noncallable owner-bound SQL rows; **it never routes or contacts a service**. Real DNS-pinned connection safety, independently scoped encrypted grants, H-2 owner UI, H-3 federation, RTC1 Hub conformance and deployed authenticated TEST acceptance remain OPEN. Migration 004 requires separately checked deployment before use; no production mutation or service pass was performed. Dynamic next-multiple-of-five and mandatory incomplete-session pause policy now governs AGENTS and SESSION-START. Exact-head PR CI required before merge.
