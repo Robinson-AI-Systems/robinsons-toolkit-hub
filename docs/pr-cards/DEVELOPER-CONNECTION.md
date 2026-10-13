@@ -56,3 +56,13 @@ future sessions. Secrets stay in protected OS storage or the explicit encrypted 
 Follow-up review: completed handoffs remain immutable until expiry even if another process
 starts setup for the same client. Hub acceptance requires a Hub-mediated RTC route and
 its readback; standalone MCP initialization or a bare service RTC request is insufficient.
+
+## Live refresh correction — October 13
+
+Authentic Google token refresh retains the existing refresh token and omits it from
+the response. The CLI now preserves it only for an already connected principal; newly
+authorized connections still require an initial refresh token, supplied rotations replace
+it, and malformed supplied values are refused. Original grant settings remain server-owned.
+Real GitHub/Google consent and authenticated initialization passed; Google Gmail identity
+readback and GitHub selected scratch-organization reads passed. Full provider, hosted Hub,
+revocation and owned scratch cleanup acceptance remain separately tracked.

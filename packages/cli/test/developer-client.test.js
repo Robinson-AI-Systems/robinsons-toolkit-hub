@@ -5,7 +5,7 @@ import {makeKeychain,nativePlan} from '../src/keychain.js';
 const origin='https://custom.example',clientId='client_'+'c'.repeat(32),clientSecret='s'.repeat(43);
 const access='a'.repeat(43),refresh='r'.repeat(43),code='k'.repeat(43),request='q'.repeat(43);
 const digest=x=>createHash('sha256').update(x).digest('base64url');
-function fixture(){
+function fixture({refreshResponse,initialResponse}={}){
  let saved=null,pending,approved=false,refreshes=0;const requests=[];
  const vault={getOAuth:async()=>saved,setOAuth:async(_n,v)=>{saved=structuredClone(v);}};
  const fetchImpl=async(url,options)=>{
@@ -22,7 +22,7 @@ function fixture(){
    expect(body.client_secret).toBe(clientSecret);expect(body.resource).toBe(origin+'/api/mcp');
    if(body.grant_type==='authorization_code'){expect(body.code).toBe(code);expect(digest(body.code_verifier)).toBe(pending.challenge);}
    else{refreshes++;expect(body.refresh_token).toBe(refresh);}
-   return json({access_token:access,refresh_token:refresh,token_type:'Bearer',expires_in:3600});
+   return json({access_token:access,refresh_token:refresh,token_type:'Bearer',expires_in:3600,...(body.grant_type==='refresh_token'?refreshResponse:initialResponse)});
   }
   if(u.pathname==='/api/mcp'){
    expect(options.headers.authorization).toBe('Bearer '+access);
@@ -50,6 +50,25 @@ describe('implementing-agent managed native connections',()=>{
   expect(await Promise.all([developerAccess(args),developerAccess(args)])).toEqual([access,access]);expect(f.refreshes()).toBe(1);
   const refreshBody=f.requests.find(x=>x.body?.grant_type==='refresh_token').body;
   expect(refreshBody.profile).toBeUndefined();expect(refreshBody.mode).toBeUndefined();
+ });
+ it('retains a nonrotating refresh token without requiring new owner consent',async()=>{
+  const f=fixture({refreshResponse:{refresh_token:undefined}}),args={name:'custom',origin,vault:f.vault,fetchImpl:f.fetchImpl};
+  await developerConnect(args);f.approve();await developerConnect(args);f.expire();
+  expect(await developerAccess(args)).toBe(access);expect(f.saved().refreshToken).toBe(refresh);expect(f.saved().profile).toBe('full');
+  expect((await developerConnect(args)).reused).toBe(true);
+ });
+ it('replaces a rotated refresh token and rejects malformed supplied replacements',async()=>{
+  const replacement='n'.repeat(43);const f=fixture({refreshResponse:{refresh_token:replacement}}),args={name:'custom',origin,vault:f.vault,fetchImpl:f.fetchImpl};
+  await developerConnect(args);f.approve();await developerConnect(args);f.expire();await developerAccess(args);expect(f.saved().refreshToken).toBe(replacement);
+  for(const invalid of [null,'',{}]){
+   const bad=fixture({refreshResponse:{refresh_token:invalid}}),options={name:'custom',origin,vault:bad.vault,fetchImpl:bad.fetchImpl};
+   await developerConnect(options);bad.approve();await developerConnect(options);bad.expire();
+   await expect(developerAccess(options)).rejects.toThrow('token_response_invalid');expect(bad.saved().refreshToken).toBe(refresh);
+  }
+ });
+ it('does not claim a renewable connection when initial authorization omits refresh token',async()=>{
+  const f=fixture({initialResponse:{refresh_token:undefined}}),args={name:'custom',origin,vault:f.vault,fetchImpl:f.fetchImpl};
+  await developerConnect(args);f.approve();await expect(developerConnect(args)).rejects.toThrow('token_response_invalid');expect(f.saved().status).toBe('pending');
  });
  it('supports native developer writes through the original server guards without imposing read_only',async()=>{
   const f=fixture(),args={name:'custom',origin,vault:f.vault,fetchImpl:f.fetchImpl};
