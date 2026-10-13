@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 hosted transport source (PR #134 proposed; 2026-10-12)
+Fixed two-tool real MCP entry (`hub_whoami`, `hub_health`), OAuth-token-only MCP authentication, separate Hub-pass whoami, SQL rate enforcement, bounded runtime Postgres pool and OAuth token-exchange API. Public contract reports rtc:0 until complete RTC 1 conformance. Owner consent UI, approved provisioned DB/config, deployed exact commit, public MCP interoperability and any two-service TEST calls remain unverified. No federation or production activation.
+
 ## H-1 OAuth security continuation (PR #133 proposed; 2026-10-12)
 Adds PostgreSQL-bound OAuth 2.1 S256 authorization codes, registered-client exact redirects, one-time refresh rotation preserving read_only/TEST/area settings, family revocation, and real throwaway SQL tests. Issuance requires an independent verified owner; **no public owner OAuth consent page or deployed connector acceptance exists yet.** H-1 remains IN_PROGRESS; PR #132 merged with exact-head checks.
 
