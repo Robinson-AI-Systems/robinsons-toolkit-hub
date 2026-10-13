@@ -10,8 +10,16 @@ import { makeKeychain, addStoredPasses } from './keychain.js';
 import { readHiddenPass } from './input.js';
 import { serveLocalStdio } from './mcp.js';
 import { createLocalFiles } from './local-files.js';
+import {developerConnect,nativeMcp} from './developer-client.js';
+import {makeDeveloperVault} from './developer-vault.js';
 
 const usage = [
+  'rtool developer-connect <server> [--profile read_only|everyday|full]',
+  'rtool developer-check <server>',
+  'rtool developer-tools <server> [search words] [--args JSON]',
+  'rtool developer-describe <server> <native_tool>',
+  'rtool developer-call <server> <native_tool> [--args JSON] [--dry-run] [--confirm]',
+  'rtool developer-logout <server> (remove local OAuth credentials)',
   'rtool servers',
   'rtool whoami <server>',
   'rtool tools [server] [search words]',
@@ -26,7 +34,7 @@ const usage = [
   'rtool logout <server> (remove local keychain entry)',
   'rtool mcp [--local FOLDER[,FOLDER...]] (JSON-RPC 2025-11-25 over stdio)'
 ].join('\n');
-const optionsWithValue = new Set(['--args', '--fields', '--detail', '--out', '--area', '--limit']);
+const optionsWithValue = new Set(['--args', '--fields', '--detail', '--out', '--area', '--limit', '--profile']);
 const flags = new Set(['--dry-run', '--confirm']);
 
 function parseOptions(words) {
@@ -133,6 +141,56 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       await vault.set(server.name, pass);
       write('Verified pass stored in OS keychain for ' + server.name + '\n');
       return 0;
+    }
+    if(command.startsWith('developer-')){
+      const {args,options}=parseOptions(words);
+      const developerVault=env.RTOOL_DEVELOPER_VAULT_DIR?await makeDeveloperVault(env.RTOOL_DEVELOPER_VAULT_DIR):vault;
+      if(!['developer-connect','developer-check','developer-tools','developer-describe','developer-call','developer-logout'].includes(command))throw new ToolError('Unknown developer command');
+      const server=byName(servers,env,args[0]);
+      if(typeof developerVault.getOAuth!=='function'||typeof developerVault.setOAuth!=='function')throw new RouteError('Protected OAuth credential storage unavailable');
+      const base={name:server.name,origin:server.url,vault:developerVault};
+      if(command==='developer-connect'){
+        ensureCount(args,1,'rtool developer-connect <server> [--profile full]');
+        if(Object.keys(options).some(k=>k!=='--profile'))throw new ToolError('Unexpected connect option');
+        await output(await developerConnect({...base,profile:options['--profile']||'full'}),{},write);return 0;
+      }
+      if(command==='developer-logout'){
+        ensureCount(args,1,'rtool developer-logout <server>');
+        await developerVault.deleteOAuth(server.name);write('Local developer credential removed; revoke the service connection to terminate remote authority.\n');return 0;
+      }
+      if(options['--profile'])throw new ToolError('Profile changes require a fresh owner-authorized connection');
+      if(command==='developer-check'){
+        ensureCount(args,1,'rtool developer-check <server>');
+        if(Object.keys(options).length)throw new ToolError('Unexpected check option');
+        const initialized=await nativeMcp({...base,method:'initialize',params:{protocolVersion:'2025-11-25',capabilities:{},clientInfo:{name:'rtool-developer',version:'0.1.0'}}});
+        await output({status:'passed',checks:['native_mcp_authenticated_initialize'],server:initialized.serverInfo,
+          providerAcceptance:'unverified',note:'This checks the custom MCP transport. Provider reads, writes and scratch isolation require their own evidence.'},{},write);return 0;
+      }
+      if(command==='developer-describe'){
+        ensureCount(args,2,'rtool developer-describe <server> <native_tool>');
+        let cursor;for(let page=0;page<20;page++){
+          const result=await nativeMcp({...base,method:'tools/list',params:cursor?{cursor}:{}});
+          const tool=result.tools?.find(t=>t.name===args[1]);if(tool){await output(tool,options,write);return 0;}
+          if(!result.nextCursor)break;cursor=result.nextCursor;
+        }
+        throw new ToolError('Native tool not available in this connection listing');
+      }
+      if(command==='developer-tools'){
+        const result=await nativeMcp({...base,method:'tools/list',params:parseJson(options['--args'])});
+        if(!Array.isArray(result.tools))throw new ToolError('Invalid native tool listing');
+        const search=args.slice(1).join(' ').toLowerCase();
+        const matches=result.tools.filter(t=>!search||(t.name+' '+t.description).toLowerCase().includes(search));
+        await output({tools:matches.slice(0,20).map(t=>({name:t.name,description:String(t.description||'').slice(0,160),readOnly:t.annotations?.readOnlyHint===true})),
+          matches:matches.length,shown:Math.min(20,matches.length),nextCursor:result.nextCursor||null,
+          note:'Search to narrow a large page; use the native nextCursor in --args to continue.'},options,write);return 0;
+      }
+      ensureCount(args,2,'rtool developer-call <server> <native_tool> --args JSON');
+      if(!/^[A-Za-z][A-Za-z0-9_.-]{0,150}$/.test(args[1]))throw new ToolError('Invalid native tool name');
+      const input=parseJson(options['--args']);
+      if(options['--dry-run'])input.dryRun=true;
+      if(options['--confirm'])input.confirm=true;
+      const result=await nativeMcp({...base,method:'tools/call',params:{name:args[1],arguments:input}});
+      await output(result,options,write);return result.isError?5:0;
     }
     env = await addStoredPasses(servers, env, vault);
     if (command === 'mcp') {

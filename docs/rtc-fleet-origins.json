@@ -1,10 +1,10 @@
 {
   "version": 1,
   "servers": {
-    "stripe": "https://stripe-mcp-psi.vercel.app",
-    "github": "https://github-mcp-xi.vercel.app",
-    "vercel": null,
-    "neon": null,
-    "google-workspace": "https://google-workspace-mcp-five.vercel.app"
+    "stripe": "https://stripe-mcp-chris-projects-de6cd1bf.vercel.app",
+    "github": "https://github-mcp-chris-projects-de6cd1bf.vercel.app",
+    "vercel": "https://vercel-mcp-chris-projects-de6cd1bf.vercel.app",
+    "neon": "https://neon-mcp-chris-projects-de6cd1bf.vercel.app",
+    "google-workspace": "https://google-workspace-mcp-chris-projects-de6cd1bf.vercel.app"
   }
 }

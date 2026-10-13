@@ -3,6 +3,7 @@
 // Windows: Windows Credential Manager via CredRead/CredWrite/CredDelete P/Invoke.
 import { spawn } from 'node:child_process';
 import { RouteError } from './config.js';
+import {validDeveloperCredential} from './developer-client.js';
 
 const SERVICE = 'robinsons-toolkit-rtool';
 const ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
@@ -73,17 +74,19 @@ if ($action -eq 'store') {
   if (-not [RtoolCredential]::Remove($target)) { exit 3 }
 } else { exit 2 }
 `;
-export function nativePlan({ action, name, platform = process.platform, env = process.env } = {}) {
+export function nativePlan({ action, name, platform = process.platform, env = process.env, kind = 'pass' } = {}) {
+  if (!['pass','oauth'].includes(kind))throw new RouteError('Invalid credential kind');
   if (!ALIAS.test(name || '') || !['store', 'lookup', 'delete'].includes(action)) {
     throw new RouteError('Invalid keychain service name or operation');
   }
   const common = safeEnvironment(env);
-  const target = SERVICE + ':' + name;
+  const service=kind==='oauth'?SERVICE+'-developer-oauth':SERVICE;
+  const target = service + ':' + name;
   if (platform === 'linux') {
     const command = 'secret-tool';
     const args = action === 'store' ?
-      ['store', '--label=Robinson Toolkit rtool', 'service', SERVICE, 'account', name] :
-      [action === 'lookup' ? 'lookup' : 'clear', 'service', SERVICE, 'account', name];
+      ['store', '--label=Robinson Toolkit rtool', 'service', service, 'account', name] :
+      [action === 'lookup' ? 'lookup' : 'clear', 'service', service, 'account', name];
     return { command, args, env: common };
   }
   if (platform === 'darwin') {
@@ -137,11 +140,24 @@ export async function runNative(plan, input = '', spawnFn = spawn) {
 }
 export function makeKeychain({ platform = process.platform, env = process.env,
   run = runNative } = {}) {
-  const execute = async (action, name, value) => {
-    const plan = nativePlan({ action, name, platform, env });
+  const execute = async (action, name, value, kind='pass') => {
+    const plan = nativePlan({ action, name, platform, env, kind });
     return run(plan, value || '');
   };
   return {
+    async getOAuth(name){
+      const result=await execute('lookup',name,null,'oauth');
+      if(!result.found)return null;
+      let value;try{value=JSON.parse(result.value);}catch{throw new RouteError('Invalid stored developer credential');}
+      if(!validDeveloperCredential(value))throw new RouteError('Invalid stored developer credential');
+      return value;
+    },
+    async setOAuth(name,value){
+      if(!validDeveloperCredential(value))throw new RouteError('Invalid developer credential; nothing stored');
+      const result=await execute('store',name,JSON.stringify(value),'oauth');
+      if(!result.found)throw new RouteError('OS keychain refused developer credential');
+    },
+    async deleteOAuth(name){return (await execute('delete',name,null,'oauth')).found;},
     async get(name) {
       const result = await execute('lookup', name);
       return result.found ? result.value : null;
