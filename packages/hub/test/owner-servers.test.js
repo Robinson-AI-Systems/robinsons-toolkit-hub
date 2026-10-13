@@ -46,7 +46,7 @@ it('owner verification precedes DNS probe, stages only inspected counts',async()
       counts:{tools:12,writes:2,money:0}}});
   expect(deps.stage.mock.calls[0][2]).toEqual({ownerVerified:true});
   expect(res.html).not.toContain('synthetic-owner-auth');
-  expect(res.html).toContain('nothing');
+  expect(res.html).toContain('No routing, credential or live authorization was enabled.');
 });
 it('listing is owner verified, escaped, capped by registry and never public',async()=>{
   const list=vi.fn(async()=>[{name:'<script>',prefix:'other',
