@@ -14,7 +14,7 @@ beforeAll(async()=>{
  schema='hub_grants_'+process.pid+'_'+Math.floor(Math.random()*100000);
  await db.query('CREATE SCHEMA "'+schema+'"');await db.query('SET search_path TO "'+schema+'"');
  for(const path of ['001-hub-foundation.sql','002-hub-oauth.sql',
-  '004-hub-registry.sql','005-hub-grants.sql'])
+  '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql'])
   await db.query(await readFile(new URL('../../migrations/'+path,import.meta.url),'utf8'));
  const issued=await issueHubPass(db,{ownerId:'owner-a',profile:'read_only',areas:['gateway'],
   mode:'test',allowWrites:false,ttlSeconds:3600},{pepper,ownerVerified:true});

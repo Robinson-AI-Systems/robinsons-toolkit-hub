@@ -1,3 +1,4 @@
+import {inspectScopedRtcIdentity} from './pinned-identity.js';
 import {createCipheriv,createDecipheriv,randomBytes,randomUUID} from 'node:crypto';
 
 const idPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,7 +101,22 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   const {rows}=await db.query(`SELECT g.* FROM hub_server_grants g
     JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
     WHERE g.owner_id=$1 AND g.caller_id=$2 AND g.caller_kind=$3 AND g.server_name=$4
-      AND g.revoked_at IS NULL AND g.expires_at>now() AND s.state='active'`,
+      AND g.revoked_at IS NULL AND g.expires_at>now() AND s.state='active'
+      AND g.verified_at IS NOT NULL
+      AND (
+        (g.caller_kind='pass' AND EXISTS(
+          SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
+          AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
+          AND c.profile='read_only' AND c.mode='test' AND c.allow_writes=FALSE
+          AND 'gateway'=ANY(c.allowed_areas)))
+        OR (g.caller_kind='oauth' AND EXISTS(
+          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=g.caller_id
+          AND o.owner_id=g.owner_id AND o.revoked_at IS NULL
+          AND o.access_expires_at>now() AND o.profile='read_only' AND o.mode='test'
+          AND 'gateway'=ANY(o.areas)
+          AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+            WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
+      )`,
   [actor.ownerId,actor.id,actor.clientId?'oauth':'pass',serverName]);
   const row=rows[0];
   if(!row) return null;
@@ -110,4 +126,50 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   const pass=Buffer.concat([decipher.update(row.ciphertext),decipher.final()]).toString('utf8');
   if(!passPattern.test(pass)) throw new Error('Invalid encrypted upstream credential');
   return {pass,grantId:row.id,areas:[...row.areas],profile:row.profile,mode:row.mode};
+}
+
+export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
+  {ownerVerified=false,inspect=inspectScopedRtcIdentity}={}) {
+  owner(ownerId,ownerVerified);
+  if(!idPattern.test(id||''))throw new TypeError('Invalid grant identity');
+  const result=await db.query(`SELECT g.*,s.origin,s.prefix,s.state
+    FROM hub_server_grants g
+    JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
+    WHERE g.id=$1 AND g.owner_id=$2 AND g.revoked_at IS NULL
+      AND g.expires_at>now() AND s.state IN ('pending','active')`,[id,ownerId]);
+  const row=result.rows[0];
+  if(!row) throw new Error('Owned pending TEST grant unavailable');
+  await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id});
+  const decipher=createDecipheriv('aes-256-gcm',key(settings),row.nonce);
+  decipher.setAAD(audience(row));
+  decipher.setAuthTag(row.tag);
+  const pass=Buffer.concat([
+    decipher.update(row.ciphertext),decipher.final()]).toString('utf8');
+  if(!passPattern.test(pass)) throw new Error('Invalid sealed TEST grant');
+  // No persist/activation unless a true pinned contract + pass-specific
+  // whoami response proves the exact scope. Tests inject only local fakes.
+  const verified=await inspect({origin:row.origin,name:row.server_name,
+    prefix:row.prefix,areas:[...row.areas],pass});
+  if(!verified?.identityVerified||verified.callable!==false||
+    verified.server!==row.server_name||verified.prefix!==row.prefix||
+    verified.mode!=='test'||verified.profile!=='read_only'||
+    !Array.isArray(verified.areas)||row.areas.some(a=>!verified.areas.includes(a)))
+    throw new Error('Scoped RTC identity not verified');
+  await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id});
+  const accepted=await db.query(`UPDATE hub_server_grants g
+    SET verified_at=now() FROM hub_servers s
+    WHERE g.id=$1 AND g.owner_id=$2 AND g.server_name=s.name
+      AND s.owner_id=g.owner_id AND s.state IN ('pending','active')
+      AND g.revoked_at IS NULL AND g.expires_at>now()
+    RETURNING g.id`,[id,ownerId]);
+  if(accepted.rowCount!==1) throw new Error('Grant changed during inspection');
+  await db.query(`UPDATE hub_servers SET state='active',updated_at=now()
+    WHERE name=$1 AND owner_id=$2 AND state='pending'`,
+    [row.server_name,ownerId]);
+  const final=await db.query(`SELECT state FROM hub_servers
+    WHERE name=$1 AND owner_id=$2`,[row.server_name,ownerId]);
+  if(final.rows[0]?.state!=='active')
+    throw new Error('Server disabled during grant inspection');
+  return {id,server:row.server_name,state:'verified_test',
+    registryActive:true,providerRoutingEnabled:false};
 }

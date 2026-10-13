@@ -59,6 +59,6 @@ export async function disableStagedServer(db,{ownerId,name},{ownerVerified=false
   if (!slug.test(name||'')) throw new TypeError('Invalid server name');
   const result=await db.query(`UPDATE hub_servers
     SET state='disabled',updated_at=now()
-    WHERE name=$1 AND owner_id=$2 AND state='pending'`,[name,ownerId]);
+    WHERE name=$1 AND owner_id=$2 AND state IN ('pending','active')`,[name,ownerId]);
   return result.rowCount===1;
 }
