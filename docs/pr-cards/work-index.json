@@ -363,13 +363,13 @@
         "D-2"
       ],
       "card": "docs/pr-cards/H-1.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "H-1"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
+      "note": "PR #132 proposal: SQL caller identity, shared rate limit and audit foundation. Public OAuth/RTC MCP, hosted identity and actual TEST acceptance remain open."
     },
     {
       "id": "H-2",
