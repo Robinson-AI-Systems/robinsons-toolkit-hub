@@ -375,7 +375,8 @@
         "#133 (OAuth PKCE scopes partial)",
         "#134 (hosted MCP/HTTPS partial)",
         "#135 (verified-owner OAuth bootstrap partial)",
-        "#136 (Hub read-only HTTP tools partial)"
+        "#136 (Hub read-only HTTP tools partial)",
+        "#137 (owner verified Hub pass issue/revoke partial)"
       ]
     },
     {

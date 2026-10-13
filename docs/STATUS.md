@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 owner-only one-time Hub pass setup (#137 proposed; source only)
+Adds a no-store/CSP verified-owner browser endpoint to issue a *fixed* 24-hour TEST/read_only/gateway-only Hub pass and independently revoke by pass identifier. A secret is displayed exactly once to its authenticated owner in the immediate HTTPS response and is never persisted raw or put into repository/PR/logs. Owner account and live host remain unconfigured/unverified; no pass was actually provisioned or displayed in this implementation session. Existing SQL issuance/revocation and lockout are reused without a new live activation. RTC remains 0; remaining RTC1 conformance and two-service acceptance are open. #136 merged exact-head CI green. 
+
 ## H-1 HTTP tools continuation (#136 proposed; source only)
 Added guarded Hub-only GET search/describe, POST harmless read/batch and public bounded OpenAPI reference. HTTPS passes must have TEST gateway area and no write permission; absent or out-of-scope passes fail closed. Upstream provider dispatch stays disabled, and RTC public manifest remains 0; hosted exact deployment, complete RTC1 conformance, genuine authenticated TEST two-service reads, denial, revocation and scale remain OPEN. No direct/local commands or service repos changed. Required exact-head GitHub CI/SQL and self-review must precede merge.
 
