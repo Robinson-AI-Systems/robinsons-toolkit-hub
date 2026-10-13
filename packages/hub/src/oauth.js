@@ -78,7 +78,18 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
     AND revoked_at IS NULL AND refresh_expires_at>now()
     RETURNING owner_id,client_id,profile,areas,mode,family_id`,
   [digestPass(input.refreshToken,pepper),input.clientId]);
-  if (!used.rows.length) return null;
+  if (!used.rows.length) {
+    // A second use of an already-rotated bearer is a compromised family,
+    // not merely an invalid grant. Never allow an older refresh to coexist
+    // with its replacements. The family query covers a concurrent rotation.
+    const prior=await db.query(`SELECT family_id FROM hub_oauth_sessions
+      WHERE refresh_digest=$1 AND client_id=$2 AND refresh_used_at IS NOT NULL
+      LIMIT 1`,[digestPass(input.refreshToken,pepper),input.clientId]);
+    if (prior.rows.length) await db.query(`UPDATE hub_oauth_sessions
+      SET revoked_at=now() WHERE family_id=$1 AND revoked_at IS NULL`,
+      [prior.rows[0].family_id]);
+    return null;
+  }
   return storeSession(db,used.rows[0],pepper,used.rows[0].family_id);
 }
 export async function authenticateOAuth(db, accessToken, { pepper }={}) {
@@ -99,4 +110,29 @@ export async function revokeOAuthFamily(db, { ownerId, sessionId }, { ownerVerif
     WHERE family_id IN (SELECT family_id FROM hub_oauth_sessions WHERE id=$1 AND owner_id=$2)
     AND revoked_at IS NULL`,[sessionId,ownerId]);
   return result.rowCount > 0;
+}
+
+export async function revokeOAuthToken(db, { clientId, token }, { pepper }={}) {
+  // RFC7009-style revocation: possession of a valid opaque token is sufficient.
+  // Never disclose whether it existed or belonged to the client.
+  if (typeof clientId !== 'string' || !/^[A-Za-z0-9_-]{8,100}$/.test(clientId))
+    return false;
+  if (!codePattern.test(token || '')) return true;
+  const hash=digestPass(token,pepper);
+  const result=await db.query(`SELECT family_id FROM hub_oauth_sessions
+    WHERE client_id=$1 AND (access_digest=$2 OR refresh_digest=$2) LIMIT 1`,
+    [clientId,hash]);
+  if (result.rows.length) await db.query(`UPDATE hub_oauth_sessions SET revoked_at=now()
+    WHERE family_id=$1 AND revoked_at IS NULL`,[result.rows[0].family_id]);
+  return true;
+}
+export async function listOwnerOAuthSessions(db, ownerId, { ownerVerified=false }={}) {
+  verified(ownerVerified);
+  if (!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId || ''))
+    throw new TypeError('Invalid owner');
+  const result=await db.query(`SELECT id,client_id,profile,areas,mode
+    FROM hub_oauth_sessions WHERE owner_id=$1 AND revoked_at IS NULL
+      AND access_expires_at>now() ORDER BY access_expires_at DESC LIMIT 20`,
+  [ownerId]);
+  return result.rows;
 }

@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 OAuth revocation and replay safety (#138 proposed; source only)
+Adds OAuth client bearer revocation with neutral responses and atomic durable rate-limit, spent-refresh family compromise revocation, and independently owner-authenticated session listing/family revocation. Disposable PostgreSQL exercises real rotation, replay, client-bound and owner-bound revocation. Form parser rejects duplicate/oversize params. Hosted exact revision, real owner setup, RTC1 and protected TEST integration remain OPEN; no real tokens, service grants or provider actions used.
+
 ## H-1 owner-only one-time Hub pass setup (#137 proposed; source only)
 Adds a no-store/CSP verified-owner browser endpoint to issue a *fixed* 24-hour TEST/read_only/gateway-only Hub pass and independently revoke by pass identifier. A secret is displayed exactly once to its authenticated owner in the immediate HTTPS response and is never persisted raw or put into repository/PR/logs. Owner account and live host remain unconfigured/unverified; no pass was actually provisioned or displayed in this implementation session. Existing SQL issuance/revocation and lockout are reused without a new live activation. RTC remains 0; remaining RTC1 conformance and two-service acceptance are open. #136 merged exact-head CI green. 
 
