@@ -1,3 +1,18 @@
+## 2026-10-13 H-2 per-grant TEST activation — PR #149 proposed
+
+Adds additive 006 SQL for active/disabled registry and per-grant verified_at
+proof. A separately owner-authenticated browser step decrypts exactly one
+owned still-live grant in memory, requires a connection-time DNS-pinned TLS
+RTC1 contract and TEST/read_only whoami with all grant areas, rechecks its
+Hub caller and atomically marks only that grant verified before switching
+its pending registry origin to active. Active grant resolution now refuses
+unverified, revoked, expired or no-longer-live Hub caller identities. Owner
+disable also handles active registry; source SQL tests exercise stage,
+scope-proof refusal, ownership, activation, resolver and revocation. No
+upstream credential was provisioned or used against a live host in this PR:
+fixture inspector only; 006 is not applied to production here. Gateway
+provider dispatch remains disabled and actual hosted acceptance OPEN.
+
 ## 2026-10-13 H-2 pinned authenticated TEST identity preflight — PR #148 proposed
 
 Extends the guarded H-2 HTTPS transport to the **only** allowed bearer-read
