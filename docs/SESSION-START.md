@@ -214,3 +214,9 @@ for the verified code paths, targeted fixture groups, acceptance and safe PR bat
 research, read only the applicable row; run `npm run test:focus -- upstream`, `release`, `auth`, `adapter`
 or `core` while building. This never replaces final full gates. Preserve the two-lane conveyor and
 reconcile review findings before merging.
+
+## Gateway recovery entry point — owner request 2026-10-12
+
+After existing §0/RTC/blocker reconciliation, take H-1 → H-2 → H-3 from the updated index/cards.
+K-3 is optional reuse, not an eligibility gate. Read the [recovery review](audits/2026-10-12-gateway-architecture-recovery.md)
+for minimum grant/audit safety and two-service/scale proof. D-4 keeps independent credential/deployment gates.

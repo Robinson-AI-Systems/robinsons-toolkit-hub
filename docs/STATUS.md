@@ -1,5 +1,16 @@
 # STATUS — current work, blockers and next action
 
+## Current gateway recovery priority — 2026-10-12
+
+Owner-requested documentation repair; see [source review and acceptance plan](audits/2026-10-12-gateway-architecture-recovery.md).
+H-1 is READY after K-1/K-2/D-2; K-3 no longer blocks hosted gateway work. Next: H-1 secure foundation,
+H-2 scoped registry, H-3 bounded federation and a two-service real TEST vertical slice. Minimum grant narrowing
+and forwarding audit are required in that slice before exposing calls; H-4/H-5 expand them later.
+Existing local MCP has six brokers per service, not a constant-size scalable menu; hosted Hub remains unbuilt.
+K-3 PRIVATE/NOT_READY, publication/adoption OPEN; D-4 independently OPEN for authenticated routes/revocation.
+Older `Next` entries below are historical checkpoints, superseded for priority by this section.
+No deployment, credentialed acceptance, scale measurement, LIVE or package release is claimed by this repair.
+
 Updated 2026-10-12. RTC 1 conformance, direct rtool commands and SDK/agent setup are built;
 the central hub server is not yet built; relay deployments have varied between READY and a Git source fetch ERROR, and no real agent route is certified.
 

@@ -25,7 +25,7 @@ write, one destructive, one money tool), used by this repo's door tests.
 **K3. `robinson-mcp-core` is extracted, not designed from scratch.** The Stripe MCP writes its contract-generic code in
 `src/core/` (its Batch A amendment). K-3 moves that code here as `packages/core`, keeps its tests, and publishes it as a
 GitHub Release tarball (`robinson-mcp-core-<semver>.tgz`) that servers pin by URL — no npm account needed. Stripe and
-Workspace adopt it with their own cards (Stripe: a card after Batch C; Workspace: P8-6).
+Workspace may optionally adopt individually proven published exports with their own cards; RTC routing does not wait.
 
 **K4. New servers start from a scaffold.** `rtool new-server <name>` (K-4) creates the standard layout, copies the plan
 system (`docs/kit/templates/`), wires `robinson-mcp-core`, and writes the first card. A new server is otherwise built by
@@ -87,3 +87,12 @@ then remaining semantic adapters and packaging/proof. All K-3 acceptance stays
 open until full contract-generic exports and clean-consumer tarball test are
 complete and a GitHub Release asset actually exists. No default policy or RTC
 version changes; Stripe and Workspace adoption remain separate repo-owned cards.
+
+**2026-10-12 — owner-requested optional shared-code boundary.**
+K-3 remains IN_PROGRESS/PRIVATE/NOT_READY with all existing package/security/release gates intact.
+It is no longer a prerequisite of H-1–H-3 or D-4. The external RTC contract is mandatory; adopting common
+internal code is optional and service-owned. K3's original automatic Stripe/Workspace adoption wording is
+superseded: retain source dispatch/storage/approvals where adapters are not equivalent. Separate private
+candidate proof, immutable publication and later production adoption; before any narrowed release, write a
+substantive card reconciling supported exports, exclusions and the existing human/machine release ledgers.
+No release/adoption completion or gate waiver is granted by this planning repair.

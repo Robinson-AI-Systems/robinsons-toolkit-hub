@@ -13,13 +13,16 @@ Each server is usable on its own the moment it is built; the hub adds a single f
 | 3 | this repo | K-0 (foundation, **done**), K-1, K-2, K-2b (contract final, conformance + fake server) | — |
 | 4 | this repo | D-1 … D-4 (`rtool`, local MCP, relay, real runs) | a server with its HTTPS API for D-4's real runs |
 | 6 | `stripe-mcp` | D, G, H, P, W, U, R … | — |
-| 7 | this repo | K-3, K-4 (shared core, scaffold) | Stripe A–C merged |
+| 7 | this repo | K-3 optional core; K-4 scaffold | existing K-3 release gates for package consumers only |
 | 8 | new repos | S cards as Chris needs servers (Vercel, Neon, GitHub, messaging …) | Chris's request + empty repo |
-| 9 | this repo | H (hub), C (workflows), L (local tools) | two servers conformant |
+| 9 | this repo | H-1 → H-2 → H-3 secure gateway, then H-4/H-5 and C | K-1/K-2/D-2 for implementation; two deployed scoped services for real acceptance |
 
 ## Order inside this repo
 
-K (K-0 done; K-1 and K-2 ready) → D → H → C → L, with S cards whenever Chris asks for a server.
+K-1/K-2 and D-2 are built. Next priority: H-1 → H-2 → H-3 with minimum grants/audit, then real two-service acceptance.
+K-3 optional reuse and D-4 route proof continue independently; do not wait for all providers.
+C follows accepted safe federation; L remains approved but does not displace eligible gateway work.
+See [the recovery review](audits/2026-10-12-gateway-architecture-recovery.md); S cards only when Chris asks.
 
 ## Implementing agent — paste this
 

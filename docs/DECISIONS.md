@@ -100,3 +100,12 @@ credentials and neutral output. It defaults to localhost and refuses full passes
 or writing/money/destructive metadata. Real-run opt-in is a technical control, not
 owner authorization. Actual three-environment evidence and pass revocation remain
 D-4 WAITING_ON_OWNER; no fake tests stand in for real certification.
+
+## 2026-10-12 — owner-requested universal gateway architecture recovery
+
+Reviewed current six-repo source; [verdict, ownership and finite acceptance](audits/2026-10-12-gateway-architecture-recovery.md).
+Remove K-3 from H-1; use K-1/K-2/D-2. K-3 remains optional PRIVATE/NOT_READY with all existing gates.
+Service dispatch/credentials/state/approvals stay service-owned behind frozen RTC 1. Fixed gateway listing,
+minimal grant narrowing/audit and bounded discovery/results are first-slice requirements; real two-service
+proof is separate from D-4 and package adoption. No frozen RTC wire change, production or spending approval.
+Explicit owner docs/planning request authorizes focused planning PRs; routine no-docs-only cadence is unchanged.

@@ -354,11 +354,12 @@
     },
     {
       "id": "H-1",
-      "title": "Hub foundation on robinson-mcp-core",
+      "title": "Secure independent Hub foundation",
       "batch": "H",
       "design": "docs/designs/BATCH-H.md",
       "dependencies": [
-        "K-3",
+        "K-1",
+        "K-2",
         "D-2"
       ],
       "card": "docs/pr-cards/H-1.md",
@@ -366,8 +367,9 @@
       "units": [
         "H-1"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
     },
     {
       "id": "H-2",
@@ -382,8 +384,9 @@
       "units": [
         "H-2"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
     },
     {
       "id": "H-3",
@@ -398,8 +401,9 @@
       "units": [
         "H-3"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
     },
     {
       "id": "H-4",
@@ -621,5 +625,15 @@
         "Chris requests this server"
       ]
     }
-  ]
+  ],
+  "gatewayRecovery": {
+    "priority": [
+      "H-1",
+      "H-2",
+      "H-3"
+    ],
+    "review": "docs/audits/2026-10-12-gateway-architecture-recovery.md",
+    "sharedCoreAdoption": "OPTIONAL_NOT_A_ROUTING_PREREQUISITE",
+    "realAcceptance": "OPEN_TWO_DEPLOYED_TEST_SERVICES_ONE_AGENT_CONNECTION"
+  }
 }

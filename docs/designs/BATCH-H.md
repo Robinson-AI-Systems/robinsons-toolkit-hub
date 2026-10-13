@@ -1,18 +1,18 @@
 # Design — Batch H: The hub server (one front door to every server)
 
 Status: **APPROVED** (Chris, 2026-10-10). Scope and acceptance: `docs/PLAN.md` → Batch H. Cards H-1 … H-5.
-Depends on K-3 (`robinson-mcp-core`) and D-1. Long-term: built after at least two servers pass conformance.
+Depends on K-1, K-2 and D-2. K-3 is optional reuse, not a prerequisite. Two independent deployed services gate real acceptance, not fixture-backed implementation.
 
 ## 0. Verify before starting
 
 | # | Assumption | How to check |
 |---|---|---|
-| H1 | `robinson-mcp-core` is released and pinned | `packages/core/package.json` version; Release exists |
-| H2 | At least two servers pass RTC conformance | each server's CI `conformance` job |
+| H1 | RTC 1, conformance and direct transport exist | K-1/K-2/D-2 source and tests; optional core exports reviewed individually |
+| H2 | Two services for real acceptance have scoped TEST credentials and verified deployed interfaces | actual-service conformance/denial evidence; reference-only checks do not qualify; implementation uses two independent fixtures meanwhile |
 
 ## 1. Decisions
 
-**H1. The hub is itself an RTC 1 server** (built on `robinson-mcp-core`): its own connector login (settings survive
+**H1. The hub is itself an RTC 1 server** (Hub-owned implementation; optional reviewed portable helpers): its own connector login (settings survive
 refresh and rate limits live in its database, contract §2), passes, HTTPS API,
 manifest and meta-tools. So every agent door (connector, HTTPS, `rtool`, local MCP, relay) works with it unchanged.
 
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS hub_change_log (id BIGSERIAL PRIMARY KEY, at TIMESTAM
 ```
 
 ## 4. Work units
-### H-1 — Hub foundation on `robinson-mcp-core` (M)
+### H-1 — Secure independent Hub foundation (M)
 ### H-2 — Server registry, setup page, health (M, medium effort)
 ### H-3 — Federated search, describe, call, batch (L, medium effort)
 Tests: two fake servers; merged search; call routing; `dryRun`/`confirm` pass-through; a server's refusal returned intact.
@@ -63,6 +63,15 @@ Tests: two fake servers; merged search; call routing; `dryRun`/`confirm` pass-th
 |---|---|
 | Hub passes RTC conformance itself | CI conformance job |
 | Hub never widens a server pass | `packages/hub/test/narrowing.test.js` |
-| Compact listing stays small with many servers | budget test with 5 fake servers |
+| Compact listing stays small with many servers | fixed-schema/count and measured-token budget at 2/5/12/50/100 synthetic servers and 10,000 aggregate tools; real two-service host run separately |
 
 ## Amendments
+
+**2026-10-12 — owner-requested gateway recovery.**
+The [review and finite acceptance matrix](../audits/2026-10-12-gateway-architecture-recovery.md) governs
+H-1–H-3 execution. RTC is the runtime boundary; no service dispatcher, SDK or core adoption in Hub routing.
+Keep fixed broker schemas and existing hub naming, selective bounded discovery, grant-scoped cache/handles,
+per-service failure isolation, no ambiguous POST retry and UTF-8 bounds on text plus structured results.
+Minimum durable audit and caller-to-upstream grant narrowing move into the first slice; H-4/H-5 remain broader
+profile/log features. Service passes must be separately issued and bound per caller grant; never forward Hub
+credentials upstream or share a broad owner grant across unrelated callers. D-4 remains independent.

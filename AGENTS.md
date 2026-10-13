@@ -45,7 +45,7 @@ authority). This repo holds:
 1. **The contract** and its **conformance test**, which every server runs in its CI.
 2. **Direct doors that work with any single server today**, before the hub exists: the `rtool` command-line tool,
    its code SDK, a local MCP, and the GitHub relay for locked-down agent workspaces.
-3. **`robinson-mcp-core`**, the shared package of contract code every server uses (extracted from the Stripe MCP).
+3. **`robinson-mcp-core`**, optional portable helpers extracted from Stripe; service adoption is separately reviewed, never required for RTC connectivity.
 4. **The hub server**: one MCP, CLI and HTTPS API that searches, describes and calls tools across all servers, plus
    cross-server workflows and local tools (files, shell, Ollama, browser).
 5. **The server kit**: the playbook and roadmap for building each individual service server.
@@ -108,8 +108,10 @@ commit**, and **authenticated end-to-end acceptance** (including refusal and
 revocation when relevant). Green CI, mocks, reference conformance, a Vercel
 READY build or a configured origin alone are not accepted integration.
 Close only when actual mandatory gates are independently satisfied.
-The approved work index blocks H-1 until K-3; continue eligible K-3/D-4 work
-instead of skipping that dependency. Maintain service autonomy and all owner
+The owner-requested [gateway recovery review](docs/audits/2026-10-12-gateway-architecture-recovery.md)
+removes K-3 from H-1: implement H-1 → H-2 → H-3 now against RTC fixtures; real
+two-service acceptance requires scoped deployed services, not shared-package adoption.
+K-3 release/adoption and D-4 routes retain their own independent gates. Maintain service autonomy and all owner
 money-out approvals, credentials, tenancy, relay, hosting and review gates.
 
 PRs should be coherent and sized under existing limits; fewer than five is

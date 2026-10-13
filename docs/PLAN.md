@@ -13,7 +13,7 @@ Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADM
 ## Batch K — Contract, conformance, core, scaffold (`designs/BATCH-K.md`)
 - [ ] CONTRACT RTC 1 final and agreed by both existing server plans; kit docs complete.
 - [ ] `packages/conformance` with the reference fake server; each listed violation caught.
-- [ ] `robinson-mcp-core` extracted from the Stripe MCP without behavior change; released as a pinned tarball.
+- [ ] Optional `robinson-mcp-core` reusable exports proven and released under existing gates; service adoption separate. This line does not gate H or D-4.
 - [ ] `rtool new-server` scaffolds a conforming empty server.
 
 ## Batch D — Direct doors (`designs/BATCH-D.md`)
@@ -34,3 +34,13 @@ Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADM
 
 ## Batch S — Service servers (`designs/BATCH-S.md`)
 - [ ] Each started server has its full plan in its own repo and appears in the roadmap; started only on Chris's request.
+
+## Gateway recovery acceptance — owner request 2026-10-12
+
+Use [the finite recovery matrix](audits/2026-10-12-gateway-architecture-recovery.md) and H-1/H-2/H-3 cards.
+- [ ] Fixed agent-facing tool count/schema and <5,000 measured tokens at 100 services/10k underlying tools.
+- [ ] No eager provider-schema loading; bounded queues, scoped cache/results, timeouts and partial failures.
+- [ ] Caller grant narrowing and durable correlation audit before first federated execution.
+- [ ] Two independent services used through one actual agent MCP connection; each still works directly.
+- [ ] Genuine harmless TEST reads, denial and same-pass revocation; source/fake/deployed proof kept separate.
+Full fleet, package publication and optional adoption are separate acceptance, not prerequisite proof.
