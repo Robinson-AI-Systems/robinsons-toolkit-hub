@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 owner-authorized OAuth bootstrap (PR #135 proposed; 2026-10-12)
+Owner-only login via scrypt passphrase verifier, shared PostgreSQL 5-attempt/15-minute lockout, exact client registration, registered-redirect S256 consent restricted to TEST read_only, HTML CSP/no-store, and OAuth discovery metadata. An owner must independently configure actual host origin, owner id, verifier, DB and HMAC key before these doors are usable. **No real configured owner account, external MCP agent, deployed exact commit, federation, provider TEST reads or RTC1 acceptance claimed.** Source and CI are separate from host integration; H-1 remains IN_PROGRESS pending deployment and RTC 1 conformance.
+
 ## H-1 hosted transport source (PR #134 proposed; 2026-10-12)
 Fixed two-tool real MCP entry (`hub_whoami`, `hub_health`), OAuth-token-only MCP authentication, separate Hub-pass whoami, SQL rate enforcement, bounded runtime Postgres pool and OAuth token-exchange API. Public contract reports rtc:0 until complete RTC 1 conformance. Owner consent UI, approved provisioned DB/config, deployed exact commit, public MCP interoperability and any two-service TEST calls remain unverified. No federation or production activation.
 
