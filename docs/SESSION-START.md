@@ -68,9 +68,11 @@ and public observation is never a signed-in route acceptance.
 
 ## 0b. Dynamic PR alignment and blocked-session handoff
 
-AGENTS' updated session policy controls: compute next actual multiple of five, adjust
-for concurrent PR allocation, and **never generate a next-chat continuation prompt
-while the expected substantive batch is incomplete**. Resolve blockers, continue
+AGENTS' updated session policy controls: normally five substantial PRs and an
+ending number divisible by five. If only one PR would reach the next multiple,
+prefer six substantial PRs to reach the following multiple instead of ending
+after one. Recalculate for concurrent PR allocation, and **never generate a
+next-chat continuation prompt while the expected substantive batch is incomplete**. Resolve blockers, continue
 independent work or pause here with the owner's smallest actionable needed input.
 
 ## 0b. Outcome and blocker triage
