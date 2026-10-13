@@ -1,3 +1,17 @@
+## 2026-10-13 H-2 pinned authenticated TEST identity preflight — PR #148 proposed
+
+Extends the guarded H-2 HTTPS transport to the **only** allowed bearer-read
+path, GET /api/whoami. The public contract probe stays credential-free.
+Each request independently resolves socket-time DNS, rejects unsafe/private
+IPv4, retains SNI/certificate hostname, refuses redirects, and bounds bytes
+and time; only exact-format separate RTC service passes are accepted. A
+caller-grant identity preflight refuses live/production, full profile, writes,
+wrong service manifest and missing required areas, without echoing upstream
+identity. Source fixtures prove permitted flow and refusals, not a real pass.
+All registry rows/grants remain pending/noncallable; no production credential,
+provider call, active routing, DB mutation or live release is made. Real
+upstream grant and deployed two-service acceptance remain OPEN.
+
 ## 2026-10-13 H-2 owner encrypted grant administration — PR #147 proposed
 
 Adds /api/owner/grants with independently verified owner-only encrypted
