@@ -1,3 +1,9 @@
+## Developer connection recovery — 2026-10-13
+
+Source adds fixed-callback dynamic developer registration, RSA/PKCE mobile handoff, explicit TEST profile consent and authenticated JSON token exchange while preserving existing public OAuth clients. First-time Hub owner setup consumes a short-lived activation once and stores a scrypt verifier; existing configured owner authentication wins. Migration 007 is additive. No deployment or hosted acceptance is claimed before checked release and genuine owner consent.
+
+Private single-runner checkpoints use an authenticated external secret store, with no credentials in Git or Library. Checkpoint helpers reject foreign origins, malformed credentials and pending requests; restoring never overwrites an already-rotated local record. Repo Management uses the existing Hub Vercel project, Development-only encrypted RTOOL_BUILDER_SESSION, through the authorized control-plane connector. Save after every credential mutation and before stopping; load before asking for repeat consent after a reset. This is a serialized runner checkpoint, not a distributed shared-token pool.
+
 ## Authentic developer connection and refresh — October 13
 
 Provenance: see `docs/developer-evidence.json` upstream_observations for exact standalone

@@ -6,9 +6,10 @@ export default function handler(req,res) {
     const origin=publicHubOrigin();
     return res.status(200).json({issuer:origin,authorization_endpoint:origin+'/api/oauth/authorize',
       token_endpoint:origin+'/api/oauth/token',revocation_endpoint:origin+'/api/oauth/revoke',
+      registration_endpoint:origin+'/api/oauth/register',
       revocation_endpoint_auth_methods_supported:['none'],response_types_supported:['code'],
       grant_types_supported:['authorization_code','refresh_token'],
       code_challenge_methods_supported:['S256'],
-      token_endpoint_auth_methods_supported:['none']});
+      token_endpoint_auth_methods_supported:['none','client_secret_post']});
   } catch { return res.status(503).json({error:'hub_unavailable'}); }
 }

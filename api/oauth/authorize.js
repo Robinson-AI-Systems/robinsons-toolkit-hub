@@ -1,4 +1,5 @@
 import { withHubDb } from '../../packages/hub/src/runtime.js';
+import {developerConsent} from '../../packages/hub/src/developer-handoff.js';
 import { authorizeOwnerConnection, formFields, htmlForm, htmlHeaders,
   publicHubOrigin } from '../../packages/hub/src/owner-login.js';
 export default async function handler(req,res) {
@@ -9,7 +10,7 @@ export default async function handler(req,res) {
   try {
     publicHubOrigin();
     return await withHubDb(async db=>{
-      const result=await authorizeOwnerConnection(db,req,fields);
+      const result=await developerConsent(db,req,fields) || await authorizeOwnerConnection(db,req,fields);
       if (result.status===200)
         return res.status(200).send(htmlForm('/api/oauth/authorize',result.fields));
       if (result.status===303) {
