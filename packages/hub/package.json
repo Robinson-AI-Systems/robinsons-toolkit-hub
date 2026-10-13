@@ -1,0 +1,1 @@
+{"name":"@robinson-ai-systems/hub","version":"0.1.0","private":true,"type":"module","exports":{"./identity":"./src/identity.js","./limits":"./src/limits.js"}}

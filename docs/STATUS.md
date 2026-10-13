@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 implementation checkpoint (PR #132 proposed; 2026-10-12)
+Hub-owned PostgreSQL caller passes, HMAC digests, one-time issuance behind a verified-owner internal boundary, immediate revocation, shared SQL request limits and append-only forwarding-audit foundation are implemented with isolated SQL fixtures. **No public issuing endpoint, OAuth connector, hosted MCP routing, scoped upstream grants or genuine deployed TEST integration yet.** H-1 IN_PROGRESS, source/SQL CI pending. Hosting remains checked daily live-only promotion, no manual production deploy and $0 autonomous spending.
+
 ## Current gateway recovery priority — 2026-10-12
 
 Owner-requested documentation repair; see [source review and acceptance plan](audits/2026-10-12-gateway-architecture-recovery.md).
