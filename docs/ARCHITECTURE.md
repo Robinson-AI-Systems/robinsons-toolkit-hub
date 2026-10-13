@@ -2,7 +2,7 @@
 
 ## Current boundary clarification — 2026-10-12
 
-The hosted Hub (`packages/hub`) has an H-1 source foundation (identity, owner-scoped test passes, OAuth and constant-size broker menu) but is **not** RTC1-certified, owner-configured or genuinely deployed on the current live revision. H-2 upstream grants and H-3 provider federation are not built. Existing local stdio MCP routes over RTC HTTPS but lists six
+The hosted Hub (`packages/hub`) has an H-1 source foundation (identity, owner-scoped test passes, OAuth and constant-size broker menu) but is **not** RTC1-certified, owner-configured or genuinely deployed on the current live revision. H-2 upstream grants and H-3 provider federation are not built. Source-only encrypted caller-bound 24-hour result persistence now exists, using independently configured optional HUB_RESULTS_KEY; no provider data is flowing through it. Existing local stdio MCP routes over RTC HTTPS but lists six
 meta-tools per configured credentialed service; it is not accepted as a constant-size universal gateway.
 The private core has eleven candidate exports and extensive tests; it is not required by existing direct routing.
 See [the verified source review](audits/2026-10-12-gateway-architecture-recovery.md) for exact snapshots,
