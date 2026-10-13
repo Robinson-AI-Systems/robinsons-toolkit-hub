@@ -66,6 +66,13 @@ pinned --public-observe step captures the same read-only contract classification
 on its runner; inspect actual job logs. Network failure is not service failure,
 and public observation is never a signed-in route acceptance.
 
+## 0b. Dynamic PR alignment and blocked-session handoff
+
+AGENTS' updated session policy controls: compute next actual multiple of five, adjust
+for concurrent PR allocation, and **never generate a next-chat continuation prompt
+while the expected substantive batch is incomplete**. Resolve blockers, continue
+independent work or pause here with the owner's smallest actionable needed input.
+
 ## 0b. Outcome and blocker triage
 
 Follow AGENTS' **Outcome-first autonomous development** policy before choosing
