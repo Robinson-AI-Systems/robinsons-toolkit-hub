@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 OAuth security continuation (PR #133 proposed; 2026-10-12)
+Adds PostgreSQL-bound OAuth 2.1 S256 authorization codes, registered-client exact redirects, one-time refresh rotation preserving read_only/TEST/area settings, family revocation, and real throwaway SQL tests. Issuance requires an independent verified owner; **no public owner OAuth consent page or deployed connector acceptance exists yet.** H-1 remains IN_PROGRESS; PR #132 merged with exact-head checks.
+
 ## H-1 implementation checkpoint (PR #132 proposed; 2026-10-12)
 Hub-owned PostgreSQL caller passes, HMAC digests, one-time issuance behind a verified-owner internal boundary, immediate revocation, shared SQL request limits and append-only forwarding-audit foundation are implemented with isolated SQL fixtures. **No public issuing endpoint, OAuth connector, hosted MCP routing, scoped upstream grants or genuine deployed TEST integration yet.** H-1 IN_PROGRESS, source/SQL CI pending. Hosting remains checked daily live-only promotion, no manual production deploy and $0 autonomous spending.
 
