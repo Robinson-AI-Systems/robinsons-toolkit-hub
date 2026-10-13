@@ -19,7 +19,17 @@
     },
     {
       "layer": "deployed",
-      "status": "unverified"
+      "status": "verified",
+      "source": "deployment_provider",
+      "service": "robinsons-toolkit-hub",
+      "commit": "fa896017c35bc692012a078d3ed570e655a50105",
+      "origin": "https://robinsons-toolkit-relay-chris-projects-de6cd1bf.vercel.app",
+      "transport": "deployment_api",
+      "observations": [
+        "ready_exact_revision",
+        "canonical_alias_exact_revision",
+        "live_branch_verified"
+      ]
     },
     {
       "layer": "custom_transport",
@@ -40,6 +50,68 @@
     {
       "layer": "cleanup",
       "status": "unverified"
+    }
+  ],
+  "upstream_observations": [
+    {
+      "service": "robinson-github-mcp",
+      "repository": "Robinson-AI-Systems/github-mcp",
+      "status": "partial",
+      "source": "custom_service",
+      "commit": "abdb685f9c793c00d4761f1b1d1aa102ef2bf2d3",
+      "origin": "https://github-mcp-chris-projects-de6cd1bf.vercel.app",
+      "transport": "native_mcp",
+      "client_commit": "105f2b33b1f918e06fc70ecce0e3c9a97b2a1eff",
+      "observed_on": "2026-10-13",
+      "closes_hosted_hub_layers": false,
+      "full_provider_acceptance": false,
+      "observations": [
+        "owner_consent_and_native_token_exchange",
+        "authenticated_initialize",
+        "full_preview_profile_and_selected_scratch_organization",
+        "provider_repository_list_read_empty_scratch_organization",
+        "account_outside_selected_grant_denied_before_provider_dispatch",
+        "real_rotating_refresh_and_authenticated_initialize_after_refresh"
+      ],
+      "remaining": [
+        "provider_fixture_write_and_owned_cleanup",
+        "independent_cross_identity_denial",
+        "revocation",
+        "hosted_hub_routes"
+      ]
+    },
+    {
+      "service": "robinson-google-workspace-mcp",
+      "repository": "Robinson-AI-Systems/google-workspace-mcp",
+      "status": "partial",
+      "source": "custom_service",
+      "commit": "564463aae4e752bc431bcb8221fb5fb8b7d78893",
+      "origin": "https://google-workspace-mcp-chris-projects-de6cd1bf.vercel.app",
+      "transport": "native_mcp",
+      "client_commit": "105f2b33b1f918e06fc70ecce0e3c9a97b2a1eff",
+      "observed_on": "2026-10-13",
+      "closes_hosted_hub_layers": false,
+      "full_provider_acceptance": false,
+      "observations": [
+        "owner_consent_and_native_token_exchange",
+        "authenticated_initialize",
+        "gmail_identity_matches_owner_selected_mailbox",
+        "nonrotating_refresh_and_provider_identity_readback_after_refresh",
+        "isolated_secondary_calendar_created_and_owner_acl_verified",
+        "tagged_event_created_and_provider_readback_verified_without_invitees",
+        "exact_owned_event_delete_confirmed",
+        "secondary_calendar_delete_dispatched_and_absent_from_calendar_list",
+        "secondary_calendar_metadata_readback_did_not_confirm_deletion",
+        "rtc_fixture_helpers_refuse_native_connection_without_separate_test_authority",
+        "deleted_secondary_calendar_acl_returns_not_found",
+        "deleted_secondary_calendar_events_return_not_found"
+      ],
+      "remaining": [
+        "independent_cross_identity_and_resource_denial",
+        "revocation",
+        "hosted_hub_routes",
+        "server_side_calendar_metadata_readback_confirmation"
+      ]
     }
   ]
 }

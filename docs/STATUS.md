@@ -1,5 +1,9 @@
 ## Authentic developer connection and refresh — October 13
 
+Provenance: see `docs/developer-evidence.json` upstream_observations for exact standalone
+origins, deployed commits, checked client revision and concrete observations. These are
+CLI-to-standalone-service checks; they do not close the hosted Hub runtime layers.
+
 GitHub and Google native OAuth consent/token exchange and authenticated MCP initialize
 passed against their own deployed servers. GitHub provider reads and scope denial passed;
 Google Gmail identity matched the selected account. Live testing found Google omits a

@@ -66,3 +66,13 @@ it, and malformed supplied values are refused. Original grant settings remain se
 Real GitHub/Google consent and authenticated initialization passed; Google Gmail identity
 readback and GitHub selected scratch-organization reads passed. Full provider, hosted Hub,
 revocation and owned scratch cleanup acceptance remain separately tracked.
+
+Partial standalone evidence is recorded separately in developer-evidence.json. It cannot
+close hosted Hub or complete-provider layers. Google original Calendar CRUD verified an
+isolated tagged event create/read/delete without notifications. The temporary secondary
+calendar vanished from CalendarList after delete, but metadata readback still returned
+it, while subsequent ACL and event reads returned notFound, independently confirming
+owned cleanup. The immediate server-side metadata confirmation still needs correction. Dedicated RTC fixture
+helpers require separate TEST authority; native full-profile provider tools retain their
+original functionality. No GitHub repository was created because current default-label
+cleanup restrictions would risk leaving an uncleanable fixture.
