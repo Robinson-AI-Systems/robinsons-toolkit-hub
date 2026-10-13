@@ -211,8 +211,11 @@ python3 docs/pr-cards/validate-index.py
 Normally implement five substantial production-quality PRs per chat, and end completed sessions
 at an actually merged PR number divisible by five. At session start inspect the actual latest
 allocated repository PR number (including concurrently opened PRs). Target the **next greater**
-multiple of five: from #141 aim for #145 (four coherent PRs); from a multiple of five normally
-aim for five. Recalculate if other agents allocate new PR numbers. Numbers are a scheduling
+multiple of five with normally five substantive PRs. If that target would require only
+one PR because the latest allocated number ends in four, **prefer six substantial
+PRs to the following multiple of five**, not a one-PR session; for example,
+from #144 aim for #150 (#145–#150). From #141 aim for #145 (four coherent PRs);
+from a multiple of five normally aim for five. Recalculate if other agents allocate new PR numbers. Numbers are a scheduling
 boundary, never evidence of capability acceptance: do not manufacture/pad/split unrelated work,
 weaken checks or mark an unverified milestone complete to reach one.
 
@@ -228,7 +231,7 @@ recalculate numbering. Prior approvals in OWNER-INPUTS are not to be requested a
 After finishing the aligned substantial PR batch with exact-head and final-main required checks,
 post a permanent PR handoff, update STATUS/cards/index/acceptance, then supply a concise
 ready-to-copy prompt that references AGENTS, SESSION-START, STATUS and latest handoff.
-Every successor prompt must preserve the same **normal five + next-multiple-of-five dynamic
+Every successor prompt must preserve the same **normal five, six when one short, next-multiple-of-five dynamic
 alignment and mandatory incomplete-batch pause/resume** policies. An explicit owner session
 cutoff takes priority; no artificial fillers. Existing per-PR ~500-line target/~800-line hard
 maximum, owner gates and checked scheduled-release policy remain unchanged.

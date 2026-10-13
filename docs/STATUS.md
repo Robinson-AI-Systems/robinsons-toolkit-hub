@@ -1,3 +1,18 @@
+## 2026-10-13 H-2 DNS-pinned RTC contract probe — PR #145 proposed
+
+Adds a fail-closed HTTPS-only /api/contract probe for already-staged RTC service
+origins. Node HTTPS retains the canonical hostname for TLS verification but the
+socket lookup pins one globally routable IPv4 address and refuses all mixed,
+private, metadata and reserved DNS results. Redirects are not followed, response
+size/time are bounded and manifest identity/TEST/read_only checked. Synthetic
+injected-transport tests cover DNS rebinding, TLS options and denial paths.
+**This does not activate any service, send any credential, stage a grant, update
+live database or prove real hosted TEST acceptance.** IPv6-only origins remain
+pending; follow-on work must independently verify activation, owner UI, per-caller
+narrowing, revocation and audited provider routing. This PR permanently records
+owner preference: if the nearest alignment would require only one PR, aim for
+six significant PRs to the following multiple. Exact-head CI is required.
+
 ## 2026-10-13 H-2 caller-specific encrypted grant staging — PR #143 proposed
 
 Building on #142's noncallable pending server registry, #143 adds a distinct
