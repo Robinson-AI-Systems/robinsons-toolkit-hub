@@ -10,6 +10,8 @@ export const SKILL = [
   'Use rtool with standalone RTC servers; the hub is not required.',
   'Never paste a pass into a prompt, source file, or command argument.',
   'Run rtool servers, tools, describe, and call to discover actual tools.',
+  'When building/testing these MCP servers, reuse developer-connect/check/tools/describe/call with native OAuth.',
+  'Builder authorization is separate from production product capability; never substitute standard connectors for custom-service acceptance.',
   'Preview changing operations with --dry-run; --confirm does not bypass server guards.',
   'Use --out NEW_FILE for large results. Never claim a call succeeded without read-back.',
   'Direct HTTPS is tried first; owner-configured encrypted GitHub relay is the fallback. Never repeat an ambiguous write.'
@@ -24,6 +26,8 @@ export function routeSummary(servers, env = process.env) {
 function section(servers, env) {
   return [BEGIN, '### Robinson Toolkit (RTC / rtool)', '',
     'Discover only real tools: rtool servers; rtool tools ALIAS; rtool describe ALIAS.TOOL.',
+    'For implementing/testing custom MCPs, reuse rtool developer-connect, developer-check, developer-tools, developer-describe and developer-call.',
+    'Use the actual custom service for its acceptance; standard connectors are infrastructure aids only.',
     'To call: rtool call ALIAS.TOOL --args JSON; for writes use --dry-run first.',
     'Never include passes in this file. The remote server enforces confirmation.',
     'Use owner-configured relay routes only; never store passes or tokens here.', '',

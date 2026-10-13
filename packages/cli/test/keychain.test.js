@@ -1,3 +1,4 @@
+import {generateKeyPairSync} from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { PassThrough } from 'node:stream';
 import { startFakeServer } from '../../conformance/fake-server/server.js';
@@ -29,6 +30,18 @@ describe('secure native keychain', () => {
     expect(() => nativePlan({ name: '../escape', action: 'store' })).toThrow();
     expect(() => nativePlan({ name: 'valid', action: 'wrong' })).toThrow();
     expect(() => nativePlan({ name: 'valid', action: 'store', platform: 'sunos' })).toThrow();
+  });
+  it('chunks Windows OAuth credentials within each protected blob limit',async()=>{
+    const entries=new Map();const vault=makeKeychain({platform:'win32',env:{},run:async(plan,input)=>{
+      expect(JSON.stringify(plan)).not.toContain(input||'never-matches');const key=plan.env.RTOOL_KEYRING_TARGET,action=plan.env.RTOOL_KEYRING_ACTION;
+      if(action==='store'){expect(Buffer.byteLength(input,'utf16le')).toBeLessThanOrEqual(2560);entries.set(key,input);return {found:true};}
+      if(action==='delete')return {found:entries.delete(key)};return {found:entries.has(key),value:entries.get(key)};
+    }});
+    const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});
+    const pending={version:1,status:'pending',origin:'https://custom.example',clientId:'c'.repeat(43),clientSecret:'s'.repeat(43),verifier:'v'.repeat(43),pollSecret:'p'.repeat(43),privateKey:privateKey.export({type:'pkcs8',format:'pem'}),requestId:'r'.repeat(43),authorizationUrl:'https://custom.example/api/oauth/authorize',expiresAt:Date.now()+600000,profile:'full'};
+    await vault.setOAuth('custom',pending);expect(await vault.getOAuth('custom')).toEqual(pending);expect(entries.size).toBeGreaterThan(1);
+    await vault.setOAuth('custom',pending);expect(entries.size).toBe(Math.ceil(JSON.stringify(pending).length/1000)+1);
+    expect(await vault.deleteOAuth('custom')).toBe(true);expect(entries.size).toBe(0);
   });
   it('validates pass format and treats missing credentials as capability unavailable', async () => {
     const log = [];

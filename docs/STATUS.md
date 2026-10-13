@@ -1,3 +1,39 @@
+## Review corrections — 2026-10-13
+
+Developer connection retries retain encrypted codes until expiry, concurrent starts use an atomic trusted-IP quota, and backend failures remain retryable. Google consent preserves the requested profile and supports actual native code length. Windows protected credentials fit bounded chunks; cloud refresh locks recover after process exit. Evidence requires every layer and genuine custom-service read/write/denial/readback observations. Production functionality remains intact. Local regression checks passed; exact-head CI, deployed connection, provider, Hub, revocation and cleanup proofs remain separate.
+
+**CI reliability correction:** Hub run 38428765220 failed before any SQL test because the
+public ECR PostgreSQL mirror returned toomanyrequests/Data limit exceeded. Use the same
+official PostgreSQL 17 Docker Hub image in both isolated service jobs; retain reviewed
+immutable Stripe source, all original tests/healthchecks and every aggregate CI requirement.
+GitHub documents public Docker Hub pulls on hosted runners as exempt from pull rate limits:
+https://docs.github.com/en/actions/reference/limits#docker-hubs-rate-limit-for-github-actions
+Generated rtool agent instructions now distinguish native developer access and product use.
+
+**Developer hosting access repair:** Several production-hosted MCP services retain Vercel
+SSO (all-except-custom-domains). Native OAuth alone cannot reach them. The developer client
+now supports an existing short-lived workload identity scoped to explicit Vercel origins,
+without disabling protection or replacing service authentication. Appropriate Trusted
+Sources caller/environment rules and actual protected client execution remain unverified.
+The CI fleet test was stale: it asserted Neon/Vercel were unconfigured; update it for the
+verified host inventory while retaining a synthetic missing-origin regression.
+
+## Reusable developer OAuth and evidence boundary — 2026-10-13
+
+Owner authorized replacing repeated manual pass setup with renewable implementing-agent
+connections. Production product capabilities remain unchanged; full developer TEST/preview
+profiles retain original server write/financial/resource guards. Native OAuth owner consent
+hands authorization back to protected client storage via PKCE plus an encrypted mobile callback.
+The rtool developer client reuses/refreshes that connection and invokes the actual custom MCP.
+The completion recovery review records catalog/runtime differences, obsolete recipes and
+a finite path to finish the intended products without introducing blanket limitations.
+Source/automated/deployed/provider/Hub/revocation/cleanup evidence remain separately tracked
+in developer-evidence.json. Standard connectors remain development infrastructure aids only.
+New handoff/client regressions and mandatory provenance checks are part of this PR; exact-head
+CI, reviewed release and real owner consent/provider acceptance remain pending. Managed cloud clients use an explicit private encrypted developer vault; desktops may use
+the OS keyring. Never place credentials in a prompt, Git or plaintext credential file. This is an implementation checkpoint, not full real-world acceptance.
+See pr-cards/DEVELOPER-CONNECTION.md. No production provider activation or paid resource change.
+
 ## 2026-10-13 H-2 per-grant TEST activation — PR #149 proposed
 
 Adds additive 006 SQL for active/disabled registry and per-grant verified_at

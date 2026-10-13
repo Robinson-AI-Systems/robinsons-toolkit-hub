@@ -1,8 +1,10 @@
 // Native OS keyrings; secrets are never passed on argv, environment or disk by rtool.
 // Linux: Secret Service via secret-tool; macOS: Keychain via security;
 // Windows: Windows Credential Manager via CredRead/CredWrite/CredDelete P/Invoke.
+import {randomBytes} from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { RouteError } from './config.js';
+import {validDeveloperCredential} from './developer-client.js';
 
 const SERVICE = 'robinsons-toolkit-rtool';
 const ALIAS = /^[a-z][a-z0-9_-]{0,39}$/;
@@ -73,17 +75,20 @@ if ($action -eq 'store') {
   if (-not [RtoolCredential]::Remove($target)) { exit 3 }
 } else { exit 2 }
 `;
-export function nativePlan({ action, name, platform = process.platform, env = process.env } = {}) {
+export function nativePlan({ action, name, platform = process.platform, env = process.env, kind = 'pass', slot = '' } = {}) {
+  if (!['pass','oauth'].includes(kind))throw new RouteError('Invalid credential kind');
   if (!ALIAS.test(name || '') || !['store', 'lookup', 'delete'].includes(action)) {
     throw new RouteError('Invalid keychain service name or operation');
   }
+  if(slot && (kind!=='oauth'||!/^part-[a-f0-9]{16}-[0-9]{1,2}$/.test(slot)))throw new RouteError('Invalid credential slot');
   const common = safeEnvironment(env);
-  const target = SERVICE + ':' + name;
+  const service=kind==='oauth'?SERVICE+'-developer-oauth'+(slot?'-'+slot:''):SERVICE;
+  const target = service + ':' + name;
   if (platform === 'linux') {
     const command = 'secret-tool';
     const args = action === 'store' ?
-      ['store', '--label=Robinson Toolkit rtool', 'service', SERVICE, 'account', name] :
-      [action === 'lookup' ? 'lookup' : 'clear', 'service', SERVICE, 'account', name];
+      ['store', '--label=Robinson Toolkit rtool', 'service', service, 'account', name] :
+      [action === 'lookup' ? 'lookup' : 'clear', 'service', service, 'account', name];
     return { command, args, env: common };
   }
   if (platform === 'darwin') {
@@ -137,11 +142,59 @@ export async function runNative(plan, input = '', spawnFn = spawn) {
 }
 export function makeKeychain({ platform = process.platform, env = process.env,
   run = runNative } = {}) {
-  const execute = async (action, name, value) => {
-    const plan = nativePlan({ action, name, platform, env });
+  const execute = async (action, name, value, kind='pass',slot='') => {
+    const plan = nativePlan({ action, name, platform, env, kind,slot });
     return run(plan, value || '');
   };
+  async function removeParts(name,result){
+   if(platform!=='win32'||!result.found)return;
+   let old;try{old=JSON.parse(result.value);}catch{return;}
+   if(old.format!=='oauth-chunks'||!/^([a-f0-9]{16})$/.test(old.id)||!Number.isInteger(old.count)||old.count<1||old.count>32)return;
+   for(let i=0;i<old.count;i++)await execute('delete',name,null,'oauth','part-'+old.id+'-'+i).catch(()=>{});
+  }
   return {
+    async getOAuth(name){
+      const result=await execute('lookup',name,null,'oauth');
+      if(!result.found)return null;
+      let value;try{
+       value=JSON.parse(result.value);
+       if(value.format==='oauth-chunks'){
+        if(platform!=='win32'||!/^([a-f0-9]{16})$/.test(value.id)||!Number.isInteger(value.count)||value.count<1||value.count>32)throw Error();
+        let text='';for(let i=0;i<value.count;i++){
+         const part=await execute('lookup',name,null,'oauth','part-'+value.id+'-'+i);
+         if(!part.found)throw Error();text+=part.value;
+        }
+        value=JSON.parse(text);
+       }
+      }catch{throw new RouteError('Invalid stored developer credential');}
+      if(!validDeveloperCredential(value))throw new RouteError('Invalid stored developer credential');
+      return value;
+    },
+    async setOAuth(name,value){
+      if(!validDeveloperCredential(value))throw new RouteError('Invalid developer credential; nothing stored');
+      const text=JSON.stringify(value);
+      if(platform!=='win32'){
+       const result=await execute('store',name,text,'oauth');
+       if(!result.found)throw new RouteError('OS keychain refused developer credential');return;
+      }
+      const old=await execute('lookup',name,null,'oauth');
+      const id=randomBytes(8).toString('hex'),count=Math.ceil(text.length/1000);
+      if(count>32)throw new RouteError('Developer credential exceeds OS vault capacity');
+      const slots=[];
+      try{
+       for(let i=0;i<count;i++){
+        const slot='part-'+id+'-'+i;slots.push(slot);
+        if(!(await execute('store',name,text.slice(i*1000,(i+1)*1000),'oauth',slot)).found)throw new RouteError('OS keychain refused developer credential');
+       }
+       if(!(await execute('store',name,JSON.stringify({format:'oauth-chunks',id,count}),'oauth')).found)throw new RouteError('OS keychain refused developer credential');
+      }catch(e){for(const slot of slots)await execute('delete',name,null,'oauth',slot).catch(()=>{});throw e;}
+      await removeParts(name,old);
+    },
+    async deleteOAuth(name){
+      const old=await execute('lookup',name,null,'oauth');
+      const removed=(await execute('delete',name,null,'oauth')).found;
+      if(removed)await removeParts(name,old);return removed;
+    },
     async get(name) {
       const result = await execute('lookup', name);
       return result.found ? result.value : null;
