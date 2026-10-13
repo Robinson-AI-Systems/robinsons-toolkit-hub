@@ -1,3 +1,16 @@
+## 2026-10-13 H-2 owner encrypted grant administration — PR #147 proposed
+
+Adds /api/owner/grants with independently verified owner-only encrypted
+TEST/read_only RTC grant staging, metadata-only listing and immediate revocation.
+The UI fixes one-day duration and refuses malformed caller UUIDs, duplicate
+areas and service-pass shapes; it never echoes the upstream pass or widens
+mode/profile. Existing H-2 SQL validates caller grant and persists AES-GCM
+ciphertext under HUB_GRANTS_KEY; missing key remains fail-closed. No service
+can route a pending staged grant, and no pass was actually enrolled through
+production. Source tests cover denial, lockout, escaping, non-disclosure,
+revoke and exact stage parameters. H-1 live owner verifier, verified active
+registry, controlled H-3 routing and authentic two-service TEST acceptance OPEN.
+
 ## 2026-10-13 H-2 verified-owner staged registry UI — PR #146 proposed
 
 Adds /api/owner/servers for independently password-verified server staging,
