@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 encrypted scoped results (#140 proposed; source/SQL only)
+Adds true isolated-SQL tested AES-256-GCM-at-rest 24h result handles, HMAC opaque handle digests and exact owner/caller-bound 4KiB base64url byte pages. A no-store HTTPS pass-only GET reauthenticates each page so revoked/expired Hub passes cannot read. Additional HUB_RESULTS_KEY must be separately configured securely; its absence disables result storage only, without disabling other Hub doors. No provider result created or routed, RTC manifest remains 0. H-2/H-3, real hosted TEST read/denial/revocation, completed conformance and measured scale remain open. #136–#139 merged with exact-head checks.
+
 ## H-1 constant-size MCP broker foundation (#139 proposed)
 Seven actual implemented, read-only Hub broker tools now offer scoped search, describe, local-only call, bounded batch and truthful namespace information alongside whoami/health. Only two Hub-owned harmless leaf reads are currently callable; no provider schema is fetched or provider credential accepted. No recursive broker routing or per-service tool registration; list size fixed across synthetic counts 2/5/12/50/100 (not a real scale/RSS benchmark). Server negotiates supported pinned MCP versions, including 2025-11-25. Public RTC manifest remains RTC0: this source slice is not full conformance or authenticated hosted acceptance. #136–#138 merged exact-head green; H-2 registry and H-3 actual federation remain unimplemented.
 

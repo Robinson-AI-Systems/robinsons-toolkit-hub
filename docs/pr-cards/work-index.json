@@ -378,7 +378,8 @@
         "#136 (Hub read-only HTTP tools partial)",
         "#137 (owner verified Hub pass issue/revoke partial)",
         "#138 (OAuth revocation and refresh reuse safety partial)",
-        "#139 (constant-size actual Hub MCP brokers partial)"
+        "#139 (constant-size actual Hub MCP brokers partial)",
+        "#140 (encrypted caller-scoped results partial)"
       ]
     },
     {
