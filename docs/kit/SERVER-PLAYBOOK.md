@@ -124,3 +124,10 @@ Copy from the Stripe MCP, replacing the service: `AGENTS.md`, `CLAUDE.md`, `docs
 5b. Developer tools (Batch V) follow contract §10: refuse production, record runs, clean up only what they created.
 6. Usable through `rtool` directly (and the relay) with a pass, proven by `scripts/agent-check.mjs`.
 7. Registered in the hub (once the hub exists) and listed as "live" in `docs/kit/SERVER-ROADMAP.md`.
+
+## Optional reuse boundary — owner-requested recovery 2026-10-12
+
+The tables above identify reusable patterns, not mandatory private-package dependencies. A server must implement
+RTC and its own direct MCP independently; it may retain local tested modules. Adopt only individually proven
+published core exports under a service-owned card with immutable pin/digest, original regressions and rollback.
+Do not wait for K-3 to implement RTC or force dispatcher, storage, account, provider or approval uniformity.

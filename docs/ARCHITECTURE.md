@@ -1,5 +1,13 @@
 # ARCHITECTURE — runtime facts, as built
 
+## Current boundary clarification — 2026-10-12
+
+The hosted Hub (`packages/hub`) is not built. Existing local stdio MCP routes over RTC HTTPS but lists six
+meta-tools per configured credentialed service; it is not accepted as a constant-size universal gateway.
+The private core has eleven candidate exports and extensive tests; it is not required by existing direct routing.
+See [the verified source review](audits/2026-10-12-gateway-architecture-recovery.md) for exact snapshots,
+result-size and fan-out gaps, ownership and target constraints. Those target constraints are planned, not deployed.
+
 Updated in the same PR that ships behavior. Designs describe what is planned.
 
 As of 2026-10-11 (#86): **foundation, conformance, direct doors and encrypted relay code exist.** The owner approved and provisioned a separate private relay-transport GitHub repository, a minimally sized Neon database with verified replay migration, and a Vercel production-target build READY from the hub source repository. Vercel has production-only secret variables and an owner-entered repo token, but it is still protected and not functionally connected: webhook, RTC server mapping, agent bindings, permission check, test passes and three real route proofs remain open (IN-04/D-4). Existing custom servers' `/api/mcp` does not certify RTC adoption. See `docs/RELAY-DEPLOY.md` and D-4 card.
