@@ -7,7 +7,7 @@ export function parseOAuthForm(req) {
   if (typeof body==='string' && Buffer.byteLength(body,'utf8')<=4096) {
     pairs=new URLSearchParams(body);
   } else if (body && typeof body==='object' && !Array.isArray(body) &&
-    Object.getPrototypeOf(body)===Object.prototype) {
+    [Object.prototype,null].includes(Object.getPrototypeOf(body))) {
     const entries=Object.entries(body);
     if (entries.length>8 || entries.some(([k,v]) => k.length>40 ||
       typeof v!=='string' || v.length>1024) ||
