@@ -1,5 +1,8 @@
 # STATUS — current work, blockers and next action
 
+## H-1 constant-size MCP broker foundation (#139 proposed)
+Seven actual implemented, read-only Hub broker tools now offer scoped search, describe, local-only call, bounded batch and truthful namespace information alongside whoami/health. Only two Hub-owned harmless leaf reads are currently callable; no provider schema is fetched or provider credential accepted. No recursive broker routing or per-service tool registration; list size fixed across synthetic counts 2/5/12/50/100 (not a real scale/RSS benchmark). Server negotiates supported pinned MCP versions, including 2025-11-25. Public RTC manifest remains RTC0: this source slice is not full conformance or authenticated hosted acceptance. #136–#138 merged exact-head green; H-2 registry and H-3 actual federation remain unimplemented.
+
 ## H-1 OAuth revocation and replay safety (#138 proposed; source only)
 Adds OAuth client bearer revocation with neutral responses and atomic durable rate-limit, spent-refresh family compromise revocation, and independently owner-authenticated session listing/family revocation. Disposable PostgreSQL exercises real rotation, replay, client-bound and owner-bound revocation. Form parser rejects duplicate/oversize params. Hosted exact revision, real owner setup, RTC1 and protected TEST integration remain OPEN; no real tokens, service grants or provider actions used.
 

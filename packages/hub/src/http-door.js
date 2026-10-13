@@ -1,39 +1,42 @@
-const meta=Object.freeze([
-  {name:'hub_whoami',area:'gateway',profiles:['read_only','everyday','full'],
-    writes:false,money:false,destructive:false,audience:['owner','builder','operator'],description:'Read authenticated Toolkit Hub connection identity',
-    inputSchema:{type:'object',properties:{},additionalProperties:false},
-    annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
-  {name:'hub_health',area:'gateway',profiles:['read_only','everyday','full'],
-    writes:false,money:false,destructive:false,audience:['owner','builder','operator'],description:'Read Toolkit Hub foundation and federation readiness',
-    inputSchema:{type:'object',properties:{},additionalProperties:false},
-    annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
-]);
-export function brokerCatalog() { return meta; }
+import {brokerCatalog,runBroker} from './broker.js';
+export {brokerCatalog} from './broker.js';
+const supported=new Set(['2025-11-25','2025-06-18','2025-03-26']);
 export function mcpReply(request,actor) {
   const id=request?.id??null;
   const base={jsonrpc:'2.0',id};
-  if (!request || request.jsonrpc!=='2.0' || typeof request.method!=='string')
+  if (!request || request.jsonrpc!=='2.0' || typeof request.method!=='string' ||
+    (request.id!==undefined && (typeof request.id!=='number' &&
+    typeof request.id!=='string' || !String(request.id).length)))
     return {...base,error:{code:-32600,message:'Invalid request'}};
   if (request.method==='notifications/initialized') return null;
   if (request.method==='initialize') {
-    if (typeof request.params?.protocolVersion!=='string')
-      return {...base,error:{code:-32602,message:'Invalid initialization'}};
-    return {...base,result:{protocolVersion:'2025-03-26',
-      capabilities:{tools:{listChanged:false}},serverInfo:{name:'robinsons-toolkit-hub',version:'0.1.0'}}};
+    if (typeof request.params?.protocolVersion!=='string' ||
+      !supported.has(request.params.protocolVersion))
+      return {...base,error:{code:-32602,message:'Unsupported protocol version'}};
+    return {...base,result:{protocolVersion:request.params.protocolVersion,
+      capabilities:{tools:{listChanged:false}},
+      serverInfo:{name:'robinsons-toolkit-hub',version:'0.1.0'}}};
   }
   if (request.method==='ping') return {...base,result:{}};
-  if (request.method==='tools/list') return {...base,result:{tools:meta}};
+  if (request.method==='tools/list') {
+    if(request.params && (typeof request.params!=='object'||Array.isArray(request.params)||
+      Object.keys(request.params).some(k=>k!=='cursor')))
+      return {...base,error:{code:-32602,message:'Invalid listing'}};
+    if(request.params?.cursor) return {...base,error:{code:-32602,message:'Unknown cursor'}};
+    return {...base,result:{tools:brokerCatalog()}};
+  }
   if (request.method!=='tools/call') return {...base,error:{code:-32601,message:'Method not found'}};
-  if (request.params?.name!=='hub_whoami' && request.params?.name!=='hub_health')
-    return {...base,error:{code:-32602,message:'Unknown tool'}};
-  if (request.params?.arguments && (typeof request.params.arguments!=='object' ||
-      Array.isArray(request.params.arguments) || Object.keys(request.params.arguments).length!==0))
+  if (!request.params || typeof request.params.name!=='string' ||
+    (request.params.arguments!==undefined && (!request.params.arguments ||
+      typeof request.params.arguments!=='object'||Array.isArray(request.params.arguments))))
     return {...base,error:{code:-32602,message:'Invalid tool arguments'}};
-  const result=request.params.name==='hub_whoami' ?
-    {profile:actor.profile,mode:actor.mode,areas:actor.areas,allowWrites:false} :
-    {foundation:'ready',federation:'not_configured',providerCallsEnabled:false};
-  return {...base,result:{content:[{type:'text',text:JSON.stringify(result)}],
-    structuredContent:result,isError:false}};
+  const value=runBroker(request.params.name,request.params.arguments??{},actor);
+  if(!value.ok) return {...base,error:{code:-32602,message:value.error.what}};
+  const json=JSON.stringify(value.result);
+  if(Buffer.byteLength(json)>8192)
+    return {...base,error:{code:-32603,message:'Result exceeds safe bound'}};
+  return {...base,result:{content:[{type:'text',text:json}],
+    structuredContent:value.result,isError:false}};
 }
 export async function handleMcp(req,res,{withDb,authorize}) {
   res.setHeader('Cache-Control','no-store');

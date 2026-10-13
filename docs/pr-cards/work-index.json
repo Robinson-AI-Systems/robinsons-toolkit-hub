@@ -377,7 +377,8 @@
         "#135 (verified-owner OAuth bootstrap partial)",
         "#136 (Hub read-only HTTP tools partial)",
         "#137 (owner verified Hub pass issue/revoke partial)",
-        "#138 (OAuth revocation and refresh reuse safety partial)"
+        "#138 (OAuth revocation and refresh reuse safety partial)",
+        "#139 (constant-size actual Hub MCP brokers partial)"
       ]
     },
     {

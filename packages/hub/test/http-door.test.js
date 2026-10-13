@@ -5,12 +5,17 @@ function reply() {
   return {headers:{},statusCode:0,body:null,setHeader(k,v){this.headers[k]=v;return this;},
     status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;},end(){return this;}};
 }
-it('fixed menu exposes only two genuine Hub tools',()=>{
-  expect(brokerCatalog().map(x=>x.name)).toEqual(['hub_whoami','hub_health']);
-  expect(mcpReply({jsonrpc:'2.0',method:'tools/list',id:1},actor).result.tools).toHaveLength(2);
+it('fixed broker menu exposes seven Hub tools and guarded leaf reads',()=>{
+  expect(brokerCatalog().map(x=>x.name)).toEqual(['hub_whoami','hub_health','hub_search_tools','hub_describe_tool','hub_call','hub_batch','hub_namespaces']);
+  expect(mcpReply({jsonrpc:'2.0',method:'tools/list',id:1},actor).result.tools).toHaveLength(7);
   const who=mcpReply({jsonrpc:'2.0',method:'tools/call',id:2,params:{name:'hub_whoami'}},actor);
   expect(who.result.structuredContent.profile).toBe('read_only');
   expect(who.result.content[0].text).toContain('read_only');
+  const search=mcpReply({jsonrpc:'2.0',method:'tools/call',id:4,
+    params:{name:'hub_search_tools',arguments:{query:'health'}}},actor);
+  expect(search.result.structuredContent.tools[0].name).toBe('hub_health');
+  expect(mcpReply({jsonrpc:'2.0',method:'initialize',id:5,
+    params:{protocolVersion:'2025-11-25'}},actor).result.protocolVersion).toBe('2025-11-25');
   expect(mcpReply({jsonrpc:'2.0',method:'tools/call',id:3,
     params:{name:'stripe_send_money'}},actor).error.code).toBe(-32602);
 });
@@ -25,7 +30,7 @@ it('authenticates before menu listing and denies shared-budget overrun',async()=
   expect(res.statusCode).toBe(429);expect(res.headers['Retry-After']).toBe('15');
   authorize.mockResolvedValue({actor});
   res=reply();await handleMcp(req,res,{withDb,authorize});
-  expect(res.body.result.tools).toHaveLength(2);
+  expect(res.body.result.tools).toHaveLength(7);
   authorize.mockResolvedValue({actor:{...actor,areas:['other']}});
   res=reply();await handleMcp(req,res,{withDb,authorize});
   expect(res.statusCode).toBe(403);
