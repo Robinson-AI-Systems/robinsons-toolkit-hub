@@ -1,3 +1,16 @@
+## 2026-10-13 H-2 verified-owner staged registry UI — PR #146 proposed
+
+Adds /api/owner/servers for independently password-verified server staging,
+owner-only listing and disabling, with no-store/CSP browser responses. Browser
+input cannot supply RTC metadata counts: the server first performs an uncredentialed
+DNS-pinned TLS contract probe (from #145), matches expected RTC1 identity and
+TEST/read_only claims, then saves only pending noncallable SQL metadata. Denials,
+lockout, duplicate fields, fake claims and cross-site markup are covered by unit
+tests; production owner verifier configuration remains absent and no service grant
+or provider call was exercised. **Source and CI only, not authenticated live
+setup, owner acceptance or activation.** Strict H-2 granting, owner grant UI,
+real verified active registry, H-3 routing and two-service proof remain open.
+
 ## 2026-10-13 H-2 DNS-pinned RTC contract probe — PR #145 proposed
 
 Adds a fail-closed HTTPS-only /api/contract probe for already-staged RTC service
