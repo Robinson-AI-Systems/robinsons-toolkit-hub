@@ -52,3 +52,7 @@ Windows developer records use bounded Credential Manager chunks and a short atom
 manifest, keeping RSA pending credentials below the per-entry blob limit. Managed POSIX
 runners use a kernel flock held by a child pipe; abandoned lock filenames do not block
 future sessions. Secrets stay in protected OS storage or the explicit encrypted runner vault.
+
+Follow-up review: completed handoffs remain immutable until expiry even if another process
+starts setup for the same client. Hub acceptance requires a Hub-mediated RTC route and
+its readback; standalone MCP initialization or a bare service RTC request is insufficient.

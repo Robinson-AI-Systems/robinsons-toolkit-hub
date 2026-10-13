@@ -1,3 +1,7 @@
+## Hub proof correction — 2026-10-13
+
+The evidence gate now rejects standalone native MCP calls and bare RTC calls as Hub acceptance. A verified Hub layer needs an actual Hub-mediated RTC route and readback. Regression checks passed. Real provider and hosted Hub acceptance remain unverified; this schema does not manufacture proof.
+
 ## Review corrections — 2026-10-13
 
 Developer connection retries retain encrypted codes until expiry, concurrent starts use an atomic trusted-IP quota, and backend failures remain retryable. Google consent preserves the requested profile and supports actual native code length. Windows protected credentials fit bounded chunks; cloud refresh locks recover after process exit. Evidence requires every layer and genuine custom-service read/write/denial/readback observations. Production functionality remains intact. Local regression checks passed; exact-head CI, deployed connection, provider, Hub, revocation and cleanup proofs remain separate.
