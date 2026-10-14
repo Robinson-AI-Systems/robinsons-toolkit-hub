@@ -25,6 +25,13 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
  const tools={
   list:listEligibleRtcTargets,resolve:resolveActiveCallerGrant,
   search:searchPinnedRtcTools,describe:describePinnedRtcTool,...deps};
+ if(name==='hub_health') {
+  if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
+  const targets=await tools.list(db,actor,{limit:50});
+  return {ok:true,result:{foundation:'ready',
+    federation:targets.length?'discovery_only':'not_configured',
+    providerCallsEnabled:false,contractVersion:0,accessibleUpstreams:targets.length}};
+ }
  if(name==='hub_namespaces') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
   const targets=await tools.list(db,actor,{limit:50});
