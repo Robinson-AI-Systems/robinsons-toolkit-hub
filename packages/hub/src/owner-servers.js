@@ -1,7 +1,7 @@
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
   verifyOwnerLogin} from './owner-login.js';
-import {stageHubServer,listStagedServers,disableStagedServer}
-  from './registry.js';
+import {stageHubServer,listStagedServers,disableStagedServer,
+  retireHubServerAndGrants} from './registry.js';
 import {probeStagedRtcContract} from './pinned-contract.js';
 
 const slug=/^[a-z][a-z0-9_]{1,59}$/;
@@ -28,7 +28,14 @@ function forms() {
     '<input type="hidden" name="action" value="disable">'+
     '<label>Server name <input name="name" maxlength="60" required></label>'+
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
-    '<button type="submit">Disable pending server</button></form>');
+    '<button type="submit">Disable pending server</button></form>'+
+    '<form method="POST" action="/api/owner/servers">'+
+    '<input type="hidden" name="action" value="retire">'+
+    '<label>Exact RTC server name <input name="name" maxlength="60" required></label>'+
+    '<label>Type RETIRE to revoke all service TEST grants '+
+    '<input name="confirm" required></label>'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<button type="submit">Permanently retire TEST service and revoke grants</button></form>');
 }
 function listing(rows) {
   return page('<p>Owner-only staging metadata, at most 100 entries.</p><ul>'+
@@ -37,19 +44,21 @@ function listing(rows) {
       ' — '+escapeHtml(row.state)+'; callable: no</li>').join('')+'</ul>');
 }
 function validated(fields) {
-  if (!fields || !['stage','list','disable'].includes(fields.action)||
+  if (!fields || !['stage','list','disable','retire'].includes(fields.action)||
     typeof fields.password!=='string'||!fields.password||
     fields.password.length>256) return false;
   if (fields.action==='list') return true;
   if(!slug.test(fields.name||'')) return false;
-  return fields.action==='disable'||(slug.test(fields.prefix||'')&&
-    typeof fields.origin==='string'&&fields.origin.length>=8&&
-    fields.origin.length<=255);
+  if(fields.action==='disable')return true;
+  if(fields.action==='retire')return fields.confirm==='RETIRE';
+  return slug.test(fields.prefix||'')&&typeof fields.origin==='string'&&
+    fields.origin.length>=8&&fields.origin.length<=255;
 }
 
 export async function handleOwnerServers(req,res,{withDb,env=process.env,
   verify=verifyOwnerLogin,probe=probeStagedRtcContract,stage=stageHubServer,
-  list=listStagedServers,disable=disableStagedServer}={}) {
+  list=listStagedServers,disable=disableStagedServer,
+  retire=retireHubServerAndGrants}={}) {
   htmlHeaders(res);
   res.setHeader('Pragma','no-cache');
   if(!['GET','POST'].includes(req.method)) {
@@ -80,6 +89,14 @@ export async function handleOwnerServers(req,res,{withDb,env=process.env,
           {ownerVerified:true});
         return res.status(disabled?200:404).send(disabled?
           'Pending server disabled; no tools were activated.' : 'Pending server unavailable.');
+      }
+      if(fields.action==='retire') {
+        const retired=await retire(db,{ownerId,name:fields.name},
+          {ownerVerified:true});
+        return res.status(retired?200:404).send(retired?
+          'RTC TEST service disabled; '+retired.revokedCount+
+          ' remaining scoped grants revoked. No provider call was made.' :
+          'Owned RTC service unavailable.');
       }
       // The browser cannot supply count/version facts; validate public RTC1
       // metadata over the pinned-origin socket before persisting a claim.
