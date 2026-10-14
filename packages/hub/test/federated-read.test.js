@@ -127,7 +127,7 @@ it('selects longest canonical service prefix for nested registered services',asy
  expect(d.read).toHaveBeenCalledWith(selectedGrant,'foo_bar_item_list',{});
  const d2=deps();
  d2.list.mockResolvedValueOnce([shallower,deeper]);
- d2.resolve.mockResolvedValueOnce(selectedGrant);
+ d2.resolve.mockResolvedValue(selectedGrant);
  d2.describe.mockResolvedValueOnce({name:'foo_bar_item_list',
    area:'billing',inputSchema:{type:'object'},writes:false});
  const described=await runFederatedBroker('hub_describe_tool',
@@ -170,4 +170,14 @@ it('routes describe and audited RTC calls to the last authorized service in a 10
  expect(refused.error.code).toBe('not_found');
  expect(denied.resolve).not.toHaveBeenCalled();
  expect(denied.read).not.toHaveBeenCalled();
+});
+
+it('does not return a read schema after a grant is revoked during metadata GET',async()=>{
+ const d=deps();
+ d.resolve.mockResolvedValueOnce(grant).mockResolvedValueOnce(null);
+ const result=await runFederatedBroker('hub_describe_tool',
+  {name:'stripe_invoice_list'},actor,{},{},d);
+ expect(result.error.code).toBe('outside_scope');
+ expect(d.read).not.toHaveBeenCalled();
+ expect(d.audit).not.toHaveBeenCalled();
 });
