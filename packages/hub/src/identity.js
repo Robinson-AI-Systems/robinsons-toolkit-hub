@@ -93,3 +93,59 @@ export async function revokeHubPass(db, id, ownerId, { ownerVerified = false } =
     WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL`,[id,ownerId]);
   return rowCount === 1;
 }
+
+const ownerName=/^[A-Za-z0-9:_-]{1,120}$/;
+const passId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function verifiedOwnerScope(ownerId,verified) {
+  if(verified!==true||typeof ownerId!=='string'||!ownerName.test(ownerId))
+    throw new Error('Verified owner approval required');
+}
+
+/**
+ * Owner may only reduce an existing Hub pass's RTC server names. The UPDATE
+ * condition is checked under the row lock by PostgreSQL; two concurrent owner
+ * requests cannot expand each other. Durable audit is in the same statement.
+ */
+export async function narrowHubPassServers(db,{ownerId,id,serverNames},
+ {ownerVerified=false}={}) {
+  verifiedOwnerScope(ownerId,ownerVerified);
+  if(typeof id!=='string'||!passId.test(id))
+    throw new TypeError('Invalid Hub pass identifier');
+  const names=serverSelection(serverNames,{required:true});
+  const owned=await db.query(`SELECT name FROM hub_servers
+    WHERE owner_id=$1 AND name=ANY($2::text[])`,[ownerId,names]);
+  const found=new Set(owned.rows.map(row=>row.name));
+  if(names.some(name=>!found.has(name)))
+    throw new Error('Selected RTC server must be registered to this owner');
+  // No reversible "set" operation: once narrowed, this owner pass can only
+  // narrow again or be revoked. Audit and mutation commit or fail together.
+  const {rows}=await db.query(`WITH tightened AS (
+    UPDATE hub_callers SET allowed_servers=$3::text[]
+    WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL AND expires_at>now()
+      AND (allowed_servers IS NULL OR $3::text[] <@ allowed_servers)
+    RETURNING id
+   )
+   INSERT INTO hub_forward_audit(caller_id,action,outcome)
+     SELECT id,'hub_pass_scope_narrow','allowed' FROM tightened
+   RETURNING caller_id`,[id,ownerId,names]);
+  return rows.length===1 ? {updated:true,serverNames:[...names]} :
+    {updated:false,serverNames:null};
+}
+
+/** Owner-private, metadata-only overview; no digest, ciphertext or bearer. */
+export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
+  verifiedOwnerScope(ownerId,ownerVerified);
+  const {rows}=await db.query(`SELECT id,profile,mode,allowed_areas,
+    to_jsonb(hub_callers)->'allowed_servers' AS server_names,expires_at,
+    CASE WHEN revoked_at IS NOT NULL THEN 'revoked'
+      WHEN expires_at<=now() THEN 'expired' ELSE 'current' END AS state
+    FROM hub_callers WHERE owner_id=$1
+    ORDER BY issued_at DESC,id LIMIT 50`,[ownerId]);
+  return rows.map(row=>({
+    id:row.id,profile:row.profile,mode:row.mode,
+    areas:[...row.allowed_areas],
+    serverNames:Array.isArray(row.server_names)?
+      [...serverSelection(row.server_names)]:null,
+    expiresAt:row.expires_at,state:row.state
+  }));
+}
