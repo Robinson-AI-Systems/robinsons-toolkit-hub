@@ -171,7 +171,11 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
           return res.status(400).json(deny('invalid_args'));
         return send(res, { ok: true, result: { results: calls } });
       }
-      if (!actor.ownerId) return res.status(403).json(deny('outside_scope'));
+      // Hub-only calls remain usable for legacy TEST identities without
+      // owner-scoped RTC grants. Such identities cannot invoke upstream
+      // tools; grant selection also independently fails closed.
+      if (!actor.ownerId && req.body.calls.some(call => !selectTool(call.name)))
+        return res.status(403).json(deny('outside_scope'));
       return respondFederated(res, await federate('hub_batch',
         { calls: req.body.calls }, actor, db, settings));
     });
