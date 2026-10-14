@@ -121,3 +121,30 @@ it('small result limits resume every authorized service without losing or repeat
  expect(local.ok).toBe(true);
  expect(local.result.tools.map(t=>t.name)).toContain('hub_health');
 });
+
+
+it('browses all 100 scoped services without a keyword using signed bounded continuation',async()=>{
+ const all=targets(100),deps=setup(all),seen=new Set();
+ let cursor,pages=0;
+ do {
+  const r=await runFederatedBroker('hub_search_tools',
+   {query:'',limit:5,...(cursor?{cursor}:{})},actor,{},settings,deps);
+  expect(r.ok).toBe(true);
+  expect(r.result.scanned).toBeLessThanOrEqual(3);
+  expect(Buffer.byteLength(JSON.stringify(r.result),'utf8')).toBeLessThan(8192);
+  for(const item of r.result.tools)if(item.server)seen.add(item.server);
+  cursor=r.result.next;
+  pages++;
+  expect(pages).toBeLessThanOrEqual(34);
+ }while(cursor);
+ expect(pages).toBe(34);
+ expect(seen.size).toBe(100);
+ expect(deps.resolve).toHaveBeenCalledTimes(100);
+ expect(deps.search).toHaveBeenCalledTimes(100);
+ const first=await runFederatedBroker('hub_search_tools',
+  {query:'',limit:5},actor,{},settings,deps);
+ const changed=await runFederatedBroker('hub_search_tools',
+  {query:'x',limit:5,cursor:first.result.next},actor,{},settings,deps);
+ expect(changed.error.code).toBe('invalid_args');
+ expect(deps.search).toHaveBeenCalledTimes(103);
+});
