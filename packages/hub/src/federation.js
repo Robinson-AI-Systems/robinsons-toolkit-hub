@@ -4,6 +4,7 @@ import {searchPinnedRtcTools,describePinnedRtcTool} from './pinned-tools.js';
 import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit,newRtcCorrelation} from './rtc-read-audit.js';
 import {storeRtcResult,readRtcResult} from './rtc-results.js';
+import {searchCursorScope,issueSearchCursor,openSearchCursor} from './search-cursor.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
@@ -53,21 +54,30 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     upstreamEnabled:targets.length>0,metadataOnly:true,next:null}};
  }
  if(name==='hub_search_tools') {
-  if(Object.keys(args).some(k=>!['query','area','server','limit'].includes(k))||
+  if(Object.keys(args).some(k=>!['query','area','server','limit','cursor'].includes(k))||
     typeof args.query!=='string'||!args.query||args.query.length>120||
     (args.server!==undefined&&!serverPattern.test(args.server))||
     (args.area!==undefined&&!areaPattern.test(args.area))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||
-      args.limit<1||args.limit>20)))
+      args.limit<1||args.limit>20))||
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>160)))
     return fail('invalid_args','Invalid search parameters');
   const limit=args.limit??10;
   const owned=args.server||args.area&&args.area!=='gateway'?[]:
     runBroker('hub_search_tools',{query:args.query,limit},actor).result.tools;
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   const matching=targets.filter(t=>(!args.server||t.name===args.server)&&
     (!args.area||t.areas.includes(args.area)));
   if(args.server&&!matching.length)return fail('not_found','No authorized RTC service');
-  const chosen=matching.slice(0,3);
+  const scope=searchCursorScope(actor,args,matching);
+  let offset=0;
+  if(args.cursor!==undefined){
+   try{offset=openSearchCursor(args.cursor,scope,settings);}
+   catch{return fail('unavailable','RTC search continuation unavailable');}
+   if(offset===null||offset>=matching.length)
+    return fail('invalid_args','Search continuation invalid or expired');
+  }
+  const chosen=matching.slice(offset,offset+3);
   const settled=await Promise.allSettled(chosen.map(async target=>{
    if(args.area&&!target.areas.includes(args.area))return {tools:[],incomplete:false};
    const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
@@ -75,7 +85,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
    return tools.search(grant,{query:args.query,area:args.area,limit:Math.min(limit,10)});
   }));
   const found=[...owned],failures=[];
-  let incomplete=matching.length>chosen.length;
+  let incomplete=matching.length>offset+chosen.length;
   for(let i=0;i<settled.length;i++) {
    const state=settled[i];
    if(state.status==='rejected'){
@@ -85,12 +95,23 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     incomplete ||= state.value.incomplete===true;
     const remaining=Math.max(0,limit-found.length);
     if(state.value.tools.length>remaining)incomplete=true;
-    for(const tool of state.value.tools.slice(0,remaining))
-      found.push({...tool,server:chosen[i].name});
+    for(const tool of state.value.tools.slice(0,remaining)) {
+      const selected={...tool,server:chosen[i].name};
+      if(Buffer.byteLength(JSON.stringify([...found,selected]),'utf8')>6500) {
+        incomplete=true;
+        break;
+      }
+      found.push(selected);
+    }
    }
   }
+  let next=null;
+  if(offset+chosen.length<matching.length) {
+    try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
+    catch{return fail('unavailable','RTC search continuation unavailable');}
+  }
   return {ok:true,result:{tools:found.slice(0,limit),failures,
-    incomplete,next:null,scanned:chosen.length,authorizedTargets:matching.length}};
+    incomplete,next,scanned:chosen.length,authorizedTargets:matching.length}};
  }
  if(name==='hub_result_read') {
   if(Object.keys(args).some(k=>!['handle','page'].includes(k))||
