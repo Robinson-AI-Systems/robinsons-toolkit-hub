@@ -3,21 +3,23 @@
 // be discovered or executed. Never treat broker names as provider names.
 const empty={type:'object',properties:{},additionalProperties:false};
 const string={type:'string',minLength:1,maxLength:120};
-const name={type:'string',pattern:'^hub_[a-z0-9_]+$',maxLength:81};
+const rtcName={type:'string',pattern:'^[a-z][a-z0-9_]{2,119}$',maxLength:120};
 const catalog=Object.freeze([
   {name:'hub_whoami',description:'Read current TEST Hub connection permissions',inputSchema:empty},
   {name:'hub_health',description:'Read Hub foundation readiness and federation status',inputSchema:empty},
-  {name:'hub_search_tools',description:'Search the currently available Hub-owned read tools',
-    inputSchema:{type:'object',properties:{query:string,limit:{type:'integer',minimum:1,maximum:20}},
+  {name:'hub_search_tools',description:'Search eligible Hub and separately granted RTC read tools',
+    inputSchema:{type:'object',properties:{query:string,limit:{type:'integer',minimum:1,maximum:20},
+      server:{type:'string',pattern:'^[a-z][a-z0-9_]{1,59}$'},
+      area:{type:'string',pattern:'^[a-z][a-z0-9_]{0,59}$'}},
       required:['query'],additionalProperties:false}},
-  {name:'hub_describe_tool',description:'Describe an available Hub-owned read tool',
-    inputSchema:{type:'object',properties:{name},required:['name'],additionalProperties:false}},
-  {name:'hub_call',description:'Call an authorized Hub-owned read tool',
-    inputSchema:{type:'object',properties:{name,args:{type:'object'}},
+  {name:'hub_describe_tool',description:'Describe an authorized RTC read tool on demand',
+    inputSchema:{type:'object',properties:{name:rtcName},required:['name'],additionalProperties:false}},
+  {name:'hub_call',description:'Call an independently granted RTC read tool',
+    inputSchema:{type:'object',properties:{name:rtcName,args:{type:'object'}},
       required:['name'],additionalProperties:false}},
   {name:'hub_batch',description:'Execute up to ten authorized Hub-owned read calls',
     inputSchema:{type:'object',properties:{calls:{type:'array',minItems:1,maxItems:10,
-      items:{type:'object',properties:{name,args:{type:'object'}},required:['name'],
+      items:{type:'object',properties:{name:rtcName,args:{type:'object'}},required:['name'],
         additionalProperties:false}}},
       required:['calls'],additionalProperties:false}},
   {name:'hub_namespaces',description:'List bounded accessible namespaces without fetching upstream tools',

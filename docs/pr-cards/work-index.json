@@ -397,10 +397,11 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Source staged registry and per-caller encryption in #142–#143, both noncallable. Owner setup, connection-time DNS safety, grant activation and real authenticated acceptance OPEN.",
+      "note": "Owner registry, pinned contract/whoami, separately sealed grant staging and verified active grant resolution implemented through #149. #157 adds eligible-target metadata, full TEST developer narrowing to read_only upstream credentials, and SQL revocation checks. Hosted DB/migration, independently attested upstream deployment and actual provider/Hub-mediated acceptance are OPEN.",
       "pr": [
         "#142 (pending server registry SQL and strict owner staging partial)",
-        "#143 (encrypted caller/session-bound RTC grant staging partial)"
+        "#143 (encrypted caller/session-bound RTC grant staging partial)",
+        "#157 (full TEST caller narrowed to active read_only grant and revocable selective targets; source/SQL)"
       ]
     },
     {
@@ -412,13 +413,18 @@
         "H-2"
       ],
       "card": "docs/pr-cards/H-3.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "H-3"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
+      "note": "Source H-3: #158 DNS-pinned RTC metadata GET, #159 bounded native MCP scoped search/describe/namespaces; #160 implements guarded grant-scoped authenticated TEST read POST, sequential batch, durable correlated attempt/outcome SQL for Hub pass + OAuth, explicit oversized inline refusal, uncertain POST no retry. Real two-service provider calls, installed hosted 008 migration, result handles/explicit pagination, live/RTC1 conformance and full H3 HTTP parity remain OPEN.",
+      "pr": [
+        "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
+        "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",
+        "#160 (non-retrying pinned read POST, audit, batch, SQL integration; hosted acceptance open)"
+      ]
     },
     {
       "id": "H-4",

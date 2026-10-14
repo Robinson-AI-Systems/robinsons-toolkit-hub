@@ -1,3 +1,53 @@
+## H-3 guarded upstream RTC read execution — PR #160 proposed
+
+Native Hub `hub_call` and sequential read-only `hub_batch` now have
+source-level TEST read routing through active, exact caller-specific
+upstream grant, prefix, on-demand harmless RTC metadata and socket-pinned
+HTTPS one-shot POST. No automatic retry of ambiguous POST outcomes.
+Durable additive 008 PostgreSQL attempt/outcome audit rows correlate
+OAuth/pass caller, owner, grant, service, canonical tool, upstream log
+ID and one operation correlation. Oversize inline result is explicitly
+refused, not truncated. Synthetic HTTP and disposable SQL tests verify
+guards, refusal, audit and partial failures. Source-merged != deployed:
+hosted 008 migration, real RTC deployment/identity pins, two-service
+Hub-mediated read and denial/revocation, HTTP parity, handles/pagination
+and RTC1 conformance remain open. No live provider mutation or release.
+
+## H-3 native MCP selective RTC discovery — PR #159 proposed
+
+The Hub's fixed MCP menu now routes `hub_search_tools`,
+`hub_describe_tool`, `hub_namespaces` and `hub_health` to the
+metadata-only RTC path. At most three eligible active read_only TEST
+service grants are queried per search, with scoped database selection,
+exact grant re-resolution, canonical tool prefix and on-demand schema
+retrieval, bounded content, independent partial-outage reporting and no
+secret disclosure. Health is `discovery_only`, not provider call readiness.
+Synthetic orchestration tests cover success, refusal, partial outage and
+no unintended execution. Live provider dispatch, HTTP parity, audit,
+handles/pagination, RTC1/full deployed two-service acceptance remain OPEN.
+
+## H-3 pinned RTC tool discovery and on-demand schema — PR #158 proposed
+
+The existing socket-pinned, hostname-verified HTTPS TEST transport now has
+a narrowly allowlisted GET-only read of scoped RTC search and exact schema
+endpoints; code verifies canonical prefix, area, read_only profile, readOnly
+metadata, bounded bytes and selected result counts. Synthetic two-service
+transport tests demonstrate refusal/SSRF restrictions. This is H-3 source
+preparation, not deployed/Hub-connected federation or external acceptance.
+No upstream credential, provider mutation, live release or spending.
+
+## H-2 full TEST developer narrowing and selected targets — PR #157 proposed
+
+One connected full-profile TEST developer can use a **separately sealed,
+verified, read_only upstream RTC pass** without being misclassified as a
+read_only Hub login. Exact actor, owner, service, prefix, mode, expiry,
+verification and revocation remain enforced on resolution. Selective active
+target metadata has a 50-entry cap and contains no pass. SQL tests use
+disposable database schema and synthetic scoped inspector only. This source
+progress does not activate runtime federation or certify migrations on the
+hosted DB, authentic deployment identity, provider routing or two-service
+read/denial/revocation acceptance. No live deployment is requested.
+
 ## Browser form parsing recovery — 2026-10-13
 
 The released owner setup link still returned HTTP 200 with the expected form, and no owner credential was saved. Local reproduction found that Node querystring-parsed browser forms have a null prototype, which the owner and OAuth parsers incorrectly rejected. Accept that safe dictionary shape while rejecting inherited prototypes, duplicate arrays and oversized values. A real setup-route unit regression reaches ordinary validation without inserting a credential. No production POST diagnostic or owner mutation was performed; the workspace automatic reviewer rejected that proposed test. Live submission remains for the owner after checked corrective release.
