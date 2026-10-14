@@ -136,7 +136,7 @@ it('resumes bounded pinned RTC next pages without extra host, path or credential
  expect(t.calls).toHaveLength(2);
 });
 it('refuses malformed and oversized next-page tokens without exposing unsafe metadata',async()=>{
- for(const next of [{url:'https://bad'},'../admin','x'.repeat(129),'space here',42]){
+ for(const next of [{url:'https://bad'},'../admin','x'.repeat(129),'space here',-1,100001,1.5]){
   const t=transportFor({ok:true,result:{tools:[tool('stripe_invoice_list','billing')],next}});
   await expect(searchPinnedRtcTools(stripe,{query:'invoice'},t)).rejects.toThrow();
  }
