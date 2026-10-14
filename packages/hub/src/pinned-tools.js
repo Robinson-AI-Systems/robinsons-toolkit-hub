@@ -1,5 +1,6 @@
 import {pinnedRtcJsonGet} from './pinned-contract.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
+import {validProviderPage} from './provider-cursor.js';
 
 const prefixPattern=/^[a-z][a-z0-9_]{1,59}$/;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
@@ -50,21 +51,30 @@ export async function searchPinnedRtcTools(target,{query='',area,limit=10,cursor
   if(typeof query!=='string'||query.length>120||
     !Number.isInteger(limit)||limit<1||limit>20||
     (area!==undefined&&(!areaPattern.test(area)||!target.areas.includes(area)))||
-    (cursor!==undefined&&(typeof cursor!=='string'||
-      !/^[A-Za-z0-9_.~-]{1,128}$/.test(cursor))))
+    (cursor!==undefined&&!validProviderPage(cursor)))
     throw new TypeError('Outside RTC search scope');
   const params=new URLSearchParams({q:query,limit:String(limit)});
   if(area)params.set('area',area);
-  if(cursor!==undefined)params.set('cursor',cursor);
+  if(cursor!==undefined)params.set(cursor.kind,cursor.value);
   const data=validateResponse(await pinnedRtcJsonGet(target.origin,
     '/api/tools?'+params.toString(),{...transport,pass:target.pass}));
   if(!Array.isArray(data.tools)||data.tools.length>limit)
     throw new Error('RTC search result count refused');
-  if(data.next!==null&&data.next!==undefined&&
-    (typeof data.next!=='string'||!/^[A-Za-z0-9_.~-]{1,128}$/.test(data.next)))
-    throw new Error('Unsafe RTC upstream continuation');
+  // Actual RTC1 fleet evidence: Stripe returns an integer offset, Workspace
+  // a decimal page string. Opaque future tokens remain supported but are
+  // never mistaken for numeric pages. Keep this independent of service names.
+  let next=null;
+  if(data.next!==null&&data.next!==undefined) {
+    if(typeof data.next==='number'&&Number.isSafeInteger(data.next))
+      next={kind:'offset',value:String(data.next)};
+    else if(typeof data.next==='string'&&/^[1-9][0-9]{0,5}$/.test(data.next))
+      next={kind:'page',value:data.next};
+    else if(typeof data.next==='string')
+      next={kind:'cursor',value:data.next};
+    if(!validProviderPage(next))throw new Error('Unsafe RTC upstream continuation');
+  }
   const tools=data.tools.map(t=>withinScope(t,target,false)).filter(Boolean);
-  return {tools,next:data.next??null,incomplete:data.next!==null&&data.next!==undefined};
+  return {tools,next,incomplete:next!==null};
 }
 export async function describePinnedRtcTool(target,name,transport={}) {
   expectTarget(target);
