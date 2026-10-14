@@ -127,11 +127,12 @@ export async function listCallerGrants(db,ownerId,{ownerVerified=false}={}) {
   owner(ownerId,ownerVerified);
   const {rows}=await db.query(`SELECT id,server_name,caller_kind,caller_id,areas,
     to_jsonb(hub_server_grants)->'area_ceiling' AS area_ceiling,
-    verified_at,expires_at,revoked_at FROM hub_server_grants
+    to_jsonb(hub_server_grants)->'verified_at' AS verified_at,
+    expires_at,revoked_at FROM hub_server_grants
     WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 100`,[ownerId]);
   return rows.map(r=>({id:r.id,server:r.server_name,callerKind:r.caller_kind,
     callerId:r.caller_id,areas:effectiveGrantAreas(r),originalAreas:[...r.areas],
-    expiresAt:r.expires_at,verified:r.verified_at!==null,
+    expiresAt:r.expires_at,verified:r.verified_at!=null,
     revoked:r.revoked_at!==null,callable:false}));
 }
 // Never expose this from owner HTML, tools or logs. H-3 may invoke it only
