@@ -31,6 +31,14 @@ function validAreas(value) {
     value.every(x=>typeof x==='string'&&areaPattern.test(x)) &&
     new Set(value).size===value.length;
 }
+// A provider service grant is never re-encrypted or widened by a Hub area ceiling.
+export function effectiveGrantAreas(row) {
+  if(!row||!validAreas(row.areas))throw new TypeError('Invalid provider grant areas');
+  if(row.area_ceiling===null||row.area_ceiling===undefined)
+    return [...row.areas];
+  if(!validAreas(row.area_ceiling))throw new TypeError('Invalid RTC area ceiling');
+  return row.areas.filter(area=>row.area_ceiling.includes(area));
+}
 async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
   const sql=callerKind==='pass' ?
     `SELECT id,owner_id,profile,allowed_areas AS areas,mode,allow_writes
@@ -81,6 +89,32 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
   ]);
   return {id:row.id,server:serverName,callerKind,callerId,profile:'read_only',
     areas:[...areas],mode:'test',state:'staged',callable:false};
+}
+/**
+ * Verified owner can only remove effective areas of one exact grant.
+ * PostgreSQL conditionally locks the grant, purges prior encrypted result
+ * pages and inserts a durable policy audit atomically or refuses everything.
+ */
+export async function narrowCallerGrantAreas(db,{ownerId,id,areas},
+ {ownerVerified=false}={}) {
+  owner(ownerId,ownerVerified);
+  if(!idPattern.test(id||'')||!validAreas(areas))
+    throw new TypeError('Invalid grant ceiling request');
+  const {rows}=await db.query(`WITH tightened AS (
+     UPDATE hub_server_grants g SET area_ceiling=$3::text[]
+     WHERE g.id=$1 AND g.owner_id=$2 AND g.revoked_at IS NULL
+       AND g.expires_at>now() AND $3::text[] <@ g.areas
+       AND (g.area_ceiling IS NULL OR $3::text[] <@ g.area_ceiling)
+     RETURNING g.id
+    ), invalidated AS (
+     DELETE FROM hub_rtc_result_handles h USING tightened t
+      WHERE h.grant_id=t.id RETURNING h.handle_digest
+    )
+    INSERT INTO hub_grant_scope_audit(grant_id,owner_id,action,areas)
+     SELECT t.id,$2,'area_narrow',$3::text[] FROM tightened t
+    RETURNING grant_id`,[id,ownerId,areas]);
+  return rows.length===1 ? {updated:true,areas:[...areas]} :
+    {updated:false,areas:null};
 }
 export async function revokeCallerGrant(db,{ownerId,id},{ownerVerified=false}={}) {
   owner(ownerId,ownerVerified);
