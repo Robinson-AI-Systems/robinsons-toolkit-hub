@@ -1,3 +1,7 @@
+## H-4 explicit server scope for owner-issued Hub TEST passes — PR #189 source proposal
+
+Main starting revision c8d0fee389ebca0cbc5227a35e0ee421d7d921c1 after fully checked and merged #188. H-4 adds a verified-owner server selection enforced independently through grant staging, SQL target listing and active dispatch; existing caller-specific sealed RTC grants remain mandatory and read_only. A new additive SQL 010 is explicitly required for new scoped issuance, and real hosted acceptance is queued as HUB-H4-SERVER-SELECTION with exact feature-source revision. H-3 remains source IN_PROGRESS and its 11 pending real acceptance tasks stay pending; no credentials, provider writes, owner approvals, releases or spending changes. CI and integration tests must pass exact PR head before this source claim is merged.
+
 ## L-1 guarded local MCP commands — PR #188 source proposal
 
 Independent approved L-1 work after PR #187: implement a bounded owner-opted-in local read-command door without arbitrary process execution, with explicit confirmation for non-default commands. Real-filesystem/MCP regression tests cover opt-in, traversal, symlink escape, byte/output bounds, confirmation and injection denial. Source/CI proof only until exact-head jobs pass; no provider calls, owner credentials, manual release or hosted production writes. L-1 remains IN_PROGRESS and general arbitrary-shell security is not represented as complete.
@@ -386,6 +390,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Source adds batch-scoped deadline propagation into pinned metadata GET and non-retrying provider POST with synthetic timing, audit, MCP/HTTPS and denial fixtures; no genuine deployed custom RTC proof. Corrected required revision to exact source feature head #185, not preceding base; source file pin must exist at that revision.",
     "introducedFile": "packages/hub/test/batch-deadline.test.js"
+  },
+  {
+    "id": "HUB-H4-SERVER-SELECTION",
+    "priority": 12,
+    "requiredRevision": "0d313eea1f4f302a755f67c33161f7cf59135365",
+    "introducedFile": "packages/hub/migrations/010-hub-pass-servers.sql",
+    "task": "Verify hosted additive migration 010 and genuine owner-selected Hub TEST pass cannot search, describe, call or read result from an unselected verified RTC service, including stale actor, stage denial and same-pass revocation",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Independently checked Hub live READY source and hosted 010; owner-confirmed scoped Hub TEST pass and two independently attested active read_only upstream services; no LIVE, write or money permissions",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: H-4 owner-selected server restriction is source-only in PR #189; disposable SQL/fixture CI and release need exact-head verification. Hosted 010, genuine owner pass, provider TEST and cross-door refusal are unverified."
   }
 ]
 ```
