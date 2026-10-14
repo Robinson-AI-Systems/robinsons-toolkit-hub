@@ -273,3 +273,17 @@ it('refuses unscoped anonymous catalogue browse and malformed input before RTC c
  }
  expect(upstream.search).not.toHaveBeenCalled();
 });
+
+it('returns compact explicit partial HTTPS batch with no extra provider attempts',async()=>{
+ const {send,upstream}=fixture();
+ upstream.read.mockResolvedValue({ok:true,result:{items:'x'.repeat(4800)}});
+ const reply=await send('batch','POST',{}, {calls:Array.from({length:5},
+  ()=>({name:'stripe_invoice_list'}))});
+ expect(reply.code).toBe(200);
+ expect(reply.body.result.incomplete).toBe(true);
+ expect(reply.body.result.results).toHaveLength(5);
+ expect(reply.body.result.results.slice(2).every(r=>r.ok===false)).toBe(true);
+ expect(upstream.read).toHaveBeenCalledTimes(3);
+ expect(upstream.audit).toHaveBeenCalledTimes(6);
+ expect(Buffer.byteLength(JSON.stringify(reply.body),'utf8')).toBeLessThan(13000);
+});

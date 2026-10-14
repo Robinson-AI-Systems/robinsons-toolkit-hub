@@ -274,13 +274,35 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
       !namePattern.test(c.name||'')||(c.args!==undefined&&!plain(c.args))))
     return fail('invalid_args','Invalid read-only batch');
   const results=[];
-  // Sequential calls preserve the original grant and independent refusal
-  // of each request. Never retry an uncertain POST or parallelize >10 reads.
+  const started=(deps.now??Date.now)();
+  const now=deps.now??Date.now;
+  const maxMs=20000,maxBytes=10000;
+  let usedBytes=0,incomplete=false,stopped=false;
+  // A serverless request cannot safely promise ten serial five-second RTC
+  // POSTs or return ten large inline results. Each call is single-shot, and
+  // budget exhaustion is disclosed per remaining item, never silently cut.
   for(const call of args.calls) {
+   if(stopped || now()-started>=maxMs) {
+    incomplete=true;stopped=true;
+    results.push({name:call.name,ok:false,error:{code:'unavailable',
+     what:'Hub batch deadline or response budget exhausted'}});
+    continue;
+   }
    const outcome=await runFederatedBroker('hub_call',call,actor,db,settings,deps);
-   results.push({name:call.name,...outcome});
+   const item={name:call.name,...outcome};
+   let bytes;
+   try{bytes=Buffer.byteLength(JSON.stringify(item),'utf8');}
+   catch{bytes=maxBytes+1;}
+   if(usedBytes+bytes>maxBytes) {
+    incomplete=true;stopped=true;
+    results.push({name:call.name,ok:false,error:{code:'unavailable',
+     what:'Hub batch response budget exhausted after audited read'}});
+    continue;
+   }
+   results.push(item);
+   usedBytes+=bytes;
   }
-  return {ok:true,result:{results}};
+  return {ok:true,result:{results,incomplete}};
  }
  if(name==='hub_describe_tool') {
   if(Object.keys(args).length!==1||!namePattern.test(args.name||''))
