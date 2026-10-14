@@ -1,4 +1,5 @@
-import { issueHubPass, revokeHubPass } from './identity.js';
+import { issueHubPass, revokeHubPass, narrowHubPassServers,
+  listHubPassScopes } from './identity.js';
 import { parseOwnerServerSelection } from './server-selection.js';
 import { escapeHtml, formFields, htmlHeaders, publicHubOrigin,
   verifyOwnerLogin } from './owner-login.js';
@@ -22,6 +23,21 @@ function passForm() {
     'separate verified TEST read-only grant.</p>' +
     '<button type="submit">Create one-day read-only TEST pass</button></form>' +
     '<form method="POST" action="/api/owner/passes">' +
+    '<input type="hidden" name="action" value="list">' +
+    '<label>Owner passphrase <input type="password" name="password" ' +
+    'autocomplete="current-password" required></label>' +
+    '<button type="submit">Review pass scopes</button></form>' +
+    '<form method="POST" action="/api/owner/passes">' +
+    '<input type="hidden" name="action" value="narrow">' +
+    '<label>Existing pass identifier <input name="id" maxlength="36" required></label>' +
+    '<label>Reduced RTC server names, comma separated ' +
+    '<input name="servers" maxlength="1300" required></label>' +
+    '<label>Owner passphrase <input type="password" name="password" ' +
+    'autocomplete="current-password" required></label>' +
+    '<p>Restriction is permanent for this pass. Existing grants cannot expand ' +
+    'the narrowed list. Reissue a new pass for new permissions.</p>' +
+    '<button type="submit">Permanently narrow this pass</button></form>' +
+    '<form method="POST" action="/api/owner/passes">' +
     '<input type="hidden" name="action" value="revoke">' +
     '<label>Pass identifier <input name="id" maxlength="36" required></label>' +
     '<label>Owner passphrase <input type="password" name="password" ' +
@@ -36,12 +52,24 @@ function passDisplay(result) {
     escapeHtml(result.pass) + '</textarea></label>' +
     '<p>Identifier for revocation: <code>' + escapeHtml(result.id) + '</code></p>');
 }
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function scopeDisplay(rows) {
+  const items=rows.map(row=>'<li><code>'+escapeHtml(row.id)+'</code> '+
+    escapeHtml(row.state)+'; '+escapeHtml(row.profile)+' '+escapeHtml(row.mode)+
+    '; servers: '+escapeHtml(row.serverNames===null ?
+      '(legacy: exact caller grants only)' : row.serverNames.join(', '))+
+    '; areas: '+escapeHtml(row.areas.join(', '))+
+    '; expires: '+escapeHtml(String(row.expiresAt))+'</li>').join('');
+  return page('<h2>Owner-only Hub pass scopes</h2>'+
+    '<p>Stored metadata only; no bearer tokens, pass digests or RTC credentials.</p>'+
+    '<ul>'+items+'</ul>');
+}
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // An independently verified owner is the only issuer. No bearer, OAuth
 // session, caller argument, provider service or AI can mint or broaden passes.
 export async function handleOwnerPasses(req, res, { withDb, env = process.env,
-  verify = verifyOwnerLogin, issue = issueHubPass, revoke = revokeHubPass } = {}) {
+  verify = verifyOwnerLogin, issue = issueHubPass, revoke = revokeHubPass,
+  narrow = narrowHubPassServers, list = listHubPassScopes } = {}) {
   htmlHeaders(res);
   res.setHeader('Pragma', 'no-cache');
   if (!['GET', 'POST'].includes(req.method)) {
@@ -54,13 +82,13 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
   if (!String(req.headers?.['content-type'] || '').startsWith('application/x-www-form-urlencoded'))
     return res.status(415).send('Unsupported content type');
   const fields = formFields(req);
-  if (!fields || !['issue', 'revoke'].includes(fields.action) ||
+  if (!fields || !['issue', 'revoke', 'narrow', 'list'].includes(fields.action) ||
     typeof fields.password !== 'string' || fields.password.length === 0 ||
-    (fields.action === 'revoke' && !uuid.test(fields.id || '')))
+    (['revoke','narrow'].includes(fields.action) && !uuid.test(fields.id || '')))
     return res.status(400).send('Invalid request');
-  const selected = fields.action === 'issue' ?
+  const selected = ['issue','narrow'].includes(fields.action) ?
     parseOwnerServerSelection(fields.servers) : null;
-  if (fields.action === 'issue' && !selected)
+  if (['issue','narrow'].includes(fields.action) && !selected)
     return res.status(400).send('Select 1–20 registered RTC servers');
   try {
     return await withDb(async (db, settings) => {
@@ -68,6 +96,17 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
       if (!decision.approved) {
         if (decision.retryAfter) res.setHeader('Retry-After', String(decision.retryAfter));
         return res.status(decision.retryAfter ? 429 : 401).send('Owner verification denied');
+      }
+      if (fields.action === 'list') {
+        const rows=await list(db,env.HUB_OWNER_ID,{ownerVerified:true});
+        return res.status(200).send(scopeDisplay(rows));
+      }
+      if (fields.action === 'narrow') {
+        const result=await narrow(db,{ownerId:env.HUB_OWNER_ID,
+          id:fields.id,serverNames:selected},{ownerVerified:true});
+        return res.status(result.updated?200:404).send(result.updated ?
+          'Hub pass permanently narrowed to selected servers.' :
+          'Pass unavailable or selection would widen its permissions.');
       }
       if (fields.action === 'revoke') {
         const revoked = await revoke(db, fields.id, env.HUB_OWNER_ID,
