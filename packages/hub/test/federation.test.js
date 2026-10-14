@@ -127,10 +127,10 @@ it('does not enable provider execution or grant metadata to other identities',as
 
 it('withholds searched RTC metadata after grant revocation or replacement during GET',async()=>{
  const deps=provider();
- let calls=0;
+ const seen=new Map();
  deps.resolve=vi.fn(async(_db,{serverName})=>{
-  calls++;
-  if(serverName==='google' && calls===2)return null;
+  seen.set(serverName,(seen.get(serverName)||0)+1);
+  if(serverName==='google' && seen.get(serverName)===2)return null;
   return {server:serverName,prefix:serverName,grantId:serverName+'-grant',
    origin:'https://rtc.example.com',areas:['gmail','billing','database'],
    profile:'read_only',mode:'test'};
