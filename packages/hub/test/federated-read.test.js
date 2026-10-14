@@ -69,6 +69,17 @@ it('records uncertain read outcome without retries, and never returns a success'
  expect(d.audit).toHaveBeenCalledTimes(2);
  expect(d.audit.mock.calls[1][1].outcome).toBe('unavailable');
 });
+it('preserves provider guard and rate-limit refusal codes without leaking details',async()=>{
+ for(const code of ['outside_scope','pass_revoked','rate_limited']) {
+  const d=deps();d.read.mockResolvedValueOnce({ok:false,
+   error:{code,what:'secret technical provider details'}});
+  const result=await runFederatedBroker('hub_call',
+   {name:'stripe_invoice_list'},actor,{},{},d);
+  expect(result.error.code).toBe(code);
+  expect(d.audit.mock.calls[1][1].outcome).toBe('refused');
+  expect(JSON.stringify(result)).not.toContain('secret technical provider details');
+ }
+});
 it('executes bounded read-only batch sequentially and reports individual denials',async()=>{
  const d=deps();
  const result=await runFederatedBroker('hub_batch',{calls:[
