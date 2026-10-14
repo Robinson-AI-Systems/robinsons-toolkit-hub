@@ -1,3 +1,11 @@
+## October 14 H-3 metadata reauthorization — PR #174 (source proposal)
+Authenticated provider-search and on-demand-schema results are now rechecked
+against the original caller-specific, current active grant immediately after
+the remote metadata GET. Revocation or replacement during the remote request
+must not disclose the stale metadata. Separate actual deployed TEST read,
+provider-denial, schema readback, revocation, relay and Sandbox evidence remain
+OPEN; no service was activated by this source change.
+
 ## October 14 fleet and hosted database independent readbacks
 The checked #169 GitHub Actions public-observe job (run 38590859362,
 readback at 2026-10-14 15:37:53 UTC, original HEAD
