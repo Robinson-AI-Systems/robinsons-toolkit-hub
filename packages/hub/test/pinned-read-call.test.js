@@ -80,3 +80,14 @@ it('preserves an authenticated RTC 403 refusal without interpreting it as a succ
  expect(response).toMatchObject({ok:false,error:{code:'outside_scope'}});
  expect(fake.requests).toHaveLength(1);
 });
+
+it('accepts a bounded large RTC read but rejects responses above the envelope without replay',async()=>{
+ const accepted=channel({result:{ok:true,result:{items:'a'.repeat(50000)}}});
+ const out=await pinnedRtcReadCall(target,'stripe_invoice_list',{},accepted);
+ expect(out.result.items).toHaveLength(50000);
+ expect(accepted.requests).toHaveLength(1);
+ const refused=channel({result:{ok:true,result:{items:'b'.repeat(71000)}}});
+ await expect(pinnedRtcReadCall(target,'stripe_invoice_list',{},refused))
+  .rejects.toThrow('do not automatically retry');
+ expect(refused.requests).toHaveLength(1);
+});

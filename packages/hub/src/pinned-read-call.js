@@ -53,7 +53,8 @@ export async function pinnedRtcReadCall(target,name,args={},
       res.on('data',buffer=>{
        if(settled)return;
        bytes+=buffer.length;
-       if(bytes>16384){fail();req.destroy();return;}
+       // The Hub stores at most 64KiB of parsed JSON; allow bounded RTC envelope overhead.
+       if(bytes>70000){fail();req.destroy();return;}
        chunks.push(buffer);
       });
       res.on('error',fail);
