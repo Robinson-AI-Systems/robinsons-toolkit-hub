@@ -419,14 +419,15 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Source H-3: #158 DNS-pinned RTC metadata GET, #159 bounded native MCP scoped search/describe/namespaces; #160 implements guarded grant-scoped authenticated TEST read POST, sequential batch, durable correlated attempt/outcome SQL for Hub pass + OAuth, explicit oversized inline refusal, uncertain POST no retry. #160 guarded MCP reads now extended with proposed native HTTPS GET search/describe and POST read/batch parity. Merged #163 encrypted grant-bound RTC read pages; resumable three-service native/HTTPS discovery and synthetic 100-service/10k-advertised-tool scale matrix proposed. Hosted 004-006/008/009 migrations, real provider/Hub acceptance, live measurements, RTC1 conformance remain OPEN.",
+      "note": "Source H-3: #158 DNS-pinned RTC metadata GET, #159 bounded native MCP scoped search/describe/namespaces; #160 implements guarded grant-scoped authenticated TEST read POST, sequential batch, durable correlated attempt/outcome SQL for Hub pass + OAuth, explicit oversized inline refusal, uncertain POST no retry. #160 guarded MCP reads now extended with proposed native HTTPS GET search/describe and POST read/batch parity. Merged #163 encrypted grant-bound RTC read pages; resumable three-service native/HTTPS discovery and 100-service scale matrix proposed in #164; independent paged namespace navigation proposed next. Hosted 004-006/008/009 migrations, real provider/Hub acceptance, live measurements, RTC1 conformance remain OPEN.",
       "pr": [
         "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
         "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",
         "#160 (non-retrying pinned read POST, audit, batch, SQL integration; hosted acceptance open)",
         "#162 (RTC HTTPS scoped read search/describe/call/batch parity; merged)",
         "#163 (grant-scoped AES-GCM RTC result handles and pages; merged)",
-        "H-3 signed continuation cursor and 100-service discovery scale matrix (proposed)"
+        "H-3 signed continuation cursor and 100-service discovery scale matrix (proposed)",
+        "H-3 complete native namespace pagination to 100 authorized services (proposed)"
       ]
     },
     {
