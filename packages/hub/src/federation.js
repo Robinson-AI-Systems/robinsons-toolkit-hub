@@ -234,6 +234,13 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     service:target.name,tool:args.name,correlationId,
     phase:'outcome',outcome,upstreamLogId});}
   catch{return fail('unavailable','RTC audit completion unavailable');}
+  // A server may finish a harmless read after its Hub grant is revoked.
+  // A successful provider POST is not permission to disclose its result now.
+  let completedGrant;
+  try {completedGrant=await tools.resolve(db,{actor,serverName:target.name},settings);}
+  catch{return fail('unavailable','RTC grant status unavailable after read');}
+  if(!sameGrant(rechecked,completedGrant))
+   return fail('outside_scope','RTC grant changed during provider read');
   if(!response)return fail('unavailable','RTC read outcome uncertain; do not retry automatically');
   if(response.ok!==true) {
    const acceptedCodes=new Set(['needs_confirmation','refused_by_guard',
@@ -250,10 +257,8 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   catch{return fail('unavailable','RTC result is not serializable');}
   if(bytes>8000) {
    if(bytes>65536)return fail('unavailable','RTC result exceeds storage bound');
-   // Refresh/revoke must immediately invalidate any saved result page.
-   const latest=await tools.resolve(db,{actor,serverName:target.name},settings);
-   if(!latest||latest.grantId!==grant.grantId||latest.origin!==grant.origin)
-     return fail('outside_scope','RTC grant changed before result storage');
+   // The same post-POST grant read also gates encrypted result storage;
+   // pages independently reauthorize on every subsequent access.
    try {
     const saved=await tools.storeResult(db,actor,grant.grantId,target.name,result,settings);
     return {ok:true,result:{name:args.name,server:target.name,
