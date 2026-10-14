@@ -126,7 +126,7 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
           SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
           AND c.profile IN ('read_only','everyday','full') AND c.mode='test' AND c.allow_writes=FALSE
-          AND (to_jsonb(c)->'allowed_servers' IS NULL OR
+          AND (NULLIF(to_jsonb(c)->'allowed_servers','null'::jsonb) IS NULL OR
             to_jsonb(c)->'allowed_servers' ? s.name)
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
@@ -192,7 +192,7 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
           AND c.profile IN ('read_only','everyday','full')
           AND c.mode='test' AND c.allow_writes=FALSE
-          AND (to_jsonb(c)->'allowed_servers' IS NULL OR
+          AND (NULLIF(to_jsonb(c)->'allowed_servers','null'::jsonb) IS NULL OR
             to_jsonb(c)->'allowed_servers' ? s.name)
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
