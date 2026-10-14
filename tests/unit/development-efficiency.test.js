@@ -49,8 +49,12 @@ describe('outcome-first owner workflow remains authoritative',()=>{
       'deployed exact','authenticated end-to-end','permanent handoff'])
       expect(policy).toContain(word);
     expect(start).toContain('## 1a. Choose a substantial outcome');
-    expect(start).toContain('five substantial merged PRs');
-    expect(start).toContain('next higher PR-number multiple of five');
+    expect(start).toContain('No fixed');
+    expect(start).toContain('cohesive roadmap');
+    expect(start).toContain('remaining context');
+    expect(agents).toContain('Roadmap-throughput and context-safe execution');
+    expect(agents).toContain('500–800');
+    expect(start).not.toContain('next higher PR-number multiple of five');
     expect(start).toContain('An explicit pre-merge gate still blocks that PR');
     expect(start).toContain('Never mark code/CI as deployed or real-provider proof');
   });
