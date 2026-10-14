@@ -78,7 +78,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
  }
  if(name==='hub_search_tools') {
   if(Object.keys(args).some(k=>!['query','area','server','limit','cursor'].includes(k))||
-    typeof args.query!=='string'||!args.query||args.query.length>120||
+    typeof args.query!=='string'||args.query.length>120||
     (args.server!==undefined&&!serverPattern.test(args.server))||
     (args.area!==undefined&&!areaPattern.test(args.area))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||
