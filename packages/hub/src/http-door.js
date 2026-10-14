@@ -1,4 +1,5 @@
 import {brokerCatalog,runBroker} from './broker.js';
+import {runFederatedBroker} from './federation.js';
 export {brokerCatalog} from './broker.js';
 const supported=new Set(['2025-11-25','2025-06-18','2025-03-26']);
 export function mcpReply(request,actor) {
@@ -38,6 +39,37 @@ export function mcpReply(request,actor) {
   return {...base,result:{content:[{type:'text',text:json}],
     structuredContent:value.result,isError:false}};
 }
+
+const federatedMetadata=new Set(['hub_health','hub_search_tools','hub_describe_tool','hub_namespaces']);
+// Maintain the synchronous foundation for existing Hub-owned reads and
+// transport validation. Only three explicit metadata operations opt into
+// separately scoped, asynchronous RTC discovery; execution remains disabled.
+export async function mcpFederatedReply(request,actor,db,settings,deps={}) {
+ const baseline=mcpReply(request,actor);
+ if(request?.jsonrpc!=='2.0'||request.method!=='tools/call'||
+   !request.params||!federatedMetadata.has(request.params.name)||
+   (request.id!==undefined&&(typeof request.id!=='string'&&typeof request.id!=='number'||
+     !String(request.id).length))||
+   request.params.arguments!==undefined&&(!request.params.arguments||
+     typeof request.params.arguments!=='object'||
+     Array.isArray(request.params.arguments)))
+   return baseline;
+ const base={jsonrpc:'2.0',id:request.id??null};
+ try {
+  const state=await runFederatedBroker(request.params.name,
+    request.params.arguments??{},actor,db,settings,deps);
+  if(!state.ok)return {...base,error:{code:-32602,
+    message:state.error.what||'RTC metadata refused'}};
+  const serialized=JSON.stringify(state.result);
+  if(typeof serialized!=='string'||Buffer.byteLength(serialized,'utf8')>8192)
+   return {...base,error:{code:-32603,message:'Result exceeds safe bound'}};
+  return {...base,result:{content:[{type:'text',text:serialized}],
+   structuredContent:state.result,isError:false}};
+ }catch {
+  return {...base,error:{code:-32603,message:'RTC metadata temporarily unavailable'}};
+ }
+}
+
 export async function handleMcp(req,res,{withDb,authorize}) {
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -71,7 +103,7 @@ export async function handleMcp(req,res,{withDb,authorize}) {
         !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway') ||
         state.actor.allowWrites===true)
         return res.status(403).json({error:'outside_scope'});
-      const reply=mcpReply(body,state.actor);
+      const reply=await mcpFederatedReply(body,state.actor,db,settings);
       if (!reply) return res.status(202).end();
       return res.status(200).json(reply);
     });
