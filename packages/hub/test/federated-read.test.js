@@ -115,7 +115,7 @@ it('selects longest canonical service prefix for nested registered services',asy
    areas:['billing'],claimedCounts:{tools:1}};
  d.list.mockResolvedValueOnce([shallower,deeper]);
  const selectedGrant={...grant,server:deeper.name,prefix:'foo_bar'};
- d.resolve.mockResolvedValueOnce(selectedGrant).mockResolvedValueOnce(selectedGrant);
+ d.resolve.mockResolvedValue(selectedGrant);
  d.describe.mockResolvedValueOnce({name:'foo_bar_item_list',area:'billing',
    writes:false,money:false,destructive:false,
    annotations:{readOnlyHint:true}});
@@ -180,4 +180,28 @@ it('does not return a read schema after a grant is revoked during metadata GET',
  expect(result.error.code).toBe('outside_scope');
  expect(d.read).not.toHaveBeenCalled();
  expect(d.audit).not.toHaveBeenCalled();
+});
+
+it('suppresses successful upstream read when its TEST grant is revoked during POST',async()=>{
+ const d=deps();
+ d.resolve.mockResolvedValueOnce(grant)
+  .mockResolvedValueOnce(grant).mockResolvedValueOnce(null);
+ const result=await runFederatedBroker('hub_call',
+  {name:'stripe_invoice_list'},actor,{},{},d);
+ expect(result.error.code).toBe('outside_scope');
+ expect(result.result).toBeUndefined();
+ expect(d.read).toHaveBeenCalledTimes(1);
+ expect(d.audit).toHaveBeenCalledTimes(2);
+ expect(d.audit.mock.calls[1][1].outcome).toBe('success');
+});
+it('fails closed if final grant check is unavailable, without retrying provider POST',async()=>{
+ const d=deps();
+ d.resolve.mockResolvedValueOnce(grant)
+  .mockResolvedValueOnce(grant).mockRejectedValueOnce(Error('DB offline'));
+ const result=await runFederatedBroker('hub_call',
+  {name:'stripe_invoice_list'},actor,{},{},d);
+ expect(result.error.code).toBe('unavailable');
+ expect(d.read).toHaveBeenCalledTimes(1);
+ expect(d.audit).toHaveBeenCalledTimes(2);
+ expect(JSON.stringify(result)).not.toContain(grant.pass);
 });
