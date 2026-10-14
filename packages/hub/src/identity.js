@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { serverSelection } from './server-selection.js';
 
 // The Hub authenticates its own callers. Upstream RTC passes live in separately
 // encrypted, caller-scoped grants added by H-2; never use this pass upstream.
@@ -38,13 +39,35 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
   // No public endpoint invokes issuance until the owner OAuth setup is complete.
   if (ownerVerified !== true) throw new Error('Verified owner approval required');
   validateIssue(input);
+  // An explicit selection is additional least privilege. Legacy trusted
+  // programmatic issuance retains the previous exact-caller grant gate.
+  const selected = serverSelection(input.serverNames);
+  if (selected) {
+    const owned = await db.query(`SELECT name FROM hub_servers
+      WHERE owner_id=$1 AND name=ANY($2::text[])`, [input.ownerId, selected]);
+    const names = new Set(owned.rows.map(row => row.name));
+    if (selected.some(name => !names.has(name)))
+      throw new Error('Selected RTC server must be registered to this owner');
+  }
   const pass = 'rtc_pass_' + randomBytes(32).toString('base64url');
   const id = randomUUID();
-  await db.query(`INSERT INTO hub_callers
-    (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,expires_at)
-    VALUES($1,$2,$3,$4,$5,$6,FALSE,now() + $7::INTEGER * interval '1 second')`,
-  [id, input.ownerId, digestPass(pass, pepper), input.profile, [...new Set(input.areas)],
-    input.mode, input.ttlSeconds]);
+  if (selected) {
+    // Fail closed if the additive migration is not installed: the selected
+    // credential must never silently fall back to unrestricted legacy mode.
+    await db.query(`INSERT INTO hub_callers
+      (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,
+       expires_at,allowed_servers)
+      VALUES($1,$2,$3,$4,$5,$6,FALSE,
+        now() + $7::INTEGER * interval '1 second',$8)`,
+    [id, input.ownerId, digestPass(pass, pepper), input.profile,
+      [...new Set(input.areas)], input.mode, input.ttlSeconds, selected]);
+  } else {
+    await db.query(`INSERT INTO hub_callers
+      (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,expires_at)
+      VALUES($1,$2,$3,$4,$5,$6,FALSE,now() + $7::INTEGER * interval '1 second')`,
+    [id, input.ownerId, digestPass(pass, pepper), input.profile, [...new Set(input.areas)],
+      input.mode, input.ttlSeconds]);
+  }
   return { id, pass }; // one-time in-memory return; NEVER put in logs or a chat tool result
 }
 export async function authenticateHubPass(db, header, { pepper } = {}) {
@@ -52,12 +75,15 @@ export async function authenticateHubPass(db, header, { pepper } = {}) {
   if (!pass) return null;
   const hash = digestPass(pass, pepper);
   const { rows } = await db.query(`SELECT id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes
-    FROM hub_callers WHERE pass_digest=$1 AND revoked_at IS NULL AND expires_at>now()`, [hash]);
+    ,to_jsonb(c)->'allowed_servers' AS allowed_servers
+    FROM hub_callers c WHERE pass_digest=$1 AND revoked_at IS NULL AND expires_at>now()`, [hash]);
   const row = rows[0];
   if (!row || !fixedEqual(row.pass_digest,hash)) return null;
   return Object.freeze({
     id:row.id, ownerId:row.owner_id, profile:row.profile,
-    areas:Object.freeze([...row.allowed_areas]), mode:row.mode, allowWrites:row.allow_writes === true
+    areas:Object.freeze([...row.allowed_areas]), mode:row.mode, allowWrites:row.allow_writes === true,
+    serverNames: Array.isArray(row.allowed_servers) ?
+      Object.freeze([...serverSelection(row.allowed_servers)]) : null
   });
 }
 export async function revokeHubPass(db, id, ownerId, { ownerVerified = false } = {}) {
