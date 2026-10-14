@@ -37,7 +37,8 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
        ,to_jsonb(hub_callers)->'allowed_servers' AS allowed_servers
        FROM hub_callers WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL
        AND expires_at>now()` :
-    `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes
+    `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes,
+        to_jsonb(s)->'allowed_servers' AS allowed_servers
        FROM hub_oauth_sessions s WHERE id=$1 AND owner_id=$2
        AND revoked_at IS NULL AND access_expires_at>now()
        AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -46,7 +47,7 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
   const a=rows[0];
   if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!=='test'||a.allow_writes===true||
     !Array.isArray(a.areas)||!a.areas.includes('gateway')||
-    (callerKind==='pass' && Array.isArray(a.allowed_servers) &&
+    (Array.isArray(a.allowed_servers) &&
       !a.allowed_servers.includes(serverName)))
     throw new Error('Caller scope refuses grant');
 }
@@ -115,6 +116,8 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
         AND fresh.owner_id=g.owner_id AND initial.owner_id=g.owner_id
         AND fresh.client_id=initial.client_id AND fresh.profile=initial.profile
         AND fresh.areas=initial.areas AND fresh.mode=initial.mode
+        AND (to_jsonb(fresh)->'allowed_servers') IS NOT DISTINCT FROM
+            (to_jsonb(initial)->'allowed_servers')
         AND fresh.mode='test' AND fresh.revoked_at IS NULL
         AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
         AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -134,6 +137,8 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL
           AND o.access_expires_at>now() AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
           AND 'gateway'=ANY(o.areas)
+          AND (NULLIF(to_jsonb(o)->'allowed_servers','null'::jsonb) IS NULL
+            OR to_jsonb(o)->'allowed_servers' ? s.name)
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
             WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
       )`,
@@ -179,6 +184,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND fresh.owner_id=g.owner_id AND initial.owner_id=g.owner_id
           AND fresh.client_id=initial.client_id AND fresh.profile=initial.profile
           AND fresh.areas=initial.areas AND fresh.mode=initial.mode
+          AND (to_jsonb(fresh)->'allowed_servers') IS NOT DISTINCT FROM
+              (to_jsonb(initial)->'allowed_servers')
           AND fresh.mode='test' AND fresh.revoked_at IS NULL
           AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -200,6 +207,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL AND o.access_expires_at>now()
           AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
           AND 'gateway'=ANY(o.areas)
+          AND (NULLIF(to_jsonb(o)->'allowed_servers','null'::jsonb) IS NULL
+            OR to_jsonb(o)->'allowed_servers' ? s.name)
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
             WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
       )

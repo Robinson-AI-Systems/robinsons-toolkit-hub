@@ -34,16 +34,17 @@ it('consent fails closed and issues only read_only TEST for the exact owner/clie
   expect(get.status).toBe(200);
   expect(authorize).not.toHaveBeenCalled();
   const post={...req,method:'POST'};
-  const denied=await authorizeOwnerConnection(clientDb,post,{...request,password:'wrong'},
+  const denied=await authorizeOwnerConnection(clientDb,post,{...request,password:'wrong',servers:'stripe'},
     {env,issue:authorize});
   expect(denied.status).toBe(401);
   expect(authorize).not.toHaveBeenCalled();
-  const accepted=await authorizeOwnerConnection(clientDb,post,{...request,password:raw},
+  const accepted=await authorizeOwnerConnection(clientDb,post,{...request,password:raw,servers:'stripe,workspace'},
     {env,issue:authorize});
   expect(accepted.status).toBe(303);
   expect(accepted.redirect).toContain('code=synthetic-code');
   expect(authorize.mock.calls[0][1]).toMatchObject({
-    ownerId:'single-owner',profile:'read_only',mode:'test',areas:['gateway']});
+    ownerId:'single-owner',profile:'read_only',mode:'test',areas:['gateway'],
+    serverNames:['stripe','workspace']});
 });
 it('owner-only client registration refuses incorrect passphrase',async()=>{
   const db={query:vi.fn().mockResolvedValue({rows:[{hits:1}]})};
@@ -59,4 +60,19 @@ it('retains safe Node-parsed owner form fields without accepting arrays or inher
  expect(formFields({method:'POST',body})).toBe(body);
  expect(formFields({method:'POST',body:parse('password=first&password=second')})).toBeNull();
  expect(formFields({method:'POST',body:Object.assign(Object.create({password:'inherited'}),{setup_token:'FAKE'})})).toBeNull();
+});
+
+it('OAuth consent requires an explicit valid server subset before password verification',async()=>{
+ const clientDb={query:vi.fn(async()=>({rows:[{owner_id:'single-owner'}]}))};
+ const issue=vi.fn();
+ const req={method:'POST',socket:{remoteAddress:'127.0.0.1'}};
+ for(const servers of ['', 'stripe,stripe', 'https://evil.example', 'Stripe']) {
+   const result=await authorizeOwnerConnection(clientDb,req,{
+     ...request,password:raw,servers},{env,issue});
+   expect(result.status).toBe(400);
+ }
+ expect(issue).not.toHaveBeenCalled();
+ const html=htmlForm('/api/oauth/authorize',request);
+ expect(html).toContain('name="servers"');
+ expect(html).not.toContain('rtc_pass_');
 });

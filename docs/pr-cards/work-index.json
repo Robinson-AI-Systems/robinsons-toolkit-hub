@@ -446,9 +446,10 @@
       "readiness": "READY",
       "externalGates": [],
       "pr": [
-        "#189 (owner-scoped subset of RTC servers for newly issued Hub passes; H-4 partial)"
+        "#189 (owner-scoped subset of RTC servers for newly issued Hub passes; H-4 partial)",
+        "#190 (owner-selected PKCE/refresh family RTC server narrowing; H-4 partial)"
       ],
-      "note": "Source stage/SQL discover/dispatch narrowed by pass-selected server names; H-4 OAuth/profile/area owner management unfinished; hosted migration 010 and real RTC TEST acceptance separately open."
+      "note": "Hub pass and OAuth PKCE owner-selected RTC names enforced at stage, SQL listing and dispatch; H-4 per-service area/profile and owner scope-management unfinished; hosted 010/011, genuine TEST credentials and provider acceptance queued."
     },
     {
       "id": "H-5",

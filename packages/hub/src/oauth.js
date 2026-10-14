@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { digestPass } from './identity.js';
+import { serverSelection } from './server-selection.js';
 const codePattern = /^[A-Za-z0-9_-]{43}$/;
 const allowedProfile = new Set(['read_only','everyday','full']);
 function token() { return randomBytes(32).toString('base64url'); }
@@ -36,8 +37,24 @@ export async function issueOAuthCode(db, input, { pepper, ownerVerified=false } 
     WHERE client_id=$1 AND owner_id=$2 AND redirect_uri=$3`,
   [input.clientId,input.ownerId,input.redirectUri]);
   if (!found.rows.length) throw new Error('Client redirect not owner-authorized');
+  const selected = serverSelection(input.serverNames);
+  if (selected) {
+    const owned = await db.query("SELECT name FROM hub_servers WHERE owner_id=$1 AND name=ANY($2::text[])",
+      [input.ownerId, selected]);
+    const names = new Set(owned.rows.map(x => x.name));
+    if (selected.some(x => !names.has(x)))
+      throw new Error('Selected RTC server must be registered to this owner');
+  }
   const code = token();
-  await db.query(`INSERT INTO hub_oauth_codes
+  if (selected) {
+    // A missing migration refuses selected owner consent, never drops scope.
+    await db.query(`INSERT INTO hub_oauth_codes
+      (code_digest,client_id,owner_id,redirect_uri,challenge,profile,
+       areas,mode,expires_at,allowed_servers)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()+interval '5 minutes',$9)`,
+    [digestPass(code,pepper),input.clientId,input.ownerId,input.redirectUri,
+      input.challenge,input.profile,[...new Set(input.areas)],input.mode,selected]);
+  } else await db.query(`INSERT INTO hub_oauth_codes
     (code_digest,client_id,owner_id,redirect_uri,challenge,profile,areas,mode,expires_at)
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()+interval '5 minutes')`,
   [digestPass(code,pepper),input.clientId,input.ownerId,input.redirectUri,input.challenge,
@@ -51,12 +68,22 @@ function pkce(verifier) {
 }
 async function storeSession(db, row, pepper, familyId=randomUUID()) {
   const access = token(), refresh = token();
-  await db.query(`INSERT INTO hub_oauth_sessions
-    (id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,
-      access_expires_at,refresh_expires_at)
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now()+interval '1 hour',now()+interval '30 days')`,
-  [randomUUID(),familyId,row.owner_id,row.client_id,digestPass(access,pepper),
-    digestPass(refresh,pepper),row.profile,row.areas,row.mode]);
+  const selected = serverSelection(row.allowed_servers);
+  const identity=[randomUUID(),familyId,row.owner_id,row.client_id,
+    digestPass(access,pepper),digestPass(refresh,pepper),row.profile,row.areas,row.mode];
+  if (selected) {
+    await db.query(`INSERT INTO hub_oauth_sessions
+      (id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,
+       access_expires_at,refresh_expires_at,allowed_servers)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,
+       now()+interval '1 hour',now()+interval '30 days',$10)`,[...identity,selected]);
+  } else {
+    await db.query(`INSERT INTO hub_oauth_sessions
+      (id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,
+       access_expires_at,refresh_expires_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,
+       now()+interval '1 hour',now()+interval '30 days')`,identity);
+  }
   return { access_token:access, refresh_token:refresh, token_type:'Bearer', expires_in:3600 };
 }
 export async function exchangeOAuthCode(db, input, { pepper }={}) {
@@ -66,7 +93,8 @@ export async function exchangeOAuthCode(db, input, { pepper }={}) {
   const used=await db.query(`UPDATE hub_oauth_codes SET consumed_at=now()
     WHERE code_digest=$1 AND client_id=$2 AND redirect_uri=$3
     AND consumed_at IS NULL AND expires_at>now()
-    RETURNING owner_id,client_id,profile,areas,mode,challenge`,
+    RETURNING owner_id,client_id,profile,areas,mode,challenge,
+      to_jsonb(hub_oauth_codes)->'allowed_servers' AS allowed_servers`,
   [digestPass(input.code,pepper),input.clientId,input.redirectUri]);
   if (used.rows.length !== 1 || used.rows[0].challenge !== challenge) return null;
   return storeSession(db,used.rows[0],pepper);
@@ -76,7 +104,8 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
   const used=await db.query(`UPDATE hub_oauth_sessions SET refresh_used_at=now()
     WHERE refresh_digest=$1 AND client_id=$2 AND refresh_used_at IS NULL
     AND revoked_at IS NULL AND refresh_expires_at>now()
-    RETURNING owner_id,client_id,profile,areas,mode,family_id`,
+    RETURNING owner_id,client_id,profile,areas,mode,family_id,
+      to_jsonb(hub_oauth_sessions)->'allowed_servers' AS allowed_servers`,
   [digestPass(input.refreshToken,pepper),input.clientId]);
   if (!used.rows.length) {
     // A second use of an already-rotated bearer is a compromised family,
@@ -95,6 +124,7 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
 export async function authenticateOAuth(db, accessToken, { pepper }={}) {
   if (!codePattern.test(accessToken || '')) return null;
   const result=await db.query(`SELECT s.id,s.owner_id,s.client_id,s.profile,s.areas,s.mode
+    ,to_jsonb(s)->'allowed_servers' AS allowed_servers
     FROM hub_oauth_sessions s
     WHERE s.access_digest=$1 AND s.revoked_at IS NULL AND s.access_expires_at>now()
     AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions revoked WHERE
@@ -102,7 +132,9 @@ export async function authenticateOAuth(db, accessToken, { pepper }={}) {
   [digestPass(accessToken,pepper)]);
   const row=result.rows[0];
   return row? Object.freeze({id:row.id,ownerId:row.owner_id,clientId:row.client_id,
-    profile:row.profile,areas:Object.freeze([...row.areas]),mode:row.mode,allowWrites:false}):null;
+    profile:row.profile,areas:Object.freeze([...row.areas]),mode:row.mode,allowWrites:false,
+    serverNames:Array.isArray(row.allowed_servers) ?
+      Object.freeze([...serverSelection(row.allowed_servers)]) : null}):null;
 }
 export async function revokeOAuthFamily(db, { ownerId, sessionId }, { ownerVerified=false }={}) {
   verified(ownerVerified);
