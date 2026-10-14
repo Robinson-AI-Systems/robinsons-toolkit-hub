@@ -1,4 +1,5 @@
 import { issueHubPass, revokeHubPass } from './identity.js';
+import { parseOwnerServerSelection } from './server-selection.js';
 import { escapeHtml, formFields, htmlHeaders, publicHubOrigin,
   verifyOwnerLogin } from './owner-login.js';
 
@@ -14,6 +15,11 @@ function passForm() {
     '<input type="hidden" name="action" value="issue">' +
     '<label>Owner passphrase <input type="password" name="password" ' +
     'autocomplete="current-password" required></label>' +
+    '<label>Authorized RTC servers (registered names, comma separated) ' +
+    '<input name="servers" maxlength="1300" required></label>' +
+    '<p>This pass cannot discover or call other servers, even if additional ' +
+    'upstream grants are configured. Every selected service still needs its ' +
+    'separate verified TEST read-only grant.</p>' +
     '<button type="submit">Create one-day read-only TEST pass</button></form>' +
     '<form method="POST" action="/api/owner/passes">' +
     '<input type="hidden" name="action" value="revoke">' +
@@ -52,6 +58,10 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
     typeof fields.password !== 'string' || fields.password.length === 0 ||
     (fields.action === 'revoke' && !uuid.test(fields.id || '')))
     return res.status(400).send('Invalid request');
+  const selected = fields.action === 'issue' ?
+    parseOwnerServerSelection(fields.servers) : null;
+  if (fields.action === 'issue' && !selected)
+    return res.status(400).send('Select 1–20 registered RTC servers');
   try {
     return await withDb(async (db, settings) => {
       const decision = await verify(db, req, fields.password, { env });
@@ -70,6 +80,7 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
         profile: 'read_only',
         mode: 'test',
         areas: ['gateway'],
+        serverNames: selected,
         allowWrites: false,
         ttlSeconds: 86400
       }, { ownerVerified: true, pepper: settings.pepper });
