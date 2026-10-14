@@ -1,3 +1,20 @@
+## H-3 grant-scoped encrypted RTC pagination — next implementation PR
+
+Forwarded RTC harmless reads exceeding the ~8 KiB inline envelope can now
+use a one-hour, AES-GCM encrypted, maximum 64 KiB opaque result handle.
+Pages are UTF-8 byte chunks encoded in base64url; they are not silent JSON
+slices. The new RTC result store remains separate from existing H-1 results
+and never persists raw handles, credentials or plaintext. Readback requires
+the exact owner/caller and re-resolution of the same active grant/server on
+every page, so revocation and grant replacement invalidate stored results.
+Native MCP uses `hub_call` with `hub_result_read`; Hub pass HTTPS readers
+use `/api/results/{handle}?page=N`. A larger result is explicitly refused.
+Additive migration 009 and synthetic SQL/MCP tests are part of proposed
+source, not yet installed hosted schema or real two-service acceptance.
+Avoid deploying before checked daily release; hosted 008 and 009 migration,
+provider-scope and revocation tests, large-result host readbacks and
+measured scale remain OPEN.
+
 ## H-3 direct HTTPS RTC federation — implementation PR in review
 
 The existing `/api/tools` GET search/schema and POST call/batch HTTP doors now
