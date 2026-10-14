@@ -40,18 +40,40 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   storeResult:storeRtcResult,readResult:readRtcResult,...deps};
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   return {ok:true,result:{foundation:'ready',
     federation:targets.length?'test_read_routing':'not_configured',
     providerCallsEnabled:targets.length>0,contractVersion:0,accessibleUpstreams:targets.length}};
  }
  if(name==='hub_namespaces') {
-  if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
-  const targets=await tools.list(db,actor,{limit:50});
-  return {ok:true,result:{namespaces:[{name:'hub',rtc:0,tools:2,mode:'test'},
-    ...targets.map(t=>({name:t.name,prefix:t.prefix,rtc:1,mode:'test',
-      claimedCounts:t.claimedCounts,readOnlyGrant:true}))],
-    upstreamEnabled:targets.length>0,metadataOnly:true,next:null}};
+  if(Object.keys(args).some(k=>!['limit','cursor'].includes(k))||
+    (args.limit!==undefined&&(!Number.isInteger(args.limit)||
+      args.limit<1||args.limit>20))||
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>160)))
+    return fail('invalid_args','Invalid namespace page request');
+  const targets=await tools.list(db,actor,{limit:100});
+  const scope=searchCursorScope(actor,{query:'__namespaces__'},targets);
+  let offset=0;
+  if(args.cursor!==undefined) {
+    try{offset=openSearchCursor(args.cursor,scope,settings);}
+    catch{return fail('unavailable','Namespace continuation unavailable');}
+    if(offset===null||offset>=targets.length)
+      return fail('invalid_args','Namespace continuation invalid or expired');
+  }
+  const limit=args.limit??10,chosen=targets.slice(offset,offset+limit);
+  const namespaces=[
+   ...(offset===0?[{name:'hub',rtc:0,tools:2,mode:'test'}]:[]),
+   ...chosen.map(t=>({name:t.name,prefix:t.prefix,rtc:1,mode:'test',
+    claimedCounts:t.claimedCounts,readOnlyGrant:true}))];
+  let next=null;
+  if(offset+chosen.length<targets.length) {
+    try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
+    catch{return fail('unavailable','Namespace continuation unavailable');}
+  }
+  if(Buffer.byteLength(JSON.stringify({namespaces,next}),'utf8')>7000)
+    return fail('unavailable','Namespace metadata exceeds safe bound');
+  return {ok:true,result:{namespaces,upstreamEnabled:targets.length>0,
+    metadataOnly:true,authorizedTargets:targets.length,next}};
  }
  if(name==='hub_search_tools') {
   if(Object.keys(args).some(k=>!['query','area','server','limit','cursor'].includes(k))||

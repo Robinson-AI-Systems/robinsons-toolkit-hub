@@ -24,7 +24,10 @@ const catalog=Object.freeze([
         additionalProperties:false}}},
       required:['calls'],additionalProperties:false}},
   {name:'hub_namespaces',description:'List bounded accessible namespaces without fetching upstream tools',
-    inputSchema:empty}
+    inputSchema:{type:'object',properties:{
+      limit:{type:'integer',minimum:1,maximum:20},
+      cursor:{type:'string',minLength:1,maxLength:160}
+    },additionalProperties:false}}
 ].map(tool=>Object.freeze({
   ...tool,area:'gateway',profiles:['read_only','everyday','full'],
   writes:false,money:false,destructive:false,audience:['builder','owner','operator'],
