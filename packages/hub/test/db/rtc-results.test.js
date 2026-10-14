@@ -2,7 +2,7 @@ import {randomUUID,randomBytes} from 'node:crypto';
 import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {readFile} from 'node:fs/promises';
-import {storeRtcResult,readRtcResult} from '../../src/rtc-results.js';
+import {storeRtcResult,readRtcResult,pruneExpiredRtcResults} from '../../src/rtc-results.js';
 
 const settings={pepper:'synthetic-rtc-results-ci-only-test-pepper-32',
  resultsKey:randomBytes(32).toString('base64url')};
@@ -68,4 +68,29 @@ it('fails closed on invalid callers, missing encryption and results above the 64
  await expect(storeRtcResult(db,actor,grant.grantId,grant.server,{},
    {...settings,resultsKey:undefined})).rejects.toThrow();
  expect(await readRtcResult(db,actor,'fake',0,settings,active())).toBeNull();
+});
+
+it('collects only expired encrypted RTC pages in small bounded batches',async()=>{
+ await db.query('DELETE FROM hub_rtc_result_handles');
+ for(let i=0;i<3;i++)
+  await storeRtcResult(db,actor,grant.grantId,grant.server,
+   {index:i},settings);
+ const first=await db.query(`SELECT handle_digest FROM hub_rtc_result_handles
+  ORDER BY created_at,handle_digest LIMIT 2`);
+ await db.query(`UPDATE hub_rtc_result_handles
+  SET expires_at=now()-interval '1 second'
+  WHERE handle_digest=ANY($1::text[])`,[first.rows.map(r=>r.handle_digest)]);
+ expect(await pruneExpiredRtcResults(db,{limit:1})).toBe(1);
+ const remain=await db.query(`SELECT count(*)::integer n FROM hub_rtc_result_handles
+  WHERE expires_at<=now()`);
+ expect(remain.rows[0].n).toBe(1);
+ // Ordinary storage opportunistically cleans remaining expired entries.
+ await storeRtcResult(db,actor,grant.grantId,grant.server,
+  {index:'new'},settings);
+ const active=await db.query(`SELECT count(*)::integer n FROM hub_rtc_result_handles`);
+ expect(active.rows[0].n).toBe(2);
+ expect(await pruneExpiredRtcResults(db,{limit:100})).toBe(0);
+ for(const limit of [0,101,1.5,-1]) {
+  await expect(pruneExpiredRtcResults(db,{limit})).rejects.toThrow();
+ }
 });
