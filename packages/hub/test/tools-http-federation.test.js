@@ -55,7 +55,7 @@ it('discovers and describes only caller-scoped RTC reads over the real HTTP hand
  expect(describe.code).toBe(200);
  expect(describe.body.result).toMatchObject({name:'stripe_invoice_list',
   server:'stripe',writes:false});
- expect(upstream.resolve).toHaveBeenCalledTimes(2);
+ expect(upstream.resolve).toHaveBeenCalledTimes(4);
  expect(upstream.read).not.toHaveBeenCalled();
  expect(upstream.audit).not.toHaveBeenCalled();
  expect(JSON.stringify([list.body,describe.body])).not.toContain(grant.pass);

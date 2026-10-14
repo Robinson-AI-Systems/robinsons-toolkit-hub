@@ -19,6 +19,16 @@ function ownerOfTool(targets,name) {
   return matches[0]??null;
 }
 const fail=(code,what)=>({ok:false,error:{code,what}});
+function sameGrant(before,after) {
+ // Re-resolve after provider metadata GET: a revoked/replaced grant must not
+ // publish stale tool names, descriptions, areas or schema to its old caller.
+ return Boolean(after && before.grantId===after.grantId &&
+  before.server===after.server && before.origin===after.origin &&
+  before.prefix===after.prefix &&
+  Array.isArray(before.areas) && Array.isArray(after.areas) &&
+  before.areas.length===after.areas.length &&
+  before.areas.every((a,i)=>a===after.areas[i]));
+}
 function plain(a) {
  return a&&typeof a==='object'&&!Array.isArray(a)&&
    Object.getPrototypeOf(a)===Object.prototype;
@@ -107,7 +117,12 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
    if(args.area&&!target.areas.includes(args.area))return {tools:[],incomplete:false};
    const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
    if(!grant)throw new Error('Grant unavailable');
-   return tools.search(grant,{query:args.query,area:args.area,limit:Math.min(limit,10)});
+   const discovered=await tools.search(grant,{query:args.query,
+    area:args.area,limit:Math.min(limit,10)});
+   const refreshed=await tools.resolve(db,{actor,serverName:target.name},settings);
+   if(!sameGrant(grant,refreshed))
+    throw new Error('RTC grant changed during metadata lookup');
+   return discovered;
   }));
   // Reserve one result from every scanned service before local tools or
   // extra results consume the page budget. Otherwise a full first provider
@@ -271,8 +286,13 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   if(!target)return fail('not_found','Tool is not available to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!grant)return fail('outside_scope','RTC grant unavailable');
-  try {return {ok:true,result:{...await tools.describe(grant,args.name),
-    server:target.name}};}
+  try {
+   const schema=await tools.describe(grant,args.name);
+   const refreshed=await tools.resolve(db,{actor,serverName:target.name},settings);
+   if(!sameGrant(grant,refreshed) || !grant.areas.includes(schema.area))
+    return fail('outside_scope','RTC grant changed during schema lookup');
+   return {ok:true,result:{...schema,server:target.name}};
+  }
   catch{return fail('unavailable','RTC schema unavailable or refused');}
  }
  return runBroker(name,args,actor);

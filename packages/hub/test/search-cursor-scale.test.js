@@ -64,7 +64,7 @@ it('searches 2/5/12/50/100 RTC services in signed three-provider pages without e
   expect(scanned).toBe(count);
   expect(seen.size).toBe(count);
   expect(deps.search).toHaveBeenCalledTimes(count);
-  expect(deps.resolve).toHaveBeenCalledTimes(count);
+  expect(deps.resolve).toHaveBeenCalledTimes(count*2);
   // 100 services advertise 10,000 tools, but only one candidate per
   // selected service is returned; no eager catalogue or schema calls.
   expect(all.reduce((n,s)=>n+s.claimedCounts.tools,0)).toBe(count*100);
@@ -139,7 +139,7 @@ it('browses all 100 scoped services without a keyword using signed bounded conti
  }while(cursor);
  expect(pages).toBe(34);
  expect(seen.size).toBe(100);
- expect(deps.resolve).toHaveBeenCalledTimes(100);
+ expect(deps.resolve).toHaveBeenCalledTimes(200);
  expect(deps.search).toHaveBeenCalledTimes(100);
  const first=await runFederatedBroker('hub_search_tools',
   {query:'',limit:5},actor,{},settings,deps);
