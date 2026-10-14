@@ -3,6 +3,9 @@ import {listEligibleRtcTargets,resolveActiveCallerGrant} from './grants.js';
 import {searchPinnedRtcTools,describePinnedRtcTool} from './pinned-tools.js';
 import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit,newRtcCorrelation} from './rtc-read-audit.js';
+import {storeRtcResult,readRtcResult} from './rtc-results.js';
+import {searchCursorScope,issueSearchCursor,openSearchCursor} from './search-cursor.js';
+import {ownsRtcToolName} from './rtc-prefix.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
@@ -11,7 +14,7 @@ const ownNames=new Set(['hub_whoami','hub_health']);
 function ownerOfTool(targets,name) {
   // Registry enforces unique prefixes, not prefix-free names. Choose the
   // longest prefix followed by '_' so nested services route deterministically.
-  const matches=targets.filter(target=>name.startsWith(target.prefix+'_'));
+  const matches=targets.filter(target=>ownsRtcToolName(target.prefix,name));
   matches.sort((left,right)=>right.prefix.length-left.prefix.length);
   return matches[0]??null;
 }
@@ -34,46 +37,83 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
  const tools={
   list:listEligibleRtcTargets,resolve:resolveActiveCallerGrant,
   search:searchPinnedRtcTools,describe:describePinnedRtcTool,
-  read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,...deps};
+  read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
+  storeResult:storeRtcResult,readResult:readRtcResult,...deps};
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   return {ok:true,result:{foundation:'ready',
     federation:targets.length?'test_read_routing':'not_configured',
     providerCallsEnabled:targets.length>0,contractVersion:0,accessibleUpstreams:targets.length}};
  }
  if(name==='hub_namespaces') {
-  if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
-  const targets=await tools.list(db,actor,{limit:50});
-  return {ok:true,result:{namespaces:[{name:'hub',rtc:0,tools:2,mode:'test'},
-    ...targets.map(t=>({name:t.name,prefix:t.prefix,rtc:1,mode:'test',
-      claimedCounts:t.claimedCounts,readOnlyGrant:true}))],
-    upstreamEnabled:targets.length>0,metadataOnly:true,next:null}};
+  if(Object.keys(args).some(k=>!['limit','cursor'].includes(k))||
+    (args.limit!==undefined&&(!Number.isInteger(args.limit)||
+      args.limit<1||args.limit>20))||
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>160)))
+    return fail('invalid_args','Invalid namespace page request');
+  const targets=await tools.list(db,actor,{limit:100});
+  const scope=searchCursorScope(actor,{query:'__namespaces__'},targets);
+  let offset=0;
+  if(args.cursor!==undefined) {
+    try{offset=openSearchCursor(args.cursor,scope,settings);}
+    catch{return fail('unavailable','Namespace continuation unavailable');}
+    if(offset===null||offset>=targets.length)
+      return fail('invalid_args','Namespace continuation invalid or expired');
+  }
+  const limit=args.limit??10,chosen=targets.slice(offset,offset+limit);
+  const namespaces=[
+   ...(offset===0?[{name:'hub',rtc:0,tools:2,mode:'test'}]:[]),
+   ...chosen.map(t=>({name:t.name,prefix:t.prefix,rtc:1,mode:'test',
+    claimedCounts:t.claimedCounts,readOnlyGrant:true}))];
+  let next=null;
+  if(offset+chosen.length<targets.length) {
+    try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
+    catch{return fail('unavailable','Namespace continuation unavailable');}
+  }
+  if(Buffer.byteLength(JSON.stringify({namespaces,next}),'utf8')>7000)
+    return fail('unavailable','Namespace metadata exceeds safe bound');
+  return {ok:true,result:{namespaces,upstreamEnabled:targets.length>0,
+    metadataOnly:true,authorizedTargets:targets.length,next}};
  }
  if(name==='hub_search_tools') {
-  if(Object.keys(args).some(k=>!['query','area','server','limit'].includes(k))||
-    typeof args.query!=='string'||!args.query||args.query.length>120||
+  if(Object.keys(args).some(k=>!['query','area','server','limit','cursor'].includes(k))||
+    typeof args.query!=='string'||args.query.length>120||
     (args.server!==undefined&&!serverPattern.test(args.server))||
     (args.area!==undefined&&!areaPattern.test(args.area))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||
-      args.limit<1||args.limit>20)))
+      args.limit<1||args.limit>20))||
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>160)))
     return fail('invalid_args','Invalid search parameters');
   const limit=args.limit??10;
-  const owned=args.server||args.area&&args.area!=='gateway'?[]:
+  if(args.server==='hub')return runBroker('hub_search_tools',
+    {query:args.query,limit},actor);
+  const owned=args.cursor||args.server||args.area&&args.area!=='gateway'?[]:
     runBroker('hub_search_tools',{query:args.query,limit},actor).result.tools;
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   const matching=targets.filter(t=>(!args.server||t.name===args.server)&&
     (!args.area||t.areas.includes(args.area)));
   if(args.server&&!matching.length)return fail('not_found','No authorized RTC service');
-  const chosen=matching.slice(0,3);
+  const scope=searchCursorScope(actor,args,matching);
+  let offset=0;
+  if(args.cursor!==undefined){
+   try{offset=openSearchCursor(args.cursor,scope,settings);}
+   catch{return fail('unavailable','RTC search continuation unavailable');}
+   if(offset===null||offset>=matching.length)
+    return fail('invalid_args','Search continuation invalid or expired');
+  }
+  const chosen=matching.slice(offset,offset+Math.min(3,limit));
   const settled=await Promise.allSettled(chosen.map(async target=>{
    if(args.area&&!target.areas.includes(args.area))return {tools:[],incomplete:false};
    const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
    if(!grant)throw new Error('Grant unavailable');
    return tools.search(grant,{query:args.query,area:args.area,limit:Math.min(limit,10)});
   }));
-  const found=[...owned],failures=[];
-  let incomplete=matching.length>chosen.length;
+  // Reserve one result from every scanned service before local tools or
+  // extra results consume the page budget. Otherwise a full first provider
+  // can hide later providers even though the cursor advances past them.
+  const found=[],failures=[],candidates=[];
+  let incomplete=matching.length>offset+chosen.length;
   for(let i=0;i<settled.length;i++) {
    const state=settled[i];
    if(state.status==='rejected'){
@@ -81,22 +121,67 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     incomplete=true;
    } else {
     incomplete ||= state.value.incomplete===true;
-    const remaining=Math.max(0,limit-found.length);
-    if(state.value.tools.length>remaining)incomplete=true;
-    for(const tool of state.value.tools.slice(0,remaining))
-      found.push({...tool,server:chosen[i].name});
+    candidates.push({server:chosen[i].name,tools:state.value.tools});
    }
   }
+  function include(entry) {
+   if(found.length>=limit ||
+     Buffer.byteLength(JSON.stringify([...found,entry]),'utf8')>6500) {
+    incomplete=true;
+    return false;
+   }
+   found.push(entry);
+   return true;
+  }
+  // At most min(3, limit) services are scanned, so normal-sized matches
+  // from distinct services each have an available result slot.
+  for(const provider of candidates) {
+   if(provider.tools.length)include({...provider.tools[0],server:provider.server});
+  }
+  for(const tool of owned)include(tool);
+  for(const provider of candidates) {
+   for(const tool of provider.tools.slice(1))
+    include({...tool,server:provider.server});
+  }
+  let next=null;
+  if(offset+chosen.length<matching.length) {
+    try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
+    catch{return fail('unavailable','RTC search continuation unavailable');}
+  }
   return {ok:true,result:{tools:found.slice(0,limit),failures,
-    incomplete,next:null,scanned:chosen.length,authorizedTargets:matching.length}};
+    incomplete,next,scanned:chosen.length,authorizedTargets:matching.length}};
+ }
+ if(name==='hub_result_read') {
+  if(Object.keys(args).some(k=>!['handle','page'].includes(k))||
+    typeof args.handle!=='string'||!/^rtc_[A-Za-z0-9_-]{43}$/.test(args.handle)||
+    (args.page!==undefined&&(!Number.isInteger(args.page)||args.page<0||args.page>15)))
+    return fail('invalid_args','Invalid RTC result page request');
+  try {
+   const page=await tools.readResult(db,actor,args.handle,args.page??0,settings);
+   return page?{ok:true,result:page}:
+     fail('not_found','RTC result missing, expired or grant revoked');
+  } catch{return fail('unavailable','RTC result temporarily unavailable');}
  }
  if(name==='hub_call') {
   if(Object.keys(args).some(k=>!['name','args'].includes(k))||
     !namePattern.test(args.name||'')||
     (args.args!==undefined&&!plain(args.args)))
     return fail('invalid_args','Invalid RTC read call arguments');
-  if(ownNames.has(args.name))return runBroker('hub_call',args,actor);
-  const targets=await tools.list(db,actor,{limit:50});
+  if(args.name==='hub_result_read')
+   return runFederatedBroker('hub_result_read',args.args??{},actor,db,settings,deps);
+  if(ownNames.has(args.name)) {
+   // The indirect Hub-owned health read must reflect the same actual
+   // eligible grants as a direct hub_health request (including in a
+   // sequential batch), not the pre-federation foundation stub.
+   if(args.name==='hub_health') {
+     if(args.args!==undefined&&Object.keys(args.args).length)
+       return fail('invalid_args','Hub health takes no arguments');
+     const state=await runFederatedBroker('hub_health',{},actor,db,settings,deps);
+     return state.ok?{ok:true,result:{name:args.name,result:state.result}}:state;
+   }
+   return runBroker('hub_call',args,actor);
+  }
+  const targets=await tools.list(db,actor,{limit:100});
   const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','RTC tool not granted to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
@@ -148,7 +233,18 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   let bytes;
   try {bytes=Buffer.byteLength(JSON.stringify(result),'utf8');}
   catch{return fail('unavailable','RTC result is not serializable');}
-  if(bytes>8000)return fail('unavailable','RTC result exceeds inline safety limit');
+  if(bytes>8000) {
+   if(bytes>65536)return fail('unavailable','RTC result exceeds storage bound');
+   // Refresh/revoke must immediately invalidate any saved result page.
+   const latest=await tools.resolve(db,{actor,serverName:target.name},settings);
+   if(!latest||latest.grantId!==grant.grantId||latest.origin!==grant.origin)
+     return fail('outside_scope','RTC grant changed before result storage');
+   try {
+    const saved=await tools.storeResult(db,actor,grant.grantId,target.name,result,settings);
+    return {ok:true,result:{name:args.name,server:target.name,
+      correlationId,upstreamLogId,stored:true,...saved}};
+   } catch{return fail('unavailable','RTC encrypted result storage unavailable');}
+  }
   return {ok:true,result};
  }
  if(name==='hub_batch') {
@@ -170,7 +266,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   if(Object.keys(args).length!==1||!namePattern.test(args.name||''))
     return fail('invalid_args','Invalid tool name');
   if(ownNames.has(args.name))return runBroker(name,args,actor);
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','Tool is not available to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);

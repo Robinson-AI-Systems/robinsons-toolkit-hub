@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "order": [
     "K",
     "D",
@@ -9,7 +9,7 @@
     "L",
     "S"
   ],
-  "process": "Just-in-time cards from approved designs; S cards only on Chris's request.",
+  "process": "Just-in-time cards from approved designs; S cards only on Chris's request. Session execution and queued deployed acceptance follow docs/SESSION-START.md.",
   "cards": [
     {
       "id": "K-0",
@@ -419,11 +419,15 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Source H-3: #158 DNS-pinned RTC metadata GET, #159 bounded native MCP scoped search/describe/namespaces; #160 implements guarded grant-scoped authenticated TEST read POST, sequential batch, durable correlated attempt/outcome SQL for Hub pass + OAuth, explicit oversized inline refusal, uncertain POST no retry. Real two-service provider calls, installed hosted 008 migration, result handles/explicit pagination, live/RTC1 conformance and full H3 HTTP parity remain OPEN.",
+      "note": "Source H-3: #158 DNS-pinned RTC metadata GET, #159 bounded native MCP scoped search/describe/namespaces; #160 implements guarded grant-scoped authenticated TEST read POST, sequential batch, durable correlated attempt/outcome SQL for Hub pass + OAuth, explicit oversized inline refusal, uncertain POST no retry. #160 guarded MCP reads now extended with proposed native HTTPS GET search/describe and POST read/batch parity. Merged #163 encrypted grant-bound RTC read pages; merged #164 native/HTTPS resumable search with 100-service synthetic matrix; bounded authorized namespace paging in this PR. Real provider tests and hosted setup remain OPEN. Hosted 004-006/008/009 migrations, real provider/Hub acceptance, live measurements, RTC1 conformance remain OPEN.",
       "pr": [
         "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
         "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",
-        "#160 (non-retrying pinned read POST, audit, batch, SQL integration; hosted acceptance open)"
+        "#160 (non-retrying pinned read POST, audit, batch, SQL integration; hosted acceptance open)",
+        "#162 (RTC HTTPS scoped read search/describe/call/batch parity; merged)",
+        "#163 (grant-scoped AES-GCM RTC result handles and pages; merged)",
+        "#164 (HMAC bound resumable RTC search with 100-service synthetic matrix; merged)",
+        "H-3 complete native namespace pagination to 100 authorized services (this PR; hosted acceptance pending)"
       ]
     },
     {

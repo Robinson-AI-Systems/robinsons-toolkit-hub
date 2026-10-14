@@ -1,3 +1,229 @@
+## October 14 fleet and hosted database independent readbacks
+The checked #169 GitHub Actions public-observe job (run 38590859362,
+readback at 2026-10-14 15:37:53 UTC, original HEAD
+`6b06a708b6609f65358a05213115893faf0d9ec5`)
+made real unauthenticated GET /api/contract requests to the five
+tracked production DNS origins. Google Workspace answered HTTP 200,
+valid RTC 1 metadata with `workspace_` prefix but no confirmed
+TEST auth; GitHub answered HTTP 200 with RTC 0 (not RTC 1);
+Stripe, Vercel and Neon each answered HTTP 401 access-protected.
+All direct authenticated reads, private relay, Sandbox and same-pass
+revocation remain UNVERIFIED, not passed by public GET or the standard
+connectors. No credentials were used in this probe.
+Separate read-only Neon table inventory of the existing
+`robinsons-toolkit-relay` project on Oct 14 found 11 existing Hub
+foundation/relay tables but no `hub_servers`,
+`hub_server_grants`, `hub_rtc_read_audit`, or
+`hub_rtc_result_handles`. Therefore hosted additive migrations
+004-006, 008, 009 and actual two-service RTC grant routing remain
+OPEN. No hosted SQL changes or manual deployments were performed.
+Trust the independently observed Vercel READY production deployment on
+`live=a26ff2fd81cab3500b1e1dab8332e2575a6d9592`
+until new provider evidence supersedes it. Main has new source not yet
+released; do not relabel source CI as provider acceptance.
+
+## H-3 authorized catalogue browsing — PR #170 (pending review)
+Agents can explore all grant-eligible RTC metadata through native
+`hub_search_tools({query:''})` or authenticated HTTPS `GET /api/tools?q=`
+and can browse one permitted service via `?server=stripe` without knowing
+tool names. The unqualified `GET /api/tools` preserves its small fixed
+Hub menu and incurs no provider requests. Every exposed upstream remains
+narrowed to TEST read_only grant/areas with a maximum three selected
+origins per request, 20 results, signed caller-bound resume cursor
+and explicit partial/incomplete reporting. Synthetic tests cover full
+100-service traversal, tampering/refusals and zero provider calls for
+unqualified reads. Result-limit saturation reserves one representative per scanned provider
+before local/extra tools and marks omitted metadata incomplete;
+a targeted service browse can recover its bounded candidates.
+Provider-specific next-page pagination and real
+hosted TEST access are not asserted. Await checked live release and
+actual provider acceptance: HUB-H3-BROWSE.
+
+## H-3 fixed HTTPS broker parity — PR #169 (pending review)
+Authenticated Hub HTTPS `POST /api/tools/{hub_broker}` now uses the same
+grant-filtered native federation dispatcher for Hub health, tool search,
+describe, call, batch and namespaces, rather than responding with stale
+foundation-only stubs or rejecting valid RTC read calls. Direct,
+`hub_call` and mixed-batch health all compute actual eligible target
+metadata, including zero configured targets. The Hub's existing pass, TEST,
+owner, grant, metadata readOnlyHint, audit-before-read, single-shot POST,
+byte budgets, and denial controls remain. Synthetic handler tests cover
+successful reads and guarded refusals. Actual hosted/provider acceptance
+must wait for the normal checked live release: HUB-H3-HTTP-BROKERS queue.
+
+## H-3 RTC prefix and 100-target route parity — PR #168 (awaiting merge/release)
+The Hub now uses one canonical RTC owner parser across encrypted pinned metadata
+discovery, schema lookup, read POST and federated longest-prefix routing. Already
+delimited provider prefixes (for example Workspace's `workspace_`) are accepted
+without double underscores; ambiguous/doubled separators and cross-service tool
+calls are refused before credentials or provider requests. Scoped call and describe
+can target all 100 eligible services, matching navigation and discovery's existing
+100-service ceiling rather than silently dropping callers after service 50.
+Adversarial fake-network tests cover both GET and POST, complete 100th-service
+routing, audit-before-read and doubled-prefix denial. No new privilege, provider
+mutation, production activation or upstream credentials. This is proposed source,
+not installed on live: real TEST Workspace read/denial/revocation, hosted migrations
+and verified deployment remain in HUB-H3-PREFIX acceptance queue.
+
+## Workflow maintenance CI correction — PR #167
+
+The consolidated guide supersedes old workflow headings. The owner-workflow regression now checks the same milestone, blocker re-entry, separate deployed/authenticated proof, permanent handoff and five-PR alignment requirements through the authoritative AGENTS pointer and session guide, with added explicit pre-merge/live-proof guard assertions. No runtime assertion or safety gate was weakened. Focused tests and normal check pass; exact-head CI remains required. ARCHITECTURE now acknowledges existing H-2/H-3 source modules while retaining unverified hosted/provider acceptance. The old reference API hosting was separately paused and future Git builds disabled under owner instruction; current Hub relay hosting was preserved.
+
+### Workflow maintenance handoff — owner publication approved
+
+New offline session utility: eight behavioral tests passed, including actual Git ancestry, partial releases, unknown/failed deployments, rollback, dependency gating, invalid queues, PR alignment and bounded output. All repository queues validate. Existing source/status evidence is preserved; no provider acceptance or release was performed. Owner explicitly approved publication on October 14; publish the reviewed maintenance branch, require exact-head CI/reviews, and merge only when those gates pass. No extra production release is authorized by this approval. Full broad application suites on the shared runner were interrupted after resource/time-limit failures; do not claim them passed. Existing exact-head remote CI/review gates must pass before any main merge.
+
+## Release acceptance queue — workflow optimization 2026-10-14
+
+Owner-authorized guidance/tooling maintenance: consolidated session procedure, focused
+checks between meaningful edits, substantial capability grouping, and read-only queued
+acceptance/PR-boundary report. This records source/tooling work, not a live/provider pass.
+The queue below seeds existing outstanding obligations; reconcile exact scenarios and
+already-proven evidence from the unchanged cards/ledger before running. Keep all prior
+open obligations, original fixture ownership, approvals and deployment provenance.
+
+<!-- release-acceptance:start -->
+```json
+[
+  {
+    "id": "HUB-D4",
+    "priority": 1,
+    "requiredRevision": "22b69eb14bcd54b86f5c00aa0567aed1e8f9d3c4",
+    "task": "Complete remaining direct/relay/Sandbox routes, refusal, revocation and cleanup acceptance",
+    "procedure": "docs/pr-cards/D-4.md",
+    "gates": "Reviewed deployed service revisions; separately scoped service passes and owner-approved isolated runners",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+  },
+  {
+    "id": "HUB-FLEET",
+    "priority": 2,
+    "requiredRevision": "22b69eb14bcd54b86f5c00aa0567aed1e8f9d3c4",
+    "task": "Catch up actual hosted fleet observations and permitted authenticated reads",
+    "procedure": "docs/SESSION-START.md",
+    "gates": "Preserve exact revision pins and non-production RTC TEST restrictions; public manifest is not authenticated proof",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+  },
+  {
+    "id": "HUB-H3-PREFIX",
+    "priority": 3,
+    "requiredRevision": "2b430dbd5981cf51a191dd84415e11696e80f265",
+    "task": "Verify Hub-mediated Workspace trailing-underscore RTC read, schema lookup, audit/readback and grant-revocation denial at the approved TEST origin; retain 100-service routing scale as synthetic until an actual large fleet exists",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Checked live Hub revision, hosted 004-006/008/009 migrations, independently pinned RTC deployment and service-owned TEST read_only grants; no provider write",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #168 source and scoped synthetic regressions proposed. Existing Vercel production READY is #165, so this source is not deployed or live-accepted."
+  },
+  {
+    "id": "HUB-H3-HTTP-BROKERS",
+    "priority": 4,
+    "requiredRevision": "c910f267cf077df7c14e98ae17b653c5263f956e",
+    "task": "Prove native and Hub-pass HTTPS broker parity under the same independently authenticated TEST grant: search, schema, scoped call, sequential batch, health and denial/readback",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Checked Hub live deployment; additive hosted grants/audit migration; independent Hub TEST pass and active verified RTC upstream grant; no provider writes",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #169 scoped fake-RTC handler tests proposed; source is not released, real two-service and revocation remain unverified."
+  },
+  {
+    "id": "HUB-H3-BROWSE",
+    "priority": 5,
+    "requiredRevision": "69dcd0738dee3eb082c2eb0f9597d8899a1157b1",
+    "task": "Verify zero-keyword RTC catalogue browsing through one actual Hub TEST connection, including scoped HTTP/default listings, service selection, signed cursor, denial and upstream partial-page disclosure",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Source released to READY Hub deployment with approved hosted registry/audit schema; sealed TEST read_only service grant verified; do not infer full provider pagination",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #170 introduced bounded keyword-free discovery with synthetic 100-service and exact service-selection tests. No deployed RTC TEST browse or provider acceptance has run."
+  }
+]
+```
+<!-- release-acceptance:end -->
+
+<!-- Current repair also records no-change daily receipts: backups cannot publish later same-day development after a successful no-op. -->
+## October 14 owner-requested daily release recovery repair — current
+
+Owner request on October 14: investigate and repair missed daily releases across the MCP repositories and Appliance Desk, including the quoted owner-run checked recovery. This supersedes the prior scheduled-only/no-new-trigger restriction for missed-event recovery only. Primary 00:01 Denver remains; retries are 00:17, 01:17 and 05:37 Denver plus 12:43 UTC. Explicit recovery defaults OFF and requires both the original actor and the triggering actor to be christcr2012, main, true recovery input and elapsed midnight. Every path retains successful exact-main CI, ancestry, atomic once-per-Denver-day receipt and independent readback. No production-provider activation, spending, force push or preview build is authorized.
+
+Local release safety tests pass. Merge requires exact-head application CI and review resolution. Source repair is separate from observed schedule execution and Vercel READY/alias proof; inspect actual daily run and receipt, do not equate main/live drift after a release with failure. These infrastructure PRs do not replace the existing substantive implementation batch.
+
+## H-3 large-fleet namespace navigation — next source PR
+
+The fixed-menu `hub_namespaces` native Hub operation now uses a bounded,
+optional `limit` and short-lived caller/roster-signed `cursor` for
+on-demand paged navigation through up to 100 authorized RTC namespaces.
+Default small fleets retain the original Hub+RTC response. Every later
+page avoids repeating the Hub entry; every service is returned exactly
+once, without contacting external provider tools or fetching schemas.
+`hub_health` now reports the same bounded 100-service eligible count.
+Revoked/changed rosters and changed callers fail closed. Synthetic tests
+cover full 2/5/12/50/100 roster traversal, a limit of one, correct
+health counts, denial and zero provider requests. Large real fleets
+and hosted migrations/provider acceptance remain OPEN. This is proposed
+source, not a deployed or accepted live claim.
+
+## H-3 bounded RTC discovery continuation and measured scale — proposed
+
+Native `hub_search_tools` and GET `/api/tools?q=...` now accept an
+opaque HMAC-authenticated, five-minute search cursor bound to caller,
+query, profile/mode and the current authorized service roster. No
+unauthorized grant/provider can be reached by replaying or modifying it.
+The broker queries at most three independent RTC origins per page and
+can resume beyond the previous hard first-three ceiling through 100
+bounded eligible service records. Lower result limits resume after
+the exact number of inspected services, without skipping or duplicating
+providers. Metadata responses stay under a bounded UTF-8 budget; partial
+truncation/failures are explicitly marked as incomplete, not silently
+omitted. Synthetic CI measures elapsed milliseconds and RSS delta at
+2/5/12/50/100 service deployments, with 10,000 advertised aggregate
+tools at the largest level, without eager schema loads. Synthetic
+measurements do not prove actual provider network latency or standalone
+MCP acceptance. Hosted acceptance remains OPEN.
+
+Independent read-only Neon table inventory on 2026-10-13 found Hub
+foundation tables, but no `hub_servers`, `hub_server_grants`,
+`hub_rtc_read_audit` or `hub_rtc_result_handles` in public schema.
+Thus hosted migrations 004–006, 008 and proposed 009 are not proven
+applied and real federation is not currently runnable. Deployment READY
+and synthetic database CI remain distinct. No production schema changes
+were made during this observation.
+
+## H-3 grant-scoped encrypted RTC pagination — next implementation PR
+
+Forwarded RTC harmless reads exceeding the ~8 KiB inline envelope can now
+use a one-hour, AES-GCM encrypted, maximum 64 KiB opaque result handle.
+Pages are UTF-8 byte chunks encoded in base64url; they are not silent JSON
+slices. The new RTC result store remains separate from existing H-1 results
+and never persists raw handles, credentials or plaintext. Readback requires
+the exact owner/caller and re-resolution of the same active grant/server on
+every page, so revocation and grant replacement invalidate stored results.
+Native MCP uses `hub_call` with `hub_result_read`; Hub pass HTTPS readers
+use `/api/results/{handle}?page=N`. A larger result is explicitly refused.
+Additive migration 009 and synthetic SQL/MCP tests are part of proposed
+source, not yet installed hosted schema or real two-service acceptance.
+Avoid deploying before checked daily release; hosted 008 and 009 migration,
+provider-scope and revocation tests, large-result host readbacks and
+measured scale remain OPEN.
+
+## H-3 direct HTTPS RTC federation — implementation PR in review
+
+The existing `/api/tools` GET search/schema and POST call/batch HTTP doors now
+share H-3's native MCP upstream selection, active exact-caller TEST read_only
+grant re-resolution, metadata safety checks, durable attempt/outcome audit,
+single-shot DNS-pinned HTTPS POST and independent batch refusal. Empty Hub
+catalogue and Hub-owned calls retain their prior backward-compatible HTTP
+shapes. Handler-level tests use a synthetic independently scoped RTC service
+and assert positive read, audit linkage, no-retry, denied writes/live actors,
+absent grants, HTTP status and bounded results. HTTPS source parity is a
+proposed change, not yet merged, deployed or independently accepted. Actual
+provider readbacks, migration 008 on hosted Postgres, 2-service Hub identity,
+revocation, RTC1 certification, handles/pagination and measured scale remain
+OPEN. No provider mutation, public access widening or manual release.
+
 ## H-3 guarded upstream RTC read execution — PR #160 proposed
 
 Native Hub `hub_call` and sequential read-only `hub_batch` now have

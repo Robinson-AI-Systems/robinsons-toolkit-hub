@@ -90,3 +90,23 @@ it('prevents SSRF rebinding and fails closed on malformed schema and unsafe path
  await expect(describePinnedRtcTool(stripe,'stripe_invoice_list?x=1',unsafe)).rejects.toThrow();
  expect(unsafe.calls).toHaveLength(0);
 });
+
+
+it('uses already-delimited workspace_ RTC prefix without adding another separator',async()=>{
+ const workspace={...google,prefix:'workspace_'};
+ const t=transportFor({ok:true,result:{tools:[
+  tool('workspace_drive_list','gmail')],next:null}});
+ const found=await searchPinnedRtcTools(workspace,{query:'drive'},t);
+ expect(found.tools.map(x=>x.name)).toEqual(['workspace_drive_list']);
+ const schema=transportFor({ok:true,result:tool('workspace_drive_list','gmail')});
+ expect((await describePinnedRtcTool(workspace,'workspace_drive_list',schema)).name)
+  .toBe('workspace_drive_list');
+ expect(schema.calls[0].path).toBe('/api/tools/workspace_drive_list');
+ const malformed=transportFor({ok:true,result:{tools:[
+  tool('workspace__drive_list','gmail')],next:null}});
+ await expect(searchPinnedRtcTools(workspace,{query:'drive'},malformed))
+  .rejects.toThrow();
+ await expect(describePinnedRtcTool(workspace,'workspace__drive_list',schema))
+  .rejects.toThrow();
+ expect(schema.calls).toHaveLength(1);
+});
