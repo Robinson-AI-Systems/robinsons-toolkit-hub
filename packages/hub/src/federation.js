@@ -102,6 +102,12 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
       !grant.areas.includes(metadata.area))
      return fail('outside_scope','RTC tool not an authorized read');
   } catch{return fail('unavailable','RTC read metadata unavailable');}
+  // A revoked or replaced grant during schema lookup must not reach POST.
+  const rechecked=await tools.resolve(db,{actor,serverName:target.name},settings);
+  if(!rechecked||rechecked.grantId!==grant.grantId||
+    rechecked.prefix!==grant.prefix||rechecked.origin!==grant.origin||
+    !rechecked.areas.includes((await Promise.resolve(metadata)).area))
+    return fail('outside_scope','RTC grant changed during read validation');
   const correlationId=tools.correlation();
   // Dispatch must never start before durable attempt receipt.
   try {await tools.audit(db,{actor,grantId:grant.grantId,
@@ -110,7 +116,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   catch{return fail('unavailable','RTC audit storage unavailable');}
   let response,outcome='unavailable';
   try {
-   response=await tools.read(grant,args.name,args.args??{});
+   response=await tools.read(rechecked,args.name,args.args??{});
    outcome=response?.ok===true?'success':'refused';
   } catch {}
   const sourceId=response?.logged?.id??response?.result?.logged?.id;
