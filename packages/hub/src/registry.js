@@ -62,3 +62,36 @@ export async function disableStagedServer(db,{ownerId,name},{ownerVerified=false
     WHERE name=$1 AND owner_id=$2 AND state IN ('pending','active')`,[name,ownerId]);
   return result.rowCount===1;
 }
+
+/**
+ * Owner-confirmed retirement of exactly one TEST RTC service. The registry
+ * disable and all of its still-unrevoked sealed caller grants change in the
+ * same database transaction. No upstream/provider call and no deletion of
+ * historical registry, audit or accounting records.
+ */
+export async function retireHubServerAndGrants(db,{ownerId,name},
+ {ownerVerified=false}={}) {
+ owner(ownerId,ownerVerified);
+ if(!slug.test(name||'')||name==='hub')
+  throw new TypeError('Invalid owner-scoped service retirement');
+ await db.query('BEGIN');
+ try {
+  const found=await db.query(`SELECT name FROM hub_servers
+    WHERE name=$1 AND owner_id=$2 FOR UPDATE`,[name,ownerId]);
+  if(found.rows.length!==1) {
+   await db.query('ROLLBACK');
+   return null;
+  }
+  await db.query(`UPDATE hub_servers SET state='disabled',updated_at=now()
+    WHERE name=$1 AND owner_id=$2`,[name,ownerId]);
+  const revoked=await db.query(`UPDATE hub_server_grants
+    SET revoked_at=now() WHERE server_name=$1 AND owner_id=$2
+    AND revoked_at IS NULL`,[name,ownerId]);
+  await db.query('COMMIT');
+  return {server:name,disabled:true,revokedCount:revoked.rowCount};
+ } catch(error) {
+  try{await db.query('ROLLBACK');}
+  catch{/* The original database failure remains authoritative. */}
+  throw error;
+ }
+}
