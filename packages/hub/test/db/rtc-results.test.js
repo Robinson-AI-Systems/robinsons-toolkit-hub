@@ -56,7 +56,7 @@ it('refuses different callers, owners, revoked/replaced grants, tampered bytes a
  await db.query('UPDATE hub_rtc_result_handles SET tag=$1 WHERE handle_digest=$2',
   [Buffer.alloc(16,0),rows[0].handle_digest]);
  await expect(readRtcResult(db,actor,stored.handle,0,settings,active())).rejects.toThrow();
- await db.query('UPDATE hub_rtc_result_handles SET expires_at=now()-interval \'1 second\' WHERE handle_digest=$1',
+ await db.query('UPDATE hub_rtc_result_handles SET created_at=now()-interval \'2 hours\', expires_at=now()-interval \'1 hour\' WHERE handle_digest=$1',
   [rows[0].handle_digest]);
  expect(await readRtcResult(db,actor,stored.handle,0,settings,active())).toBeNull();
 });
