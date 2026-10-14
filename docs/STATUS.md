@@ -1,3 +1,13 @@
+## H-3 pinned RTC tool discovery and on-demand schema — PR #158 proposed
+
+The existing socket-pinned, hostname-verified HTTPS TEST transport now has
+a narrowly allowlisted GET-only read of scoped RTC search and exact schema
+endpoints; code verifies canonical prefix, area, read_only profile, readOnly
+metadata, bounded bytes and selected result counts. Synthetic two-service
+transport tests demonstrate refusal/SSRF restrictions. This is H-3 source
+preparation, not deployed/Hub-connected federation or external acceptance.
+No upstream credential, provider mutation, live release or spending.
+
 ## H-2 full TEST developer narrowing and selected targets — PR #157 proposed
 
 One connected full-profile TEST developer can use a **separately sealed,

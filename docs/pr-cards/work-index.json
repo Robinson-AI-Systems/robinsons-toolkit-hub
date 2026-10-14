@@ -413,13 +413,16 @@
         "H-2"
       ],
       "card": "docs/pr-cards/H-3.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "H-3"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Owner-requested 2026-10-12 gateway recovery: K-3 optional, minimum grant/audit safety required before federation; see recovery review and card. READY means card written; dependencies still govern execution."
+      "note": "PR #158 begins H-3 guarded source: scoped pinned HTTPS GET search and exact on-demand read_only schema; synthetic two-service tests. Broker/database routing, POST calls, durable audit, bounded results, exact deployed two-service provider reads/denial/revocation and RTC1 remain OPEN.",
+      "pr": [
+        "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)"
+      ]
     },
     {
       "id": "H-4",
