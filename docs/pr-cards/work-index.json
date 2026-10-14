@@ -397,10 +397,11 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Source staged registry and per-caller encryption in #142–#143, both noncallable. Owner setup, connection-time DNS safety, grant activation and real authenticated acceptance OPEN.",
+      "note": "Owner registry, pinned contract/whoami, separately sealed grant staging and verified active grant resolution implemented through #149. #157 adds eligible-target metadata, full TEST developer narrowing to read_only upstream credentials, and SQL revocation checks. Hosted DB/migration, independently attested upstream deployment and actual provider/Hub-mediated acceptance are OPEN.",
       "pr": [
         "#142 (pending server registry SQL and strict owner staging partial)",
-        "#143 (encrypted caller/session-bound RTC grant staging partial)"
+        "#143 (encrypted caller/session-bound RTC grant staging partial)",
+        "#157 (full TEST caller narrowed to active read_only grant and revocable selective targets; source/SQL)"
       ]
     },
     {
