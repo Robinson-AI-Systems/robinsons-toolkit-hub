@@ -1,3 +1,45 @@
+### Workflow maintenance handoff — owner publication approved
+
+New offline session utility: eight behavioral tests passed, including actual Git ancestry, partial releases, unknown/failed deployments, rollback, dependency gating, invalid queues, PR alignment and bounded output. All repository queues validate. Existing source/status evidence is preserved; no provider acceptance or release was performed. Owner explicitly approved publication on October 14; publish the reviewed maintenance branch, require exact-head CI/reviews, and merge only when those gates pass. No extra production release is authorized by this approval. Full broad application suites on the shared runner were interrupted after resource/time-limit failures; do not claim them passed. Existing exact-head remote CI/review gates must pass before any main merge.
+
+## Release acceptance queue — workflow optimization 2026-10-14
+
+Owner-authorized guidance/tooling maintenance: consolidated session procedure, focused
+checks between meaningful edits, substantial capability grouping, and read-only queued
+acceptance/PR-boundary report. This records source/tooling work, not a live/provider pass.
+The queue below seeds existing outstanding obligations; reconcile exact scenarios and
+already-proven evidence from the unchanged cards/ledger before running. Keep all prior
+open obligations, original fixture ownership, approvals and deployment provenance.
+
+<!-- release-acceptance:start -->
+```json
+[
+  {
+    "id": "HUB-D4",
+    "priority": 1,
+    "requiredRevision": "22b69eb14bcd54b86f5c00aa0567aed1e8f9d3c4",
+    "task": "Complete remaining direct/relay/Sandbox routes, refusal, revocation and cleanup acceptance",
+    "procedure": "docs/pr-cards/D-4.md",
+    "gates": "Reviewed deployed service revisions; separately scoped service passes and owner-approved isolated runners",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+  },
+  {
+    "id": "HUB-FLEET",
+    "priority": 2,
+    "requiredRevision": "22b69eb14bcd54b86f5c00aa0567aed1e8f9d3c4",
+    "task": "Catch up actual hosted fleet observations and permitted authenticated reads",
+    "procedure": "docs/SESSION-START.md",
+    "gates": "Preserve exact revision pins and non-production RTC TEST restrictions; public manifest is not authenticated proof",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+  }
+]
+```
+<!-- release-acceptance:end -->
+
 <!-- Current repair also records no-change daily receipts: backups cannot publish later same-day development after a successful no-op. -->
 ## October 14 owner-requested daily release recovery repair — current
 

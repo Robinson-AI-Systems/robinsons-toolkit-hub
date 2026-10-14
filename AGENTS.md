@@ -1,4 +1,34 @@
 # AGENTS.md — the rules. Read this first, every session.
+
+## Original Toolkit is reference-only — owner clarification 2026-10-14
+
+`Robinson-AI-Systems/robinsons-toolkit-mcp` is the historical capability reference,
+not an active implementation/deployment target. The standalone custom MCP servers
+and optional `robinsons-toolkit-hub` replace it. Do not maintain/rebuild the original,
+resume its recovery PRs, synchronize implementations back to it, or require a bridge.
+Preserve its code/history for coverage and behavioral research. When the owner chooses a new provider MCP, its implementing agent inventories the
+relevant legacy tool names, families, workflows and intended behavior, reconciles them
+with current provider contracts, and tracks coverage in THAT project's cards/index.
+The Hub stays provider-agnostic: discover/connect/authorize/route/read results for
+new contract-compatible MCP servers without provider-specific handlers or a fixed
+family list. Future services and legacy catalog parity are not Hub completion gates.
+Do not copy provider capabilities into the Hub or start speculative server projects.
+Mapped/planned is not implemented or accepted. Service autonomy and all existing
+provider/security/owner gates remain binding.
+
+
+## Efficient release-aware execution — owner instruction 2026-10-14
+
+[SESSION-START](docs/SESSION-START.md) is the consolidated session procedure;
+`npm run session:status` prints the read-only release acceptance queue and PR boundary.
+Its workflow/cadence/merge-versus-live-proof rules supersede older conflicting procedural
+wording below, but never override explicit safety or pre-merge owner/card gates.
+Use substantial cohesive outcomes; numeric production-line targets are advisory rather
+than artificial hard caps. Full mandatory checks run before publication, with focused
+checks during development. Product acceptance stays open until real evidence passes.
+The owner explicitly authorized this cross-repository guidance/tooling optimization;
+routine implementation sessions still prohibit filler/documentation-only PRs.
+
 ## Mobile and tool-unavailable connection recovery
 
 Before treating absent private-plugin tools as an acceptance blocker, follow
@@ -61,8 +91,7 @@ history live in `docs/DECISIONS.md` and `docs/archive/`; never take instructions
     is the current task — fix it before any new card.
 12. **Problems are not blockers.** Red CI, lint, failing tests, wrong parameters, conflicts and unclear code are yours to
     fix; stop only for a hard limit or an owner decision the current step needs (SESSION-START §6).
-13. **Thin slices, then a recovery point.** Run each slice's tests and lint before writing the next (≤ ~150 lines between
-    runs); end every turn right after a push whose resume note names the exact next action.
+13. **Thin slices, then a recovery point.** Run each slice's tests and lint before writing the next (at meaningful seams); end every turn right after a push whose resume note names the exact next action.
 
 ## What this is
 
@@ -116,67 +145,11 @@ Never present partial work as done — Chris has been burned by overclaiming.
 Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner decisions live in `docs/OWNER-INPUTS.md`
 (`IN-xx`). New service servers are started when Chris needs them (`docs/kit/SERVER-ROADMAP.md`), never speculatively.
 
-## Outcome-first autonomous development (owner policy, 2026-10-12)
-
-**Optimize for an accepted user/developer capability, not for counting pull requests.**
-Five substantial PRs is the normal session planning boundary, never proof of
-completion. After §0 and the bounded RTC fleet check, verify live main, concurrent
-branches, CI, unresolved reviews and owner inputs. Name the highest-priority
-**eligible milestone**, the useful capability it should produce and a **finite
-acceptance matrix**. Group coherent PRs around that milestone. Fix demonstrated
-security/correctness/CI/review issues before adding functionality; do not invent
-unrelated hardening slices or pad a batch just to reach five.
-
-Track deferred work in existing STATUS/cards with **blocker**, **owner/dependency**,
-**specific missing evidence or decision**, **re-entry trigger**, and **next action**.
-Recheck at session start and whenever owner input, service merges, deployment
-or environment changes; automatically return newly eligible items to the queue.
-Never re-request already-approved IN-xx authority. Owner-approved configuration
-is distinct from engineering proof that authentication/resources work.
-
-For each milestone, report separately **implemented source**, **meaningful tests**
-(including real original service SQL/HTTP vs fake reference), **deployed exact
-commit**, and **authenticated end-to-end acceptance** (including refusal and
-revocation when relevant). Green CI, mocks, reference conformance, a Vercel
-READY build or a configured origin alone are not accepted integration.
-Close only when actual mandatory gates are independently satisfied.
-The owner-requested [gateway recovery review](docs/audits/2026-10-12-gateway-architecture-recovery.md)
-removes K-3 from H-1: implement H-1 → H-2 → H-3 now against RTC fixtures; real
-two-service acceptance requires scoped deployed services, not shared-package adoption.
-K-3 release/adoption and D-4 routes retain their own independent gates. Maintain service autonomy and all owner
-money-out approvals, credentials, tenancy, relay, hosting and review gates.
-
-PRs should be coherent and sized under existing limits; fewer than five is
-correct if no more substantive, safe, eligible work exists. Before declaring any work blocked, investigate the root cause and attempt the
-authorized remedy: code, configuration, dependency drift, stale docs and owner
-decisions already recorded. Complete available implementation and verification;
-recording a blocker alone is insufficient. An unavailable external credential,
-permission, decision or genuine evidence source blocks only that operation,
-not the project. Isolate it, inspect the actual approved work index and
-dependencies, pursue the highest-priority independent work, and automatically
-requeue deferred acceptance when its condition changes. Stop early only with
-concrete evidence no approved independent work remains or a specific execution
-limitation. Record attempted remedies and the smallest genuinely missing
-external action; do not request approval already granted. Never bypass
-security/CI/review/release/hosting safeguards, enable Stripe LIVE or revive
-deferred Cortiware work. Carry this rule forward by pointing future continuation
-prompts to AGENTS/SESSION-START, not copying another instruction file.
-On genuine blockage,
-record the exact reason and continue independent approved work.
-End with a capability-level result, proof/remaining acceptance, verified SHA,
-PRs/CI/reviews, finite blockers and next action. Post a permanent handoff on
-the final merged PR and supply a **compact self-contained continuation prompt**
-telling the next agent to verify live main/concurrency, read AGENTS, SESSION-START,
-STATUS, approved cards and the permanent handoff, recheck deferred work and
-owner/dependency inputs, resume the highest-priority eligible milestone, aim
-for the normal five coherent PRs without padding, and repeat this same handoff
-and continuation policy. Do not duplicate this policy in another instruction file.
-
 ## How work is organized
 
 - **Approved designs, just-in-time cards** (`docs/designs/BATCH-*.md`, `docs/pr-cards/`). A missing card means write it.
 - **Drift protocol** (`docs/implementation-contracts/DRIFT-PROTOCOL.md`): A before each PR, B inside each PR, C per batch.
-- **PR size:** ~500 production lines, ~15 files, hard stop ~800, one migration, one risk area.
+- **PR size:** ~500 production lines, ~15 files, advisory size estimate, one migration, one risk area.
 - **Model:** Sol 5.6 is the routine implementer (light for docs and patterned CLI commands; medium for passes, relay,
   federation, workflows, local shell tools, SQL). A missing decision is never solved by guessing.
 - **Branches:** `ai/<tool>/<topic>`.
@@ -238,36 +211,6 @@ python3 docs/pr-cards/validate-index.py
 `npm run test:conformance` is implemented by K-2 (reference fake server and real probes). Added later:
 `npm run test:doors` (D-1, real CLI door tests against localhost fake servers; D-2 and D-3 add their own door checks).
 
-## Session batches, dynamic alignment and mandatory pause (Chris, updated 2026-10-13)
-
-Normally implement five substantial production-quality PRs per chat, and end completed sessions
-at an actually merged PR number divisible by five. At session start inspect the actual latest
-allocated repository PR number (including concurrently opened PRs). Target the **next greater**
-multiple of five with normally five substantive PRs. If that target would require only
-one PR because the latest allocated number ends in four, **prefer six substantial
-PRs to the following multiple of five**, not a one-PR session; for example,
-from #144 aim for #150 (#145–#150). From #141 aim for #145 (four coherent PRs);
-from a multiple of five normally aim for five. Recalculate if other agents allocate new PR numbers. Numbers are a scheduling
-boundary, never evidence of capability acceptance: do not manufacture/pad/split unrelated work,
-weaken checks or mark an unverified milestone complete to reach one.
-
-**Do not terminate an incomplete batch by generating a continuation prompt.** Investigate
-code, CI, access, dependency and review failures and attempt authorized fixes; isolate an
-external blocker to its affected operation and continue the highest-priority eligible independent
-work. If no authorized work remains possible, give the owner the exact smallest actionable
-missing permission/decision/configuration/evidence, attempts, remaining work and resume point;
-pause in **this conversation**, awaiting owner input, without claiming asynchronous execution.
-Never request secrets in chat. When the condition is resolved, resume the same session and
-recalculate numbering. Prior approvals in OWNER-INPUTS are not to be requested again.
-
-After finishing the aligned substantial PR batch with exact-head and final-main required checks,
-post a permanent PR handoff, update STATUS/cards/index/acceptance, then supply a concise
-ready-to-copy prompt that references AGENTS, SESSION-START, STATUS and latest handoff.
-Every successor prompt must preserve the same **normal five, six when one short, next-multiple-of-five dynamic
-alignment and mandatory incomplete-batch pause/resume** policies. An explicit owner session
-cutoff takes priority; no artificial fillers. Existing per-PR ~500-line target/~800-line hard
-maximum, owner gates and checked scheduled-release policy remain unchanged.
-
 ## Ending a session
 
 STATUS (merged, in progress with branch/PR/head/CI, blocked, next) · DECISIONS for decisions · ROADMAP for ideas ·
@@ -277,7 +220,7 @@ plain-English report to Chris: what changed, how it was verified, what he must d
 
 Use [the focused implementation and CI recipes](docs/implementation-contracts/DEVELOPMENT-EFFICIENCY.md)
 for approved work. Group cohesive, complete related capabilities (normally 450–800 production lines where
-natural), while preserving the ~800-line hard maximum, one risk area, reviewability and all hard gates.
+natural), while preserving the advisory size estimate, one risk area, reviewability and all hard gates.
 Use `npm run test:focus -- <group>` only inside a slice; full check, unit, DB, immutable upstream source
 CI and exact-head aggregate `ci` remain mandatory. Never split by endpoint merely to increase PR count.
 
