@@ -1,3 +1,16 @@
+## H-3 native MCP selective RTC discovery — PR #159 proposed
+
+The Hub's fixed MCP menu now routes `hub_search_tools`,
+`hub_describe_tool`, `hub_namespaces` and `hub_health` to the
+metadata-only RTC path. At most three eligible active read_only TEST
+service grants are queried per search, with scoped database selection,
+exact grant re-resolution, canonical tool prefix and on-demand schema
+retrieval, bounded content, independent partial-outage reporting and no
+secret disclosure. Health is `discovery_only`, not provider call readiness.
+Synthetic orchestration tests cover success, refusal, partial outage and
+no unintended execution. Live provider dispatch, HTTP parity, audit,
+handles/pagination, RTC1/full deployed two-service acceptance remain OPEN.
+
 ## H-3 pinned RTC tool discovery and on-demand schema — PR #158 proposed
 
 The existing socket-pinned, hostname-verified HTTPS TEST transport now has
