@@ -52,7 +52,8 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   const owned=args.server||args.area&&args.area!=='gateway'?[]:
     runBroker('hub_search_tools',{query:args.query,limit},actor).result.tools;
   const targets=await tools.list(db,actor,{limit:50});
-  const matching=args.server?targets.filter(t=>t.name===args.server):targets;
+  const matching=targets.filter(t=>(!args.server||t.name===args.server)&&
+    (!args.area||t.areas.includes(args.area)));
   if(args.server&&!matching.length)return fail('not_found','No authorized RTC service');
   const chosen=matching.slice(0,3);
   const settled=await Promise.allSettled(chosen.map(async target=>{
