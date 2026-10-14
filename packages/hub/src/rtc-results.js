@@ -23,6 +23,19 @@ function aad(caller,grantId,service) {
    throw TypeError('Invalid RTC grant binding');
  return Buffer.from([caller,grantId,service].join(String.fromCharCode(0)),'utf8');
 }
+// Expired encrypted result handles are no longer available to callers, but
+// without bounded collection they consume the Hub's capped Neon storage forever.
+// This touches only expired RTC handles, never H-1 results or active pages.
+export async function pruneExpiredRtcResults(db,{limit=100}={}) {
+ if(!Number.isInteger(limit)||limit<1||limit>100)
+  throw new TypeError('Invalid RTC expiry collection bound');
+ const {rowCount}=await db.query(`WITH expired AS (
+   SELECT handle_digest FROM hub_rtc_result_handles
+   WHERE expires_at<=now() ORDER BY expires_at,handle_digest LIMIT $1
+  ) DELETE FROM hub_rtc_result_handles existing USING expired
+   WHERE existing.handle_digest=expired.handle_digest`,[limit]);
+ return rowCount;
+}
 export async function storeRtcResult(db,actor,grantId,service,result,settings) {
  const {key,pepper,caller}=validated(actor,settings);
  const associated=aad(caller,grantId,service);
@@ -30,6 +43,7 @@ export async function storeRtcResult(db,actor,grantId,service,result,settings) {
  if(typeof value!=='string')throw TypeError('Invalid RTC JSON');
  const plain=Buffer.from(value,'utf8');
  if(!plain.length||plain.length>65536)throw RangeError('RTC result exceeds storage bound');
+ await pruneExpiredRtcResults(db);
  const handle='rtc_'+randomBytes(32).toString('base64url');
  const nonce=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key,nonce);
  cipher.setAAD(associated);
