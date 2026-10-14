@@ -1,3 +1,18 @@
+## H-3 guarded upstream RTC read execution — PR #160 proposed
+
+Native Hub `hub_call` and sequential read-only `hub_batch` now have
+source-level TEST read routing through active, exact caller-specific
+upstream grant, prefix, on-demand harmless RTC metadata and socket-pinned
+HTTPS one-shot POST. No automatic retry of ambiguous POST outcomes.
+Durable additive 008 PostgreSQL attempt/outcome audit rows correlate
+OAuth/pass caller, owner, grant, service, canonical tool, upstream log
+ID and one operation correlation. Oversize inline result is explicitly
+refused, not truncated. Synthetic HTTP and disposable SQL tests verify
+guards, refusal, audit and partial failures. Source-merged != deployed:
+hosted 008 migration, real RTC deployment/identity pins, two-service
+Hub-mediated read and denial/revocation, HTTP parity, handles/pagination
+and RTC1 conformance remain open. No live provider mutation or release.
+
 ## H-3 native MCP selective RTC discovery — PR #159 proposed
 
 The Hub's fixed MCP menu now routes `hub_search_tools`,
