@@ -16,11 +16,11 @@ const owner='owner-one';
 let db,schema,actor,issued,grantId,handle;
 const passParams={ownerId:owner,profile:'read_only',areas:['gateway'],
   mode:'test',allowWrites:false,ttlSeconds:3600,serverNames:['stripe']};
-const input=(callerId)=>({ownerId:owner,serverName:'stripe',
+const input=(callerId,serverName='stripe')=>({ownerId:owner,serverName,
   callerKind:'pass',callerId,areas:['billing','reports'],
   pass:upstreamPass,ttlSeconds:3600});
-async function stagedAndActive(callerId) {
- const staged=await stageCallerGrant(db,input(callerId),{ownerVerified:true,settings});
+async function stagedAndActive(callerId,serverName='stripe') {
+ const staged=await stageCallerGrant(db,input(callerId,serverName),{ownerVerified:true,settings});
  await activateVerifiedCallerGrant(db,{ownerId:owner,id:staged.id},settings,
   {ownerVerified:true,inspect:async arg=>({
    server:arg.name,prefix:arg.prefix,areas:arg.areas,
@@ -109,8 +109,12 @@ it('refuses attempts to restore an eliminated area or use another owner identity
   .toBeNull();
 });
 it('two independent DB connections cannot race area removals into expanded permissions',async()=>{
- const second=await issueHubPass(db,passParams,{pepper,ownerVerified:true});
- const raceId=await stagedAndActive(second.id);
+ // H-2 intentionally allows staging only while the target is pending.
+ // Use a fresh independently scoped TEST service rather than weakening that gate.
+ await db.query("INSERT INTO hub_servers(name,owner_id,prefix,origin,claimed_rtc,claimed_counts) VALUES('workspace',$1,'workspace','https://workspace.example.com',1,'{\"tools\":5,\"writes\":0,\"money\":0}')",[owner]);
+ const second=await issueHubPass(db,{...passParams,serverNames:['workspace']},
+  {pepper,ownerVerified:true});
+ const raceId=await stagedAndActive(second.id,'workspace');
  const peer=new pg.Client({connectionString:process.env.TEST_DATABASE_URL});
  await peer.connect();
  try{
@@ -124,7 +128,7 @@ it('two independent DB connections cannot race area removals into expanded permi
   expect(updates.filter(x=>x.updated)).toHaveLength(1);
   const selected=updates.find(x=>x.updated).areas;
   const raceActor=await authenticateHubPass(db,'Bearer '+second.pass,{pepper});
-  expect((await resolveActiveCallerGrant(db,{actor:raceActor,serverName:'stripe'},settings)).areas)
+  expect((await resolveActiveCallerGrant(db,{actor:raceActor,serverName:'workspace'},settings)).areas)
    .toEqual(selected);
   expect((await db.query('SELECT count(*)::int AS total FROM hub_grant_scope_audit WHERE grant_id=$1',[raceId])).rows[0].total).toBe(1);
   expect(await revokeHubPass(db,second.id,owner,{ownerVerified:true})).toBe(true);
