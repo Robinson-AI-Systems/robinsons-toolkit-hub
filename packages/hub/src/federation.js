@@ -8,6 +8,7 @@ import {searchCursorScope,issueSearchCursor,openSearchCursor} from './search-cur
 import {issueProviderCursor,openProviderCursor,validProviderPage} from './provider-cursor.js';
 import {issueFleetCursor,openFleetCursor,maxFleetDepth} from './fleet-cursor.js';
 import {scopedCatalogueCache} from './catalogue-cache.js';
+import {scopedSchemaCache} from './schema-cache.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
@@ -52,7 +53,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   search:searchPinnedRtcTools,describe:describePinnedRtcTool,
   read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
   storeResult:storeRtcResult,readResult:readRtcResult,
-  cache:scopedCatalogueCache,...deps};
+  cache:scopedCatalogueCache,schemaCache:scopedSchemaCache,...deps};
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
   const targets=await tools.list(db,actor,{limit:100});
@@ -376,10 +377,19 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!grant)return fail('outside_scope','RTC grant unavailable');
   try {
-   const schema=await tools.describe(grant,args.name);
+   // Cache only independently grant-narrowed DESCRIBE responses. Real
+   // execution preflight below still fetches live provider metadata for
+   // every POST. No cached readOnlyHint can authorize execution.
+   const schema=await ((tools.describe===describePinnedRtcTool||deps.schemaCache)
+    ?tools.schemaCache.describe({actor,target,grant,name:args.name,settings},
+      ()=>tools.describe(grant,args.name))
+    :tools.describe(grant,args.name));
    const refreshed=await tools.resolve(db,{actor,serverName:target.name},settings);
-   if(!sameGrant(grant,refreshed) || !grant.areas.includes(schema.area))
-    return fail('outside_scope','RTC grant changed during schema lookup');
+   if(!sameGrant(grant,refreshed) || !grant.areas.includes(schema.area) ||
+     schema.name!==args.name || schema.writes!==false ||
+     schema.money!==false || schema.destructive!==false ||
+     schema.annotations?.readOnlyHint!==true)
+    return fail('outside_scope','RTC read-only schema no longer granted');
    return {ok:true,result:{...schema,server:target.name}};
   }
   catch{return fail('unavailable','RTC schema unavailable or refused');}

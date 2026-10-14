@@ -1,3 +1,21 @@
+## H-3 separately scoped, short-lived on-demand read schema cache — new source PR
+
+RTC schema descriptions can be reused for 15 seconds only for the same
+verified service/owner/caller/grant/endpoint/tool context. Concurrent
+DESCRIBE requests for that exact identity share one pinned GET, while
+each caller independently rechecks its current grant afterward. Invalid,
+oversized, write-capable, foreign-area, failed and unsafe schemas are not
+cached or disclosed. One 32-entry/192-KiB memory limit prevents unbounded
+metadata buildup; no network destinations or credentials are added.
+
+**Every actual provider tool POST still fetches its own live readOnlyHint
+metadata and performs durable audit before dispatch.** The cache is never
+execution authorization. Native MCP and authenticated HTTPS describe use
+one shared guarded path. Tests cover freshness, isolated concurrent hits,
+expiry, 32-entry eviction, denial/rotation, active-grant rechecks, POST
+metadata drift, and redaction. No deployment or authenticated provider
+acceptance is claimed. HUB-H3-SCHEMAS is PENDING.
+
 ## H-3 fleet-wide complete RTC catalogue paging and scoped metadata cache — source awaiting reviewed PR
 Broad read_only TEST search can now continue past both the next authorized
 service and the individual RTC provider's next catalogue page in one
@@ -286,6 +304,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     ],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Source and synthetic 5/100-service/HTTP/MCP/cache/revocation tests assembled in one H-3 feature PR; no newly verified ready deployment, provider-paged two-service acceptance, same-pass revocation or real fixture cleanup."
+  },
+  {
+    "id": "HUB-H3-SCHEMAS",
+    "priority": 10,
+    "requiredRevision": "ea80257f06dd23daf3345855c59f4f998c4b2e35",
+    "task": "Verify a checked Hub production deployment uses only independently narrowed authenticated RTC1 TEST schema GETs, on-demand cached DESCRIBE parity through native/HTTP, reauthorization and provider metadata drift/write denial, with direct provider readback",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "New merged implementation checked READY; real isolated two-service scoped TEST passes; no LIVE provider write, grant rotation and standalone acceptance separate",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Read-only, concurrent, caller/grant/verified-origin-bound 15s describe cache source/fixtures on PR branch; deployed custom RTC schema and revocation evidence outstanding."
   }
 ]
 ```

@@ -129,7 +129,9 @@ it('selects longest canonical service prefix for nested registered services',asy
  d2.list.mockResolvedValueOnce([shallower,deeper]);
  d2.resolve.mockResolvedValue(selectedGrant);
  d2.describe.mockResolvedValueOnce({name:'foo_bar_item_list',
-   area:'billing',inputSchema:{type:'object'},writes:false});
+   area:'billing',description:'Safe TEST metadata',profiles:['read_only'],
+   annotations:{readOnlyHint:true},inputSchema:{type:'object'},
+   writes:false,money:false,destructive:false});
  const described=await runFederatedBroker('hub_describe_tool',
    {name:'foo_bar_item_list'},actor,{},{},d2);
  expect(described.result.server).toBe('foo_bar_service');
