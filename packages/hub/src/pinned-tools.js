@@ -45,20 +45,26 @@ function validateResponse(data) {
 }
 // This module performs only authenticated GET reads under the sealed RTC
 // read_only pass. It cannot execute a tool or forward a Hub bearer.
-export async function searchPinnedRtcTools(target,{query='',area,limit=10}={},transport={}) {
+export async function searchPinnedRtcTools(target,{query='',area,limit=10,cursor}={},transport={}) {
   expectTarget(target);
   if(typeof query!=='string'||query.length>120||
     !Number.isInteger(limit)||limit<1||limit>20||
-    (area!==undefined&&(!areaPattern.test(area)||!target.areas.includes(area))))
+    (area!==undefined&&(!areaPattern.test(area)||!target.areas.includes(area)))||
+    (cursor!==undefined&&(typeof cursor!=='string'||
+      !/^[A-Za-z0-9_.~-]{1,128}$/.test(cursor))))
     throw new TypeError('Outside RTC search scope');
   const params=new URLSearchParams({q:query,limit:String(limit)});
   if(area)params.set('area',area);
+  if(cursor!==undefined)params.set('cursor',cursor);
   const data=validateResponse(await pinnedRtcJsonGet(target.origin,
     '/api/tools?'+params.toString(),{...transport,pass:target.pass}));
   if(!Array.isArray(data.tools)||data.tools.length>limit)
     throw new Error('RTC search result count refused');
+  if(data.next!==null&&data.next!==undefined&&
+    (typeof data.next!=='string'||!/^[A-Za-z0-9_.~-]{1,128}$/.test(data.next)))
+    throw new Error('Unsafe RTC upstream continuation');
   const tools=data.tools.map(t=>withinScope(t,target,false)).filter(Boolean);
-  return {tools,next:null,incomplete:data.next!==null&&data.next!==undefined};
+  return {tools,next:data.next??null,incomplete:data.next!==null&&data.next!==undefined};
 }
 export async function describePinnedRtcTool(target,name,transport={}) {
   expectTarget(target);
