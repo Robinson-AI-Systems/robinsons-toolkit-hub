@@ -85,7 +85,7 @@ describe('rtool MCP local CLI integration', () => {
       });
       input.end(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) + '\n');
       expect(await running).toBe(0);
-      expect(JSON.parse(out).result.tools).toHaveLength(10);
+      expect(JSON.parse(out).result.tools).toHaveLength(11);
       expect(err).toBe('');
     }));
 });
