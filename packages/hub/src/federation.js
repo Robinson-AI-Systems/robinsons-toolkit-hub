@@ -5,6 +5,7 @@ import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit,newRtcCorrelation} from './rtc-read-audit.js';
 import {storeRtcResult,readRtcResult} from './rtc-results.js';
 import {searchCursorScope,issueSearchCursor,openSearchCursor} from './search-cursor.js';
+import {issueProviderCursor,openProviderCursor} from './provider-cursor.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
@@ -93,7 +94,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     (args.area!==undefined&&!areaPattern.test(args.area))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||
       args.limit<1||args.limit>20))||
-    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>160)))
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>384)))
     return fail('invalid_args','Invalid search parameters');
   const limit=args.limit??10;
   if(args.server==='hub')return runBroker('hub_search_tools',
@@ -105,20 +106,27 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     (!args.area||t.areas.includes(args.area)));
   if(args.server&&!matching.length)return fail('not_found','No authorized RTC service');
   const scope=searchCursorScope(actor,args,matching);
-  let offset=0;
+  // A selected service can follow its own RTC next page; broad search
+  // continues to page across services, never multiplying fan-out.
+  const focused=Boolean(args.server && matching.length===1);
+  let offset=0,providerCursor=null;
   if(args.cursor!==undefined){
-   try{offset=openSearchCursor(args.cursor,scope,settings);}
-   catch{return fail('unavailable','RTC search continuation unavailable');}
-   if(offset===null||offset>=matching.length)
+   try {
+    if(focused)providerCursor=openProviderCursor(args.cursor,scope,settings);
+    else offset=openSearchCursor(args.cursor,scope,settings);
+   } catch{return fail('unavailable','RTC search continuation unavailable');}
+   if((focused && providerCursor===null)||
+      (!focused && (offset===null||offset>=matching.length)))
     return fail('invalid_args','Search continuation invalid or expired');
   }
-  const chosen=matching.slice(offset,offset+Math.min(3,limit));
+  const chosen=matching.slice(offset,offset+(focused?1:Math.min(3,limit)));
   const settled=await Promise.allSettled(chosen.map(async target=>{
    if(args.area&&!target.areas.includes(args.area))return {tools:[],incomplete:false};
    const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
    if(!grant)throw new Error('Grant unavailable');
    const discovered=await tools.search(grant,{query:args.query,
-    area:args.area,limit:Math.min(limit,10)});
+    area:args.area,limit:Math.min(limit,10),
+    ...(providerCursor!==null?{cursor:providerCursor}:{})});
    const refreshed=await tools.resolve(db,{actor,serverName:target.name},settings);
    if(!sameGrant(grant,refreshed))
     throw new Error('RTC grant changed during metadata lookup');
@@ -135,8 +143,9 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     failures.push({server:chosen[i].name,code:'unavailable'});
     incomplete=true;
    } else {
-    incomplete ||= state.value.incomplete===true;
-    candidates.push({server:chosen[i].name,tools:state.value.tools});
+    incomplete ||= state.value.incomplete===true||state.value.next!=null;
+    candidates.push({server:chosen[i].name,tools:state.value.tools,
+      next:state.value.next??null});
    }
   }
   function include(entry) {
@@ -159,7 +168,10 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     include({...tool,server:provider.server});
   }
   let next=null;
-  if(offset+chosen.length<matching.length) {
+  if(focused && candidates.length===1 && candidates[0].next!==null) {
+    try{next=issueProviderCursor(scope,candidates[0].next,settings);}
+    catch{return fail('unavailable','RTC provider continuation unavailable');}
+  } else if(!focused && offset+chosen.length<matching.length) {
     try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
     catch{return fail('unavailable','RTC search continuation unavailable');}
   }
