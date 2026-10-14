@@ -5,7 +5,10 @@ silently losing additional provider tools. Opaque provider continuations
 are AES-GCM sealed and tied to exact caller/grant/revision scope; forged,
 expired or rotated tokens are refused before any provider network call.
 Broad three-provider search and bounded service cursors remain unchanged.
-Source and synthetic tests are not release or real-provider evidence.
+Reviewed upstream provider code identifies numeric-offset RTC listing for
+Stripe and decimal-page RTC listing for Workspace; Hub now emits only that
+observed selector style under pinned allowlisted GET. Source and synthetic
+tests are not release or real-provider evidence.
 Production RTC cursor compatibility, authenticated browse and revocation
 readbacks are queued as HUB-H3-UPSTREAM-PAGES; no release/spending requested.
 
