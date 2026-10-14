@@ -13,7 +13,8 @@ async function invoke(method,body,overrides={}) {
     verify:vi.fn(async(_db,_req,pass)=>({approved:pass==='synthetic-owner-auth'})),
     probe:vi.fn(async()=>({tools:12,writes:2,money:0})),
     stage:vi.fn(async()=>({state:'pending',callable:false})),
-    list:vi.fn(async()=>[]),disable:vi.fn(async()=>true),...overrides};
+    list:vi.fn(async()=>[]),disable:vi.fn(async()=>true),
+    retire:vi.fn(async()=>({disabled:true,revokedCount:2})),...overrides};
   await handleOwnerServers({method,body,headers:{
     'content-type':'application/x-www-form-urlencoded'},
     socket:{remoteAddress:'127.0.0.1'}},res,deps);
@@ -81,4 +82,34 @@ it('refuses duplicates, malformed origins, blocked accounts, methods and content
   expect(failure.res.html).not.toContain('dns refused');
   expect((await invoke('GET',null,{env:{...env,HUB_PUBLIC_ORIGIN:'http://example.com'}}))
     .res.code).toBe(503);
+});
+
+it('requires exact owner verification and typed RETIRE before atomic TEST grant cleanup',async()=>{
+ const form=await invoke('GET');
+ expect(form.res.html).toContain('Type RETIRE');
+ const body='action=retire&name=stripe&confirm=RETIRE&password=synthetic-owner-auth';
+ const invalid=await invoke('POST',body.replace('confirm=RETIRE','confirm=yes'));
+ expect(invalid.res.code).toBe(400);
+ expect(invalid.deps.retire).not.toHaveBeenCalled();
+ const unauthenticated=await invoke('POST',body.replace(
+  'synthetic-owner-auth','incorrect'));
+ expect(unauthenticated.res.code).toBe(401);
+ expect(unauthenticated.deps.retire).not.toHaveBeenCalled();
+ const {res,deps}=await invoke('POST',body);
+ expect(res.code).toBe(200);
+ expect(res.html).toContain('2 remaining scoped grants revoked');
+ expect(deps.retire).toHaveBeenCalledWith(expect.anything(),
+  {ownerId:'owner-one',name:'stripe'},{ownerVerified:true});
+ expect(deps.probe).not.toHaveBeenCalled();
+ expect(deps.stage).not.toHaveBeenCalled();
+ expect(res.html).not.toContain('synthetic-owner-auth');
+});
+it('does not leak grant identities on retirement failure',async()=>{
+ const body='action=retire&name=stripe&confirm=RETIRE&password=synthetic-owner-auth';
+ const error=await invoke('POST',body,{retire:async()=>{
+  throw Error('private sealed grant details')}});
+ expect(error.res.code).toBe(503);
+ expect(error.res.html).not.toContain('private sealed');
+ const unknown=await invoke('POST',body,{retire:async()=>null});
+ expect(unknown.res.code).toBe(404);
 });
