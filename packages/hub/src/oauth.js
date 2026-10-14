@@ -255,9 +255,9 @@ export async function narrowOwnerOAuthFamilyServers(db,{ownerId,sessionId,server
             (different.owner_id<>s.owner_id OR different.revoked_at IS NOT NULL
              OR different.allowed_servers IS DISTINCT FROM s.allowed_servers))
         AND NOT EXISTS(
-          SELECT 1 FROM unnest($3::text[]) choice
+          SELECT 1 FROM unnest($3::text[]) AS choice(name)
           WHERE NOT EXISTS(SELECT 1 FROM hub_servers owned
-            WHERE owned.name=choice AND owned.owner_id=$2))
+            WHERE owned.name=choice.name AND owned.owner_id=$2))
     ), tightened AS (
       UPDATE hub_oauth_sessions s SET allowed_servers=$3::text[]
       WHERE s.family_id IN (SELECT family_id FROM target)
@@ -271,6 +271,7 @@ export async function narrowOwnerOAuthFamilyServers(db,{ownerId,sessionId,server
       WHERE grant.id=h.grant_id AND grant.owner_id=$2
         AND grant.caller_kind='oauth'
         AND grant.server_name<>ALL($3::text[])
+        AND EXISTS(SELECT 1 FROM tightened)
         AND grant.caller_id IN (SELECT id FROM hub_oauth_sessions
           WHERE family_id IN (SELECT family_id FROM target))
       RETURNING h.handle_digest
