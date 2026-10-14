@@ -67,7 +67,7 @@ it('routes HTTP POST through exact grant, readOnlyHint and durable attempt/outco
  expect(reply.body.result).toMatchObject({
   name:'stripe_invoice_list',server:'stripe',upstreamLogId:'rtc_read_log_1',
   result:{invoices:['TEST-1']}});
- expect(upstream.resolve).toHaveBeenCalledTimes(2);
+ expect(upstream.resolve).toHaveBeenCalledTimes(3);
  expect(upstream.read).toHaveBeenCalledWith(grant,'stripe_invoice_list',{limit:1});
  expect(upstream.audit).toHaveBeenCalledTimes(2);
  const attempt=upstream.audit.mock.calls[0][1],outcome=upstream.audit.mock.calls[1][1];
