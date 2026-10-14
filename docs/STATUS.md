@@ -1,3 +1,7 @@
+## L-1 guarded local MCP commands — PR #188 source proposal
+
+Independent approved L-1 work after PR #187: implement a bounded owner-opted-in local read-command door without arbitrary process execution, with explicit confirmation for non-default commands. Real-filesystem/MCP regression tests cover opt-in, traversal, symlink escape, byte/output bounds, confirmation and injection denial. Source/CI proof only until exact-head jobs pass; no provider calls, owner credentials, manual release or hosted production writes. L-1 remains IN_PROGRESS and general arbitrary-shell security is not represented as complete.
+
 ## Focused roadmap-throughput averages and remaining-work measurement — source PR #187
 
 Owner-directed planning averages: 400–800 changed production-code lines
