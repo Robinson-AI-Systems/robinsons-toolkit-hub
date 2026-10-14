@@ -1,3 +1,14 @@
+## October 14 outcome-sized agent-session policy — PR #181 source
+The owner replaced fixed five-PR session quotas and divisible-by-five PR-number
+boundaries with complete approved roadmap slices grouped into compatible,
+reviewable large PRs. Roughly 500–800 meaningful production lines plus tests
+is advisory for suitable coherent work, never a minimum, quota or reason to
+pad features; risk, quality gates and integration decide packaging. Every
+merged PR is a durable context-recovery checkpoint. The read-only
+`session:status` CLI now reports the observed PR only informationally.
+This change does not advance H-3 provider acceptance, release source to
+production, activate RTC grants or relax any owner/security/spending gate.
+
 ## October 14 H-3 owner-confirmed temporary TEST service retirement — PR #180 (source proposal)
 A verified owner may retire one exact Hub RTC registry service and revoke
 its remaining TEST grants atomically after entering a typed confirmation.
