@@ -22,7 +22,7 @@ it('keeps a fixed and bounded Hub-only search and describe catalog', async () =>
   expect(found.body.result.tools.map(x => x.name)).toEqual(['hub_health']);
   expect(found.body.result.next).toBeNull();
   expect((await send('item', 'GET', { name: 'hub_whoami' })).body.result.writes).toBe(false);
-  expect((await send('item', 'GET', { name: 'stripe_send_money' })).code).toBe(400);
+  expect((await send('item', 'GET', { name: 'stripe_send_money' })).code).toBe(403);
   expect((await send('item', 'GET', { name: 'hub_unknown' })).code).toBe(404);
   expect((await send('list', 'GET', { limit: '1000' })).code).toBe(400);
 });
@@ -36,7 +36,7 @@ it('runs only harmless scoped Hub tools and bounded read-only batches', async ()
   expect(batch.body.result.results).toHaveLength(2);
   expect((await send('batch', 'POST', {}, { calls: [
     { name: 'hub_health', args: {} }, { name: 'stripe_send_money' }
-  ] })).code).toBe(400);
+  ] })).code).toBe(403);
   expect((await send('batch', 'POST', {}, { calls: Array(11).fill({ name: 'hub_health' }) })).code).toBe(400);
   expect((await send('item', 'POST', { name: 'hub_health' }, { x: 'x'.repeat(9000) })).code).toBe(400);
 });
