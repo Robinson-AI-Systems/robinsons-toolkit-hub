@@ -1,3 +1,16 @@
+
+## H-4 OAuth connection-family owner management — source PR pending
+
+Owner-only OAuth family metadata now shows the latest live session for each
+family without access/refresh bearer, digest or upstream service secret. The
+owner can revoke the entire selected TEST family with one conditional SQL
+operation that also deletes prior encrypted RTC result-page handles and
+records an immutable nonsecret audit. Replay and stale grants stay refused;
+reissuance requires a fresh independently owner-approved PKCE authorization
+and freshly scoped upstream service grants. Additive SQL 013 is required for
+this owner action and fails closed when absent. Synthetic unit and isolated
+PostgreSQL tests do not install hosted migrations or close real RTC acceptance.
+
 ## October 14 session handoff — source #188–#192, finish exactly five gated PRs
 
 Verified main before #192: a745623a91363eb541e06f05e749030158494932 (#191 merged). Earlier four session merges: #188 c8d0fee389ebca0cbc5227a35e0ee421d7d921c1 (L-1 bounded local read commands), #189 099ddba2fec173c2598ad5a2448c051812c6236e (H-4 Hub pass selected RTC servers), #190 10a900ff80e2538cb8f499f907236ee672fd2760 (H-4 OAuth refresh family scopes), #191 a745623a91363eb541e06f05e749030158494932 (H-4 owner-only atomic server narrowing). PR #192 must independently pass exact-head unit, real disposable DB, check/index/lint/developer, original Stripe SQL/HTTP and release-policy, resolve review threads, and merge before the session's five-PR outcome can be claimed. Actual fifth merge SHA is established only from GitHub, not predicted in this document.
@@ -453,6 +466,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Source PR #192 owner-only area ceiling, unchanged encrypted upstream grant, atomic audit and result deletion with disposable PostgreSQL integration are not deployment or external RTC acceptance."
+  },
+  {
+    "id": "HUB-H4-OWNER-OAUTH-LIFECYCLE",
+    "priority": 16,
+    "requiredRevision": "SOURCE_PIN_PENDING",
+    "introducedFile": "packages/hub/migrations/013-hub-owner-oauth-audit.sql",
+    "task": "Verify owner-only OAuth family metadata, exact family revocation, durable redacted family audit, refresh/access denial and old encrypted RTC handle invalidation with real hosted TEST",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Checked READY deployment containing migration 013 and prior 010/011/012; independently authenticated owner and genuine service-issued TEST/read_only caller with active RTC grant; inspect durable audit and provider read/no-write",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: H-4 owner OAuth family lifecycle source, synthetic HTTP and disposable SQL evidence only; no hosted owner or real RTC TEST readback."
   }
 ]
 ```
