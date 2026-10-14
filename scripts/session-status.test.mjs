@@ -55,13 +55,22 @@ test('real git refs and ancestry drive the offline CLI without network/mutations
   try {
     git('init'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.invalid');
     mkdirSync(join(root, 'docs')); writeFileSync(join(root, 'file'), 'first'); git('add', '.'); git('commit', '-m', 'first'); const first = git('rev-parse', 'HEAD');
+    mkdirSync(join(root, 'packages/hub/src'), { recursive: true });
+    writeFileSync(join(root, 'packages/hub/src/feature.js'), 'export const ready = true;\n');
     writeFileSync(join(root, 'file'), 'second'); git('add', '.'); git('commit', '-m', 'second'); const second = git('rev-parse', 'HEAD');
     git('update-ref', 'refs/remotes/origin/main', second); git('update-ref', 'refs/remotes/origin/live', first);
     writeFileSync(join(root, 'docs/session-policy.json'), JSON.stringify({ repository: 'fixture/repo', ledger: 'docs/STATUS.md', instructions: 'AGENTS.md' }));
     writeFileSync(join(root, 'docs/STATUS.md'), block([row('FIRST', first), row('SECOND', second)]));
     const before = git('status', '--porcelain');
     const output = run(root, ['--deployed', first, '--state', 'READY', '--latest-pr', '104']);
-    assert.match(output, /FIRST DEPLOYED_CANDIDATE_CHECK_GATES/); assert.match(output, /SECOND WAIT_RELEASE_OR_FETCH_HISTORY/); assert.match(output, /Latest observed PR: #104 \(informational only/); assert.doesNotMatch(output, /Next session boundary/);
+    assert.match(output, /FIRST DEPLOYED_CANDIDATE_CHECK_GATES/); assert.match(output, /SECOND WAIT_RELEASE_OR_FETCH_HISTORY/);
+    writeFileSync(join(root, 'docs/STATUS.md'), block([
+      { ...row('MISPUN', first), introducedFile: 'packages/hub/src/feature.js' },
+      { ...row('PINNED', second), introducedFile: 'packages/hub/src/feature.js' }
+    ]));
+    const pinnedReport = run(root, ['--deployed', first, '--state', 'READY']);
+    assert.match(pinnedReport, /MISPUN VERIFY_SOURCE_PIN/);
+    assert.match(pinnedReport, /PINNED WAIT_RELEASE_OR_FETCH_HISTORY/); assert.match(output, /Latest observed PR: #104 \(informational only/); assert.doesNotMatch(output, /Next session boundary/);
     assert.equal(git('status', '--porcelain'), before);
     assert.match(run(root, []), /VERIFY_DEPLOYMENT/);
     assert.throws(() => run(root, ['--deployed', first])); assert.throws(() => run(root, ['--deployed', first, '--state', 'FAKE'])); assert.throws(() => run(root, ['--latest-pr', '1.5']));
@@ -70,4 +79,25 @@ test('real git refs and ancestry drive the offline CLI without network/mutations
     assert.doesNotMatch(run(root, ['--limit', '12']), /additional tasks/);
     assert.throws(() => run(root, ['--limit', '0']));
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('a source-specific queue entry refuses a predecessor commit even if it has been deployed', () => {
+  const introducedFile = 'packages/hub/src/feature.js';
+  const older = { ...row('NEW', a), introducedFile };
+  const pending = planQueue([older], obs, ancestor, () => false);
+  assert.equal(pending[0].disposition, 'VERIFY_SOURCE_PIN');
+  const ready = planQueue([{ ...older, requiredRevision: b }], obs,
+    ancestor, (revision, path) => revision === b && path === introducedFile);
+  assert.equal(ready[0].disposition, 'DEPLOYED_CANDIDATE_CHECK_GATES');
+  const unknown = planQueue([{ ...older, requiredRevision: b }], obs, ancestor);
+  assert.equal(unknown[0].disposition, 'VERIFY_SOURCE_PIN');
+});
+test('source marker validation refuses traversal and duplicate separators', () => {
+  for (const introducedFile of ['../outside', 'packages/../../outside',
+    '/tmp/private', 'packages//hub/src/file.js', '', 42]) {
+    assert.throws(() => readQueue(block([{ ...row(), introducedFile }])));
+  }
+  assert.equal(readQueue(block([{ ...row(),
+    introducedFile: 'packages/hub/src/feature.js' }]))[0].introducedFile,
+  'packages/hub/src/feature.js');
 });

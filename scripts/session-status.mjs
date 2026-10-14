@@ -23,6 +23,12 @@ export function readQueue(text) {
     if (!row || !/^[A-Z0-9][A-Z0-9-]{0,63}$/.test(row.id) || ids.has(row.id)) throw new Error('Invalid or duplicate acceptance ID.');
     ids.add(row.id);
     if (!SHA.test(row.requiredRevision) || !states.has(row.status)) throw new Error(`Invalid revision/status: ${row.id}`);
+    // Optional immutable source marker guards newly implemented acceptance
+    // against accidentally pinning the PR's *base* instead of feature code.
+    if (row.introducedFile !== undefined && (typeof row.introducedFile !== 'string' ||
+      !/^(packages|api|scripts|tests)\/[A-Za-z0-9._/-]+$/.test(row.introducedFile) ||
+      row.introducedFile.includes('..') || row.introducedFile.includes('//')))
+      throw new Error(`Invalid source marker: ${row.id}`);
     if (!Number.isSafeInteger(row.priority) || row.priority < 1) throw new Error(`Invalid priority: ${row.id}`);
     for (const key of ['task', 'procedure', 'gates', 'lastEvidence']) {
       if (typeof row[key] !== 'string' || !row[key].trim() || row[key].length > 1200) throw new Error(`Missing/bounded ${key}: ${row.id}`);
@@ -45,7 +51,7 @@ export function readQueue(text) {
   return rows;
 }
 
-export function planQueue(rows, observation, isAncestor) {
+export function planQueue(rows, observation, isAncestor, verifySource = () => null) {
   const { main, live, deployed, deploymentState } = observation;
   for (const [name, sha] of Object.entries({ main, live, deployed })) {
     if (sha !== null && sha !== undefined && !SHA.test(sha)) throw new Error(`Use an exact full ${name} SHA.`);
@@ -55,7 +61,11 @@ export function planQueue(rows, observation, isAncestor) {
   const included = row => ready && isAncestor(row.requiredRevision, deployed) === true;
   return [...rows].sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id)).map(row => {
     let disposition;
-    if (!ready) disposition = 'VERIFY_DEPLOYMENT';
+    // Missing/unknown immutable source identity is never an eligible
+    // deployed feature, even when a preceding merge was released.
+    if (row.introducedFile && verifySource(row.requiredRevision, row.introducedFile) !== true)
+      disposition = 'VERIFY_SOURCE_PIN';
+    else if (!ready) disposition = 'VERIFY_DEPLOYMENT';
     else if (!included(row)) disposition = row.status === 'PASSED' ? 'RECHECK_AFTER_ROLLBACK' : 'WAIT_RELEASE_OR_FETCH_HISTORY';
     else if (row.status === 'PASSED') disposition = 'RECORDED_PASS';
     else if (row.status === 'BLOCKED') disposition = 'RECHECK_EXTERNAL_GATE';
@@ -92,7 +102,8 @@ export function run(root, args) {
     if (!git(root, 'cat-file', '-t', a) || !git(root, 'cat-file', '-t', b)) return null;
     return git(root, 'merge-base', '--is-ancestor', a, b) !== null;
   };
-  const plan = planQueue(rows, observation, ancestor);
+  const plan = planQueue(rows, observation, ancestor, (revision, path) =>
+    git(root, 'cat-file', '-e', revision + ':' + path) !== null);
   const limit = flags['--limit'] === undefined ? 10 : Number(flags['--limit']);
   if (flags['--limit'] !== undefined && (!/^\d+$/.test(flags['--limit']) || !Number.isSafeInteger(limit) || limit < 1 || limit > 1000)) throw new Error('Limit must be an integer from 1 to 1000.');
   const active = plan.filter(row => row.disposition !== 'RECORDED_PASS');
