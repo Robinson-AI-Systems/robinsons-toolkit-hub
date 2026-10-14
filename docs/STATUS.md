@@ -1,3 +1,10 @@
+## October 14 H-3 in-flight read grant revocation — PR #175 (source proposal)
+Hub now withholds completed upstream RTC read results if the caller's grant
+was revoked or replaced while the provider POST was in flight, after durable
+attempt/outcome audit. No automatic retry, no key disclosure or success on a
+failed final grant check; the final validation also gates encrypted handles.
+Real TEST issuer revocation, native/HTTPS readback and D-4 routes remain OPEN.
+
 ## October 14 H-3 metadata reauthorization — PR #174 (source proposal)
 Authenticated provider-search and on-demand-schema results are now rechecked
 against the original caller-specific, current active grant immediately after
