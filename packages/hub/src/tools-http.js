@@ -6,6 +6,10 @@ const serverName = /^[a-z][a-z0-9_]{1,59}$/;
 const areaName = /^[a-z][a-z0-9_]{0,59}$/;
 const deny = code => ({ ok: false, error: { code } });
 const selectTool = name => brokerCatalog().find(tool => tool.name === name);
+const federatedHubTools = new Set([
+  'hub_health', 'hub_search_tools', 'hub_describe_tool',
+  'hub_call', 'hub_batch', 'hub_namespaces'
+]);
 function inScope(actor) {
   return actor?.mode === 'test' && Array.isArray(actor.areas) &&
     actor.areas.includes('gateway') && actor.allowWrites !== true;
@@ -143,6 +147,13 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
       }
       if (route === 'item') {
         if (selectTool(name)) {
+          // Public broker names must use the same authorized, audited RTC
+          // dispatcher as native MCP and direct provider HTTPS calls. The
+          // synchronous foundation would otherwise misreport health and
+          // silently refuse already-eligible federated read operations.
+          if (federatedHubTools.has(name))
+            return respondFederated(res, await federate(name, req.body,
+              actor, db, settings));
           const result = runTool(name, req.body, actor);
           return send(res, result, result.ok ? 200 : 400);
         }
@@ -153,7 +164,8 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
       }
       // Keep existing Hub-only batches stable. Mixed service batches use
       // the single audited, non-retrying, sequential H-3 implementation.
-      if (req.body.calls.every(call => selectTool(call.name))) {
+      if (req.body.calls.every(call => selectTool(call.name) &&
+        !federatedHubTools.has(call.name))) {
         const calls = req.body.calls.map(call => runTool(call.name, call.args, actor));
         if (calls.some(call => !call.ok))
           return res.status(400).json(deny('invalid_args'));
