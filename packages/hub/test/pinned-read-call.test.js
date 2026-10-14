@@ -91,3 +91,17 @@ it('accepts a bounded large RTC read but rejects responses above the envelope wi
   .rejects.toThrow('do not automatically retry');
  expect(refused.requests).toHaveLength(1);
 });
+
+
+it('dispatches a canonical trailing-underscore workspace tool once and rejects doubled separators',async()=>{
+ const workspace={...target,server:'google-workspace',prefix:'workspace_'};
+ const fake=channel();
+ const reply=await pinnedRtcReadCall(workspace,'workspace_drive_list',{limit:1},fake);
+ expect(reply.ok).toBe(true);
+ expect(fake.requests[0].options.path).toBe('/api/tools/workspace_drive_list');
+ await expect(pinnedRtcReadCall(workspace,'workspace__drive_list',{},fake))
+  .rejects.toThrow();
+ await expect(pinnedRtcReadCall(workspace,'stripe_invoice_list',{},fake))
+  .rejects.toThrow();
+ expect(fake.requests).toHaveLength(1);
+});
