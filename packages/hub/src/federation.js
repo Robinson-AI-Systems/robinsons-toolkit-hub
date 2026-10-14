@@ -94,8 +94,9 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   if(!target)return fail('not_found','RTC tool not granted to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!grant)return fail('outside_scope','RTC grant unavailable');
+  let metadata;
   try {
-   const metadata=await tools.describe(grant,args.name);
+   metadata=await tools.describe(grant,args.name);
    if(metadata?.name!==args.name||metadata.writes!==false||
       metadata.money!==false||metadata.destructive!==false||
       metadata.annotations?.readOnlyHint!==true||
@@ -106,7 +107,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   const rechecked=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!rechecked||rechecked.grantId!==grant.grantId||
     rechecked.prefix!==grant.prefix||rechecked.origin!==grant.origin||
-    !rechecked.areas.includes((await Promise.resolve(metadata)).area))
+    !rechecked.areas.includes(metadata.area))
     return fail('outside_scope','RTC grant changed during read validation');
   const correlationId=tools.correlation();
   // Dispatch must never start before durable attempt receipt.
