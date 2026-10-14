@@ -141,3 +141,44 @@ it('refuses malformed and oversized next-page tokens without exposing unsafe met
   await expect(searchPinnedRtcTools(stripe,{query:'invoice'},t)).rejects.toThrow();
  }
 });
+
+it('follows observed Stripe numeric-offset and Workspace decimal-page RTC1 replies without provider-name branching',async()=>{
+ const s=transportFor(options=>({ok:true,result:options.path.includes('offset=2')?
+  {tools:[tool('stripe_invoice_detail','billing')],total:3,offset:2,next:null}:
+  {tools:[tool('stripe_invoice_list','billing')],total:3,offset:0,next:2}}));
+ const firstStripe=await searchPinnedRtcTools(stripe,{query:'invoice',limit:2},s);
+ expect(firstStripe.next).toEqual({kind:'offset',value:'2'});
+ const secondStripe=await searchPinnedRtcTools(stripe,
+  {query:'invoice',limit:2,cursor:firstStripe.next},s);
+ expect(secondStripe.tools.map(t=>t.name)).toEqual(['stripe_invoice_detail']);
+ expect(secondStripe.next).toBeNull();
+ expect(s.calls.map(x=>x.path)).toEqual([
+  '/api/tools?q=invoice&limit=2',
+  '/api/tools?q=invoice&limit=2&offset=2'
+ ]);
+ const w=transportFor(options=>({ok:true,result:options.path.includes('page=2')?
+  {tools:[tool('google_gmail_get','gmail')],next:null}:
+  {tools:[tool('google_gmail_list','gmail')],next:'2'}}));
+ const firstWorkspace=await searchPinnedRtcTools(google,{query:'gmail',limit:2},w);
+ expect(firstWorkspace.next).toEqual({kind:'page',value:'2'});
+ const secondWorkspace=await searchPinnedRtcTools(google,
+  {query:'gmail',limit:2,cursor:firstWorkspace.next},w);
+ expect(secondWorkspace.tools.map(t=>t.name)).toEqual(['google_gmail_get']);
+ expect(secondWorkspace.next).toBeNull();
+ expect(w.calls.map(x=>x.path)).toEqual([
+  '/api/tools?q=gmail&limit=2',
+  '/api/tools?q=gmail&limit=2&page=2'
+ ]);
+ expect([...w.calls,...s.calls].every(x=>x.method==='GET'&&x.rejectUnauthorized))
+  .toBe(true);
+});
+it('refuses malformed or ambiguous typed RTC selectors before network dispatch',async()=>{
+ const t=transportFor({ok:true,result:{tools:[],next:null}});
+ for(const cursor of [
+  {kind:'offset',value:'0'},{kind:'offset',value:'100001'},
+  {kind:'page',value:'notnumeric'},{kind:'page',value:'1.5'},
+  {kind:'other',value:'1'},{kind:'cursor',value:'../admin'},
+  {kind:'page',value:'2',offset:'1'}
+ ]) await expect(searchPinnedRtcTools(google,{cursor},t)).rejects.toThrow();
+ expect(t.calls).toHaveLength(0);
+});
