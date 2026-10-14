@@ -157,7 +157,7 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
     typeof actor.ownerId!=='string'||!actor.ownerId||
     typeof actor.id!=='string'||!actor.id||
-    !Number.isInteger(limit)||limit<1||limit>50) return [];
+    !Number.isInteger(limit)||limit<1||limit>100) return [];
   const callerKind=actor.clientId?'oauth':'pass';
   const {rows}=await db.query(`SELECT s.name,s.prefix,s.claimed_counts,g.areas
     FROM hub_servers s JOIN hub_server_grants g

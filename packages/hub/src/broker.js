@@ -10,6 +10,7 @@ const catalog=Object.freeze([
   {name:'hub_search_tools',description:'Search eligible Hub and separately granted RTC read tools',
     inputSchema:{type:'object',properties:{query:string,limit:{type:'integer',minimum:1,maximum:20},
       server:{type:'string',pattern:'^[a-z][a-z0-9_]{1,59}$'},
+      cursor:{type:'string',minLength:1,maxLength:160},
       area:{type:'string',pattern:'^[a-z][a-z0-9_]{0,59}$'}},
       required:['query'],additionalProperties:false}},
   {name:'hub_describe_tool',description:'Describe an authorized RTC read tool on demand',

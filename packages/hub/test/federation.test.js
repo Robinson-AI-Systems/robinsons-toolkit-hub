@@ -78,12 +78,19 @@ it('limits fan-out to three active targets, with no broad automatic fallback',as
  const deps=provider();
  deps.list=vi.fn(async()=>[...targets,{name:'vercel',prefix:'vercel',
    areas:['projects'],claimedCounts:{tools:500}}]);
+ const settings={pepper:'synthetic-hub-pagination-key-at-least-32-bytes'};
  const state=await runFederatedBroker('hub_search_tools',
-  {query:'read',limit:10},actor,{},{},deps);
+  {query:'read',limit:10},actor,{},settings,deps);
  expect(deps.search).toHaveBeenCalledTimes(3);
  expect(state.result.authorizedTargets).toBe(4);
  expect(state.result.incomplete).toBe(true);
- expect(state.result.next).toBeNull();
+ expect(typeof state.result.next).toBe('string');
+ const second=await runFederatedBroker('hub_search_tools',
+  {query:'read',limit:10,cursor:state.result.next},actor,{},settings,deps);
+ expect(second.ok).toBe(true);
+ expect(second.result.scanned).toBe(1);
+ expect(second.result.next).toBeNull();
+ expect(deps.search).toHaveBeenCalledTimes(4);
  const denied=await runFederatedBroker('hub_search_tools',
   {query:'read',server:'nonexistent'},actor,{},{},deps);
  expect(denied.error.code).toBe('not_found');
