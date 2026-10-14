@@ -24,8 +24,10 @@ function fixture() {
    area: 'billing', writes: false, money: false, destructive: false }],
    incomplete: false })),
   describe: vi.fn(async (_grant, name) => ({
-   name, area: 'billing', writes: false, money: false, destructive: false,
-   annotations: { readOnlyHint: true }, inputSchema: { type: 'object' } })),
+   name, area: 'billing', writes: name.endsWith('_write'),
+   money: false, destructive: false,
+   annotations: { readOnlyHint: !name.endsWith('_write') },
+   inputSchema: { type: 'object' } })),
   read: vi.fn(async () => ({ ok: true, result: { invoices: ['TEST-1'] },
    logged: { id: 'rtc_read_log_1' } })),
   audit: vi.fn(async () => 1),
