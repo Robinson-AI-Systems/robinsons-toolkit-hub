@@ -77,3 +77,42 @@ it('refuses a blank, duplicated or malformed server selection before owner verif
  expect(issue).not.toHaveBeenCalled();
  expect(verify).not.toHaveBeenCalled();
 });
+
+it('requires independent verified owner before listing or reducing pass permissions',async()=>{
+ const list=vi.fn(async()=>[{
+   id,profile:'read_only',mode:'test',areas:['gateway'],
+   serverNames:['stripe','<script>'],state:'current',expiresAt:'tomorrow'
+ }]);
+ expect((await send('POST','action=list&password=wrong',{list})).statusCode).toBe(401);
+ expect(list).not.toHaveBeenCalled();
+ const owner=await send('POST','action=list&password=synthetic-owner-auth',{list});
+ expect(owner.statusCode).toBe(200);
+ expect(owner.headers['Cache-Control']).toBe('no-store');
+ expect(owner.html).toContain('stripe');
+ expect(owner.html).not.toContain('<script>');
+ expect(owner.html).not.toContain('synthetic-one-time-value');
+ expect(list).toHaveBeenCalledWith({},'owner-one',{ownerVerified:true});
+ const narrow=vi.fn(async()=>({updated:true,serverNames:['stripe']}));
+ const params='action=narrow&password=synthetic-owner-auth&id='+id+'&servers=stripe';
+ expect((await send('POST',params.replace('synthetic-owner-auth','wrong'),
+   {narrow})).statusCode).toBe(401);
+ expect(narrow).not.toHaveBeenCalled();
+ const narrowed=await send('POST',params,{narrow});
+ expect(narrowed.statusCode).toBe(200);
+ expect(narrow).toHaveBeenCalledWith({},{
+   ownerId:'owner-one',id,serverNames:['stripe']
+ },{ownerVerified:true});
+ expect((await send('POST',params,{narrow:async()=>({updated:false})}))
+   .statusCode).toBe(404);
+});
+it('rejects narrowing without an exact ID, real selected subset or owner review',async()=>{
+ const narrow=vi.fn();
+ for(const params of [
+   'action=narrow&password=synthetic-owner-auth&id=bad&servers=stripe',
+   'action=narrow&password=synthetic-owner-auth&id='+id,
+   'action=narrow&password=synthetic-owner-auth&id='+id+'&servers=stripe%2Cstripe',
+   'action=narrow&password=synthetic-owner-auth&id='+id+'&servers=..',
+   'action=narrow&password=synthetic-owner-auth&id='+id+'&servers='
+ ])expect((await send('POST',params,{narrow})).statusCode).toBe(400);
+ expect(narrow).not.toHaveBeenCalled();
+});
