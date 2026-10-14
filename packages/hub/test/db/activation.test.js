@@ -1,7 +1,9 @@
 import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {readFile} from 'node:fs/promises';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,createHash} from 'node:crypto';
+import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,
+  authenticateOAuth,rotateOAuthRefresh,revokeOAuthFamily} from '../../src/oauth.js';
 import {issueHubPass} from '../../src/identity.js';
 import {stageCallerGrant,resolveActiveCallerGrant,listEligibleRtcTargets,revokeCallerGrant,
   activateVerifiedCallerGrant} from '../../src/grants.js';
@@ -110,4 +112,46 @@ it('narrows full TEST developer identity to a separately verified read_only RTC 
  expect(await listEligibleRtcTargets(db,developer)).toEqual([]);
  expect(await resolveActiveCallerGrant(db,{actor:developer,serverName:'workspace'},settings))
    .toBeNull();
+});
+
+it('keeps a sealed read grant bound to the same OAuth family through refresh, not another family',async()=>{
+ const clientId='authorized_builder_client';
+ const redirectUri='https://agent.example.com/oauth/cb';
+ const verifier='oauth-verifier-valid-0123456789-abcdefghijklmnopqrstuvwxyz';
+ const challenge=createHash('sha256').update(verifier).digest('base64url');
+ await registerOAuthClient(db,{ownerId:'owner-a',clientId,redirectUri},
+   {ownerVerified:true});
+ const code=await issueOAuthCode(db,{ownerId:'owner-a',clientId,redirectUri,
+  challenge,profile:'full',mode:'test',areas:['gateway']},{pepper,ownerVerified:true});
+ const first=await exchangeOAuthCode(db,{code,clientId,redirectUri,verifier},{pepper});
+ const before=await authenticateOAuth(db,first.access_token,{pepper});
+ await db.query(`INSERT INTO hub_servers
+   (name,owner_id,prefix,origin,claimed_rtc,claimed_counts)
+   VALUES('neon','owner-a','neon','https://neon-mcp.vercel.app',1,
+   '{"tools":10,"writes":0,"money":0}')`);
+ const grant=await stageCallerGrant(db,{ownerId:'owner-a',serverName:'neon',
+   callerKind:'oauth',callerId:before.id,areas:['database'],pass,ttlSeconds:3600},
+   {ownerVerified:true,settings});
+ await activateVerifiedCallerGrant(db,{ownerId:'owner-a',id:grant.id},settings,
+  {ownerVerified:true,inspect:async({name,prefix,areas})=>({
+   server:name,prefix,areas,profile:'read_only',mode:'test',
+   identityVerified:true,callable:false})});
+ const token=await rotateOAuthRefresh(db,{refreshToken:first.refresh_token,clientId},{pepper});
+ const after=await authenticateOAuth(db,token.access_token,{pepper});
+ expect(after.id).not.toBe(before.id);
+ expect(after.profile).toBe('full');
+ expect((await listEligibleRtcTargets(db,after)).map(x=>x.name)).toEqual(['neon']);
+ expect(await resolveActiveCallerGrant(db,{actor:after,serverName:'neon'},settings))
+  .toMatchObject({grantId:grant.id,profile:'read_only',mode:'test'});
+ const separate=await issueOAuthCode(db,{ownerId:'owner-a',clientId,redirectUri,
+  challenge,profile:'full',mode:'test',areas:['gateway']},{pepper,ownerVerified:true});
+ const otherToken=await exchangeOAuthCode(db,{code:separate,clientId,redirectUri,verifier},{pepper});
+ const otherActor=await authenticateOAuth(db,otherToken.access_token,{pepper});
+ expect(await listEligibleRtcTargets(db,otherActor)).toEqual([]);
+ expect(await resolveActiveCallerGrant(db,{actor:otherActor,serverName:'neon'},settings))
+  .toBeNull();
+ await revokeOAuthFamily(db,{ownerId:'owner-a',sessionId:after.id},{ownerVerified:true});
+ expect(await listEligibleRtcTargets(db,after)).toEqual([]);
+ expect(await resolveActiveCallerGrant(db,{actor:after,serverName:'neon'},settings))
+  .toBeNull();
 });
