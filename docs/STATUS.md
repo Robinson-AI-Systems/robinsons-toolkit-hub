@@ -147,7 +147,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "gates": "Reviewed deployed service revisions; separately scoped service passes and owner-approved isolated runners",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+    "lastEvidence": "2026-10-14: Host Hub main/live/READY at 0b17dd5f, hosted H-2/H-3 tables installed and independently read back, but separate real direct/private-relay/Sandbox/cleanup/same-pass revocation are still unverified. No new consent requested."
   },
   {
     "id": "HUB-FLEET",
@@ -158,7 +158,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "gates": "Preserve exact revision pins and non-production RTC TEST restrictions; public manifest is not authenticated proof",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+    "lastEvidence": "2026-10-14: Checked GitHub runner public GET: Workspace RTC1 prefix workspace_ HTTP 200 unauthenticated; GitHub RTC0 HTTP 200; Stripe/Neon/Vercel protection HTTP 401. Custom Hub authenticated foundation health RTC0 and zero active upstreams. Genuine signed-in service reads still open."
   },
   {
     "id": "HUB-H3-PREFIX",
@@ -169,7 +169,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "gates": "Checked live Hub revision, hosted 004-006/008/009 migrations, independently pinned RTC deployment and service-owned TEST read_only grants; no provider write",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "PR #168 source and scoped synthetic regressions proposed. Existing Vercel production READY is #165, so this source is not deployed or live-accepted."
+    "lastEvidence": "2026-10-14: Source #168 and successors deployed at exact Hub 0b17dd5f production READY. Hosted 004-006/008/009 migrations independently installed; zero staged/verified RTC grants or active services. Separate sensitive HUB_GRANTS_KEY now configured for next checked deployment; do not infer active runtime key. Actual Workspace TEST schema/read/denial/revoke open."
   },
   {
     "id": "HUB-H3-HTTP-BROKERS",
@@ -180,7 +180,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "gates": "Checked Hub live deployment; additive hosted grants/audit migration; independent Hub TEST pass and active verified RTC upstream grant; no provider writes",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "PR #169 scoped fake-RTC handler tests proposed; source is not released, real two-service and revocation remain unverified."
+    "lastEvidence": "2026-10-14: Deployed Hub H-3 native and HTTPS code at READY 0b17dd5f and independently read back hosted schema; no actual independently pinned upstream TEST credentials, grant, authenticated two-service read, native/HTTPS parity or revocation accepted."
   },
   {
     "id": "HUB-H3-BROWSE",
@@ -191,7 +191,29 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "gates": "Source released to READY Hub deployment with approved hosted registry/audit schema; sealed TEST read_only service grant verified; do not infer full provider pagination",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "PR #170 introduced bounded keyword-free discovery with synthetic 100-service and exact service-selection tests. No deployed RTC TEST browse or provider acceptance has run."
+    "lastEvidence": "2026-10-14: Source #170 deployed at Hub READY 0b17dd5f, database migrations now installed, but catalog browse requires approved verified owner/TEST grant setup; provider next-page completeness and signed-in readback remain open."
+  },
+  {
+    "id": "HUB-H3-OWNER",
+    "priority": 6,
+    "requiredRevision": "cdf00c81bf65a36f90d00e623c41fd4f1a2b21c8",
+    "task": "At checked deployed source, verify genuine owner-authenticated mobile readiness form, counts, privacy/denials and distinct two-service TEST preflight without exposing passwords or granting provider access",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Reviewed READY live revision including owner readiness source; independently verified owner login, no-store page, installed SQL and secure configuration; do not submit credentials through PR/chat",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: #178 merged and exact-head source CI passed. Owner readiness has not yet appeared in verified READY release or undergone protected real owner-form acceptance; no live owner password was used."
+  },
+  {
+    "id": "HUB-H3-RETIRE",
+    "priority": 7,
+    "requiredRevision": "a78c994fe4ff8bac5ec8c623a00d470be196880b",
+    "task": "Verify owner-confirmed exact TEST service retirement, atomic linked-grant revocation, independent readback and restricted-fixture cleanup in an authorized isolated environment",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Checked READY deployment with H-3 registry/grant schema, owner verification and exact typed RETIRE approval for independently authorized disposable TEST fixture only; no production provider data deletion",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Source and isolated PostgreSQL/owner-route tests proposed in PR #180; no authorized real staged fixture or hosted retirement has been executed."
   }
 ]
 ```
