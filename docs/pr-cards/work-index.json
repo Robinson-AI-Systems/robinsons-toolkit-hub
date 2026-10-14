@@ -419,7 +419,7 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "H-3 source merged through #182 selected-service paging; current cohesive source proposal adds complete fleet-wide upstream provider page navigation and 15-second grant-safe metadata caching under the existing TEST/read_only fixed MCP/HTTPS broker. Synthetic tests do not close real acceptance. Hosted H2/H3 tables were independently installed at last check, but no staged/active upstream TEST grants or genuine Hub two-service calls verified. Daily checked main→live release must include the source before HUB-H3-FLEET-PAGES acceptance; preserve eight earlier pending queue items, D4 separate paths and no autonomous spending. Remains IN_PROGRESS.",
+      "note": "Merged through #183 (complete bounded 100-service provider paging and 15s metadata catalogue cache); current eligible source outcome adds safely scoped 15s/32-entry concurrent read-only schema DESCRIBE cache with fresh POST schema preflight and native/HTTPS parity. H-3 real TEST two-service provider acceptance, grant revocation, migrations and D-4 remain separate PENDING queue; deployed READY still older PR #173. Source not live.",
       "pr": [
         "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
         "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",

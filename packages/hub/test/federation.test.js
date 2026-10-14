@@ -22,7 +22,9 @@ function provider() {
     description:'Read TEST objects',area:grant.areas[0],writes:false,
     money:false,destructive:false}],incomplete:false})),
   describe:vi.fn(async(_grant,name)=>({name,area:'billing',
-    inputSchema:{type:'object'},writes:false}))
+    description:'Safe RTC TEST read',profiles:['read_only'],
+    inputSchema:{type:'object'},writes:false,money:false,destructive:false,
+    annotations:{readOnlyHint:true}}))
  };
  return deps;
 }
