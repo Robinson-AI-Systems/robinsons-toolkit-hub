@@ -1,3 +1,15 @@
+## H-3 fixed HTTPS broker parity — PR #169 (pending review)
+Authenticated Hub HTTPS `POST /api/tools/{hub_broker}` now uses the same
+grant-filtered native federation dispatcher for Hub health, tool search,
+describe, call, batch and namespaces, rather than responding with stale
+foundation-only stubs or rejecting valid RTC read calls. Direct,
+`hub_call` and mixed-batch health all compute actual eligible target
+metadata, including zero configured targets. The Hub's existing pass, TEST,
+owner, grant, metadata readOnlyHint, audit-before-read, single-shot POST,
+byte budgets, and denial controls remain. Synthetic handler tests cover
+successful reads and guarded refusals. Actual hosted/provider acceptance
+must wait for the normal checked live release: HUB-H3-HTTP-BROKERS queue.
+
 ## H-3 RTC prefix and 100-target route parity — PR #168 (awaiting merge/release)
 The Hub now uses one canonical RTC owner parser across encrypted pinned metadata
 discovery, schema lookup, read POST and federated longest-prefix routing. Already
@@ -64,6 +76,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "PR #168 source and scoped synthetic regressions proposed. Existing Vercel production READY is #165, so this source is not deployed or live-accepted."
+  },
+  {
+    "id": "HUB-H3-HTTP-BROKERS",
+    "priority": 4,
+    "requiredRevision": "b48bc90edb2be13a0b98cca850da437fb1866cb9",
+    "task": "Prove native and Hub-pass HTTPS broker parity under the same independently authenticated TEST grant: search, schema, scoped call, sequential batch, health and denial/readback",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Checked Hub live deployment; additive hosted grants/audit migration; independent Hub TEST pass and active verified RTC upstream grant; no provider writes",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #169 scoped fake-RTC handler tests proposed; source is not released, real two-service and revocation remain unverified."
   }
 ]
 ```
