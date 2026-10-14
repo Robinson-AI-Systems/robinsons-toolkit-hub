@@ -20,7 +20,7 @@ provider/security/owner gates remain binding.
 ## Efficient release-aware execution — owner instruction 2026-10-14
 
 [SESSION-START](docs/SESSION-START.md) is the consolidated session procedure;
-`npm run session:status` prints the read-only release acceptance queue and PR boundary.
+`npm run session:status` prints the read-only release acceptance queue and indexed remaining-roadmap summary.
 Its workflow/cadence/merge-versus-live-proof rules supersede older conflicting procedural
 wording below, but never override explicit safety or pre-merge owner/card gates.
 Use substantial cohesive outcomes; numeric production-line targets are advisory rather
@@ -35,11 +35,19 @@ routine implementation sessions still prohibit filler/documentation-only PRs.
 functionality, not GitHub activity. Each PR must integrate at least one whole eligible
 roadmap slice; package multiple adjacent small slices from the same approved parent
 outcome when their contract, risk, callers, integration and tests belong together.
-Plan around roughly 500–800 production-code lines per *suitable* cohesive PR,
-plus meaningful tests, as an advisory review-size range, never a minimum, quota,
-or reason for filler code. Larger or smaller coherent boundaries are permitted
-when evidence, risk and testability justify them. Avoid one-helper/one-tool PRs
-when the remaining compatible slice work can be completed safely together.
+Target **400–800 changed production-code lines per substantive PR on average**
+and **2–5 fully completed roadmap slices per substantive PR on average**,
+measured over the latest five merged implementation PRs when available. These
+are *averages for planning*, not a hard per-PR minimum/maximum, acceptance
+substitute, or reason to add filler, bundle unrelated risks, or split coherent
+outcomes. Count only production source changes for the line metric (not
+tests, docs, generated files or fixtures); cite actual completed slice IDs
+from existing cards in each PR, with their integrated tests and callers.
+A fully completed slice has its eligible engineering and pre-merge checks
+finished; deployment-dependent external acceptance stays separately OPEN.
+Small safety corrections and unusually large inseparable outcomes remain
+legitimate and should be explained, not padded. Avoid one-helper/one-tool
+PRs when adjacent eligible slices belong together.
 
 **No fixed PR count or multiple-of-five boundary.** Older directions elsewhere
 requiring five or ten PRs or PR-number alignment are superseded. Do not invent
@@ -51,6 +59,18 @@ another work unit, assess whether the remaining chat context can support its
 implementation, corrections, tests, merge and handoff. If not, finish a clean
 checkpoint instead of beginning work likely to be abandoned. Never use a
 continuation prompt instead of completing currently feasible work.
+
+**Remaining-work visibility.** Run `npm run session:status` to read the
+current work-index counts (merged, in-progress, approved, owner-on-request)
+and remaining approved **roadmap units**, by batch, alongside the separate
+release acceptance queue. The index's `units` are coarse planned acceptance
+units, not automatically counted PR slices. At each PR handoff record actual
+completed slice IDs and production-code line changes; report what is still
+unfinished in the authoritative cards, without inventing a finer estimate.
+Do not mark incomplete cards MERGED just to raise a percentage. Follow the
+roadmap's designated order, not the milestone named in an old handoff.
+A session-specific explicit owner request for five PRs applies to that
+session alone without weakening quality gates or making five a standing quota.
 
 **Adaptive CI budget and measurement.** Validate focused behavior at meaningful
 code seams, run required complete gates on the final coherent tree and fix all

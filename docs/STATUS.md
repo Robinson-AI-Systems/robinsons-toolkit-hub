@@ -1,3 +1,23 @@
+## Focused roadmap-throughput averages and remaining-work measurement — source PR #187
+
+Owner-directed planning averages: 400–800 changed production-code lines
+and 2–5 fully completed, existing-card-backed slices per substantive PR,
+calculated from recent merged implementation PRs. Never pad, split
+coherent outcomes, group unrelated risks, or weaken required CI to hit
+a numeric target; isolated corrective changes are legitimate.
+
+The existing read-only `npm run session:status` now counts coarse
+authoritative indexed roadmap units by batch/status, independently of
+the existing release-acceptance queue. Current baseline from the index:
+32 tracked units; 16 MERGED, 6 IN_PROGRESS, 9 APPROVED, 1 ON_REQUEST,
+so 15 approved unfinished units (the on-request unit excluded). These
+units are NOT finer-grained PR implementation slices, and MERGED source
+is not genuine hosted acceptance; pending provider/RTC tests stay open.
+The owner's one-session request for five sizeable PRs remains in the
+permanent handoff; it does not become a standing per-session quota.
+No roadmap card, grant, credential, deployed acceptance or release
+status was changed by this measurement enhancement.
+
 ## October 14 source-accurate acceptance readiness pins — correction
 
 The new H-3 schema and bounded-batch acceptance rows must require their

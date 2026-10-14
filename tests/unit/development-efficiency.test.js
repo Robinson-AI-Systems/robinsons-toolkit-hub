@@ -53,7 +53,10 @@ describe('outcome-first owner workflow remains authoritative',()=>{
     expect(start).toContain('cohesive roadmap');
     expect(start).toContain('remaining context');
     expect(agents).toContain('Roadmap-throughput and context-safe execution');
-    expect(agents).toContain('500–800');
+    expect(agents).toContain('400–800 changed production-code lines');
+    expect(agents).toContain('2–5 fully completed roadmap slices');
+    expect(start).toContain('coarse indexed units');
+    expect(start).toContain('deployment-dependent');
     expect(start).not.toContain('next higher PR-number multiple of five');
     expect(start).toContain('An explicit pre-merge gate still blocks that PR');
     expect(start).toContain('Never mark code/CI as deployed or real-provider proof');
