@@ -74,6 +74,8 @@ it('requires registered, owned server names and persists PKCE and refresh-family
  expect(await revokeOAuthFamily(db,{ownerId:'owner-a',sessionId:fresh.id},
    {ownerVerified:true})).toBe(true);
  expect(await authenticateOAuth(db,rotated.access_token,{pepper})).toBeNull();
+ expect(await revokeCallerGrant(db,{ownerId:'owner-a',id:grant.id},
+   {ownerVerified:true})).toBe(true);
  await expect(stageCallerGrant(db,{ownerId:'owner-a',serverName:'stripe',
    callerKind:'oauth',callerId:fresh.id,areas:['billing'],pass,
    ttlSeconds:3600},{ownerVerified:true,settings})).rejects.toThrow();
