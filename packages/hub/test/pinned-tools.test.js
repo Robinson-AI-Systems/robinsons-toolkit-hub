@@ -118,7 +118,7 @@ it('resumes bounded pinned RTC next pages without extra host, path or credential
     {tools:[tool('stripe_invoice_list','billing')],next:'page_2'}
  }));
  const first=await searchPinnedRtcTools(stripe,{query:'invoice',limit:2},t);
- expect(first.next).toBe('page_2');
+ expect(first.next).toEqual({kind:'cursor',value:'page_2'});
  expect(first.incomplete).toBe(true);
  const second=await searchPinnedRtcTools(stripe,
   {query:'invoice',limit:2,cursor:first.next},t);
@@ -131,7 +131,7 @@ it('resumes bounded pinned RTC next pages without extra host, path or credential
  expect(t.calls.every(c=>c.method==='GET'&&c.rejectUnauthorized===true)).toBe(true);
  expect(t.calls.every(c=>c.headers.authorization==='Bearer '+pass)).toBe(true);
  for(const cursor of ['https://bad.example','../../admin','x'.repeat(129),'has space']){
-  await expect(searchPinnedRtcTools(stripe,{cursor},t)).rejects.toThrow();
+  await expect(searchPinnedRtcTools(stripe,{cursor:{kind:'cursor',value:cursor}},t)).rejects.toThrow();
  }
  expect(t.calls).toHaveLength(2);
 });
