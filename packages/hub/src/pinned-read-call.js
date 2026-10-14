@@ -31,6 +31,7 @@ export async function pinnedRtcReadCall(target,name,args={},
    try{
      req=request({protocol:'https:',hostname,port:443,method:'POST',
       path:'/api/tools/'+name,agent:false,rejectUnauthorized:true,
+      signal:AbortSignal.timeout(5000),
       headers:{accept:'application/json','content-type':'application/json',
        authorization:'Bearer '+target.pass,
        'content-length':Buffer.byteLength(serialized,'utf8')},
@@ -44,7 +45,8 @@ export async function pinnedRtcReadCall(target,name,args={},
       }
      },res=>{
       const mime=String(res.headers?.['content-type']||'');
-      if(res.statusCode!==200||!/^application\/json(?:\s*;|$)/i.test(mime)){
+      if(![200,400,401,403,404,409,422,429].includes(res.statusCode)||
+        !/^application\/json(?:\s*;|$)/i.test(mime)){
        res.resume();return fail();
       }
       const chunks=[];let bytes=0;
@@ -60,7 +62,8 @@ export async function pinnedRtcReadCall(target,name,args={},
        try{
         const parsed=JSON.parse(Buffer.concat(chunks).toString('utf8'));
         if(!object(parsed)||typeof parsed.ok!=='boolean'||
-          parsed.ok&&(!Object.hasOwn(parsed,'result')))return fail();
+          parsed.ok&&(!Object.hasOwn(parsed,'result'))||
+          (res.statusCode!==200&&parsed.ok!==false))return fail();
         settled=true;resolve(parsed);
        }catch{fail();}
       });
