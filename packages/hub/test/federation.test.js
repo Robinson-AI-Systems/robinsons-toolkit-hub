@@ -50,6 +50,10 @@ it('returns selective, grant-scoped real RTC metadata through the fixed native M
  expect(nav.result.structuredContent.namespaces.map(x=>x.name))
   .toEqual(['hub','google','stripe','neon']);
  expect(nav.result.structuredContent.metadataOnly).toBe(true);
+ const health=await mcpFederatedReply(req('hub_health',{}),actor,{},{},deps);
+ expect(health.result.structuredContent).toMatchObject({
+  foundation:'ready',federation:'discovery_only',providerCallsEnabled:false,
+  accessibleUpstreams:3});
  expect(deps.resolve).toHaveBeenCalledTimes(2);
  expect(deps.describe).toHaveBeenCalledTimes(1);
  expect(mcpReply(req('hub_whoami',{}),actor).result.structuredContent.profile)
