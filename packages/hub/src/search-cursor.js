@@ -14,7 +14,8 @@ function signature(secret,contents,scope){
 export function searchCursorScope(actor,args,matching){
  return [actor.ownerId,actor.id,actor.mode,actor.profile,
   args.query,args.server??'',args.area??'',
-  matching.map(t=>[t.name,t.prefix,t.areas])];
+  matching.map(t=>[t.name,t.prefix,t.areas,
+   t.grantId??null,t.origin??null,t.verifiedAt??null])];
 }
 /** Pagination resumes by authorized service, at most three providers per page. */
 export function issueSearchCursor(scope,offset,settings,{now=Date.now}={}){
