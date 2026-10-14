@@ -49,7 +49,7 @@ it('persists separate durable attempt and outcome without pass bytes or argument
  const first=await appendRtcReadAudit(db,{...common,phase:'attempt',outcome:'allowed'});
  const last=await appendRtcReadAudit(db,{...common,phase:'outcome',
   outcome:'success',upstreamLogId:'log5'});
- expect(last).toBeGreaterThan(first);
+ expect(BigInt(last)).toBeGreaterThan(BigInt(first));
  const q=await db.query('SELECT * FROM hub_rtc_read_audit WHERE correlation_id=$1',
   [correlationId]);
  expect(q.rows.map(x=>x.phase)).toEqual(['attempt','outcome']);
