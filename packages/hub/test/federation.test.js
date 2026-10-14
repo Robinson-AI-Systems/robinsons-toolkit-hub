@@ -54,7 +54,7 @@ it('returns selective, grant-scoped real RTC metadata through the fixed native M
  expect(health.result.structuredContent).toMatchObject({
   foundation:'ready',federation:'test_read_routing',providerCallsEnabled:true,
   accessibleUpstreams:3});
- expect(deps.resolve).toHaveBeenCalledTimes(2);
+ expect(deps.resolve).toHaveBeenCalledTimes(4);
  expect(deps.describe).toHaveBeenCalledTimes(1);
  expect(mcpReply(req('hub_whoami',{}),actor).result.structuredContent.profile)
    .toBe('full');
