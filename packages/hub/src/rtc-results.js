@@ -16,12 +16,12 @@ function validated(actor,settings) {
  const key=Buffer.from(raw,'base64url');
  if(key.length!==32||key.toString('base64url')!==raw)
    throw Error('RTC result encryption unavailable');
- return {key,pepper,caller:actor.ownerId+'\\0'+actor.id};
+ return {key,pepper,caller:actor.ownerId+String.fromCharCode(0)+actor.id};
 }
 function aad(caller,grantId,service) {
  if(!grantPattern.test(grantId||'')||!serverPattern.test(service||''))
    throw TypeError('Invalid RTC grant binding');
- return Buffer.from([caller,grantId,service].join('\\0'),'utf8');
+ return Buffer.from([caller,grantId,service].join(String.fromCharCode(0)),'utf8');
 }
 export async function storeRtcResult(db,actor,grantId,service,result,settings) {
  const {key,pepper,caller}=validated(actor,settings);
