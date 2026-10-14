@@ -12,14 +12,16 @@ function inScope(actor) {
 }
 function listTools(query = {}) {
   if (!query || typeof query !== 'object' || Array.isArray(query) ||
-    Object.keys(query).some(key => !['q', 'area', 'server', 'limit'].includes(key))) return null;
+    Object.keys(query).some(key => !['q', 'area', 'server', 'limit', 'cursor'].includes(key))) return null;
   const q = query.q ?? '';
   const area = query.area ?? '';
   const server = query.server;
+  const cursor = query.cursor;
   const limitRaw = query.limit ?? '10';
   if (typeof q !== 'string' || q.length > 120 || typeof area !== 'string' ||
     (area && !areaName.test(area)) ||
     (server !== undefined && (typeof server !== 'string' || !serverName.test(server))) ||
+    (cursor !== undefined && (typeof cursor !== 'string' || cursor.length > 160)) ||
     (typeof limitRaw !== 'string' && typeof limitRaw !== 'number') ||
     !/^[1-9][0-9]?$|^100$/.test(String(limitRaw)) ||
     Array.isArray(limitRaw)) return null;
@@ -27,7 +29,7 @@ function listTools(query = {}) {
   const matching = brokerCatalog().filter(tool =>
     (!server || server === 'hub') && (!area || tool.area === area) &&
     (!q || (tool.name + ' ' + tool.description).toLowerCase().includes(q.toLowerCase())));
-  return { q, area, server, limit, tools: matching.slice(0, limit), next: null };
+  return { q, area, server, cursor, limit, tools: matching.slice(0, limit), next: null };
 }
 function argsValid(args) {
   if (args === undefined) return true;
@@ -127,6 +129,7 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
         return respondFederated(res, await federate('hub_search_tools', {
           query: filtered.q, limit: filtered.limit,
           ...(filtered.area ? { area: filtered.area } : {}),
+          ...(filtered.cursor ? { cursor: filtered.cursor } : {}),
           ...(filtered.server && filtered.server !== 'hub' ? { server: filtered.server } : {})
         }, actor, db, settings));
       }
