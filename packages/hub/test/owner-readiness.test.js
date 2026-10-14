@@ -13,7 +13,7 @@ async function invoke(method,body,extra={}) {
   if(sql.includes('information_schema'))return {rows:[
    {table_name:'hub_servers'},{table_name:'hub_server_grants'},
    {table_name:'hub_rtc_read_audit'},{table_name:'hub_rtc_result_handles'}]};
-  return {rows:[{servers:2,grants:2,active:2,verified:2}]};
+  return {rows:[{servers:2,grants:2,active:2,verified:2,ready_services:2}]};
  });
  const deps={env,withDb:async fn=>fn({query},
   {grantsKey:goodKey,resultsKey:goodKey}),
@@ -79,4 +79,15 @@ it('rejects invalid bodies, methods and unconfigured owner without leaking error
   summarize:async()=>{throw Error('internal sensitive DB information');}});
  expect(error.res.code).toBe(503);
  expect(error.res.body).not.toContain('sensitive');
+});
+
+it('never mistakes two grants on the same service for two-service readiness',async()=>{
+ const state={schemaReady:true,installedTables:4,grantsKeyReady:true,
+  resultsKeyReady:true,servers:2,stagedGrants:2,activeServers:2,
+  verifiedGrants:2,readyServices:1};
+ const {res}=await invoke('POST','password=fixture-owner',{
+  summarize:async()=>state});
+ expect(res.code).toBe(200);
+ expect(res.body).toContain('Distinct active TEST services with verified grants');
+ expect(res.body).toContain('Two-service TEST routing preflight: not ready');
 });

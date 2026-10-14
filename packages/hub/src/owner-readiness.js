@@ -25,7 +25,7 @@ export async function summarizeHubReadiness(db,ownerId,settings) {
   [requiredTables]);
  const found=new Set(result.rows.map(r=>r.table_name));
  const schemaReady=requiredTables.every(x=>found.has(x));
- let counts={servers:0,grants:0,active:0,verified:0};
+ let counts={servers:0,grants:0,active:0,verified:0,ready_services:0};
  if(schemaReady){
   const {rows}=await db.query(`SELECT
    (SELECT count(*)::integer FROM hub_servers WHERE owner_id=$1) AS servers,
@@ -35,20 +35,27 @@ export async function summarizeHubReadiness(db,ownerId,settings) {
      AND state='active') AS active,
    (SELECT count(*)::integer FROM hub_server_grants WHERE owner_id=$1
      AND revoked_at IS NULL AND expires_at>now()
-     AND verified_at IS NOT NULL) AS verified`,[ownerId]);
+     AND verified_at IS NOT NULL) AS verified,
+   (SELECT count(DISTINCT g.server_name)::integer
+     FROM hub_server_grants g JOIN hub_servers s
+       ON s.name=g.server_name AND s.owner_id=g.owner_id
+     WHERE g.owner_id=$1 AND s.state='active'
+       AND g.revoked_at IS NULL AND g.expires_at>now()
+       AND g.verified_at IS NOT NULL) AS ready_services`,[ownerId]);
   if(rows[0])counts=rows[0];
  }
  return {schemaReady,installedTables:found.size,
   grantsKeyReady:configuredKey(settings.grantsKey),
   resultsKeyReady:configuredKey(settings.resultsKey),
   servers:Number(counts.servers)||0,stagedGrants:Number(counts.grants)||0,
-  activeServers:Number(counts.active)||0,verifiedGrants:Number(counts.verified)||0};
+  activeServers:Number(counts.active)||0,verifiedGrants:Number(counts.verified)||0,
+  readyServices:Number(counts.ready_services)||0};
 }
 function report(state) {
  const line=(label,value)=>'<li>'+label+': <strong>'+value+'</strong></li>';
  const yes=v=>v?'ready':'not ready';
  const scoped=state.schemaReady&&state.grantsKeyReady&&
-  state.resultsKeyReady&&state.activeServers>=2&&state.verifiedGrants>=2;
+  state.resultsKeyReady&&state.readyServices>=2;
  return intro()+'<p>Configuration snapshot only: no provider or transport '+
   'acceptance is claimed.</p><ul>'+
   line('Required H-2/H-3 database tables',state.installedTables+'/4')+
@@ -58,6 +65,7 @@ function report(state) {
   line('Unexpired scoped TEST grants',state.stagedGrants)+
   line('Activated RTC registry services',state.activeServers)+
   line('Verified TEST grants',state.verifiedGrants)+
+  line('Distinct active TEST services with verified grants',state.readyServices)+
   '</ul><p>Two-service TEST routing preflight: '+yes(scoped)+
   '. A ready preflight still requires independently reviewed deployed '+
   'origins, authenticated harmless reads, denial/readback and revocation.</p>'+
