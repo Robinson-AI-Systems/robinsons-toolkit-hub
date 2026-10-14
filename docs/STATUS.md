@@ -1,3 +1,24 @@
+## H-3 end-to-end RTC TEST read-only batch deadline — source proposal
+
+One Hub batch must not continue dispatching a sequence of up to ten 5-second
+provider POSTs after its 20-second execution budget expires. The same absolute
+Hub deadline now follows each sequential call into independently scoped
+preflight metadata GET and finally into a one-shot provider POST. TLS/DNS
+socket-pinned transports can use bounded per-request timeouts no greater
+than the original five seconds and no longer than the batch remainder.
+Deadline exhaustion before dispatch refuses the call; if an already
+acknowledged durable audit attempt expires, a matching unavailable outcome
+is recorded *without* contacting the provider. Unknown POST outcome stays
+unknown and is never retried. Suffix calls remain explicit denied results
+with `incomplete:true`, preserving compact fixed MCP and HTTPS parity.
+
+Source-only synthetic regression coverage includes deadline loss during
+metadata, grant recheck and durable audit; one-shot timeout propagation
+through both pinned HTTPS GET and POST; batch suffix stopping, existing
+standalone 5-second behavior, no credentials and no write permissions.
+Real hosted TEST read timing and independent provider audits require
+checked deployment and approved passes: HUB-H3-BATCH-DEADLINE PENDING.
+
 ## H-3 separately scoped, short-lived on-demand read schema cache — new source PR
 
 RTC schema descriptions can be reused for 15 seconds only for the same
@@ -315,6 +336,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Read-only, concurrent, caller/grant/verified-origin-bound 15s describe cache source/fixtures on PR branch; deployed custom RTC schema and revocation evidence outstanding."
+  },
+  {
+    "id": "HUB-H3-BATCH-DEADLINE",
+    "priority": 11,
+    "requiredRevision": "43c9b33db64a8c5b369180d905222ae46e17822f",
+    "task": "Verify a checked deployed Hub uses bounded RTC TEST batch schema GET and one-shot read POST timeouts, stops suffix calls at 20 seconds, preserves durable audits, reports uncertainty/no retries and honors grant revocation through native MCP and HTTPS",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Verified READY deployment containing source and independently owner-approved TEST/read_only grants; no LIVE money/write tests or unapproved fixtures",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Source adds batch-scoped deadline propagation into pinned metadata GET and non-retrying provider POST with synthetic timing, audit, MCP/HTTPS and denial fixtures; no genuine deployed custom RTC proof."
   }
 ]
 ```

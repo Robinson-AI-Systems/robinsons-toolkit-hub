@@ -419,7 +419,7 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "Merged through #183 (complete bounded 100-service provider paging and 15s metadata catalogue cache); current eligible source outcome adds safely scoped 15s/32-entry concurrent read-only schema DESCRIBE cache with fresh POST schema preflight and native/HTTPS parity. H-3 real TEST two-service provider acceptance, grant revocation, migrations and D-4 remain separate PENDING queue; deployed READY still older PR #173. Source not live.",
+      "note": "Source through merged #184: encrypted and grant-scoped fleet browsing, on-demand 15-second schema caching, TEST/read_only native/HTTP audited one-shot reads. Current cohesive eligible source outcome adds absolute 20-second sequential batch budget enforcement in pinned RTC GET/POST and pre/post-audit refusal, with synthetic source proof. Hosted READY remains older than main with no verified active upstream grants; real TEST, two-service, same-pass revocation, cleanup and D4 are open in authoritative acceptance queue. No manual release or autonomous spending.",
       "pr": [
         "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
         "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",

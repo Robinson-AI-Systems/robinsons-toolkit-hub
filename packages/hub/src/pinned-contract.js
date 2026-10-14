@@ -70,7 +70,9 @@ function assertManifest(manifest,{name,prefix}) {
 // this one request resolves and pins its connect address through lookup.
 // agent:false prevents pooled socket reuse; no redirects or proxies are used.
 export async function pinnedRtcJsonGet(origin,route,
-  {pass,lookup=systemLookup,request=httpsRequest}={}) {
+  {pass,lookup=systemLookup,request=httpsRequest,timeoutMs=5000}={}) {
+  if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>5000)
+    throw new TypeError('Invalid pinned RTC metadata deadline');
   validateStagedOrigin(origin);
   if (!['/api/contract','/api/whoami'].includes(route) && !safeToolReadRoute(route) ||
     (route==='/api/contract' && pass!==undefined)||
@@ -87,6 +89,7 @@ export async function pinnedRtcJsonGet(origin,route,
     try {
       req=request({protocol:'https:',hostname,port:443,method:'GET',
         path:route,agent:false,rejectUnauthorized:true,
+        signal:AbortSignal.timeout(timeoutMs),
         headers:{accept:'application/json',
           ...(pass===undefined?{}:{authorization:'Bearer '+pass})},
         lookup:(asked,_options,callback)=>{
@@ -127,7 +130,7 @@ export async function pinnedRtcJsonGet(origin,route,
           } catch {fail('Invalid RTC JSON manifest');}
         });
       });
-      req.setTimeout(5000,()=>{fail('RTC contract timeout');req.destroy();});
+      req.setTimeout(timeoutMs,()=>{fail('RTC contract timeout');req.destroy();});
       req.on('error',()=>fail('RTC contract connection failed'));
       req.end();
     } catch {fail('RTC contract connection failed');}
