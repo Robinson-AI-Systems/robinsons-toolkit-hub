@@ -1,3 +1,7 @@
+## H-4 owner-only immediate Hub pass narrowing — PR #191 source proposal
+
+From merged #190 (10a900ff80e2538cb8f499f907236ee672fd2760), implement immutable one-way server allowlist reduction on a live Hub pass and authenticated metadata readback. PostgreSQL must commit both reduction and nonsecret audit in one statement; stale actor and prior encrypted RTC page handles are rechecked against current SQL grants. The new HUB-H4-OWNER-NARROW queue row retains real hosted owner authorization, 010 migration, exact deployment and independent two-service RTC TEST proof as PENDING. All 13 prior acceptance rows are preserved and no manual release, provider permissions, money-out or production activation occurs.
+
 ## H-4 owner-confirmed OAuth RTC server subset — PR #190 source proposal
 
 Following merged #189 (099ddba2fec173c2598ad5a2448c051812c6236e), H-4 now continues through OAuth authorization-code and refresh-session narrowing while retaining independent H-2 verified read_only service grants, owner verification and persistent SQL family scope parity. Source/SQL fixtures are not live acceptance. Queue receives HUB-H4-OAUTH-SELECTION with exact feature revision and new 011 migration gate; previous twelve obligations remain PENDING. No manual release, production secret, provider mutation or spending authorized.
@@ -418,6 +422,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: #190 H-4 OAuth owner-consent, token family inheritance and H-2 SQL source/fixture tests proposed; no installed hosted 011, actual owner consent or real provider TEST credential proof."
+  },
+  {
+    "id": "HUB-H4-OWNER-NARROW",
+    "priority": 14,
+    "requiredRevision": "e8f12191c2ce64401e834c0269a6ed0aad7ac57b",
+    "task": "Verify password-gated owner Hub pass scope readback, atomic in-place server reduction, immutable audit row, stale actor and prior encrypted RTC result-handle denial on real hosted TEST after 010",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Independently checked deployed Hub source and migration 010; exact owner-approved TEST caller and two independently verified read_only RTC upstream grants; audit/readback with real result handle; no provider mutation",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: #191 owner-only atomic scope reduction, source/real disposable SQL and synthetic RTC result-page tests proposed; no actual hosted owner readback or prior real TEST result handle."
   }
 ]
 ```
