@@ -78,7 +78,7 @@ it('collects only expired encrypted RTC pages in small bounded batches',async()=
  const first=await db.query(`SELECT handle_digest FROM hub_rtc_result_handles
   ORDER BY created_at,handle_digest LIMIT 2`);
  await db.query(`UPDATE hub_rtc_result_handles
-  SET expires_at=now()-interval '1 second'
+  SET created_at=now()-interval '2 hours', expires_at=now()-interval '1 hour'
   WHERE handle_digest=ANY($1::text[])`,[first.rows.map(r=>r.handle_digest)]);
  expect(await pruneExpiredRtcResults(db,{limit:1})).toBe(1);
  const remain=await db.query(`SELECT count(*)::integer n FROM hub_rtc_result_handles
