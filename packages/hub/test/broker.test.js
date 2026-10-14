@@ -41,3 +41,16 @@ it('fails closed for overprivileged scopes and malformed arguments',()=>{
   }
   expect(runBroker('hub_namespaces',{},actor).result.namespaces[0].rtc).toBe(0);
 });
+
+
+it('allows explicitly empty search terms in the fixed broker schema and local fallback',()=>{
+ const schema=brokerCatalog().find(t=>t.name==='hub_search_tools').inputSchema;
+ expect(schema.properties.query.minLength).toBeUndefined();
+ expect(schema.properties.query.maxLength).toBe(120);
+ const eligible={id:'fixture',profile:'read_only',mode:'test',
+  areas:['gateway'],allowWrites:false};
+ const response=runBroker('hub_search_tools',{query:''},eligible);
+ expect(response.ok).toBe(true);
+ expect(response.result.tools.map(t=>t.name)).toEqual(['hub_whoami','hub_health']);
+ expect(runBroker('hub_search_tools',{},eligible).error.code).toBe('invalid_args');
+});
