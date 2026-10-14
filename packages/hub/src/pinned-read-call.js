@@ -12,7 +12,9 @@ function object(value) {
 }
 /** A single strictly bounded RTC POST, never retried: uncertain POST outcome stays uncertain. */
 export async function pinnedRtcReadCall(target,name,args={},
-  {lookup=systemLookup,request=httpsRequest}={}) {
+  {lookup=systemLookup,request=httpsRequest,timeoutMs=5000}={}) {
+ if(!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>5000)
+   throw new TypeError('Invalid RTC POST deadline');
  if(!target||typeof target.prefix!=='string'||
    !/^[a-z][a-z0-9_]{1,59}$/.test(target.prefix)||
    !toolName.test(name||'')||!ownsRtcToolName(target.prefix,name)||
@@ -32,7 +34,7 @@ export async function pinnedRtcReadCall(target,name,args={},
    try{
      req=request({protocol:'https:',hostname,port:443,method:'POST',
       path:'/api/tools/'+name,agent:false,rejectUnauthorized:true,
-      signal:AbortSignal.timeout(5000),
+      signal:AbortSignal.timeout(timeoutMs),
       headers:{accept:'application/json','content-type':'application/json',
        authorization:'Bearer '+target.pass,
        'content-length':Buffer.byteLength(serialized,'utf8')},
@@ -70,7 +72,7 @@ export async function pinnedRtcReadCall(target,name,args={},
        }catch{fail();}
       });
      });
-     req.setTimeout(5000,()=>{fail();req.destroy();});
+     req.setTimeout(timeoutMs,()=>{fail();req.destroy();});
      req.on('error',fail);
      req.end(serialized);
    }catch{fail();}

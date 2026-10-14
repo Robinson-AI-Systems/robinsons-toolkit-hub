@@ -241,6 +241,15 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   } catch{return fail('unavailable','RTC result temporarily unavailable');}
  }
  if(name==='hub_call') {
+  // Batch-owned absolute deadline is internal execution context, never
+  // accepted from a tool's arguments or forwarded to the provider.
+  // Guard before any provider metadata work, and again after each awaited
+  // authorization/audit step. A completed but uncertain POST is never retried.
+  const clock=deps.now??Date.now,deadline=deps.batchDeadlineAt;
+  const remaining=()=>deadline===undefined?5000:
+    Math.min(5000,Math.max(0,deadline-clock()));
+  if(deadline!==undefined&&(!Number.isSafeInteger(deadline)||remaining()<=0))
+    return fail('unavailable','RTC batch deadline expired before read');
   if(Object.keys(args).some(k=>!['name','args'].includes(k))||
     !namePattern.test(args.name||'')||
     (args.args!==undefined&&!plain(args.args)))
@@ -266,7 +275,11 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   if(!grant)return fail('outside_scope','RTC grant unavailable');
   let metadata;
   try {
-   metadata=await tools.describe(grant,args.name);
+   // Respect the remaining end-to-end batch budget during the pinned
+   // read-only schema GET. This is not executable-schema caching.
+   if(remaining()<=0)return fail('unavailable','RTC batch deadline before schema');
+   metadata=await tools.describe(grant,args.name,
+    ...(deadline===undefined?[]:[{timeoutMs:Math.ceil(remaining())}]));
    if(metadata?.name!==args.name||metadata.writes!==false||
       metadata.money!==false||metadata.destructive!==false||
       metadata.annotations?.readOnlyHint!==true||
@@ -279,16 +292,27 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     rechecked.prefix!==grant.prefix||rechecked.origin!==grant.origin||
     !rechecked.areas.includes(metadata.area))
     return fail('outside_scope','RTC grant changed during read validation');
+  // A metadata GET or grant recheck may consume the last seconds of a
+  // batch. Refuse before recording an attempt that cannot be dispatched.
+  if(remaining()<=0)
+    return fail('unavailable','RTC batch deadline expired during read preflight');
   const correlationId=tools.correlation();
   // Dispatch must never start before durable attempt receipt.
   try {await tools.audit(db,{actor,grantId:grant.grantId,
     service:target.name,tool:args.name,correlationId,
     phase:'attempt',outcome:'allowed'});}
   catch{return fail('unavailable','RTC audit storage unavailable');}
-  let response,outcome='unavailable';
+  let response,outcome='unavailable',skippedDeadline=false;
   try {
-   response=await tools.read(rechecked,args.name,args.args??{});
-   outcome=response?.ok===true?'success':'refused';
+   // If audit writes consume the remaining budget, retain the attempt
+   // receipt and append its unavailable outcome without sending a POST.
+   const available=remaining();
+   if(available<=0)skippedDeadline=true;
+   else {
+    response=await tools.read(rechecked,args.name,args.args??{},
+     ...(deadline===undefined?[]:[{timeoutMs:Math.ceil(available)}]));
+    outcome=response?.ok===true?'success':'refused';
+   }
   } catch {}
   const sourceId=response?.logged?.id??response?.result?.logged?.id;
   const upstreamLogId=typeof sourceId==='string'&&sourceId.length<=128&&
@@ -304,7 +328,9 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   catch{return fail('unavailable','RTC grant status unavailable after read');}
   if(!sameGrant(rechecked,completedGrant))
    return fail('outside_scope','RTC grant changed during provider read');
-  if(!response)return fail('unavailable','RTC read outcome uncertain; do not retry automatically');
+  if(!response)return fail('unavailable',skippedDeadline?
+    'RTC batch deadline expired after audit; provider POST not started':
+    'RTC read outcome uncertain; do not retry automatically');
   if(response.ok!==true) {
    const acceptedCodes=new Set(['needs_confirmation','refused_by_guard',
     'not_found','permission','service_error','rate_limited','pass_expired',
@@ -337,21 +363,24 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
       !namePattern.test(c.name||'')||(c.args!==undefined&&!plain(c.args))))
     return fail('invalid_args','Invalid read-only batch');
   const results=[];
-  const started=(deps.now??Date.now)();
-  const now=deps.now??Date.now;
+  const now=deps.now??Date.now,started=now();
   const maxMs=20000,maxBytes=10000;
+  if(!Number.isSafeInteger(started)||started>Number.MAX_SAFE_INTEGER-maxMs)
+    return fail('unavailable','RTC batch clock unavailable');
+  const deadlineAt=started+maxMs;
   let usedBytes=0,incomplete=false,stopped=false;
   // A serverless request cannot safely promise ten serial five-second RTC
   // POSTs or return ten large inline results. Each call is single-shot, and
   // budget exhaustion is disclosed per remaining item, never silently cut.
   for(const call of args.calls) {
-   if(stopped || now()-started>=maxMs) {
+   if(stopped || now()>=deadlineAt) {
     incomplete=true;stopped=true;
     results.push({name:call.name,ok:false,error:{code:'unavailable',
      what:'Hub batch deadline or response budget exhausted'}});
     continue;
    }
-   const outcome=await runFederatedBroker('hub_call',call,actor,db,settings,deps);
+   const outcome=await runFederatedBroker('hub_call',call,actor,db,settings,
+    {...deps,batchDeadlineAt:deadlineAt});
    const item={name:call.name,...outcome};
    let bytes;
    try{bytes=Buffer.byteLength(JSON.stringify(item),'utf8');}
@@ -364,6 +393,9 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
    }
    results.push(item);
    usedBytes+=bytes;
+   // A provider might return after its allotted transport window; do
+   // not dispatch another attempt after an already-expired batch budget.
+   if(now()>=deadlineAt){incomplete=true;stopped=true;}
   }
   return {ok:true,result:{results,incomplete}};
  }
