@@ -205,3 +205,35 @@ it('fails closed if final grant check is unavailable, without retrying provider 
  expect(d.audit).toHaveBeenCalledTimes(2);
  expect(JSON.stringify(result)).not.toContain(grant.pass);
 });
+
+it('returns bounded partial batch instead of risking ten serial provider timeouts',async()=>{
+ const d=deps();
+ let elapsed=0;
+ d.now=()=>elapsed;
+ d.read.mockImplementation(async()=>{
+  elapsed+=21000;
+  return {ok:true,result:{items:['synthetic']}};
+ });
+ const r=await runFederatedBroker('hub_batch',{calls:[
+  {name:'stripe_invoice_list'},{name:'stripe_invoice_list'},
+  {name:'stripe_invoice_list'}]},actor,{},{},d);
+ expect(r.ok).toBe(true);
+ expect(r.result.incomplete).toBe(true);
+ expect(r.result.results.map(x=>x.ok)).toEqual([true,false,false]);
+ expect(d.read).toHaveBeenCalledTimes(1);
+ expect(d.audit).toHaveBeenCalledTimes(2);
+});
+it('does not emit a truncated batch or dispatch further RTC reads after output cap',async()=>{
+ const d=deps();
+ d.read.mockResolvedValue({ok:true,result:{items:'x'.repeat(4800)}});
+ const calls=Array.from({length:5},()=>({name:'stripe_invoice_list'}));
+ const r=await runFederatedBroker('hub_batch',{calls},actor,{},{},d);
+ expect(r.ok).toBe(true);
+ expect(r.result.incomplete).toBe(true);
+ expect(r.result.results).toHaveLength(5);
+ expect(r.result.results.slice(0,2).every(x=>x.ok)).toBe(true);
+ expect(r.result.results.slice(2).every(x=>!x.ok)).toBe(true);
+ expect(d.read).toHaveBeenCalledTimes(3);
+ expect(d.audit).toHaveBeenCalledTimes(6);
+ expect(Buffer.byteLength(JSON.stringify(r),'utf8')).toBeLessThan(12000);
+});
