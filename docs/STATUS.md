@@ -1,3 +1,18 @@
+## H-3 large-fleet namespace navigation — next source PR
+
+The fixed-menu `hub_namespaces` native Hub operation now uses a bounded,
+optional `limit` and short-lived caller/roster-signed `cursor` for
+on-demand paged navigation through up to 100 authorized RTC namespaces.
+Default small fleets retain the original Hub+RTC response. Every later
+page avoids repeating the Hub entry; every service is returned exactly
+once, without contacting external provider tools or fetching schemas.
+`hub_health` now reports the same bounded 100-service eligible count.
+Revoked/changed rosters and changed callers fail closed. Synthetic tests
+cover full 2/5/12/50/100 roster traversal, a limit of one, correct
+health counts, denial and zero provider requests. Large real fleets
+and hosted migrations/provider acceptance remain OPEN. This is proposed
+source, not a deployed or accepted live claim.
+
 ## H-3 bounded RTC discovery continuation and measured scale — proposed
 
 Native `hub_search_tools` and GET `/api/tools?q=...` now accept an
