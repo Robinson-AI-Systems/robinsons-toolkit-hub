@@ -470,7 +470,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H4-OWNER-OAUTH-LIFECYCLE",
     "priority": 16,
-    "requiredRevision": "SOURCE_PIN_PENDING",
+    "requiredRevision": "c7b0a6d5e658516162d1201974c75c5c99abfb6f",
     "introducedFile": "packages/hub/migrations/013-hub-owner-oauth-audit.sql",
     "task": "Verify owner-only OAuth family metadata, exact family revocation, durable redacted family audit, refresh/access denial and old encrypted RTC handle invalidation with real hosted TEST",
     "procedure": "docs/pr-cards/H-4.md",
