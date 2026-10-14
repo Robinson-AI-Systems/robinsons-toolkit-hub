@@ -1,3 +1,17 @@
+## H-3 authorized catalogue browsing — PR #170 (pending review)
+Agents can explore all grant-eligible RTC metadata through native
+`hub_search_tools({query:''})` or authenticated HTTPS `GET /api/tools?q=`
+and can browse one permitted service via `?server=stripe` without knowing
+tool names. The unqualified `GET /api/tools` preserves its small fixed
+Hub menu and incurs no provider requests. Every exposed upstream remains
+narrowed to TEST read_only grant/areas with a maximum three selected
+origins per request, 20 results, signed caller-bound resume cursor
+and explicit partial/incomplete reporting. Synthetic tests cover full
+100-service traversal, tampering/refusals and zero provider calls for
+unqualified reads. Provider-specific next-page pagination and real
+hosted TEST access are not asserted. Await checked live release and
+actual provider acceptance: HUB-H3-BROWSE.
+
 ## H-3 fixed HTTPS broker parity — PR #169 (pending review)
 Authenticated Hub HTTPS `POST /api/tools/{hub_broker}` now uses the same
 grant-filtered native federation dispatcher for Hub health, tool search,
@@ -87,6 +101,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "PR #169 scoped fake-RTC handler tests proposed; source is not released, real two-service and revocation remain unverified."
+  },
+  {
+    "id": "HUB-H3-BROWSE",
+    "priority": 5,
+    "requiredRevision": "00723ed1aa2f9a06a389401ea7c65bb2fdaab65c",
+    "task": "Verify zero-keyword RTC catalogue browsing through one actual Hub TEST connection, including scoped HTTP/default listings, service selection, signed cursor, denial and upstream partial-page disclosure",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Source released to READY Hub deployment with approved hosted registry/audit schema; sealed TEST read_only service grant verified; do not infer full provider pagination",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #170 introduced bounded keyword-free discovery with synthetic 100-service and exact service-selection tests. No deployed RTC TEST browse or provider acceptance has run."
   }
 ]
 ```
