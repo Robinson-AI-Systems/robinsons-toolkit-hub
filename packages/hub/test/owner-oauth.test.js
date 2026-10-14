@@ -75,3 +75,25 @@ it('rejects duplicate fields, method, missing origin, unsupported type and locko
  expect(lock.res.statusCode).toBe(429);
  expect(lock.res.headers['Retry-After']).toBe('24');
 });
+
+it('owner can only one-way narrow an exact OAuth family after password verification',async()=>{
+ const narrow=vi.fn(async()=>({updated:true,serverNames:['stripe']}));
+ const valid='action=narrow&password=synthetic-owner-passphrase&id='+id+'&servers=stripe';
+ expect((await send('POST',valid.replace('synthetic-owner-passphrase','wrong'),
+   {narrow})).res.statusCode).toBe(401);
+ for(const body of [
+   valid.replace(id,'invalid'),
+   valid.replace('&servers=stripe',''),
+   valid.replace('servers=stripe','servers=Stripe'),
+   valid.replace('servers=stripe','servers=stripe%2Cstripe')
+ ])expect((await send('POST',body,{narrow})).res.statusCode).toBe(400);
+ expect(narrow).not.toHaveBeenCalled();
+ const ok=(await send('POST',valid,{narrow})).res;
+ expect(ok.statusCode).toBe(200);
+ expect(narrow).toHaveBeenCalledWith({},{ownerId:'owner-a',
+  sessionId:id,serverNames:['stripe']},{ownerVerified:true});
+ expect((await send('POST',valid,{narrow:async()=>({updated:false})}))
+  .res.statusCode).toBe(404);
+ const {res}=await send('GET');
+ expect(res.html).toContain('Permanently narrow this family');
+});

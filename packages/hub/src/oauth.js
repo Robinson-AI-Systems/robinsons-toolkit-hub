@@ -229,3 +229,57 @@ export async function revokeOwnerOAuthFamily(db,{ownerId,sessionId},
     RETURNING id`,[sessionId,ownerId]);
   return rows.length===1;
 }
+
+/**
+ * An independently verified owner may only permanently reduce the server
+ * selection of an existing OAuth refresh family. All existing sessions
+ * change in one SQL statement; concurrent owner decisions cannot restore
+ * previously removed servers. Upstream encrypted RTC grants are untouched.
+ */
+export async function narrowOwnerOAuthFamilyServers(db,{ownerId,sessionId,serverNames},
+ {ownerVerified=false}={}) {
+  verified(ownerVerified);
+  if(!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId||'')||
+    !uuidPattern.test(sessionId||'')) throw new TypeError('Invalid OAuth family selector');
+  const selected=serverSelection(serverNames,{required:true});
+  const {rows}=await db.query(`WITH target AS (
+      SELECT s.family_id FROM hub_oauth_sessions s
+      WHERE s.id=$1 AND s.owner_id=$2 AND s.revoked_at IS NULL
+        AND s.refresh_expires_at>now()
+        AND (s.allowed_servers IS NULL OR
+          ($3::text[] <@ s.allowed_servers
+           AND cardinality($3::text[])<cardinality(s.allowed_servers)))
+        AND NOT EXISTS(
+          SELECT 1 FROM hub_oauth_sessions different
+          WHERE different.family_id=s.family_id AND
+            (different.owner_id<>s.owner_id OR different.revoked_at IS NOT NULL
+             OR different.allowed_servers IS DISTINCT FROM s.allowed_servers))
+        AND NOT EXISTS(
+          SELECT 1 FROM unnest($3::text[]) choice
+          WHERE NOT EXISTS(SELECT 1 FROM hub_servers owned
+            WHERE owned.name=choice AND owned.owner_id=$2))
+    ), tightened AS (
+      UPDATE hub_oauth_sessions s SET allowed_servers=$3::text[]
+      WHERE s.family_id IN (SELECT family_id FROM target)
+        AND s.owner_id=$2 AND s.revoked_at IS NULL
+        AND (s.allowed_servers IS NULL OR
+          ($3::text[] <@ s.allowed_servers
+           AND cardinality($3::text[])<cardinality(s.allowed_servers)))
+      RETURNING s.id
+    ), invalidated AS (
+      DELETE FROM hub_rtc_result_handles h USING hub_server_grants grant
+      WHERE grant.id=h.grant_id AND grant.owner_id=$2
+        AND grant.caller_kind='oauth'
+        AND grant.server_name<>ALL($3::text[])
+        AND grant.caller_id IN (SELECT id FROM hub_oauth_sessions
+          WHERE family_id IN (SELECT family_id FROM target))
+      RETURNING h.handle_digest
+    )
+    INSERT INTO hub_oauth_family_scope_audit
+      (owner_id,family_id,session_id,server_names,affected_sessions,purged_handles)
+    SELECT $2,t.family_id,$1,$3::text[],
+      (SELECT count(*) FROM tightened),(SELECT count(*) FROM invalidated)
+    FROM target t WHERE EXISTS(SELECT 1 FROM tightened)
+    RETURNING id`,[sessionId,ownerId,selected]);
+  return {updated:rows.length===1,serverNames:rows.length===1?[...selected]:null};
+}
