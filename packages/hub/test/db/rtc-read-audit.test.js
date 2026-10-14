@@ -3,7 +3,8 @@ import pg from 'pg';
 import {randomBytes,createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {issueHubPass} from '../../src/identity.js';
-import {stageCallerGrant,activateVerifiedCallerGrant} from '../../src/grants.js';
+import {stageCallerGrant,activateVerifiedCallerGrant,
+ listEligibleRtcTargets} from '../../src/grants.js';
 import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,authenticateOAuth}
  from '../../src/oauth.js';
 import {appendRtcReadAudit,newRtcCorrelation} from '../../src/rtc-read-audit.js';
@@ -96,4 +97,14 @@ it('rejects impersonated actor and invalid unverified metadata before SQL insert
    phase:'attempt',outcome:'success'})).rejects.toThrow();
  const after=await db.query('SELECT count(*)::integer AS n FROM hub_rtc_read_audit');
  expect(after.rows[0].n).toBe(before.rows[0].n);
+});
+
+it('returns private grant identity and verified origin only to the cursor scope selector',async()=>{
+ const targets=await listEligibleRtcTargets(db,actor,{limit:100});
+ const stripe=targets.find(t=>t.name==='stripe');
+ expect(stripe).toMatchObject({grantId,origin:'https://stripe-mcp-psi.vercel.app',
+  prefix:'stripe',state:'active',readOnlyGrant:true});
+ expect(typeof stripe.verifiedAt).toBe('string');
+ expect(stripe.verifiedAt.length).toBeGreaterThan(10);
+ expect(JSON.stringify(targets)).not.toContain(pass);
 });
