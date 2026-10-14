@@ -201,3 +201,33 @@ it('marks full-page dropped provider extras incomplete and supports selected-ser
  ]);
  expect(focused.result.incomplete).toBe(false);
 });
+
+it('invalidates native search and namespace continuations after same-scope grant rotation',async()=>{
+ const before=targets(5).map((t,i)=>({...t,grantId:'first-'+i,
+  origin:'https://svc'+i+'.example.net',verifiedAt:'2026-10-14T00:00:00Z'}));
+ const original=setup(before);
+ const search=await runFederatedBroker('hub_search_tools',
+  {query:'status',limit:3},actor,{},settings,original);
+ expect(search.ok).toBe(true);
+ const namespace=await runFederatedBroker('hub_namespaces',
+  {limit:2},actor,{},settings,original);
+ expect(namespace.ok).toBe(true);
+ const changed=before.map((t,i)=>i===1?{...t,grantId:'replacement-1'}:t);
+ const after=setup(changed);
+ const staleSearch=await runFederatedBroker('hub_search_tools',
+  {query:'status',limit:3,cursor:search.result.next},
+  actor,{},settings,after);
+ const staleNamespace=await runFederatedBroker('hub_namespaces',
+  {limit:2,cursor:namespace.result.next},actor,{},settings,after);
+ expect(staleSearch.error.code).toBe('invalid_args');
+ expect(staleNamespace.error.code).toBe('invalid_args');
+ expect(after.resolve).not.toHaveBeenCalled();
+ expect(after.search).not.toHaveBeenCalled();
+ const moved=setup(before.map((t,i)=>i===1?
+  {...t,origin:'https://moved.example.net'}:t));
+ const staleOrigin=await runFederatedBroker('hub_search_tools',
+  {query:'status',limit:3,cursor:search.result.next},
+  actor,{},settings,moved);
+ expect(staleOrigin.error.code).toBe('invalid_args');
+ expect(moved.search).not.toHaveBeenCalled();
+});
