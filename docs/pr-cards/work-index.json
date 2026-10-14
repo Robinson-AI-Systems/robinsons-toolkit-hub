@@ -449,9 +449,10 @@
         "#189 (owner-scoped subset of RTC servers for newly issued Hub passes; H-4 partial)",
         "#190 (owner-selected PKCE/refresh family RTC server narrowing; H-4 partial)",
         "#191 (owner-only atomic one-way pass reduction, redacted listing, concurrent SQL/audit and result denial; partial)",
-        "#192 (verified-owner original-grant area ceiling, immutable audit, RTC result purge and cross-process race; partial)"
+        "#192 (verified-owner original-grant area ceiling, immutable audit, RTC result purge and cross-process race; partial)",
+        "#193 (owner-only OAuth family review/revoke with atomic encrypted-result invalidation and audit; H-4 partial)"
       ],
-      "note": "Four H-4 source slices #189–#192 narrow server permissions through direct pass, OAuth family, owner pass edits and independent upstream grant areas. Original TEST/read_only pass remains sealed and unchanged. H-4 parent remains in progress pending full profile/family lifecycle and independently deployed real RTC acceptance; hosted migrations 010–012 pending."
+      "note": "Four H-4 source slices #189–#192 narrow server permissions through direct pass, OAuth family, owner pass edits and independent upstream grant areas. Original TEST/read_only pass remains sealed and unchanged. H-4 parent remains in progress pending full profile/family lifecycle and independently deployed real RTC acceptance; hosted migrations 010–012 pending. Owner OAuth family lifecycle (013) requires checked deployment and independent real TEST acceptance."
     },
     {
       "id": "H-5",

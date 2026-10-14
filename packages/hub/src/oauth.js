@@ -168,3 +168,64 @@ export async function listOwnerOAuthSessions(db, ownerId, { ownerVerified=false 
   [ownerId]);
   return result.rows;
 }
+
+const uuidPattern=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+
+// Owner-only family view; one most recent session per still-live family.
+// Never include bearer digests, upstream grants or OAuth verifier material.
+export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}) {
+  verified(ownerVerified);
+  if(!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId||''))
+    throw new TypeError('Invalid owner');
+  const {rows}=await db.query(`SELECT id,family_id,client_id,profile,areas,mode,
+    allowed_servers,access_expires_at,refresh_expires_at FROM (
+      SELECT s.id,s.family_id,s.client_id,s.profile,s.areas,s.mode,
+        to_jsonb(s)->'allowed_servers' AS allowed_servers,
+        s.access_expires_at,s.refresh_expires_at,
+        row_number() OVER (PARTITION BY s.family_id
+          ORDER BY s.refresh_expires_at DESC,s.access_expires_at DESC,s.id DESC) AS rank
+      FROM hub_oauth_sessions s WHERE s.owner_id=$1 AND s.revoked_at IS NULL
+        AND s.refresh_expires_at>now()
+        AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions r
+          WHERE r.family_id=s.family_id AND r.revoked_at IS NOT NULL)
+    ) current WHERE rank=1 ORDER BY access_expires_at DESC,id LIMIT 30`,[ownerId]);
+  return rows.map(r=>({
+    id:r.id,clientId:r.client_id,profile:r.profile,mode:r.mode,
+    areas:[...r.areas],serverNames:Array.isArray(r.allowed_servers) ?
+      [...serverSelection(r.allowed_servers)] : null,
+    accessExpiresAt:r.access_expires_at,refreshExpiresAt:r.refresh_expires_at
+  }));
+}
+
+// Unlike bearer self-revocation, this path requires an independent owner
+// challenge. An audit write, full refresh-family shutdown, and deletion of
+// prior RTC encrypted handles commit or roll back as one SQL statement.
+export async function revokeOwnerOAuthFamily(db,{ownerId,sessionId},
+ {ownerVerified=false}={}) {
+  verified(ownerVerified);
+  if(!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId||'')||
+    !uuidPattern.test(sessionId||'')) throw new TypeError('Invalid OAuth family selector');
+  const {rows}=await db.query(`WITH target AS (
+      SELECT family_id FROM hub_oauth_sessions
+      WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL
+        AND refresh_expires_at>now()
+    ), revoked AS (
+      UPDATE hub_oauth_sessions s SET revoked_at=now()
+      WHERE s.owner_id=$2 AND s.revoked_at IS NULL
+        AND s.family_id IN (SELECT family_id FROM target)
+      RETURNING s.id
+    ), purged AS (
+      DELETE FROM hub_rtc_result_handles h USING hub_server_grants g
+      WHERE h.grant_id=g.id AND g.owner_id=$2 AND g.caller_kind='oauth'
+        AND g.caller_id IN (SELECT id FROM hub_oauth_sessions
+          WHERE family_id IN (SELECT family_id FROM target))
+      RETURNING h.handle_digest
+    )
+    INSERT INTO hub_oauth_owner_audit
+      (owner_id,family_id,sample_session_id,action,affected_sessions,purged_handles)
+    SELECT $2,t.family_id,$1,'revoke',
+      (SELECT count(*) FROM revoked),(SELECT count(*) FROM purged)
+    FROM target t WHERE EXISTS(SELECT 1 FROM revoked)
+    RETURNING id`,[sessionId,ownerId]);
+  return rows.length===1;
+}
