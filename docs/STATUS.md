@@ -1,3 +1,11 @@
+## October 14 H-3 owner-authenticated setup readiness — PR #178 (source proposal)
+The owner can inspect the exact H-3 schema, encryption-key and active TEST
+grant prerequisites from a no-store, independently password-verified mobile
+browser form without revealing provider credentials or activating routing.
+GET is metadata-free; unauthorized POST performs no registry inspection.
+Unit tests cover owner auth, locked state, unavailable schema and sanitized
+failures. Deployed TEST identity/read/denial/revocation remain OPEN.
+
 ## October 14 H-3 bounded encrypted handle expiry cleanup — PR #177 (source proposal)
 Dedicated RTC read-result storage now prunes at most 100 expired encrypted
 handle rows during a new stored result, without affecting unexpired RTC pages
