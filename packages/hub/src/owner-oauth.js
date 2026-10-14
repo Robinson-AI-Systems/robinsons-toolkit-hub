@@ -1,4 +1,6 @@
-import {listOwnerOAuthFamilies,revokeOwnerOAuthFamily} from './oauth.js';
+import {listOwnerOAuthFamilies,revokeOwnerOAuthFamily,
+  narrowOwnerOAuthFamilyServers} from './oauth.js';
+import {parseOwnerServerSelection} from './server-selection.js';
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
   verifyOwnerLogin} from './owner-login.js';
 
@@ -25,7 +27,14 @@ function form() {
     '<p>Irreversible: ends all access and refresh tokens in the family. '+
     'Previously issued RTC result pages are deleted. To connect again, '+
     'use new owner-approved OAuth PKCE authorization and new scoped grants.</p>'+
-    '<button type="submit">Revoke entire connection family</button></form>');
+    '<button type="submit">Revoke entire connection family</button></form>'+ 
+    '<form method="POST" action="/api/owner/oauth">'+
+    '<input type="hidden" name="action" value="narrow">'+
+    '<label>Connection session ID <input name="id" maxlength="36" required></label>'+
+    '<label>Reduced RTC server names <input name="servers" maxlength="1300" required></label>'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<p>One-way family restriction; previously issued RTC result pages for removed servers are invalidated.</p>'+
+    '<button type="submit">Permanently narrow this family</button></form>');
 }
 function display(rows) {
   return page('<h2>Active family metadata (max 30)</h2>'+
@@ -40,7 +49,8 @@ function display(rows) {
 }
 export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
   verify=verifyOwnerLogin,list=listOwnerOAuthFamilies,
-  revoke=revokeOwnerOAuthFamily}={}) {
+  revoke=revokeOwnerOAuthFamily,
+  narrow=narrowOwnerOAuthFamilyServers}={}) {
   htmlHeaders(res);
   res.setHeader('Pragma','no-cache');
   if(!['GET','POST'].includes(req.method)) {
@@ -53,11 +63,14 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
   if(!String(req.headers?.['content-type']||'').startsWith('application/x-www-form-urlencoded'))
     return res.status(415).send('Unsupported content type');
   const fields=formFields(req);
-  if(!fields||!['list','revoke'].includes(fields.action)||
+  if(!fields||!['list','revoke','narrow'].includes(fields.action)||
      typeof fields.password!=='string'||!fields.password||
      fields.password.length>256||
-     (fields.action==='revoke'&&!uuid.test(fields.id||'')))
+     (['revoke','narrow'].includes(fields.action)&&!uuid.test(fields.id||'')))
     return res.status(400).send('Invalid request');
+  const selection=fields.action==='narrow' ? parseOwnerServerSelection(fields.servers) : null;
+  if(fields.action==='narrow'&&!selection)
+    return res.status(400).send('Select 1–20 canonical RTC servers');
   try {
     return await withDb(async db=>{
       const decision=await verify(db,req,fields.password,{env});
@@ -67,6 +80,13 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
       }
       if(fields.action==='list') return res.status(200).send(
         display(await list(db,env.HUB_OWNER_ID,{ownerVerified:true})));
+      if(fields.action==='narrow') {
+        const result=await narrow(db,{ownerId:env.HUB_OWNER_ID,
+          sessionId:fields.id,serverNames:selection},{ownerVerified:true});
+        return res.status(result.updated?200:404).send(result.updated?
+          'OAuth family permanently narrowed; removed RTC result pages invalidated.' :
+          'OAuth family unavailable or selection would widen permissions.');
+      }
       const done=await revoke(db,{ownerId:env.HUB_OWNER_ID,sessionId:fields.id},
         {ownerVerified:true});
       return res.status(done?200:404).send(done?

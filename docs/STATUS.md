@@ -1,3 +1,14 @@
+## H-4 permanent OAuth family server narrowing — source proposal
+
+Owner-only one-way reduction now updates every existing PKCE refresh family
+session under SQL's conditional subset guards, with a durable audit and removal
+of encrypted RTC result pages attached to excluded services. An already
+issued broad actor must fail active SQL service checks, and refreshed access
+tokens inherit the narrowed selection. Concurrent conflicting reductions
+cannot reinstate another server. Scope changes do not re-encrypt service grants,
+contact providers, or activate LIVE. Hosted migration 014 and genuine TEST
+read/denial remain queued; H-4 remains IN_PROGRESS.
+
 
 ## H-4 OAuth connection-family owner management — source PR pending
 
@@ -478,6 +489,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: H-4 owner OAuth family lifecycle source, synthetic HTTP and disposable SQL evidence only; no hosted owner or real RTC TEST readback."
+  },
+  {
+    "id": "HUB-H4-OAUTH-FAMILY-NARROW",
+    "priority": 17,
+    "requiredRevision": "59bb7466e501f9232317adc257358bd0fe61e80a",
+    "introducedFile": "packages/hub/migrations/014-hub-oauth-family-scope-audit.sql",
+    "task": "Verify authenticated owner one-way family server reduction, all rotated session scopes, durable nonsecret audit, no removed-service native/HTTP read and prior encrypted RTC result-page refusal",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Checked READY deployment with migrations 010/011/013/014, independently verified owner and service-issued TEST/read_only upstream grants, genuine two-service RTC read and denial proof; no write or LIVE",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: local HTTP/isolated PostgreSQL H-4 family narrowing and concurrency checks are not deployed owner or real provider TEST evidence."
   }
 ]
 ```
