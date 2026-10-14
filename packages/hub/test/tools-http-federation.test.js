@@ -294,7 +294,7 @@ it('continues a selected RTC catalogue through the authenticated HTTPS Hub door'
  upstream.search.mockImplementation(async(_grant,args)=>({
   tools:[{name:args.cursor?'stripe_invoice_detail':'stripe_invoice_list',
    area:'billing',description:'Safe TEST metadata',writes:false,money:false,
-   destructive:false}],next:args.cursor?null:'provider_page_two',
+   destructive:false}],next:args.cursor?null:{kind:'cursor',value:'provider_page_two'},
   incomplete:!args.cursor
  }));
  const options={q:'invoice',server:'stripe',area:'billing',limit:'3'};
@@ -309,7 +309,7 @@ it('continues a selected RTC catalogue through the authenticated HTTPS Hub door'
  expect(second.body.result.tools.map(t=>t.name)).toEqual(['stripe_invoice_detail']);
  expect(second.body.result.next).toBeNull();
  expect(upstream.search.mock.calls.map(c=>c[1].cursor))
-  .toEqual([undefined,'provider_page_two']);
+  .toEqual([undefined,{kind:'cursor',value:'provider_page_two'}]);
  const altered=await send('list','GET',{...options,q:'other',cursor});
  expect(altered.code).toBe(400);
  expect(altered.body.error.code).toBe('invalid_args');
