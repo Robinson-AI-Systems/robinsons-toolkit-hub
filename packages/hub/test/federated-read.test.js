@@ -134,3 +134,40 @@ it('selects longest canonical service prefix for nested registered services',asy
    {name:'foo_bar_item_list'},actor,{},{},d2);
  expect(described.result.server).toBe('foo_bar_service');
 });
+
+
+it('routes describe and audited RTC calls to the last authorized service in a 100-service roster',async()=>{
+ const d=deps(),members=Array.from({length:99},(_,i)=>({
+  name:'svc'+String(i).padStart(3,'0'),
+  prefix:'svc'+String(i).padStart(3,'0'),areas:['billing'],
+  claimedCounts:{tools:1}}));
+ members.push({name:'workspace',prefix:'workspace_',areas:['billing'],
+  claimedCounts:{tools:1}});
+ d.list.mockResolvedValue(members);
+ const selected={...grant,server:'workspace',prefix:'workspace_'};
+ d.resolve.mockResolvedValue(selected);
+ d.describe.mockResolvedValue({name:'workspace_drive_list',area:'billing',
+  writes:false,money:false,destructive:false,
+  annotations:{readOnlyHint:true},inputSchema:{type:'object'}});
+ const described=await runFederatedBroker('hub_describe_tool',
+  {name:'workspace_drive_list'},actor,{},{},d);
+ expect(described.ok).toBe(true);
+ expect(described.result.server).toBe('workspace');
+ const executed=await runFederatedBroker('hub_call',
+  {name:'workspace_drive_list',args:{}},actor,{},{},d);
+ expect(executed.ok).toBe(true);
+ expect(executed.result.server).toBe('workspace');
+ expect(d.list).toHaveBeenCalledTimes(2);
+ expect(d.list).toHaveBeenNthCalledWith(1,expect.anything(),actor,{limit:100});
+ expect(d.list).toHaveBeenNthCalledWith(2,expect.anything(),actor,{limit:100});
+ expect(d.resolve).toHaveBeenCalledWith(expect.anything(),
+  {actor,serverName:'workspace'},expect.anything());
+ expect(d.read).toHaveBeenCalledTimes(1);
+ expect(d.audit).toHaveBeenCalledTimes(2);
+ const denied=deps();denied.list.mockResolvedValue(members);
+ const refused=await runFederatedBroker('hub_call',
+  {name:'workspace__drive_list'},actor,{},{},denied);
+ expect(refused.error.code).toBe('not_found');
+ expect(denied.resolve).not.toHaveBeenCalled();
+ expect(denied.read).not.toHaveBeenCalled();
+});
