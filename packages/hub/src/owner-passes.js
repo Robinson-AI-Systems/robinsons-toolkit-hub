@@ -63,7 +63,7 @@ function scopeDisplay(rows) {
     '<p>Stored metadata only; no bearer tokens, pass digests or RTC credentials.</p>'+
     '<ul>'+items+'</ul>');
 }
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // An independently verified owner is the only issuer. No bearer, OAuth
 // session, caller argument, provider service or AI can mint or broaden passes.
