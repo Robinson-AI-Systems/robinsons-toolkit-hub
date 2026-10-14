@@ -419,10 +419,11 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "H-3 source #158 pinned and scoped upstream RTC metadata GET. #159 wires fixed native Hub MCP search/describe/health/namespaces to up to three active, grant-verified RTC targets per request, with partial outage isolation, on-demand schemas and non-writing health. Provider POST call/batch, HTTP door parity, durable audit, result handles, deployed H-2 grants and real two-service acceptance still OPEN.",
+      "note": "Source H-3: #158 DNS-pinned RTC metadata GET, #159 bounded native MCP scoped search/describe/namespaces; #160 implements guarded grant-scoped authenticated TEST read POST, sequential batch, durable correlated attempt/outcome SQL for Hub pass + OAuth, explicit oversized inline refusal, uncertain POST no retry. Real two-service provider calls, installed hosted 008 migration, result handles/explicit pagination, live/RTC1 conformance and full H3 HTTP parity remain OPEN.",
       "pr": [
         "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
-        "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)"
+        "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",
+        "#160 (non-retrying pinned read POST, audit, batch, SQL integration; hosted acceptance open)"
       ]
     },
     {
