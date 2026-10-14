@@ -34,7 +34,7 @@ function fixture() {
   correlation: randomUUID
  };
  const authorize = vi.fn(async () => ({ actor }));
- const withDb = async fn => fn({}, {});
+ const withDb = async fn => fn({}, {pepper:'synthetic-https-search-cursor-key-over-32-bytes'});
  const federate = (name,args,current,db,settings) =>
   runFederatedBroker(name,args,current,db,settings,upstream);
  async function send(route, method, query = {}, body, auth = authorize) {
@@ -139,4 +139,29 @@ it('rejects invalid routes, query selectors and request envelopes before contact
   await send('batch','POST',{}, {calls:Array(11).fill({name:'stripe_invoice_list'})})
  ]) expect(r.code).toBe(400);
  expect(upstream.read).not.toHaveBeenCalled();
+});
+
+it('continues bounded RTC HTTPS discovery with a caller-bound cursor',async()=>{
+ const {send,upstream}=fixture();
+ upstream.list.mockResolvedValueOnce([
+  {name:'stripe',prefix:'stripe',areas:['billing']},
+  {name:'google',prefix:'google',areas:['billing']},
+  {name:'github',prefix:'github',areas:['billing']},
+  {name:'neon',prefix:'neon',areas:['billing']}
+ ]).mockResolvedValueOnce([
+  {name:'stripe',prefix:'stripe',areas:['billing']},
+  {name:'google',prefix:'google',areas:['billing']},
+  {name:'github',prefix:'github',areas:['billing']},
+  {name:'neon',prefix:'neon',areas:['billing']}
+ ]);
+ const first=await send('list','GET',{q:'invoice',area:'billing',limit:'5'});
+ expect(first.code).toBe(200);
+ expect(first.body.result.scanned).toBe(3);
+ expect(typeof first.body.result.next).toBe('string');
+ const second=await send('list','GET',{
+  q:'invoice',area:'billing',limit:'5',cursor:first.body.result.next});
+ expect(second.code).toBe(200);
+ expect(second.body.result.scanned).toBe(1);
+ expect(second.body.result.next).toBeNull();
+ expect(upstream.search).toHaveBeenCalledTimes(4);
 });
