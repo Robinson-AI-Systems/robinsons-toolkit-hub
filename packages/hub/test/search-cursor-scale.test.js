@@ -240,7 +240,7 @@ it('browses every page of one selected RTC service with sealed caller-bound cont
   const page=args.cursor==='provider_page_2'?2:1;
   return {tools:[{name:grant.prefix+'_read_'+page,area:'billing',
    description:'Scoped page '+page,writes:false,money:false,destructive:false}],
-   next:page===1?'provider_page_2':null,incomplete:page===1};
+   next:page===1?{kind:'cursor',value:'provider_page_2'}:null,incomplete:page===1};
  });
  const args={query:'read',server:'svc000',area:'billing',limit:3};
  const first=await runFederatedBroker('hub_search_tools',args,actor,{},settings,deps);
@@ -256,7 +256,7 @@ it('browses every page of one selected RTC service with sealed caller-bound cont
  expect(followed.result.tools.map(t=>t.name)).toEqual(['svc000_read_2']);
  expect(followed.result.next).toBeNull();
  expect(followed.result.incomplete).toBe(false);
- expect(deps.search.mock.calls.map(c=>c[1].cursor)).toEqual([undefined,'provider_page_2']);
+ expect(deps.search.mock.calls.map(c=>c[1].cursor)).toEqual([undefined,{kind:'cursor',value:'provider_page_2'}]);
  expect(deps.resolve).toHaveBeenCalledTimes(4);
  for(const changed of [
   {...args,server:'svc001',cursor:first.result.next},
