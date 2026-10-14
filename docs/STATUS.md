@@ -493,7 +493,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H4-OAUTH-FAMILY-NARROW",
     "priority": 17,
-    "requiredRevision": "FEATURE_PIN",
+    "requiredRevision": "59bb7466e501f9232317adc257358bd0fe61e80a",
     "introducedFile": "packages/hub/migrations/014-hub-oauth-family-scope-audit.sql",
     "task": "Verify authenticated owner one-way family server reduction, all rotated session scopes, durable nonsecret audit, no removed-service native/HTTP read and prior encrypted RTC result-page refusal",
     "procedure": "docs/pr-cards/H-4.md",
