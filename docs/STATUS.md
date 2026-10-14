@@ -1,3 +1,14 @@
+## H-3 encrypted selected-provider RTC catalogue pages — source branch
+A selected granted read_only TEST service can resume its own upstream
+GET /api/tools `next` through MCP or authenticated HTTPS, rather than
+silently losing additional provider tools. Opaque provider continuations
+are AES-GCM sealed and tied to exact caller/grant/revision scope; forged,
+expired or rotated tokens are refused before any provider network call.
+Broad three-provider search and bounded service cursors remain unchanged.
+Source and synthetic tests are not release or real-provider evidence.
+Production RTC cursor compatibility, authenticated browse and revocation
+readbacks are queued as HUB-H3-UPSTREAM-PAGES; no release/spending requested.
+
 ## October 14 outcome-sized agent-session policy — PR #181 source
 The owner replaced fixed five-PR session quotas and divisible-by-five PR-number
 boundaries with complete approved roadmap slices grouped into compatible,
@@ -225,6 +236,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Source and isolated PostgreSQL/owner-route tests proposed in PR #180; no authorized real staged fixture or hosted retirement has been executed."
+  },
+  {
+    "id": "HUB-H3-UPSTREAM-PAGES",
+    "priority": 8,
+    "requiredRevision": "66edca0d943e80b64e27cee4c22730ddf07e5b25",
+    "task": "Independently verify a checked Hub deployment follows a real scoped RTC provider next-page token through native MCP and HTTPS selected-service browse; demonstrate two or more distinct results, denied forged/expired/rotated grant cursors and standalone provider readback",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Reviewed released Hub source at least required revision; exact RTC1 provider origin and sealed independently issued TEST read_only grant, protected owner and caller identities; no provider writes or live execution",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Source-only selected-service upstream cursor transport and encrypted Hub continuation added on implementation branch; no new READY production release, staged RTC grants, genuine provider paging, denials or same-pass revocation verified."
   }
 ]
 ```
