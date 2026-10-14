@@ -25,6 +25,26 @@ export function choosePublicIpv4(answers) {
   return answers[0].address;
 }
 
+// Only the RTC read-only listing and exact-tool-schema doors may extend the
+// original contract/whoami HTTPS allowlist; no user-supplied arbitrary path.
+function safeToolReadRoute(route) {
+  if(typeof route!=='string'||route.length>512||route.includes('#'))return false;
+  if(/^\/api\/tools\/[a-z][a-z0-9_]{1,119}$/.test(route))return true;
+  let parsed;
+  try {parsed=new URL(route,'https://fixed.example.org');}
+  catch {return false;}
+  if(parsed.pathname!=='/api/tools'||!['','?'].includes(route.slice(10,11))||
+    parsed.searchParams.size>3||parsed.username||parsed.password||
+    parsed.origin!=='https://fixed.example.org')return false;
+  for(const key of parsed.searchParams.keys())
+    if(!['q','area','limit'].includes(key)||parsed.searchParams.getAll(key).length!==1)
+      return false;
+  const q=parsed.searchParams.get('q'),area=parsed.searchParams.get('area'),
+    limit=parsed.searchParams.get('limit');
+  return (!q||q.length<=120)&&(!area||/^[a-z][a-z0-9_]{0,59}$/.test(area))&&
+    (!limit||/^(?:[1-9]|1[0-9]|20)$/.test(limit));
+}
+
 function assertManifest(manifest,{name,prefix}) {
   if (!manifest || typeof manifest!=='object'||Array.isArray(manifest)||
     manifest.rtc!==1||manifest.server!==name||manifest.prefix!==prefix||
@@ -46,9 +66,9 @@ function assertManifest(manifest,{name,prefix}) {
 export async function pinnedRtcJsonGet(origin,route,
   {pass,lookup=systemLookup,request=httpsRequest}={}) {
   validateStagedOrigin(origin);
-  if (!['/api/contract','/api/whoami'].includes(route)||
+  if (!['/api/contract','/api/whoami'].includes(route) && !safeToolReadRoute(route) ||
     (route==='/api/contract' && pass!==undefined)||
-    (route==='/api/whoami' && (typeof pass!=='string'||
+    (route!=='/api/contract' && (typeof pass!=='string'||
       !/^rtc_pass_[A-Za-z0-9_-]{43}$/.test(pass))))
     throw new TypeError('Invalid pinned RTC read request');
   const hostname=new URL(origin).hostname;
@@ -84,7 +104,7 @@ export async function pinnedRtcJsonGet(origin,route,
         response.on('data',chunk=>{
           if(complete) return;
           total+=chunk.length;
-          if(total>16384) {
+          if(total>(safeToolReadRoute(route)?65536:16384)) {
             fail('RTC manifest exceeds byte limit');
             req.destroy();
             return;
