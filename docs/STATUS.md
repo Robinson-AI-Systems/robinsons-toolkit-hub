@@ -1,3 +1,21 @@
+## H-3 bounded RTC discovery continuation and measured scale — proposed
+
+Native `hub_search_tools` and GET `/api/tools?q=...` now accept an
+opaque HMAC-authenticated, five-minute search cursor bound to caller,
+query, profile/mode and the current authorized service roster. No
+unauthorized grant/provider can be reached by replaying or modifying it.
+The broker queries at most three independent RTC origins per page and
+can resume beyond the previous hard first-three ceiling through 100
+bounded eligible service records. Lower result limits resume after
+the exact number of inspected services, without skipping or duplicating
+providers. Metadata responses stay under a bounded UTF-8 budget; partial
+truncation/failures are explicitly marked as incomplete, not silently
+omitted. Synthetic CI measures elapsed milliseconds and RSS delta at
+2/5/12/50/100 service deployments, with 10,000 advertised aggregate
+tools at the largest level, without eager schema loads. Synthetic
+measurements do not prove actual provider network latency or standalone
+MCP acceptance. Hosted acceptance remains OPEN.
+
 Independent read-only Neon table inventory on 2026-10-13 found Hub
 foundation tables, but no `hub_servers`, `hub_server_grants`,
 `hub_rtc_read_audit` or `hub_rtc_result_handles` in public schema.
