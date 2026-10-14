@@ -1,3 +1,17 @@
+## H-3 RTC prefix and 100-target route parity — PR #168 (awaiting merge/release)
+The Hub now uses one canonical RTC owner parser across encrypted pinned metadata
+discovery, schema lookup, read POST and federated longest-prefix routing. Already
+delimited provider prefixes (for example Workspace's `workspace_`) are accepted
+without double underscores; ambiguous/doubled separators and cross-service tool
+calls are refused before credentials or provider requests. Scoped call and describe
+can target all 100 eligible services, matching navigation and discovery's existing
+100-service ceiling rather than silently dropping callers after service 50.
+Adversarial fake-network tests cover both GET and POST, complete 100th-service
+routing, audit-before-read and doubled-prefix denial. No new privilege, provider
+mutation, production activation or upstream credentials. This is proposed source,
+not installed on live: real TEST Workspace read/denial/revocation, hosted migrations
+and verified deployment remain in HUB-H3-PREFIX acceptance queue.
+
 ## Workflow maintenance CI correction — PR #167
 
 The consolidated guide supersedes old workflow headings. The owner-workflow regression now checks the same milestone, blocker re-entry, separate deployed/authenticated proof, permanent handoff and five-PR alignment requirements through the authoritative AGENTS pointer and session guide, with added explicit pre-merge/live-proof guard assertions. No runtime assertion or safety gate was weakened. Focused tests and normal check pass; exact-head CI remains required. ARCHITECTURE now acknowledges existing H-2/H-3 source modules while retaining unverified hosted/provider acceptance. The old reference API hosting was separately paused and future Git builds disabled under owner instruction; current Hub relay hosting was preserved.
@@ -39,6 +53,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "Existing ledger/card remains authoritative; current live/provider acceptance must be reconciled at session start. Seed revision conservatively includes reviewed current main."
+  },
+  {
+    "id": "HUB-H3-PREFIX",
+    "priority": 3,
+    "requiredRevision": "2b430dbd5981cf51a191dd84415e11696e80f265",
+    "task": "Verify Hub-mediated Workspace trailing-underscore RTC read, schema lookup, audit/readback and grant-revocation denial at the approved TEST origin; retain 100-service routing scale as synthetic until an actual large fleet exists",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Checked live Hub revision, hosted 004-006/008/009 migrations, independently pinned RTC deployment and service-owned TEST read_only grants; no provider write",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #168 source and scoped synthetic regressions proposed. Existing Vercel production READY is #165, so this source is not deployed or live-accepted."
   }
 ]
 ```
