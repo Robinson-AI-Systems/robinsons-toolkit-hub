@@ -18,7 +18,7 @@ export function searchCursorScope(actor,args,matching){
 }
 /** Pagination resumes by authorized service, at most three providers per page. */
 export function issueSearchCursor(scope,offset,settings,{now=Date.now}={}){
- if(!Number.isInteger(offset)||offset<3||offset>99||offset%3!==0)
+ if(!Number.isInteger(offset)||offset<1||offset>99)
   throw new TypeError('Invalid service page offset');
  const contents={v:1,o:offset,e:Math.floor(now()/1000)+300};
  const encoded=Buffer.from(JSON.stringify(contents)).toString('base64url');
@@ -36,8 +36,8 @@ export function openSearchCursor(value,scope,settings,{now=Date.now}={}){
  }catch{return null;}
  const seconds=Math.floor(now()/1000);
  if(!contents||Object.keys(contents).sort().join(',')!=='e,o,v'||
-   contents.v!==1||!Number.isInteger(contents.o)||contents.o<3||
-   contents.o>99||contents.o%3!==0||
+   contents.v!==1||!Number.isInteger(contents.o)||contents.o<1||
+   contents.o>99||
    !Number.isInteger(contents.e)||contents.e<=seconds||
    contents.e>seconds+300)return null;
  const actual=Buffer.from(parsed[2]),expected=Buffer.from(
