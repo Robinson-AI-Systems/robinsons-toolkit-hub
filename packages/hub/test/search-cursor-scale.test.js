@@ -29,7 +29,7 @@ it('signs expiring search cursors against exact caller, query and authorized set
  const issued=issueSearchCursor(scope,3,settings,{now:()=>when});
  expect(openSearchCursor(issued,scope,settings,{now:()=>when+1000})).toBe(3);
  for(const wrong of [
-   issued.slice(0,-1)+'x',issued.slice(0,9)+'Q'+issued.slice(10),
+   issued.slice(0,-1)+(issued.endsWith('x')?'y':'x'),issued.slice(0,9)+'Q'+issued.slice(10),
    'not-valid', 'A'.repeat(300)
  ]) expect(openSearchCursor(wrong,scope,settings,{now:()=>when+1000})).toBeNull();
  expect(openSearchCursor(issued,searchCursorScope({...actor,id:randomUUID()},input,all),
@@ -43,6 +43,7 @@ it('signs expiring search cursors against exact caller, query and authorized set
 it('searches 2/5/12/50/100 RTC services in signed three-provider pages without eager schema',async()=>{
  for(const count of [2,5,12,50,100]){
   const all=targets(count),deps=setup(all);
+  const started=performance.now(),rssBefore=process.memoryUsage().rss;
   let cursor,scanned=0,seen=new Set(),pages=0;
   do {
    const args={...input,...(cursor?{cursor}:{})};
@@ -67,6 +68,10 @@ it('searches 2/5/12/50/100 RTC services in signed three-provider pages without e
   // 100 services advertise 10,000 tools, but only one candidate per
   // selected service is returned; no eager catalogue or schema calls.
   expect(all.reduce((n,s)=>n+s.claimedCounts.tools,0)).toBe(count*100);
+  console.info('H3_SCALE_SAMPLE',JSON.stringify({services:count,
+   advertisedTools:count*100,pages,scanned,providerRequests:deps.search.mock.calls.length,
+   elapsedMs:Number((performance.now()-started).toFixed(3)),
+   rssDeltaBytes:process.memoryUsage().rss-rssBefore}));
  }
 });
 it('refuses stale caller/selection and invalid cursor without querying upstream',async()=>{
@@ -95,4 +100,24 @@ it('reports metadata budget incompleteness instead of overflowing MCP structured
  expect(reply.ok).toBe(true);
  expect(reply.result.incomplete).toBe(false);
  expect(Buffer.byteLength(JSON.stringify(reply),'utf8')).toBeLessThan(8192);
+});
+
+it('small result limits resume every authorized service without losing or repeating targets',async()=>{
+ const deps=setup(targets(5)),pages=[],seen=[];
+ let cursor;
+ do {
+  const args={query:'status',area:'billing',limit:1,...(cursor?{cursor}:{})};
+  const r=await runFederatedBroker('hub_search_tools',args,actor,{},settings,deps);
+  expect(r.ok).toBe(true);
+  pages.push(r.result);
+  seen.push(...r.result.tools.map(t=>t.server));
+  cursor=r.result.next;
+ }while(cursor);
+ expect(seen).toEqual(['svc000','svc001','svc002','svc003','svc004']);
+ expect(pages).toHaveLength(5);
+ expect(deps.search).toHaveBeenCalledTimes(5);
+ const local=await runFederatedBroker('hub_search_tools',
+  {query:'health',server:'hub'},actor,{},settings,deps);
+ expect(local.ok).toBe(true);
+ expect(local.result.tools.map(t=>t.name)).toContain('hub_health');
 });
