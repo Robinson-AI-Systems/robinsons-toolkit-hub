@@ -21,7 +21,7 @@ function channel({answers=[{address:'8.8.8.8',family:4}],
      const res=new EventEmitter();res.statusCode=status;
      res.headers={'content-type':mime};res.resume=vi.fn();
      onResponse(res);
-     if(status===200&&mime==='application/json'){
+     if([200,400,401,403,404,409,422,429].includes(status)&&mime==='application/json'){
       res.emit('data',Buffer.from(JSON.stringify(result)));
       res.emit('end');
      }
@@ -71,4 +71,12 @@ it('does not return redirects or unexpected HTML as successful read',async()=>{
    .rejects.toThrow('do not automatically retry');
   expect(fake.request).toHaveBeenCalledTimes(1);
  }
+});
+
+it('preserves an authenticated RTC 403 refusal without interpreting it as a successful read',async()=>{
+ const fake=channel({status:403,result:{ok:false,
+  error:{code:'outside_scope',what:'not authorized'}}});
+ const response=await pinnedRtcReadCall(target,'stripe_invoice_list',{},fake);
+ expect(response).toMatchObject({ok:false,error:{code:'outside_scope'}});
+ expect(fake.requests).toHaveLength(1);
 });
