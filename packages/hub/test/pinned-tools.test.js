@@ -110,3 +110,75 @@ it('uses already-delimited workspace_ RTC prefix without adding another separato
   .rejects.toThrow();
  expect(schema.calls).toHaveLength(1);
 });
+
+it('resumes bounded pinned RTC next pages without extra host, path or credential reach',async()=>{
+ const t=transportFor(options=>({
+  ok:true,result:options.path.includes('cursor=page_2')?
+    {tools:[tool('stripe_invoice_detail','billing')],next:null}:
+    {tools:[tool('stripe_invoice_list','billing')],next:'page_2'}
+ }));
+ const first=await searchPinnedRtcTools(stripe,{query:'invoice',limit:2},t);
+ expect(first.next).toEqual({kind:'cursor',value:'page_2'});
+ expect(first.incomplete).toBe(true);
+ const second=await searchPinnedRtcTools(stripe,
+  {query:'invoice',limit:2,cursor:first.next},t);
+ expect(second.tools.map(x=>x.name)).toEqual(['stripe_invoice_detail']);
+ expect(second.next).toBeNull();
+ expect(t.calls.map(c=>c.path)).toEqual([
+  '/api/tools?q=invoice&limit=2',
+  '/api/tools?q=invoice&limit=2&cursor=page_2'
+ ]);
+ expect(t.calls.every(c=>c.method==='GET'&&c.rejectUnauthorized===true)).toBe(true);
+ expect(t.calls.every(c=>c.headers.authorization==='Bearer '+pass)).toBe(true);
+ for(const cursor of ['https://bad.example','../../admin','x'.repeat(129),'has space']){
+  await expect(searchPinnedRtcTools(stripe,{cursor:{kind:'cursor',value:cursor}},t)).rejects.toThrow();
+ }
+ expect(t.calls).toHaveLength(2);
+});
+it('refuses malformed and oversized next-page tokens without exposing unsafe metadata',async()=>{
+ for(const next of [{url:'https://bad'},'../admin','x'.repeat(129),'space here',-1,100001,1.5]){
+  const t=transportFor({ok:true,result:{tools:[tool('stripe_invoice_list','billing')],next}});
+  await expect(searchPinnedRtcTools(stripe,{query:'invoice'},t)).rejects.toThrow();
+ }
+});
+
+it('follows observed Stripe numeric-offset and Workspace decimal-page RTC1 replies without provider-name branching',async()=>{
+ const s=transportFor(options=>({ok:true,result:options.path.includes('offset=2')?
+  {tools:[tool('stripe_invoice_detail','billing')],total:3,offset:2,next:null}:
+  {tools:[tool('stripe_invoice_list','billing')],total:3,offset:0,next:2}}));
+ const firstStripe=await searchPinnedRtcTools(stripe,{query:'invoice',limit:2},s);
+ expect(firstStripe.next).toEqual({kind:'offset',value:'2'});
+ const secondStripe=await searchPinnedRtcTools(stripe,
+  {query:'invoice',limit:2,cursor:firstStripe.next},s);
+ expect(secondStripe.tools.map(t=>t.name)).toEqual(['stripe_invoice_detail']);
+ expect(secondStripe.next).toBeNull();
+ expect(s.calls.map(x=>x.path)).toEqual([
+  '/api/tools?q=invoice&limit=2',
+  '/api/tools?q=invoice&limit=2&offset=2'
+ ]);
+ const w=transportFor(options=>({ok:true,result:options.path.includes('page=2')?
+  {tools:[tool('google_gmail_get','gmail')],next:null}:
+  {tools:[tool('google_gmail_list','gmail')],next:'2'}}));
+ const firstWorkspace=await searchPinnedRtcTools(google,{query:'gmail',limit:2},w);
+ expect(firstWorkspace.next).toEqual({kind:'page',value:'2'});
+ const secondWorkspace=await searchPinnedRtcTools(google,
+  {query:'gmail',limit:2,cursor:firstWorkspace.next},w);
+ expect(secondWorkspace.tools.map(t=>t.name)).toEqual(['google_gmail_get']);
+ expect(secondWorkspace.next).toBeNull();
+ expect(w.calls.map(x=>x.path)).toEqual([
+  '/api/tools?q=gmail&limit=2',
+  '/api/tools?q=gmail&limit=2&page=2'
+ ]);
+ expect([...w.calls,...s.calls].every(x=>x.method==='GET'&&x.rejectUnauthorized))
+  .toBe(true);
+});
+it('refuses malformed or ambiguous typed RTC selectors before network dispatch',async()=>{
+ const t=transportFor({ok:true,result:{tools:[],next:null}});
+ for(const cursor of [
+  {kind:'offset',value:'0'},{kind:'offset',value:'100001'},
+  {kind:'page',value:'notnumeric'},{kind:'page',value:'1.5'},
+  {kind:'other',value:'1'},{kind:'cursor',value:'../admin'},
+  {kind:'page',value:'2',offset:'1'}
+ ]) await expect(searchPinnedRtcTools(google,{cursor},t)).rejects.toThrow();
+ expect(t.calls).toHaveLength(0);
+});

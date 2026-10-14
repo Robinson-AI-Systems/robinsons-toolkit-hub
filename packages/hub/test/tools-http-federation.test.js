@@ -287,3 +287,34 @@ it('returns compact explicit partial HTTPS batch with no extra provider attempts
  expect(upstream.audit).toHaveBeenCalledTimes(6);
  expect(Buffer.byteLength(JSON.stringify(reply.body),'utf8')).toBeLessThan(13000);
 });
+
+
+it('continues a selected RTC catalogue through the authenticated HTTPS Hub door',async()=>{
+ const {send,upstream}=fixture();
+ upstream.search.mockImplementation(async(_grant,args)=>({
+  tools:[{name:args.cursor?'stripe_invoice_detail':'stripe_invoice_list',
+   area:'billing',description:'Safe TEST metadata',writes:false,money:false,
+   destructive:false}],next:args.cursor?null:{kind:'cursor',value:'provider_page_two'},
+  incomplete:!args.cursor
+ }));
+ const options={q:'invoice',server:'stripe',area:'billing',limit:'3'};
+ const first=await send('list','GET',options);
+ expect(first.code).toBe(200);
+ expect(first.body.result.tools.map(t=>t.name)).toEqual(['stripe_invoice_list']);
+ const cursor=first.body.result.next;
+ expect(cursor).toMatch(/^p\./);
+ expect(cursor).not.toContain('provider_page_two');
+ const second=await send('list','GET',{...options,cursor});
+ expect(second.code).toBe(200);
+ expect(second.body.result.tools.map(t=>t.name)).toEqual(['stripe_invoice_detail']);
+ expect(second.body.result.next).toBeNull();
+ expect(upstream.search.mock.calls.map(c=>c[1].cursor))
+  .toEqual([undefined,{kind:'cursor',value:'provider_page_two'}]);
+ const altered=await send('list','GET',{...options,q:'other',cursor});
+ expect(altered.code).toBe(400);
+ expect(altered.body.error.code).toBe('invalid_args');
+ expect(upstream.search).toHaveBeenCalledTimes(2);
+ expect(upstream.read).not.toHaveBeenCalled();
+ expect(upstream.audit).not.toHaveBeenCalled();
+ expect(JSON.stringify([first.body,second.body,altered.body])).not.toContain(grant.pass);
+});

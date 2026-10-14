@@ -34,15 +34,21 @@ function safeToolReadRoute(route) {
   try {parsed=new URL(route,'https://fixed.example.org');}
   catch {return false;}
   if(parsed.pathname!=='/api/tools'||!['','?'].includes(route.slice(10,11))||
-    parsed.searchParams.size>3||parsed.username||parsed.password||
+    parsed.searchParams.size>4||parsed.username||parsed.password||
     parsed.origin!=='https://fixed.example.org')return false;
   for(const key of parsed.searchParams.keys())
-    if(!['q','area','limit'].includes(key)||parsed.searchParams.getAll(key).length!==1)
+    if(!['q','area','limit','cursor','page','offset'].includes(key)||
+       parsed.searchParams.getAll(key).length!==1)
       return false;
   const q=parsed.searchParams.get('q'),area=parsed.searchParams.get('area'),
-    limit=parsed.searchParams.get('limit');
+    limit=parsed.searchParams.get('limit'),cursor=parsed.searchParams.get('cursor'),
+    page=parsed.searchParams.get('page'),offset=parsed.searchParams.get('offset');
   return (!q||q.length<=120)&&(!area||/^[a-z][a-z0-9_]{0,59}$/.test(area))&&
-    (!limit||/^(?:[1-9]|1[0-9]|20)$/.test(limit));
+    (!limit||/^(?:[1-9]|1[0-9]|20)$/.test(limit))&&
+    (!cursor||/^[A-Za-z0-9_.~-]{1,128}$/.test(cursor))&&
+    (!page||/^[1-9][0-9]{0,5}$/.test(page)&&Number(page)<=100000)&&
+    (!offset||/^[1-9][0-9]{0,5}$/.test(offset)&&Number(offset)<=100000)&&
+    [cursor,page,offset].filter(value=>value!==null).length<=1;
 }
 
 function assertManifest(manifest,{name,prefix}) {

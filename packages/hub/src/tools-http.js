@@ -25,7 +25,7 @@ function listTools(query = {}) {
   if (typeof q !== 'string' || q.length > 120 || typeof area !== 'string' ||
     (area && !areaName.test(area)) ||
     (server !== undefined && (typeof server !== 'string' || !serverName.test(server))) ||
-    (cursor !== undefined && (typeof cursor !== 'string' || cursor.length > 160)) ||
+    (cursor !== undefined && (typeof cursor !== 'string' || cursor.length > 384)) ||
     (typeof limitRaw !== 'string' && typeof limitRaw !== 'number') ||
     !/^[1-9][0-9]?$|^100$/.test(String(limitRaw)) ||
     Array.isArray(limitRaw)) return null;
