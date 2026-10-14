@@ -63,9 +63,10 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     incomplete=true;
    } else {
     incomplete ||= state.value.incomplete===true;
-    for(const tool of state.value.tools)
-      if(found.length<limit)found.push({...tool,server:chosen[i].name});
-    if(state.value.tools.length>Math.max(0,limit-found.length))incomplete=true;
+    const remaining=Math.max(0,limit-found.length);
+    if(state.value.tools.length>remaining)incomplete=true;
+    for(const tool of state.value.tools.slice(0,remaining))
+      found.push({...tool,server:chosen[i].name});
    }
   }
   return {ok:true,result:{tools:found.slice(0,limit),failures,
