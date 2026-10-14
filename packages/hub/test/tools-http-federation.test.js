@@ -165,3 +165,75 @@ it('continues bounded RTC HTTPS discovery with a caller-bound cursor',async()=>{
  expect(second.body.result.next).toBeNull();
  expect(upstream.search).toHaveBeenCalledTimes(4);
 });
+
+
+it('exposes the same guarded federation through every fixed HTTPS broker operation',async()=>{
+ const {send,upstream}=fixture();
+ const namespace=await send('item','POST',{name:'hub_namespaces'},{});
+ expect(namespace.code).toBe(200);
+ expect(namespace.body.result.namespaces.map(x=>x.name)).toEqual(['hub','stripe']);
+ const discovered=await send('item','POST',{name:'hub_search_tools'},
+  {query:'invoice',server:'stripe',area:'billing',limit:5});
+ expect(discovered.code).toBe(200);
+ expect(discovered.body.result.tools.map(x=>x.name)).toEqual(['stripe_invoice_list']);
+ const described=await send('item','POST',{name:'hub_describe_tool'},
+  {name:'stripe_invoice_list'});
+ expect(described.code).toBe(200);
+ expect(described.body.result.server).toBe('stripe');
+ const called=await send('item','POST',{name:'hub_call'},
+  {name:'stripe_invoice_list',args:{limit:1}});
+ expect(called.code).toBe(200);
+ expect(called.body.result).toMatchObject({server:'stripe',
+  result:{invoices:['TEST-1']}});
+ const batch=await send('item','POST',{name:'hub_batch'},
+  {calls:[{name:'hub_health'},{name:'stripe_invoice_list'}]});
+ expect(batch.code).toBe(200);
+ expect(batch.body.result.results[0]).toMatchObject({name:'hub_health',
+  ok:true,result:{result:{accessibleUpstreams:1,providerCallsEnabled:true}}});
+ expect(batch.body.result.results[1]).toMatchObject({
+  name:'stripe_invoice_list',ok:true});
+ expect(upstream.read).toHaveBeenCalledTimes(2);
+ expect(upstream.audit).toHaveBeenCalledTimes(4);
+ expect(JSON.stringify([namespace,discovered,described,called,batch]))
+  .not.toContain(grant.pass);
+});
+
+it('keeps health identical across direct, indirect and batch HTTPS reads, including zero-grant status',async()=>{
+ const {send,upstream}=fixture();
+ for(const members of [[target],[]]){
+  upstream.list.mockResolvedValue(members);
+  const expected=members.length;
+  const direct=await send('item','POST',{name:'hub_health'},{});
+  const indirect=await send('item','POST',{name:'hub_call'},
+   {name:'hub_health'});
+  const allOwned=await send('batch','POST',{},
+   {calls:[{name:'hub_whoami'},{name:'hub_health'}]});
+  expect(direct.code).toBe(200);
+  expect(direct.body.result.accessibleUpstreams).toBe(expected);
+  expect(indirect.body.result.result.accessibleUpstreams).toBe(expected);
+  expect(allOwned.body.result.results[1].result.result.accessibleUpstreams)
+   .toBe(expected);
+  expect(direct.body.result.providerCallsEnabled).toBe(Boolean(expected));
+ }
+ const denied=await send('item','POST',{name:'hub_call'},
+  {name:'hub_health',args:{unexpected:true}});
+ expect(denied.code).toBe(400);
+ expect(denied.body.error.code).toBe('invalid_args');
+ expect(upstream.read).not.toHaveBeenCalled();
+});
+
+it('denies unsafe broker dispatch before provider read, preserving old whoami behavior',async()=>{
+ const {send,upstream}=fixture();
+ const who=await send('item','POST',{name:'hub_whoami'},{});
+ expect(who.code).toBe(200);
+ expect(who.body.result.profile).toBe('full');
+ const forbidden=await send('item','POST',{name:'hub_call'},
+  {name:'stripe_invoice_write',args:{amount:10}});
+ expect(forbidden.code).toBe(403);
+ const denied=await send('item','POST',{name:'hub_batch'},
+  {calls:[{name:'stripe_invoice_write',args:{amount:10}}]});
+ expect(denied.code).toBe(200);
+ expect(denied.body.result.results[0].error.code).toBe('outside_scope');
+ expect(upstream.read).not.toHaveBeenCalled();
+ expect(upstream.audit).not.toHaveBeenCalled();
+});

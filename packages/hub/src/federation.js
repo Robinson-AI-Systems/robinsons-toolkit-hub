@@ -156,7 +156,18 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     return fail('invalid_args','Invalid RTC read call arguments');
   if(args.name==='hub_result_read')
    return runFederatedBroker('hub_result_read',args.args??{},actor,db,settings,deps);
-  if(ownNames.has(args.name))return runBroker('hub_call',args,actor);
+  if(ownNames.has(args.name)) {
+   // The indirect Hub-owned health read must reflect the same actual
+   // eligible grants as a direct hub_health request (including in a
+   // sequential batch), not the pre-federation foundation stub.
+   if(args.name==='hub_health') {
+     if(args.args!==undefined&&Object.keys(args.args).length)
+       return fail('invalid_args','Hub health takes no arguments');
+     const state=await runFederatedBroker('hub_health',{},actor,db,settings,deps);
+     return state.ok?{ok:true,result:{name:args.name,result:state.result}}:state;
+   }
+   return runBroker('hub_call',args,actor);
+  }
   const targets=await tools.list(db,actor,{limit:100});
   const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','RTC tool not granted to caller');
