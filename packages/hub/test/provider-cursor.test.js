@@ -14,20 +14,20 @@ const scope=(who=actor,which=target,q=query)=>
 
 it('encrypts a five-minute provider continuation and never exposes its opaque value',()=>{
  const at=1_800_000_000_000,privateNext='private_test_cursor.opaque-next';
- const cursor=issueProviderCursor(scope(),privateNext,settings,{now:()=>at});
+ const cursor=issueProviderCursor(scope(),{kind:'cursor',value:privateNext},settings,{now:()=>at});
  expect(cursor).toMatch(/^p\.[A-Za-z0-9_-]+$/);
  expect(cursor.length).toBeLessThanOrEqual(384);
  expect(cursor).not.toContain(privateNext);
  expect(Buffer.from(cursor.slice(2),'base64url').toString('utf8'))
    .not.toContain(privateNext);
  expect(openProviderCursor(cursor,scope(),settings,{now:()=>at+1000}))
-   .toBe(privateNext);
+   .toEqual({kind:'cursor',value:privateNext});
  expect(openProviderCursor(cursor,scope(),settings,{now:()=>at+301000}))
    .toBeNull();
 });
 
 it('rejects changed callers, query, active grant, verification and endpoint before lookup',()=>{
- const cursor=issueProviderCursor(scope(),'next_2',settings);
+ const cursor=issueProviderCursor(scope(),{kind:'cursor',value:'next_2'},settings);
  const wrong=[
   scope({...actor,id:randomUUID()}),
   scope({...actor,ownerId:'other'}),
@@ -44,12 +44,12 @@ it('rejects changed callers, query, active grant, verification and endpoint befo
 });
 
 it('fails closed on tampering, cross-kind token replay and unsafe upstream values',()=>{
- const cursor=issueProviderCursor(scope(),'next_1',settings);
+ const cursor=issueProviderCursor(scope(),{kind:'cursor',value:'next_1'},settings);
  const bytes=Buffer.from(cursor.slice(2),'base64url');bytes[bytes.length-1]^=1;
  const altered='p.'+bytes.toString('base64url');
  for(const bad of [altered,cursor+'x','x.'+cursor.slice(2),'a'.repeat(500),
   'not-a-cursor','']) expect(openProviderCursor(bad,scope(),settings)).toBeNull();
  for(const bad of ['', '../admin','https://host/other','has space','x'.repeat(129)])
-  expect(()=>issueProviderCursor(scope(),bad,settings)).toThrow();
- expect(()=>issueProviderCursor(scope(),'valid',{pepper:'short'})).toThrow();
+  expect(()=>issueProviderCursor(scope(),{kind:'cursor',value:bad},settings)).toThrow();
+ expect(()=>issueProviderCursor(scope(),{kind:'cursor',value:'valid'},{pepper:'short'})).toThrow();
 });
