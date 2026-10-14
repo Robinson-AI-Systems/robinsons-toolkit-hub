@@ -237,3 +237,39 @@ it('denies unsafe broker dispatch before provider read, preserving old whoami be
  expect(upstream.read).not.toHaveBeenCalled();
  expect(upstream.audit).not.toHaveBeenCalled();
 });
+
+
+it('browses authorized RTC tools without a guessed query while preserving the default small Hub catalog',async()=>{
+ const {send,upstream}=fixture();
+ const local=await send('list','GET',{});
+ expect(local.code).toBe(200);
+ expect(local.body.result.tools.some(t=>t.name==='hub_search_tools')).toBe(true);
+ expect(upstream.search).not.toHaveBeenCalled();
+ const selected=await send('list','GET',{server:'stripe',limit:'5'});
+ expect(selected.code).toBe(200);
+ expect(selected.body.result.tools.map(t=>t.name)).toEqual(['stripe_invoice_list']);
+ expect(selected.body.result.scanned).toBe(1);
+ const broad=await send('list','GET',{q:'',limit:'5'});
+ expect(broad.code).toBe(200);
+ expect(broad.body.result.tools.map(t=>t.name)).toContain('stripe_invoice_list');
+ expect(broad.body.result.tools.some(t=>t.name==='hub_health')).toBe(true);
+ expect(upstream.search).toHaveBeenCalledTimes(2);
+ expect(upstream.search).toHaveBeenLastCalledWith(grant,
+  expect.objectContaining({query:'',limit:5}));
+ expect(JSON.stringify([selected.body,broad.body])).not.toContain(grant.pass);
+});
+
+it('refuses unscoped anonymous catalogue browse and malformed input before RTC calls',async()=>{
+ const {send,upstream}=fixture();
+ const noOwner=vi.fn(async()=>({actor:{...actor,ownerId:undefined}}));
+ const denied=await send('list','GET',{q:'',server:'stripe'},undefined,noOwner);
+ expect(denied.code).toBe(403);
+ for(const query of [
+  {q:'',limit:'21'},{q:'',cursor:'tampered'},
+  {q:'',server:'missing/unsafe'},{q:'',area:'../../'}
+ ]) {
+  const status=await send('list','GET',query);
+  expect(status.code).not.toBe(200);
+ }
+ expect(upstream.search).not.toHaveBeenCalled();
+});

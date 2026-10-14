@@ -1,3 +1,44 @@
+## October 14 fleet and hosted database independent readbacks
+The checked #169 GitHub Actions public-observe job (run 38590859362,
+readback at 2026-10-14 15:37:53 UTC, original HEAD
+`6b06a708b6609f65358a05213115893faf0d9ec5`)
+made real unauthenticated GET /api/contract requests to the five
+tracked production DNS origins. Google Workspace answered HTTP 200,
+valid RTC 1 metadata with `workspace_` prefix but no confirmed
+TEST auth; GitHub answered HTTP 200 with RTC 0 (not RTC 1);
+Stripe, Vercel and Neon each answered HTTP 401 access-protected.
+All direct authenticated reads, private relay, Sandbox and same-pass
+revocation remain UNVERIFIED, not passed by public GET or the standard
+connectors. No credentials were used in this probe.
+Separate read-only Neon table inventory of the existing
+`robinsons-toolkit-relay` project on Oct 14 found 11 existing Hub
+foundation/relay tables but no `hub_servers`,
+`hub_server_grants`, `hub_rtc_read_audit`, or
+`hub_rtc_result_handles`. Therefore hosted additive migrations
+004-006, 008, 009 and actual two-service RTC grant routing remain
+OPEN. No hosted SQL changes or manual deployments were performed.
+Trust the independently observed Vercel READY production deployment on
+`live=a26ff2fd81cab3500b1e1dab8332e2575a6d9592`
+until new provider evidence supersedes it. Main has new source not yet
+released; do not relabel source CI as provider acceptance.
+
+## H-3 authorized catalogue browsing — PR #170 (pending review)
+Agents can explore all grant-eligible RTC metadata through native
+`hub_search_tools({query:''})` or authenticated HTTPS `GET /api/tools?q=`
+and can browse one permitted service via `?server=stripe` without knowing
+tool names. The unqualified `GET /api/tools` preserves its small fixed
+Hub menu and incurs no provider requests. Every exposed upstream remains
+narrowed to TEST read_only grant/areas with a maximum three selected
+origins per request, 20 results, signed caller-bound resume cursor
+and explicit partial/incomplete reporting. Synthetic tests cover full
+100-service traversal, tampering/refusals and zero provider calls for
+unqualified reads. Result-limit saturation reserves one representative per scanned provider
+before local/extra tools and marks omitted metadata incomplete;
+a targeted service browse can recover its bounded candidates.
+Provider-specific next-page pagination and real
+hosted TEST access are not asserted. Await checked live release and
+actual provider acceptance: HUB-H3-BROWSE.
+
 ## H-3 fixed HTTPS broker parity — PR #169 (pending review)
 Authenticated Hub HTTPS `POST /api/tools/{hub_broker}` now uses the same
 grant-filtered native federation dispatcher for Hub health, tool search,
@@ -87,6 +128,17 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "PR #169 scoped fake-RTC handler tests proposed; source is not released, real two-service and revocation remain unverified."
+  },
+  {
+    "id": "HUB-H3-BROWSE",
+    "priority": 5,
+    "requiredRevision": "69dcd0738dee3eb082c2eb0f9597d8899a1157b1",
+    "task": "Verify zero-keyword RTC catalogue browsing through one actual Hub TEST connection, including scoped HTTP/default listings, service selection, signed cursor, denial and upstream partial-page disclosure",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Source released to READY Hub deployment with approved hosted registry/audit schema; sealed TEST read_only service grant verified; do not infer full provider pagination",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "PR #170 introduced bounded keyword-free discovery with synthetic 100-service and exact service-selection tests. No deployed RTC TEST browse or provider acceptance has run."
   }
 ]
 ```

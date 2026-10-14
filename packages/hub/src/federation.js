@@ -78,7 +78,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
  }
  if(name==='hub_search_tools') {
   if(Object.keys(args).some(k=>!['query','area','server','limit','cursor'].includes(k))||
-    typeof args.query!=='string'||!args.query||args.query.length>120||
+    typeof args.query!=='string'||args.query.length>120||
     (args.server!==undefined&&!serverPattern.test(args.server))||
     (args.area!==undefined&&!areaPattern.test(args.area))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||
@@ -109,7 +109,10 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
    if(!grant)throw new Error('Grant unavailable');
    return tools.search(grant,{query:args.query,area:args.area,limit:Math.min(limit,10)});
   }));
-  const found=[...owned],failures=[];
+  // Reserve one result from every scanned service before local tools or
+  // extra results consume the page budget. Otherwise a full first provider
+  // can hide later providers even though the cursor advances past them.
+  const found=[],failures=[],candidates=[];
   let incomplete=matching.length>offset+chosen.length;
   for(let i=0;i<settled.length;i++) {
    const state=settled[i];
@@ -118,17 +121,27 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     incomplete=true;
    } else {
     incomplete ||= state.value.incomplete===true;
-    const remaining=Math.max(0,limit-found.length);
-    if(state.value.tools.length>remaining)incomplete=true;
-    for(const tool of state.value.tools.slice(0,remaining)) {
-      const selected={...tool,server:chosen[i].name};
-      if(Buffer.byteLength(JSON.stringify([...found,selected]),'utf8')>6500) {
-        incomplete=true;
-        break;
-      }
-      found.push(selected);
-    }
+    candidates.push({server:chosen[i].name,tools:state.value.tools});
    }
+  }
+  function include(entry) {
+   if(found.length>=limit ||
+     Buffer.byteLength(JSON.stringify([...found,entry]),'utf8')>6500) {
+    incomplete=true;
+    return false;
+   }
+   found.push(entry);
+   return true;
+  }
+  // At most min(3, limit) services are scanned, so normal-sized matches
+  // from distinct services each have an available result slot.
+  for(const provider of candidates) {
+   if(provider.tools.length)include({...provider.tools[0],server:provider.server});
+  }
+  for(const tool of owned)include(tool);
+  for(const provider of candidates) {
+   for(const tool of provider.tools.slice(1))
+    include({...tool,server:provider.server});
   }
   let next=null;
   if(offset+chosen.length<matching.length) {

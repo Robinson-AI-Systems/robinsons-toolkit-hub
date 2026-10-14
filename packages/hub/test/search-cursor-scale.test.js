@@ -121,3 +121,83 @@ it('small result limits resume every authorized service without losing or repeat
  expect(local.ok).toBe(true);
  expect(local.result.tools.map(t=>t.name)).toContain('hub_health');
 });
+
+
+it('browses all 100 scoped services without a keyword using signed bounded continuation',async()=>{
+ const all=targets(100),deps=setup(all),seen=new Set();
+ let cursor,pages=0;
+ do {
+  const r=await runFederatedBroker('hub_search_tools',
+   {query:'',limit:5,...(cursor?{cursor}:{})},actor,{},settings,deps);
+  expect(r.ok).toBe(true);
+  expect(r.result.scanned).toBeLessThanOrEqual(3);
+  expect(Buffer.byteLength(JSON.stringify(r.result),'utf8')).toBeLessThan(8192);
+  for(const item of r.result.tools)if(item.server)seen.add(item.server);
+  cursor=r.result.next;
+  pages++;
+  expect(pages).toBeLessThanOrEqual(34);
+ }while(cursor);
+ expect(pages).toBe(34);
+ expect(seen.size).toBe(100);
+ expect(deps.resolve).toHaveBeenCalledTimes(100);
+ expect(deps.search).toHaveBeenCalledTimes(100);
+ const first=await runFederatedBroker('hub_search_tools',
+  {query:'',limit:5},actor,{},settings,deps);
+ const changed=await runFederatedBroker('hub_search_tools',
+  {query:'x',limit:5,cursor:first.result.next},actor,{},settings,deps);
+ expect(changed.error.code).toBe('invalid_args');
+ expect(deps.search).toHaveBeenCalledTimes(103);
+});
+
+
+it('never silently skips scanned providers when each has more tools than a shared browse page',async()=>{
+ for(const limit of [1,2,5]) {
+  const deps=setup(targets(5));
+  deps.search.mockImplementation(async grant=>({tools:
+   Array.from({length:5},(_,i)=>({
+    name:grant.prefix+'_read_'+i,area:'billing',
+    description:'Safe metadata '+i,writes:false,money:false,
+    destructive:false,annotations:{readOnlyHint:true}
+   })),incomplete:false}));
+  const seen=new Set();let cursor,pages=0,hasLocal=false;
+  do {
+   const r=await runFederatedBroker('hub_search_tools',
+    {query:'',limit,...(cursor?{cursor}:{})},actor,{},settings,deps);
+   expect(r.ok).toBe(true);
+   const scanned=r.result.scanned;
+   expect(scanned).toBeLessThanOrEqual(Math.min(3,limit));
+   expect(r.result.incomplete).toBe(true);
+   expect(r.result.tools).toHaveLength(limit);
+   for(const t of r.result.tools) {
+    if(t.server)seen.add(t.server);
+    if(t.name==='hub_health')hasLocal=true;
+   }
+   cursor=r.result.next;pages++;
+  }while(cursor);
+  expect(seen.size).toBe(5);
+  expect(deps.search).toHaveBeenCalledTimes(5);
+  expect(pages).toBe(Math.ceil(5/Math.min(3,limit)));
+  if(limit===5)expect(hasLocal).toBe(true);
+ }
+});
+
+it('marks full-page dropped provider extras incomplete and supports selected-service follow-up',async()=>{
+ const deps=setup(targets(3));
+ deps.search.mockImplementation(async grant=>({tools:Array.from({length:3},(_,i)=>({
+  name:grant.prefix+'_list_'+i,area:'billing',writes:false,money:false,
+  destructive:false,description:'Harmless metadata',
+  annotations:{readOnlyHint:true}})),incomplete:false}));
+ const broad=await runFederatedBroker('hub_search_tools',
+  {query:'',limit:3},actor,{},settings,deps);
+ expect(broad.ok).toBe(true);
+ expect(broad.result.next).toBeNull();
+ expect(broad.result.incomplete).toBe(true);
+ expect(broad.result.tools.map(t=>t.server)).toEqual(['svc000','svc001','svc002']);
+ const focused=await runFederatedBroker('hub_search_tools',
+  {query:'',server:'svc002',limit:5},actor,{},settings,deps);
+ expect(focused.ok).toBe(true);
+ expect(focused.result.tools.map(t=>t.name)).toEqual([
+  'svc002_list_0','svc002_list_1','svc002_list_2'
+ ]);
+ expect(focused.result.incomplete).toBe(false);
+});
