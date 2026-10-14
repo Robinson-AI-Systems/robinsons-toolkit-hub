@@ -267,12 +267,12 @@ export async function narrowOwnerOAuthFamilyServers(db,{ownerId,sessionId,server
            AND cardinality($3::text[])<cardinality(s.allowed_servers)))
       RETURNING s.id
     ), invalidated AS (
-      DELETE FROM hub_rtc_result_handles h USING hub_server_grants grant
-      WHERE grant.id=h.grant_id AND grant.owner_id=$2
-        AND grant.caller_kind='oauth'
-        AND grant.server_name<>ALL($3::text[])
+      DELETE FROM hub_rtc_result_handles h USING hub_server_grants g
+      WHERE g.id=h.grant_id AND g.owner_id=$2
+        AND g.caller_kind='oauth'
+        AND g.server_name<>ALL($3::text[])
         AND EXISTS(SELECT 1 FROM tightened)
-        AND grant.caller_id IN (SELECT id FROM hub_oauth_sessions
+        AND g.caller_id IN (SELECT id FROM hub_oauth_sessions
           WHERE family_id IN (SELECT family_id FROM target))
       RETURNING h.handle_digest
     )
