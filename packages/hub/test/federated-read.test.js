@@ -95,3 +95,31 @@ it('refuses other owners, names and excessive inline results',async()=>{
  expect(state.error.code).toBe('unavailable');
  expect(huge.audit).toHaveBeenCalledTimes(2);
 });
+
+it('selects longest canonical service prefix for nested registered services',async()=>{
+ const d=deps();
+ const deeper={name:'foo_bar_service',prefix:'foo_bar',
+   areas:['billing'],claimedCounts:{tools:1}};
+ const shallower={name:'foo_service',prefix:'foo',
+   areas:['billing'],claimedCounts:{tools:1}};
+ d.list.mockResolvedValueOnce([shallower,deeper]);
+ const selectedGrant={...grant,server:deeper.name,prefix:'foo_bar'};
+ d.resolve.mockResolvedValueOnce(selectedGrant).mockResolvedValueOnce(selectedGrant);
+ d.describe.mockResolvedValueOnce({name:'foo_bar_item_list',area:'billing',
+   writes:false,money:false,destructive:false,
+   annotations:{readOnlyHint:true}});
+ const result=await runFederatedBroker('hub_call',
+   {name:'foo_bar_item_list'},actor,{},{},d);
+ expect(result.ok).toBe(true);
+ expect(d.resolve).toHaveBeenCalledWith(expect.anything(),
+   {actor,serverName:'foo_bar_service'},expect.anything());
+ expect(d.read).toHaveBeenCalledWith(selectedGrant,'foo_bar_item_list',{});
+ const d2=deps();
+ d2.list.mockResolvedValueOnce([shallower,deeper]);
+ d2.resolve.mockResolvedValueOnce(selectedGrant);
+ d2.describe.mockResolvedValueOnce({name:'foo_bar_item_list',
+   area:'billing',inputSchema:{type:'object'},writes:false});
+ const described=await runFederatedBroker('hub_describe_tool',
+   {name:'foo_bar_item_list'},actor,{},{},d2);
+ expect(described.result.server).toBe('foo_bar_service');
+});
