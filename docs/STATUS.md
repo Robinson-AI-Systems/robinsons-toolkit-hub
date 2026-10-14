@@ -1,3 +1,10 @@
+## October 14 H-3 bounded sequential multi-provider batch — PR #176 (source proposal)
+Hub multi-read batches now have explicit per-request time/output budgets,
+preserve successfully completed read entries, report the unactioned remainder
+as partial, and stop dispatch rather than overrun hosted function time or
+silently truncate a response. Synthetic native/HTTPS tests are source proof
+only; authenticated two-service TEST, revocation and D-4 routes stay OPEN.
+
 ## October 14 H-3 in-flight read grant revocation — PR #175 (source proposal)
 Hub now withholds completed upstream RTC read results if the caller's grant
 was revoked or replaced while the provider POST was in flight, after durable
