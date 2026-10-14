@@ -5,6 +5,7 @@ import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit,newRtcCorrelation} from './rtc-read-audit.js';
 import {storeRtcResult,readRtcResult} from './rtc-results.js';
 import {searchCursorScope,issueSearchCursor,openSearchCursor} from './search-cursor.js';
+import {ownsRtcToolName} from './rtc-prefix.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
@@ -13,7 +14,7 @@ const ownNames=new Set(['hub_whoami','hub_health']);
 function ownerOfTool(targets,name) {
   // Registry enforces unique prefixes, not prefix-free names. Choose the
   // longest prefix followed by '_' so nested services route deterministically.
-  const matches=targets.filter(target=>name.startsWith(target.prefix+'_'));
+  const matches=targets.filter(target=>ownsRtcToolName(target.prefix,name));
   matches.sort((left,right)=>right.prefix.length-left.prefix.length);
   return matches[0]??null;
 }
@@ -156,7 +157,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   if(args.name==='hub_result_read')
    return runFederatedBroker('hub_result_read',args.args??{},actor,db,settings,deps);
   if(ownNames.has(args.name))return runBroker('hub_call',args,actor);
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','RTC tool not granted to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
@@ -241,7 +242,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   if(Object.keys(args).length!==1||!namePattern.test(args.name||''))
     return fail('invalid_args','Invalid tool name');
   if(ownNames.has(args.name))return runBroker(name,args,actor);
-  const targets=await tools.list(db,actor,{limit:50});
+  const targets=await tools.list(db,actor,{limit:100});
   const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','Tool is not available to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);

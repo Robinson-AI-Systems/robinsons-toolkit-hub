@@ -1,4 +1,5 @@
 import {pinnedRtcJsonGet} from './pinned-contract.js';
+import {ownsRtcToolName} from './rtc-prefix.js';
 
 const prefixPattern=/^[a-z][a-z0-9_]{1,59}$/;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
@@ -13,7 +14,7 @@ function expectTarget(target) {
 function withinScope(tool,target,withSchema) {
   if(!tool||typeof tool!=='object'||Array.isArray(tool)||
     !toolPattern.test(tool.name||'')||
-    !tool.name.startsWith(target.prefix+'_')||
+    !ownsRtcToolName(target.prefix,tool.name)||
     typeof tool.description!=='string'||tool.description.length>160||
     !areaPattern.test(tool.area||'')||
     !Array.isArray(tool.profiles)||!tool.profiles.includes('read_only')||
@@ -61,7 +62,7 @@ export async function searchPinnedRtcTools(target,{query='',area,limit=10}={},tr
 }
 export async function describePinnedRtcTool(target,name,transport={}) {
   expectTarget(target);
-  if(!toolPattern.test(name||'')||!name.startsWith(target.prefix+'_'))
+  if(!toolPattern.test(name||'')||!ownsRtcToolName(target.prefix,name))
     throw new TypeError('Tool is not owned by target RTC prefix');
   const data=validateResponse(await pinnedRtcJsonGet(target.origin,
     '/api/tools/'+name,{...transport,pass:target.pass}));
