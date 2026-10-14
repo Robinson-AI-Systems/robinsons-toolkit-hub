@@ -1,3 +1,7 @@
+## H-4 owner-confirmed OAuth RTC server subset — PR #190 source proposal
+
+Following merged #189 (099ddba2fec173c2598ad5a2448c051812c6236e), H-4 now continues through OAuth authorization-code and refresh-session narrowing while retaining independent H-2 verified read_only service grants, owner verification and persistent SQL family scope parity. Source/SQL fixtures are not live acceptance. Queue receives HUB-H4-OAUTH-SELECTION with exact feature revision and new 011 migration gate; previous twelve obligations remain PENDING. No manual release, production secret, provider mutation or spending authorized.
+
 ## H-4 explicit server scope for owner-issued Hub TEST passes — PR #189 source proposal
 
 Main starting revision c8d0fee389ebca0cbc5227a35e0ee421d7d921c1 after fully checked and merged #188. H-4 adds a verified-owner server selection enforced independently through grant staging, SQL target listing and active dispatch; existing caller-specific sealed RTC grants remain mandatory and read_only. A new additive SQL 010 is explicitly required for new scoped issuance, and real hosted acceptance is queued as HUB-H4-SERVER-SELECTION with exact feature-source revision. H-3 remains source IN_PROGRESS and its 11 pending real acceptance tasks stay pending; no credentials, provider writes, owner approvals, releases or spending changes. CI and integration tests must pass exact PR head before this source claim is merged.
@@ -402,6 +406,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: H-4 owner-selected server restriction is source-only in PR #189; disposable SQL/fixture CI and release need exact-head verification. Hosted 010, genuine owner pass, provider TEST and cross-door refusal are unverified."
+  },
+  {
+    "id": "HUB-H4-OAUTH-SELECTION",
+    "priority": 13,
+    "requiredRevision": "87059841d9dc12ac7838c25f644fbdef7820b8fa",
+    "introducedFile": "packages/hub/migrations/011-hub-oauth-server-scopes.sql",
+    "task": "On checked Hub READY with additive SQL 011, prove owner-confirmed OAuth PKCE selected RTC service allowlist persists through refresh rotation; genuine selected and unselected TEST routes, family tamper/refusal, and explicit revocation deny old access",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Independently verified owner OAuth consent and Hub deployment revision, migrations 010/011 applied, two separately attested RTC1 service-owned read_only TEST passes; real authenticated audit/readback, no LIVE/write",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: #190 H-4 OAuth owner-consent, token family inheritance and H-2 SQL source/fixture tests proposed; no installed hosted 011, actual owner consent or real provider TEST credential proof."
   }
 ]
 ```
