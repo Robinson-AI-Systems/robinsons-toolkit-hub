@@ -419,9 +419,10 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "PR #158 begins H-3 guarded source: scoped pinned HTTPS GET search and exact on-demand read_only schema; synthetic two-service tests. Broker/database routing, POST calls, durable audit, bounded results, exact deployed two-service provider reads/denial/revocation and RTC1 remain OPEN.",
+      "note": "H-3 source #158 pinned and scoped upstream RTC metadata GET. #159 wires fixed native Hub MCP search/describe/health/namespaces to up to three active, grant-verified RTC targets per request, with partial outage isolation, on-demand schemas and non-writing health. Provider POST call/batch, HTTP door parity, durable audit, result handles, deployed H-2 grants and real two-service acceptance still OPEN.",
       "pr": [
-        "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)"
+        "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
+        "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)"
       ]
     },
     {
