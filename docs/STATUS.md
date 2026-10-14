@@ -1,3 +1,16 @@
+## October 14 source-accurate acceptance readiness pins — correction
+
+The new H-3 schema and bounded-batch acceptance rows must require their
+**implementation source** revisions, not the previous main baseline.
+HUB-H3-SCHEMAS now requires PR #184 exact source head; HUB-H3-BATCH-DEADLINE
+requires PR #185 exact source head. Optional read-only `introducedFile`
+markers make `session:status` fail closed with VERIFY_SOURCE_PIN if the
+pinned revision does not actually contain the feature's introduced file.
+Unknown/shallow local Git history similarly refuses to declare deployment
+eligibility. The source marker check never treats READY state, standard
+provider connectors or CI as actual authenticated RTC acceptance. No
+provider network, permission, spending or scheduled release behavior changes.
+
 ## H-3 end-to-end RTC TEST read-only batch deadline — source proposal
 
 One Hub batch must not continue dispatching a sequence of up to ten 5-second
@@ -329,24 +342,26 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H3-SCHEMAS",
     "priority": 10,
-    "requiredRevision": "ea80257f06dd23daf3345855c59f4f998c4b2e35",
+    "requiredRevision": "b530feef19f3df9048ae72cd8b86970d51c94905",
     "task": "Verify a checked Hub production deployment uses only independently narrowed authenticated RTC1 TEST schema GETs, on-demand cached DESCRIBE parity through native/HTTP, reauthorization and provider metadata drift/write denial, with direct provider readback",
     "procedure": "docs/pr-cards/H-3.md",
     "gates": "New merged implementation checked READY; real isolated two-service scoped TEST passes; no LIVE provider write, grant rotation and standalone acceptance separate",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "2026-10-14: Read-only, concurrent, caller/grant/verified-origin-bound 15s describe cache source/fixtures on PR branch; deployed custom RTC schema and revocation evidence outstanding."
+    "lastEvidence": "2026-10-14: Read-only, concurrent, caller/grant/verified-origin-bound 15s describe cache source/fixtures on PR branch; deployed custom RTC schema and revocation evidence outstanding. Corrected required revision to exact source feature head #184, not preceding base; source file pin must exist at that revision.",
+    "introducedFile": "packages/hub/src/schema-cache.js"
   },
   {
     "id": "HUB-H3-BATCH-DEADLINE",
     "priority": 11,
-    "requiredRevision": "43c9b33db64a8c5b369180d905222ae46e17822f",
+    "requiredRevision": "24b65fcdd5906d38a78b9a0960607f1e6dc1f252",
     "task": "Verify a checked deployed Hub uses bounded RTC TEST batch schema GET and one-shot read POST timeouts, stops suffix calls at 20 seconds, preserves durable audits, reports uncertainty/no retries and honors grant revocation through native MCP and HTTPS",
     "procedure": "docs/pr-cards/H-3.md",
     "gates": "Verified READY deployment containing source and independently owner-approved TEST/read_only grants; no LIVE money/write tests or unapproved fixtures",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "2026-10-14: Source adds batch-scoped deadline propagation into pinned metadata GET and non-retrying provider POST with synthetic timing, audit, MCP/HTTPS and denial fixtures; no genuine deployed custom RTC proof."
+    "lastEvidence": "2026-10-14: Source adds batch-scoped deadline propagation into pinned metadata GET and non-retrying provider POST with synthetic timing, audit, MCP/HTTPS and denial fixtures; no genuine deployed custom RTC proof. Corrected required revision to exact source feature head #185, not preceding base; source file pin must exist at that revision.",
+    "introducedFile": "packages/hub/test/batch-deadline.test.js"
   }
 ]
 ```
