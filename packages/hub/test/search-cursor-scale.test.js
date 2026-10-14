@@ -231,3 +231,71 @@ it('invalidates native search and namespace continuations after same-scope grant
  expect(staleOrigin.error.code).toBe('invalid_args');
  expect(moved.search).not.toHaveBeenCalled();
 });
+
+it('browses every page of one selected RTC service with sealed caller-bound continuation',async()=>{
+ const all=targets(2).map(t=>({...t,origin:'https://rtc.example.com',
+  verifiedAt:'2026-10-14T16:00:00Z',grantId:t.name+'-grant'}));
+ const deps=setup(all);
+ deps.search.mockImplementation(async(grant,args)=>{
+  const page=args.cursor==='provider_page_2'?2:1;
+  return {tools:[{name:grant.prefix+'_read_'+page,area:'billing',
+   description:'Scoped page '+page,writes:false,money:false,destructive:false}],
+   next:page===1?'provider_page_2':null,incomplete:page===1};
+ });
+ const args={query:'read',server:'svc000',area:'billing',limit:3};
+ const first=await runFederatedBroker('hub_search_tools',args,actor,{},settings,deps);
+ expect(first.ok).toBe(true);
+ expect(first.result.tools.map(t=>t.name)).toEqual(['svc000_read_1']);
+ expect(first.result.incomplete).toBe(true);
+ expect(first.result.next).toMatch(/^p\./);
+ expect(first.result.next).not.toContain('provider_page_2');
+ expect(first.result.scanned).toBe(1);
+ const followed=await runFederatedBroker('hub_search_tools',
+  {...args,cursor:first.result.next},actor,{},settings,deps);
+ expect(followed.ok).toBe(true);
+ expect(followed.result.tools.map(t=>t.name)).toEqual(['svc000_read_2']);
+ expect(followed.result.next).toBeNull();
+ expect(followed.result.incomplete).toBe(false);
+ expect(deps.search.mock.calls.map(c=>c[1].cursor)).toEqual([undefined,'provider_page_2']);
+ expect(deps.resolve).toHaveBeenCalledTimes(4);
+ for(const changed of [
+  {...args,server:'svc001',cursor:first.result.next},
+  {...args,query:'other',cursor:first.result.next},
+  {...args,cursor:first.result.next.slice(0,-1)+'x'}
+ ]){
+  const rejected=await runFederatedBroker('hub_search_tools',
+   changed,actor,{},settings,deps);
+  expect(rejected.error.code).toBe('invalid_args');
+ }
+ expect(deps.search).toHaveBeenCalledTimes(2);
+ const rotated=setup(all.map(t=>({...t,grantId:t.grantId+'-rotated'})));
+ const stale=await runFederatedBroker('hub_search_tools',
+  {...args,cursor:first.result.next},actor,{},settings,rotated);
+ expect(stale.error.code).toBe('invalid_args');
+ expect(rotated.search).not.toHaveBeenCalled();
+ const otherActor=await runFederatedBroker('hub_search_tools',
+  {...args,cursor:first.result.next},{...actor,id:randomUUID()}, {},settings,deps);
+ expect(otherActor.error.code).toBe('invalid_args');
+ expect(deps.search).toHaveBeenCalledTimes(2);
+});
+it('keeps broad service pagination distinct from focused provider page tokens',async()=>{
+ const deps=setup(targets(5));
+ deps.search.mockImplementation(async grant=>({tools:[{
+  name:grant.prefix+'_read',area:'billing',description:'Read scoped data',
+  writes:false,money:false,destructive:false
+ }],next:'upstream_page_2',incomplete:true}));
+ const first=await runFederatedBroker('hub_search_tools',input,actor,{},settings,deps);
+ expect(first.ok).toBe(true);
+ expect(first.result.next).toBeTruthy();
+ expect(first.result.next.startsWith('p.')).toBe(false);
+ expect(first.result.incomplete).toBe(true);
+ const second=await runFederatedBroker('hub_search_tools',
+  {...input,cursor:first.result.next},actor,{},settings,deps);
+ expect(second.ok).toBe(true);
+ expect(second.result.scanned).toBe(2);
+ expect(deps.search).toHaveBeenCalledTimes(5);
+ const rejected=await runFederatedBroker('hub_search_tools',
+  {query:'read',server:'svc000',area:'billing',cursor:first.result.next},
+  actor,{},settings,deps);
+ expect(rejected.error.code).toBe('invalid_args');
+});
