@@ -121,14 +121,14 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
       if (route === 'list') {
         // Empty search is intentionally the compact, bounded Hub catalogue.
         // A nonempty query selects at most three caller-authorized RTC grants.
-        if (!filtered.q && !filtered.server)
+        if (!Object.hasOwn(req.query, 'q') && !filtered.server && !filtered.cursor)
           return send(res, { ok: true, result: { tools: filtered.tools, next: null } });
         if (filtered.server === 'hub' || !actor.ownerId) {
           if (filtered.server && filtered.server !== 'hub')
             return res.status(403).json(deny('outside_scope'));
           return send(res, { ok: true, result: { tools: filtered.tools, next: null } });
         }
-        if (!filtered.q || filtered.limit > 20)
+        if (filtered.limit > 20)
           return res.status(400).json(deny('invalid_args'));
         return respondFederated(res, await federate('hub_search_tools', {
           query: filtered.q, limit: filtered.limit,
