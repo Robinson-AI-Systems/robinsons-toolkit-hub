@@ -32,7 +32,10 @@ narrowed to TEST read_only grant/areas with a maximum three selected
 origins per request, 20 results, signed caller-bound resume cursor
 and explicit partial/incomplete reporting. Synthetic tests cover full
 100-service traversal, tampering/refusals and zero provider calls for
-unqualified reads. Provider-specific next-page pagination and real
+unqualified reads. Result-limit saturation reserves one representative per scanned provider
+before local/extra tools and marks omitted metadata incomplete;
+a targeted service browse can recover its bounded candidates.
+Provider-specific next-page pagination and real
 hosted TEST access are not asserted. Await checked live release and
 actual provider acceptance: HUB-H3-BROWSE.
 
@@ -129,7 +132,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H3-BROWSE",
     "priority": 5,
-    "requiredRevision": "00723ed1aa2f9a06a389401ea7c65bb2fdaab65c",
+    "requiredRevision": "69dcd0738dee3eb082c2eb0f9597d8899a1157b1",
     "task": "Verify zero-keyword RTC catalogue browsing through one actual Hub TEST connection, including scoped HTTP/default listings, service selection, signed cursor, denial and upstream partial-page disclosure",
     "procedure": "docs/pr-cards/H-3.md",
     "gates": "Source released to READY Hub deployment with approved hosted registry/audit schema; sealed TEST read_only service grant verified; do not infer full provider pagination",
