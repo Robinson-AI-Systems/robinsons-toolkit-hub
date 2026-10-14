@@ -1,4 +1,5 @@
 import {inspectScopedRtcIdentity} from './pinned-identity.js';
+import {validateStagedOrigin} from './registry.js';
 import {createCipheriv,createDecipheriv,randomBytes,randomUUID} from 'node:crypto';
 
 const idPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,7 +42,7 @@ async function checkCaller(db,{ownerId,callerKind,callerId}) {
          WHERE compromised.family_id=s.family_id AND compromised.revoked_at IS NOT NULL)`;
   const {rows}=await db.query(sql,[callerId,ownerId]);
   const a=rows[0];
-  if(!a||a.profile!=='read_only'||a.mode!=='test'||a.allow_writes===true||
+  if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!=='test'||a.allow_writes===true||
     !Array.isArray(a.areas)||!a.areas.includes('gateway')) throw new Error('Caller scope refuses grant');
 }
 export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={}) {
@@ -94,25 +95,36 @@ export async function listCallerGrants(db,ownerId,{ownerVerified=false}={}) {
 // Never expose this from owner HTML, tools or logs. H-3 may invoke it only
 // after a separately verified, enabled origin and exact live caller scope.
 export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
-  if(!actor||actor.mode!=='test'||actor.profile!=='read_only'||actor.allowWrites===true||
+  if(!actor||actor.mode!=='test'||!['read_only','everyday','full'].includes(actor.profile)||actor.allowWrites===true||
     !actor.areas?.includes('gateway')||!namePattern.test(serverName||''))
     return null;
   const secret=key(settings);
-  const {rows}=await db.query(`SELECT g.* FROM hub_server_grants g
+  const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,s.prefix AS target_prefix FROM hub_server_grants g
     JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
-    WHERE g.owner_id=$1 AND g.caller_id=$2 AND g.caller_kind=$3 AND g.server_name=$4
+    WHERE g.owner_id=$1 AND g.caller_kind=$3
+      AND (g.caller_id=$2 OR (g.caller_kind='oauth' AND EXISTS (
+        SELECT 1 FROM hub_oauth_sessions fresh
+        JOIN hub_oauth_sessions initial ON initial.family_id=fresh.family_id
+        WHERE fresh.id=$2 AND initial.id=g.caller_id
+        AND fresh.owner_id=g.owner_id AND initial.owner_id=g.owner_id
+        AND fresh.client_id=initial.client_id AND fresh.profile=initial.profile
+        AND fresh.areas=initial.areas AND fresh.mode=initial.mode
+        AND fresh.mode='test' AND fresh.revoked_at IS NULL
+        AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
+        AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+          WHERE compromised.family_id=fresh.family_id AND compromised.revoked_at IS NOT NULL)))) AND g.server_name=$4
       AND g.revoked_at IS NULL AND g.expires_at>now() AND s.state='active'
-      AND g.verified_at IS NOT NULL
+      AND g.verified_at IS NOT NULL AND g.profile='read_only' AND g.mode='test'
       AND (
         (g.caller_kind='pass' AND EXISTS(
           SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
-          AND c.profile='read_only' AND c.mode='test' AND c.allow_writes=FALSE
+          AND c.profile IN ('read_only','everyday','full') AND c.mode='test' AND c.allow_writes=FALSE
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
-          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=g.caller_id
+          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL
-          AND o.access_expires_at>now() AND o.profile='read_only' AND o.mode='test'
+          AND o.access_expires_at>now() AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
           AND 'gateway'=ANY(o.areas)
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
             WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
@@ -120,12 +132,70 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   [actor.ownerId,actor.id,actor.clientId?'oauth':'pass',serverName]);
   const row=rows[0];
   if(!row) return null;
+  // Never dispatch a credential toward a changed or malformed registry target.
+  const origin=validateStagedOrigin(row.target_origin);
+  if(!namePattern.test(row.target_prefix||'')) throw new Error('Invalid active service prefix');
   const decipher=createDecipheriv('aes-256-gcm',secret,row.nonce);
   decipher.setAAD(audience(row));
   decipher.setAuthTag(row.tag);
   const pass=Buffer.concat([decipher.update(row.ciphertext),decipher.final()]).toString('utf8');
   if(!passPattern.test(pass)) throw new Error('Invalid encrypted upstream credential');
-  return {pass,grantId:row.id,areas:[...row.areas],profile:row.profile,mode:row.mode};
+  return {pass,grantId:row.id,origin,prefix:row.target_prefix,server:serverName,
+    areas:[...row.areas],profile:row.profile,mode:row.mode};
+}
+
+
+/**
+ * Grant-filtered, metadata-only target selection. A full TEST developer
+ * principal may select a separately issued read_only service grant, never
+ * broaden it. The active grant resolver must still run before any request,
+ * independently rechecking expiry and revocation.
+ */
+export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
+  if(!actor||actor.mode!=='test'||actor.allowWrites===true||
+    !['read_only','everyday','full'].includes(actor.profile)||
+    !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
+    typeof actor.ownerId!=='string'||!actor.ownerId||
+    typeof actor.id!=='string'||!actor.id||
+    !Number.isInteger(limit)||limit<1||limit>50) return [];
+  const callerKind=actor.clientId?'oauth':'pass';
+  const {rows}=await db.query(`SELECT s.name,s.prefix,s.claimed_counts,g.areas
+    FROM hub_servers s JOIN hub_server_grants g
+      ON g.server_name=s.name AND g.owner_id=s.owner_id
+    WHERE s.owner_id=$1 AND g.caller_kind=$3
+      AND (g.caller_id=$2 OR (g.caller_kind='oauth' AND EXISTS(
+        SELECT 1 FROM hub_oauth_sessions fresh
+        JOIN hub_oauth_sessions initial ON initial.family_id=fresh.family_id
+        WHERE fresh.id=$2 AND initial.id=g.caller_id
+          AND fresh.owner_id=g.owner_id AND initial.owner_id=g.owner_id
+          AND fresh.client_id=initial.client_id AND fresh.profile=initial.profile
+          AND fresh.areas=initial.areas AND fresh.mode=initial.mode
+          AND fresh.mode='test' AND fresh.revoked_at IS NULL
+          AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
+          AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+            WHERE compromised.family_id=fresh.family_id AND compromised.revoked_at IS NOT NULL))))
+      AND s.state='active' AND g.verified_at IS NOT NULL
+      AND g.revoked_at IS NULL AND g.expires_at>now()
+      AND g.profile='read_only' AND g.mode='test'
+      AND (
+        (g.caller_kind='pass' AND EXISTS(
+          SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
+          AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
+          AND c.profile IN ('read_only','everyday','full')
+          AND c.mode='test' AND c.allow_writes=FALSE
+          AND 'gateway'=ANY(c.allowed_areas)))
+        OR (g.caller_kind='oauth' AND EXISTS(
+          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
+          AND o.owner_id=g.owner_id AND o.revoked_at IS NULL AND o.access_expires_at>now()
+          AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
+          AND 'gateway'=ANY(o.areas)
+          AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+            WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
+      )
+    ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit]);
+  return rows.map(row=>({name:row.name,prefix:row.prefix,
+    claimedCounts:row.claimed_counts,areas:[...row.areas],
+    state:'active',readOnlyGrant:true}));
 }
 
 export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,

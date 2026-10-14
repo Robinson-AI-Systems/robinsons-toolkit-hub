@@ -16,7 +16,7 @@ it('requires independent owner confirmation and a separate valid key',async()=>{
   await expect(stageCallerGrant(db,input,{settings:{},ownerVerified:true})).rejects.toThrow();
   expect(db.query).not.toHaveBeenCalled();
 });
-it('encrypts only for independently confirmed exact TEST/read_only caller and pending service',async()=>{
+it('encrypts only for independently confirmed non-writing TEST caller and pending service',async()=>{
   const query=vi.fn().mockResolvedValueOnce({rows:[{profile:'read_only',mode:'test',
     allow_writes:false,areas:['gateway']}]})
     .mockResolvedValueOnce({rows:[{state:'pending'}]})
@@ -26,7 +26,7 @@ it('encrypts only for independently confirmed exact TEST/read_only caller and pe
   expect(query.mock.calls[2][1][8].toString('utf8')).not.toContain(input.pass);
   expect(query.mock.calls[2][1][11]).toBe(300);
   const bad={query:vi.fn().mockResolvedValue({rows:[{profile:'full',mode:'test',
-    allow_writes:false,areas:['gateway']}]})};
+    allow_writes:true,areas:['gateway']}]})};
   await expect(stageCallerGrant(bad,input,{settings,ownerVerified:true})).rejects.toThrow();
   expect(bad.query).toHaveBeenCalledTimes(1);
 });
