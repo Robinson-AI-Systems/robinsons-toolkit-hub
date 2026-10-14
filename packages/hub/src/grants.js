@@ -243,7 +243,8 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
     verified.mode!=='test'||verified.profile!=='read_only'||
     !Array.isArray(verified.areas)||row.areas.some(a=>!verified.areas.includes(a)))
     throw new Error('Scoped RTC identity not verified');
-  await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id});
+  await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
+    serverName:row.server_name});
   const accepted=await db.query(`UPDATE hub_server_grants g
     SET verified_at=now() FROM hub_servers s
     WHERE g.id=$1 AND g.owner_id=$2 AND g.server_name=s.name
