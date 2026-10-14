@@ -117,7 +117,11 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
         // A nonempty query selects at most three caller-authorized RTC grants.
         if (!filtered.q && !filtered.server)
           return send(res, { ok: true, result: { tools: filtered.tools, next: null } });
-        if (!actor.ownerId) return res.status(403).json(deny('outside_scope'));
+        if (filtered.server === 'hub' || !actor.ownerId) {
+          if (filtered.server && filtered.server !== 'hub')
+            return res.status(403).json(deny('outside_scope'));
+          return send(res, { ok: true, result: { tools: filtered.tools, next: null } });
+        }
         if (!filtered.q || filtered.limit > 20)
           return res.status(400).json(deny('invalid_args'));
         return respondFederated(res, await federate('hub_search_tools', {
