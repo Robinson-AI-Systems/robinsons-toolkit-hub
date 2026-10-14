@@ -1,3 +1,10 @@
+## October 14 H-3 bounded encrypted handle expiry cleanup — PR #177 (source proposal)
+Dedicated RTC read-result storage now prunes at most 100 expired encrypted
+handle rows during a new stored result, without affecting unexpired RTC pages
+or the independent H-1 result table. Real throwaway PostgreSQL tests prove
+expiry-only pruning and bounded continuation; production DB cleanup has not
+been executed and actual provider TEST acceptance remains OPEN.
+
 ## October 14 H-3 bounded sequential multi-provider batch — PR #176 (source proposal)
 Hub multi-read batches now have explicit per-request time/output budgets,
 preserve successfully completed read entries, report the unactioned remainder
