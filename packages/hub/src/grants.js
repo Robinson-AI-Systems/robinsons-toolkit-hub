@@ -1,4 +1,5 @@
 import {inspectScopedRtcIdentity} from './pinned-identity.js';
+import {allowedByHubPass} from './server-selection.js';
 import {validateStagedOrigin} from './registry.js';
 import {createCipheriv,createDecipheriv,randomBytes,randomUUID} from 'node:crypto';
 
@@ -30,9 +31,10 @@ function validAreas(value) {
     value.every(x=>typeof x==='string'&&areaPattern.test(x)) &&
     new Set(value).size===value.length;
 }
-async function checkCaller(db,{ownerId,callerKind,callerId}) {
+async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
   const sql=callerKind==='pass' ?
     `SELECT id,owner_id,profile,allowed_areas AS areas,mode,allow_writes
+       ,to_jsonb(hub_callers)->'allowed_servers' AS allowed_servers
        FROM hub_callers WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL
        AND expires_at>now()` :
     `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes
@@ -43,7 +45,10 @@ async function checkCaller(db,{ownerId,callerKind,callerId}) {
   const {rows}=await db.query(sql,[callerId,ownerId]);
   const a=rows[0];
   if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!=='test'||a.allow_writes===true||
-    !Array.isArray(a.areas)||!a.areas.includes('gateway')) throw new Error('Caller scope refuses grant');
+    !Array.isArray(a.areas)||!a.areas.includes('gateway')||
+    (callerKind==='pass' && Array.isArray(a.allowed_servers) &&
+      !a.allowed_servers.includes(serverName)))
+    throw new Error('Caller scope refuses grant');
 }
 export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={}) {
   const {ownerId,serverName,callerKind,callerId,areas,pass,ttlSeconds}=input||{};
@@ -54,7 +59,7 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
     ttlSeconds<60||ttlSeconds>30*86400)
     throw new TypeError('Invalid separately scoped TEST grant');
   const secret=key(settings);
-  await checkCaller(db,{ownerId,callerKind,callerId});
+  await checkCaller(db,{ownerId,callerKind,callerId,serverName});
   const host=await db.query(`SELECT state FROM hub_servers WHERE name=$1 AND owner_id=$2`,
     [serverName,ownerId]);
   if(host.rows.length!==1||host.rows[0].state!=='pending')
@@ -96,7 +101,8 @@ export async function listCallerGrants(db,ownerId,{ownerVerified=false}={}) {
 // after a separately verified, enabled origin and exact live caller scope.
 export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   if(!actor||actor.mode!=='test'||!['read_only','everyday','full'].includes(actor.profile)||actor.allowWrites===true||
-    !actor.areas?.includes('gateway')||!namePattern.test(serverName||''))
+    !actor.areas?.includes('gateway')||!namePattern.test(serverName||'')||
+    !allowedByHubPass(actor,serverName))
     return null;
   const secret=key(settings);
   const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,s.prefix AS target_prefix FROM hub_server_grants g
@@ -120,6 +126,8 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
           SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
           AND c.profile IN ('read_only','everyday','full') AND c.mode='test' AND c.allow_writes=FALSE
+          AND (to_jsonb(c)->'allowed_servers' IS NULL OR
+            to_jsonb(c)->'allowed_servers' ? s.name)
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
           SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
@@ -184,6 +192,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
           AND c.profile IN ('read_only','everyday','full')
           AND c.mode='test' AND c.allow_writes=FALSE
+          AND (to_jsonb(c)->'allowed_servers' IS NULL OR
+            to_jsonb(c)->'allowed_servers' ? s.name)
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
           SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
@@ -193,7 +203,9 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
             WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
       )
-    ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit]);
+      AND ($5::text[] IS NULL OR s.name=ANY($5))
+    ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit,
+      Array.isArray(actor.serverNames) ? actor.serverNames : null]);
   return rows.map(row=>({name:row.name,prefix:row.prefix,
     claimedCounts:row.claimed_counts,areas:[...row.areas],
     // Private cursor scope inputs only: never shown to callers in the
@@ -214,7 +226,8 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
       AND g.expires_at>now() AND s.state IN ('pending','active')`,[id,ownerId]);
   const row=result.rows[0];
   if(!row) throw new Error('Owned pending TEST grant unavailable');
-  await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id});
+  await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
+    serverName:row.server_name});
   const decipher=createDecipheriv('aes-256-gcm',key(settings),row.nonce);
   decipher.setAAD(audience(row));
   decipher.setAuthTag(row.tag);
