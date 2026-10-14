@@ -43,10 +43,15 @@ describe('outcome-first owner workflow remains authoritative',()=>{
   it('requires a milestone, blocker re-entry and independent acceptance',()=>{
     const agents=readFileSync(new URL('../../AGENTS.md',import.meta.url),'utf8');
     const start=readFileSync(new URL('../../docs/SESSION-START.md',import.meta.url),'utf8');
-    for(const word of ['Outcome-first autonomous development','re-entry trigger',
+    expect(agents).toContain('[SESSION-START](docs/SESSION-START.md)');
+    const policy=agents+'\n'+start;
+    for(const word of ['observable result and finite acceptance','re-entry trigger',
       'deployed exact','authenticated end-to-end','permanent handoff'])
-      expect(agents).toContain(word);
-    expect(start).toContain('## 0b. Outcome and blocker triage');
-    expect(start).toContain('five PRs');
+      expect(policy).toContain(word);
+    expect(start).toContain('## 1a. Choose a substantial outcome');
+    expect(start).toContain('five substantial merged PRs');
+    expect(start).toContain('next higher PR-number multiple of five');
+    expect(start).toContain('An explicit pre-merge gate still blocks that PR');
+    expect(start).toContain('Never mark code/CI as deployed or real-provider proof');
   });
 });

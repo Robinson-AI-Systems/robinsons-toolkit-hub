@@ -1,9 +1,20 @@
 # ARCHITECTURE — runtime facts, as built
 
-## Current boundary clarification — 2026-10-12
+## Current source and acceptance boundary — 2026-10-14
 
-The hosted Hub (`packages/hub`) has an H-1 source foundation (identity, owner-scoped test passes, OAuth and constant-size broker menu) but is **not** RTC1-certified, owner-configured or genuinely deployed on the current live revision. H-2 upstream grants and H-3 provider federation are not built. Source-only encrypted caller-bound 24-hour result persistence now exists, using independently configured optional HUB_RESULTS_KEY; no provider data is flowing through it. Existing local stdio MCP routes over RTC HTTPS but lists six
-meta-tools per configured credentialed service; it is not accepted as a constant-size universal gateway.
+The hosted Hub (`packages/hub`) includes H-1 identity/OAuth/pass foundations,
+H-2 registry and grant source modules, and H-3 federation, bounded discovery,
+cursor pagination and encrypted result source modules. The earlier statement
+that H-2/H-3 had no implementation is superseded by these modules and their
+tests; it is not a reason to rebuild them. Their exact current progress and
+remaining requirements are recorded in STATUS/cards, not inferred from existence.
+Source modules and synthetic 2/5/12/50/100-service tests do not prove hosted
+migrations, real provider authorization, RTC certification, route/revocation or
+cleanup acceptance. Independently reconcile main/live/READY production and run
+cleared queue tasks before claiming those layers. The Hub is provider-agnostic;
+each new custom server owns its provider capabilities and legacy coverage.
+Existing local stdio MCP routes over RTC HTTPS but lists six meta-tools per
+configured credentialed service; it is not accepted as a constant-size universal gateway.
 The private core has eleven candidate exports and extensive tests; it is not required by existing direct routing.
 See [the verified source review](audits/2026-10-12-gateway-architecture-recovery.md) for exact snapshots,
 result-size and fan-out gaps, ownership and target constraints. Those target constraints are planned, not deployed.

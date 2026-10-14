@@ -5,6 +5,10 @@ Written 2026-10-10. [STATUS](STATUS.md) holds current state; [PLAN](PLAN.md) hol
 ## The whole program (across repos)
 
 Each server is usable on its own the moment it is built; the hub adds a single front door later.
+The Hub is provider-agnostic; future provider families are owner-selected projects,
+not a fixed Hub backlog or completion prerequisite. Each new provider agent uses
+the original Toolkit read-only to reconcile its own intended capability coverage.
+The original Toolkit is reference-only and is not maintained or rebuilt.
 
 | Step | Where | What | Waits on |
 |---|---|---|---|
