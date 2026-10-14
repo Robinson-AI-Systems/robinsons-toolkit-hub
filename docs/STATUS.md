@@ -1,3 +1,15 @@
+## H-2 full TEST developer narrowing and selected targets — PR #157 proposed
+
+One connected full-profile TEST developer can use a **separately sealed,
+verified, read_only upstream RTC pass** without being misclassified as a
+read_only Hub login. Exact actor, owner, service, prefix, mode, expiry,
+verification and revocation remain enforced on resolution. Selective active
+target metadata has a 50-entry cap and contains no pass. SQL tests use
+disposable database schema and synthetic scoped inspector only. This source
+progress does not activate runtime federation or certify migrations on the
+hosted DB, authentic deployment identity, provider routing or two-service
+read/denial/revocation acceptance. No live deployment is requested.
+
 ## Browser form parsing recovery — 2026-10-13
 
 The released owner setup link still returned HTTP 200 with the expected form, and no owner credential was saved. Local reproduction found that Node querystring-parsed browser forms have a null prototype, which the owner and OAuth parsers incorrectly rejected. Accept that safe dictionary shape while rejecting inherited prototypes, duplicate arrays and oversized values. A real setup-route unit regression reaches ordinary validation without inserting a credential. No production POST diagnostic or owner mutation was performed; the workspace automatic reviewer rejected that proposed test. Live submission remains for the owner after checked corrective release.
