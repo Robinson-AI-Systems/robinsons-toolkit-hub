@@ -3,7 +3,7 @@ import pg from 'pg';
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {issueHubPass} from '../../src/identity.js';
-import {stageCallerGrant,resolveActiveCallerGrant,revokeCallerGrant,
+import {stageCallerGrant,resolveActiveCallerGrant,listEligibleRtcTargets,revokeCallerGrant,
   activateVerifiedCallerGrant} from '../../src/grants.js';
 import {disableStagedServer} from '../../src/registry.js';
 const settings={grantsKey:randomBytes(32).toString('base64url')};
@@ -70,4 +70,44 @@ it('activates exact TEST grant after scope proof, then revocation disables resol
  expect(await disableStagedServer(db,{ownerId:'owner-a',name:'stripe'},
   {ownerVerified:true})).toBe(true);
  expect((await db.query('SELECT state FROM hub_servers')).rows[0].state).toBe('disabled');
+});
+
+it('narrows full TEST developer identity to a separately verified read_only RTC grant',async()=>{
+ const issued=await issueHubPass(db,{ownerId:'owner-a',profile:'full',
+  mode:'test',areas:['gateway'],allowWrites:false,ttlSeconds:3600},
+  {pepper,ownerVerified:true});
+ const developer={id:issued.id,ownerId:'owner-a',mode:'test',profile:'full',
+  areas:['gateway'],allowWrites:false};
+ await db.query(`INSERT INTO hub_servers
+   (name,owner_id,prefix,origin,claimed_rtc,claimed_counts)
+   VALUES('workspace','owner-a','google','https://google-workspace-mcp.vercel.app',1,
+   '{"tools":20,"writes":3,"money":0}')`);
+ const staged=await stageCallerGrant(db,{ownerId:'owner-a',serverName:'workspace',
+  callerKind:'pass',callerId:developer.id,areas:['gmail'],pass,ttlSeconds:3600},
+  {ownerVerified:true,settings});
+ expect(await listEligibleRtcTargets(db,developer)).toEqual([]);
+ const accepted=await activateVerifiedCallerGrant(db,{ownerId:'owner-a',id:staged.id},
+  settings,{ownerVerified:true,inspect:async({name,prefix,areas})=>({
+    server:name,prefix,areas,mode:'test',profile:'read_only',
+    identityVerified:true,callable:false})});
+ expect(accepted.registryActive).toBe(true);
+ expect(await listEligibleRtcTargets(db,developer)).toEqual([
+  expect.objectContaining({name:'workspace',prefix:'google',
+    readOnlyGrant:true,areas:['gmail']})]);
+ const active=await resolveActiveCallerGrant(db,{actor:developer,serverName:'workspace'},settings);
+ expect(active).toMatchObject({server:'workspace',profile:'read_only',
+  mode:'test',origin:'https://google-workspace-mcp.vercel.app',
+  prefix:'google',areas:['gmail']});
+ expect(active.pass).toBe(pass);
+ for(const narrowed of [{...developer,mode:'live'},{...developer,allowWrites:true},
+   {...developer,areas:[]},{...developer,id:'different'}]) {
+   expect(await listEligibleRtcTargets(db,narrowed)).toEqual([]);
+   expect(await resolveActiveCallerGrant(db,{actor:narrowed,
+     serverName:'workspace'},settings)).toBeNull();
+ }
+ expect(await revokeCallerGrant(db,{ownerId:'owner-a',id:staged.id},
+  {ownerVerified:true})).toBe(true);
+ expect(await listEligibleRtcTargets(db,developer)).toEqual([]);
+ expect(await resolveActiveCallerGrant(db,{actor:developer,serverName:'workspace'},settings))
+   .toBeNull();
 });
