@@ -1402,6 +1402,51 @@
         126
       ],
       "reason": "Original PR merged; preserve exact source history, including squash-merged tips."
+    },
+    {
+      "name": "ai/codex/mobile-native-connection",
+      "sha": "a70f689951a9151c3023811dbb2e824e4f33aad2",
+      "disposition": "merged",
+      "prs": [
+        156
+      ],
+      "reason": "Verified merged PR; preserve exact source history including squash-merged tips."
+    },
+    {
+      "name": "ai/gpt6/h2-scoped-developer-targets",
+      "sha": "5913aa23270f224bc6c6b349971a4a8ccc802485",
+      "disposition": "merged",
+      "prs": [
+        157
+      ],
+      "reason": "Verified merged PR; preserve exact source history including squash-merged tips."
+    },
+    {
+      "name": "ai/gpt6/h3-guarded-read-dispatch",
+      "sha": "022195be44d26e8b36a49598c7e7d7cee6c94f24",
+      "disposition": "merged",
+      "prs": [
+        160
+      ],
+      "reason": "Verified merged PR; preserve exact source history including squash-merged tips."
+    },
+    {
+      "name": "ai/gpt6/h3-pinned-rtc-tool-discovery",
+      "sha": "8dfd729ea7b09fa23c658f5f19c21932be006c87",
+      "disposition": "merged",
+      "prs": [
+        158
+      ],
+      "reason": "Verified merged PR; preserve exact source history including squash-merged tips."
+    },
+    {
+      "name": "ai/gpt6/h3-selective-mcp-discovery",
+      "sha": "d50cdf75841a3f5292a493092260d323b4fb1851",
+      "disposition": "merged",
+      "prs": [
+        159
+      ],
+      "reason": "Verified merged PR; preserve exact source history including squash-merged tips."
     }
   ]
 }
