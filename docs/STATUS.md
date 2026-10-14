@@ -1,3 +1,11 @@
+## October 14 H-3 owner-confirmed temporary TEST service retirement — PR #180 (source proposal)
+A verified owner may retire one exact Hub RTC registry service and revoke
+its remaining TEST grants atomically after entering a typed confirmation.
+The operation does not delete provider records, change the standalone
+service, call upstream APIs or loosen bearer scopes. Disposal/rollback
+proof uses a real isolated Postgres schema plus owner-route refusal tests.
+Production TEST activation and D-4 external cleanup evidence remain OPEN.
+
 ## October 14 H-3 grant/endpoint-bound federation cursors — PR #179 (source proposal)
 A signed Hub search/namespace continuation now fails closed when the
 actual caller's active grant changes or the destination/verification rotates,
