@@ -1,0 +1,74 @@
+import {EventEmitter} from 'node:events';
+import {randomBytes} from 'node:crypto';
+import {it,expect,vi} from 'vitest';
+import {pinnedRtcReadCall} from '../src/pinned-read-call.js';
+const pass='rtc_pass_'+randomBytes(32).toString('base64url');
+const target={server:'stripe',prefix:'stripe',profile:'read_only',
+ mode:'test',origin:'https://stripe-mcp-psi.vercel.app',
+ pass,areas:['billing']};
+function channel({answers=[{address:'8.8.8.8',family:4}],
+ status=200,mime='application/json',result={ok:true,result:{items:[]}}}={}) {
+ const requests=[];
+ const lookup=vi.fn((_host,_options,cb)=>cb(null,answers));
+ const request=vi.fn((options,onResponse)=>{
+  const req=new EventEmitter();
+  req.setTimeout=vi.fn();req.destroy=vi.fn();
+  req.end=body=>{
+   requests.push({options,body});
+   options.lookup(options.hostname,{},(err)=>{
+    if(err){queueMicrotask(()=>req.emit('error',err));return;}
+    queueMicrotask(()=>{
+     const res=new EventEmitter();res.statusCode=status;
+     res.headers={'content-type':mime};res.resume=vi.fn();
+     onResponse(res);
+     if(status===200&&mime==='application/json'){
+      res.emit('data',Buffer.from(JSON.stringify(result)));
+      res.emit('end');
+     }
+    });
+   });
+  };
+  return req;
+ });
+ return {lookup,request,requests};
+}
+it('performs one pinned HTTPS authorized RTC read with exact name and no retry',async()=>{
+ const fake=channel();
+ const result=await pinnedRtcReadCall(target,'stripe_invoice_list',
+  {limit:2},fake);
+ expect(result).toEqual({ok:true,result:{items:[]}});
+ expect(fake.requests).toHaveLength(1);
+ expect(fake.requests[0].options).toMatchObject({
+  method:'POST',hostname:'stripe-mcp-psi.vercel.app',port:443,
+  protocol:'https:',agent:false,rejectUnauthorized:true,
+  path:'/api/tools/stripe_invoice_list'});
+ expect(fake.requests[0].options.headers.authorization).toBe('Bearer '+pass);
+ expect(JSON.parse(fake.requests[0].body)).toEqual({limit:2});
+});
+it('rejects DNS rebinding before connected socket and does not retry',async()=>{
+ const fake=channel({answers:[{address:'169.254.169.254',family:4}]});
+ await expect(pinnedRtcReadCall(target,'stripe_invoice_list',{},fake))
+  .rejects.toThrow('do not automatically retry');
+ expect(fake.requests).toHaveLength(1);
+ expect(fake.request).toHaveBeenCalledTimes(1);
+});
+it('refuses non-read-only grants, cross-prefix calls and huge payloads before network',async()=>{
+ const fake=channel();
+ for(const t of [{...target,profile:'full'},{...target,mode:'live'},
+  {...target,origin:'https://127.0.0.1'}]){
+  await expect(pinnedRtcReadCall(t,'stripe_invoice_list',{},fake)).rejects.toThrow();
+ }
+ await expect(pinnedRtcReadCall(target,'github_repo_list',{},fake)).rejects.toThrow();
+ await expect(pinnedRtcReadCall(target,'stripe_invoice_list',
+  {large:'x'.repeat(9000)},fake)).rejects.toThrow();
+ expect(fake.request).toHaveBeenCalledTimes(0);
+});
+it('does not return redirects or unexpected HTML as successful read',async()=>{
+ for(const setup of [{status:302,mime:'text/html'},
+  {status:200,mime:'text/html'},{result:{ok:'bad',result:{}}}]){
+  const fake=channel(setup);
+  await expect(pinnedRtcReadCall(target,'stripe_invoice_list',{},fake))
+   .rejects.toThrow('do not automatically retry');
+  expect(fake.request).toHaveBeenCalledTimes(1);
+ }
+});
