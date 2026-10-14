@@ -122,7 +122,7 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
           AND c.profile IN ('read_only','everyday','full') AND c.mode='test' AND c.allow_writes=FALSE
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
-          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=g.caller_id
+          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL
           AND o.access_expires_at>now() AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
           AND 'gateway'=ANY(o.areas)
@@ -162,7 +162,18 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
   const {rows}=await db.query(`SELECT s.name,s.prefix,s.claimed_counts,g.areas
     FROM hub_servers s JOIN hub_server_grants g
       ON g.server_name=s.name AND g.owner_id=s.owner_id
-    WHERE s.owner_id=$1 AND g.caller_id=$2 AND g.caller_kind=$3
+    WHERE s.owner_id=$1 AND g.caller_kind=$3
+      AND (g.caller_id=$2 OR (g.caller_kind='oauth' AND EXISTS(
+        SELECT 1 FROM hub_oauth_sessions fresh
+        JOIN hub_oauth_sessions initial ON initial.family_id=fresh.family_id
+        WHERE fresh.id=$2 AND initial.id=g.caller_id
+          AND fresh.owner_id=g.owner_id AND initial.owner_id=g.owner_id
+          AND fresh.client_id=initial.client_id AND fresh.profile=initial.profile
+          AND fresh.areas=initial.areas AND fresh.mode=initial.mode
+          AND fresh.mode='test' AND fresh.revoked_at IS NULL
+          AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
+          AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+            WHERE compromised.family_id=fresh.family_id AND compromised.revoked_at IS NOT NULL))))
       AND s.state='active' AND g.verified_at IS NOT NULL
       AND g.revoked_at IS NULL AND g.expires_at>now()
       AND g.profile='read_only' AND g.mode='test'
@@ -174,7 +185,7 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND c.mode='test' AND c.allow_writes=FALSE
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
-          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=g.caller_id
+          SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL AND o.access_expires_at>now()
           AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
           AND 'gateway'=ANY(o.areas)
