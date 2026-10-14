@@ -14,7 +14,7 @@ async function call(method,body,extra={}) {
   const deps={env,withDb:async fn=>fn({}, {grantsKey:'synthetic-key'}),
     verify:vi.fn(async(_db,_req,password)=>({approved:password==='synthetic-owner-auth'})),
     stage:vi.fn(async()=>({callable:false})),list:vi.fn(async()=>[]),
-    revoke:vi.fn(async()=>true),...extra};
+    revoke:vi.fn(async()=>true),narrow:vi.fn(async()=>({updated:true})),...extra};
   await handleOwnerGrants({method,body,headers:{
     'content-type':'application/x-www-form-urlencoded'},
     socket:{remoteAddress:'127.0.0.1'}},res,deps);
@@ -75,4 +75,52 @@ it('rejects duplicates, malformed callers/scopes/pass and unconfigured owner',as
   expect(down.res.body).not.toContain('test secret');
   expect((await call('GET',null,{env:{...env,HUB_PUBLIC_ORIGIN:'http://hub.example'}}))
     .res.code).toBe(503);
+});
+
+it('requires independent owner login for irreversible RTC grant area restriction',async()=>{
+ const narrow=vi.fn(async()=>({updated:true,areas:['billing']}));
+ const fields='action=narrow_areas&id='+id+'&areas=billing';
+ const denied=await call('POST',fields+'&password=incorrect',{narrow});
+ expect(denied.res.code).toBe(401);
+ expect(narrow).not.toHaveBeenCalled();
+ const approved=await call('POST',fields+'&password=synthetic-owner-auth',{narrow});
+ expect(approved.res.code).toBe(200);
+ expect(approved.res.body).toContain('permanently reduced');
+ expect(approved.res.body).not.toContain(secret);
+ expect(narrow).toHaveBeenCalledWith(expect.anything(),{
+   ownerId:'owner-a',id,areas:['billing']
+ },{ownerVerified:true});
+ const stale=await call('POST',fields+'&password=synthetic-owner-auth',{
+  narrow:async()=>({updated:false})});
+ expect(stale.res.code).toBe(404);
+ expect(stale.res.body).not.toContain(secret);
+});
+it('rejects malformed grant area restrictions before owner login or provider access',async()=>{
+ const narrow=vi.fn();
+ for(const fields of [
+   'action=narrow_areas&id=bad&areas=billing',
+   'action=narrow_areas&id='+id+'&areas=billing%2Cbilling',
+   'action=narrow_areas&id='+id+'&areas=Billing',
+   'action=narrow_areas&id='+id+'&areas=',
+   'action=narrow_areas&id='+id,
+   'action=narrow_areas&id='+id+'&areas=reports%3Bcat'
+ ]) {
+   expect((await call('POST',fields+'&password=synthetic-owner-auth',
+     {narrow})).res.code).toBe(400);
+ }
+ expect(narrow).not.toHaveBeenCalled();
+ const form=await call('GET');
+ expect(form.res.body).toContain('name="action" value="narrow_areas"');
+ expect(form.res.body).not.toContain(secret);
+});
+it('returns only permitted area metadata with escaped names and original grant scope',async()=>{
+ const rows=[{id,server:'stripe',callerKind:'pass',callerId:id,
+   areas:['billing'],originalAreas:['billing','<script>'],revoked:false,verified:true}];
+ const listed=await call('POST','action=list&password=synthetic-owner-auth',
+   {list:async()=>rows});
+ expect(listed.res.code).toBe(200);
+ expect(listed.res.body).toContain('billing');
+ expect(listed.res.body).toContain('&lt;script&gt;');
+ expect(listed.res.body).not.toContain('<script>');
+ expect(listed.res.body).not.toContain(secret);
 });

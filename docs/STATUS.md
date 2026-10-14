@@ -1,3 +1,11 @@
+## October 14 session handoff — source #188–#192, finish exactly five gated PRs
+
+Verified main before #192: a745623a91363eb541e06f05e749030158494932 (#191 merged). Earlier four session merges: #188 c8d0fee389ebca0cbc5227a35e0ee421d7d921c1 (L-1 bounded local read commands), #189 099ddba2fec173c2598ad5a2448c051812c6236e (H-4 Hub pass selected RTC servers), #190 10a900ff80e2538cb8f499f907236ee672fd2760 (H-4 OAuth refresh family scopes), #191 a745623a91363eb541e06f05e749030158494932 (H-4 owner-only atomic server narrowing). PR #192 must independently pass exact-head unit, real disposable DB, check/index/lint/developer, original Stripe SQL/HTTP and release-policy, resolve review threads, and merge before the session's five-PR outcome can be claimed. Actual fifth merge SHA is established only from GitHub, not predicted in this document.
+
+Approved source work under H-4 continues with owner-only, irreversible area ceilings on separately issued encrypted RTC read-only grants, preserving original AES-GCM associated data and deleting previously generated encrypted RTC result handles in the same SQL statement as nonsecret audit. SQL migration 012 is additive and **not hosted installed**. Source/CI, checked production deployment, owner-authorized real TEST, and direct/relay/Sandbox checks remain four distinct evidence layers; a green CI never closes real acceptance.
+
+Authoritative index: 32 coarse units, 16 MERGED, 7 IN_PROGRESS, 8 APPROVED, 1 ON_REQUEST; 15 approved unfinished parent units, not 15 fine-grained PR slices. Fifteen real release-dependent acceptance rows now PENDING, including four new H-4 obligations; preserve their required source pins, prerequisites and explicit refusal gates. Live branch last confirmed at 0b17dd5f4334790f0830265f479766e61dc29b0d and production READY before this session, hence independent owner-scope migration/TEST acceptance cannot be assumed on new main. Follow existing approved order in repository instructions; when release or external TEST credentials are unavailable, finish independent eligible work rather than defer all work. Never bypass owner-only setup, live promotion, review/CI, service-owned credentials or $0 spend policy.
+
 ## H-4 owner-only immediate Hub pass narrowing — PR #191 source proposal
 
 From merged #190 (10a900ff80e2538cb8f499f907236ee672fd2760), implement immutable one-way server allowlist reduction on a live Hub pass and authenticated metadata readback. PostgreSQL must commit both reduction and nonsecret audit in one statement; stale actor and prior encrypted RTC page handles are rechecked against current SQL grants. The new HUB-H4-OWNER-NARROW queue row retains real hosted owner authorization, 010 migration, exact deployment and independent two-service RTC TEST proof as PENDING. All 13 prior acceptance rows are preserved and no manual release, provider permissions, money-out or production activation occurs.
@@ -433,6 +441,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: #191 owner-only atomic scope reduction, source/real disposable SQL and synthetic RTC result-page tests proposed; no actual hosted owner readback or prior real TEST result handle."
+  },
+  {
+    "id": "HUB-H4-AREA-CEILINGS",
+    "priority": 15,
+    "requiredRevision": "88f11d2f0680c0a3a1eb5627027ac7015580316e",
+    "introducedFile": "packages/hub/migrations/012-hub-grant-area-ceilings.sql",
+    "task": "Verify hosted additive SQL 012, independently authenticated owner one-way per-grant TEST area restriction, durable redacted policy audit, an authorized area read, forbidden removed-area schema/call/batch, and refusal of old encrypted RTC result handle on both native MCP and HTTPS",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Exact checked deployed Hub READY source and installed SQL 010/011/012; owner-approved scoped Hub and independent service-owned RTC TEST/read_only passes, two genuinely attested services and durable provider audit readback; never write or spend",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Source PR #192 owner-only area ceiling, unchanged encrypted upstream grant, atomic audit and result deletion with disposable PostgreSQL integration are not deployment or external RTC acceptance."
   }
 ]
 ```
