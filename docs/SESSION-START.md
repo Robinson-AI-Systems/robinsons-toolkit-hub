@@ -161,7 +161,7 @@ keep unaccepted provider/deployment evidence OPEN. The existing
 units by status and batch next to, but separate from, release acceptance
 obligations. These coarse indexed units do **not** estimate remaining
 fine-grained slices or total effort; cite card-specific unfinished slices
-when making an estimate. No standing fixed PR-count or multiple-of-five
+when making an estimate. No fixed standing PR-count or multiple-of-five
 rule; an explicit **next-session** owner request for five full PRs governs
 that session only, with all safety gates and context recovery intact.
 Do not count a passing helper as a completed outcome. After each verified
