@@ -1,3 +1,28 @@
+## October 14 fleet and hosted database independent readbacks
+The checked #169 GitHub Actions public-observe job (run 38590859362,
+readback at 2026-10-14 15:37:53 UTC, original HEAD
+`6b06a708b6609f65358a05213115893faf0d9ec5`)
+made real unauthenticated GET /api/contract requests to the five
+tracked production DNS origins. Google Workspace answered HTTP 200,
+valid RTC 1 metadata with `workspace_` prefix but no confirmed
+TEST auth; GitHub answered HTTP 200 with RTC 0 (not RTC 1);
+Stripe, Vercel and Neon each answered HTTP 401 access-protected.
+All direct authenticated reads, private relay, Sandbox and same-pass
+revocation remain UNVERIFIED, not passed by public GET or the standard
+connectors. No credentials were used in this probe.
+Separate read-only Neon table inventory of the existing
+`robinsons-toolkit-relay` project on Oct 14 found 11 existing Hub
+foundation/relay tables but no `hub_servers`,
+`hub_server_grants`, `hub_rtc_read_audit`, or
+`hub_rtc_result_handles`. Therefore hosted additive migrations
+004-006, 008, 009 and actual two-service RTC grant routing remain
+OPEN. No hosted SQL changes or manual deployments were performed.
+Trust the exact independently observed Vercel production deployment
+`dpl_JAJFwPTgkqc2k4fDoFv1PEW1Wn5X`, READY on
+`live=a26ff2fd81cab3500b1e1dab8332e2575a6d9592`
+until new provider evidence supersedes it. Main has new source not yet
+released; do not relabel source CI as provider acceptance.
+
 ## H-3 authorized catalogue browsing — PR #170 (pending review)
 Agents can explore all grant-eligible RTC metadata through native
 `hub_search_tools({query:''})` or authenticated HTTPS `GET /api/tools?q=`
