@@ -1,3 +1,11 @@
+Independent read-only Neon table inventory on 2026-10-13 found Hub
+foundation tables, but no `hub_servers`, `hub_server_grants`,
+`hub_rtc_read_audit` or `hub_rtc_result_handles` in public schema.
+Thus hosted migrations 004–006, 008 and proposed 009 are not proven
+applied and real federation is not currently runnable. Deployment READY
+and synthetic database CI remain distinct. No production schema changes
+were made during this observation.
+
 ## H-3 grant-scoped encrypted RTC pagination — next implementation PR
 
 Forwarded RTC harmless reads exceeding the ~8 KiB inline envelope can now
