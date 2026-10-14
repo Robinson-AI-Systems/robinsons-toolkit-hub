@@ -439,12 +439,16 @@
         "H-3"
       ],
       "card": "docs/pr-cards/H-4.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "H-4"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "#189 (owner-scoped subset of RTC servers for newly issued Hub passes; H-4 partial)"
+      ],
+      "note": "Source stage/SQL discover/dispatch narrowed by pass-selected server names; H-4 OAuth/profile/area owner management unfinished; hosted migration 010 and real RTC TEST acceptance separately open."
     },
     {
       "id": "H-5",
