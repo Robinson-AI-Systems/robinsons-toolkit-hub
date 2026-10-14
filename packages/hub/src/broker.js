@@ -20,7 +20,7 @@ const catalog=Object.freeze([
       required:['name'],additionalProperties:false}},
   {name:'hub_batch',description:'Execute up to ten authorized Hub-owned read calls',
     inputSchema:{type:'object',properties:{calls:{type:'array',minItems:1,maxItems:10,
-      items:{type:'object',properties:{name,args:{type:'object'}},required:['name'],
+      items:{type:'object',properties:{name:rtcName,args:{type:'object'}},required:['name'],
         additionalProperties:false}}},
       required:['calls'],additionalProperties:false}},
   {name:'hub_namespaces',description:'List bounded accessible namespaces without fetching upstream tools',
