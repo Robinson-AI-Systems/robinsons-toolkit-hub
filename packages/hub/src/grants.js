@@ -159,7 +159,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     typeof actor.id!=='string'||!actor.id||
     !Number.isInteger(limit)||limit<1||limit>100) return [];
   const callerKind=actor.clientId?'oauth':'pass';
-  const {rows}=await db.query(`SELECT s.name,s.prefix,s.claimed_counts,g.areas
+  const {rows}=await db.query(`SELECT s.name,s.prefix,s.origin,s.claimed_counts,g.areas,
+           g.id AS grant_id,g.verified_at
     FROM hub_servers s JOIN hub_server_grants g
       ON g.server_name=s.name AND g.owner_id=s.owner_id
     WHERE s.owner_id=$1 AND g.caller_kind=$3
@@ -195,6 +196,10 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit]);
   return rows.map(row=>({name:row.name,prefix:row.prefix,
     claimedCounts:row.claimed_counts,areas:[...row.areas],
+    // Private cursor scope inputs only: never shown to callers in the
+    // Hub namespace/search result or sent to an upstream provider.
+    grantId:row.grant_id,origin:row.origin,
+    verifiedAt:row.verified_at?.toISOString?.()??String(row.verified_at??''),
     state:'active',readOnlyGrant:true}));
 }
 
