@@ -17,8 +17,7 @@ foundation/relay tables but no `hub_servers`,
 `hub_rtc_result_handles`. Therefore hosted additive migrations
 004-006, 008, 009 and actual two-service RTC grant routing remain
 OPEN. No hosted SQL changes or manual deployments were performed.
-Trust the exact independently observed Vercel production deployment
-`dpl_JAJFwPTgkqc2k4fDoFv1PEW1Wn5X`, READY on
+Trust the independently observed Vercel READY production deployment on
 `live=a26ff2fd81cab3500b1e1dab8332e2575a6d9592`
 until new provider evidence supersedes it. Main has new source not yet
 released; do not relabel source CI as provider acceptance.
