@@ -3,6 +3,7 @@ import {listEligibleRtcTargets,resolveActiveCallerGrant} from './grants.js';
 import {searchPinnedRtcTools,describePinnedRtcTool} from './pinned-tools.js';
 import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit,newRtcCorrelation} from './rtc-read-audit.js';
+import {storeRtcResult,readRtcResult} from './rtc-results.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
@@ -34,7 +35,8 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
  const tools={
   list:listEligibleRtcTargets,resolve:resolveActiveCallerGrant,
   search:searchPinnedRtcTools,describe:describePinnedRtcTool,
-  read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,...deps};
+  read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
+  storeResult:storeRtcResult,readResult:readRtcResult,...deps};
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
   const targets=await tools.list(db,actor,{limit:50});
@@ -90,11 +92,24 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   return {ok:true,result:{tools:found.slice(0,limit),failures,
     incomplete,next:null,scanned:chosen.length,authorizedTargets:matching.length}};
  }
+ if(name==='hub_result_read') {
+  if(Object.keys(args).some(k=>!['handle','page'].includes(k))||
+    typeof args.handle!=='string'||!/^rtc_[A-Za-z0-9_-]{43}$/.test(args.handle)||
+    (args.page!==undefined&&(!Number.isInteger(args.page)||args.page<0||args.page>15)))
+    return fail('invalid_args','Invalid RTC result page request');
+  try {
+   const page=await tools.readResult(db,actor,args.handle,args.page??0,settings);
+   return page?{ok:true,result:page}:
+     fail('not_found','RTC result missing, expired or grant revoked');
+  } catch{return fail('unavailable','RTC result temporarily unavailable');}
+ }
  if(name==='hub_call') {
   if(Object.keys(args).some(k=>!['name','args'].includes(k))||
     !namePattern.test(args.name||'')||
     (args.args!==undefined&&!plain(args.args)))
     return fail('invalid_args','Invalid RTC read call arguments');
+  if(args.name==='hub_result_read')
+   return runFederatedBroker('hub_result_read',args.args??{},actor,db,settings,deps);
   if(ownNames.has(args.name))return runBroker('hub_call',args,actor);
   const targets=await tools.list(db,actor,{limit:50});
   const target=ownerOfTool(targets,args.name);
@@ -148,7 +163,18 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   let bytes;
   try {bytes=Buffer.byteLength(JSON.stringify(result),'utf8');}
   catch{return fail('unavailable','RTC result is not serializable');}
-  if(bytes>8000)return fail('unavailable','RTC result exceeds inline safety limit');
+  if(bytes>8000) {
+   if(bytes>65536)return fail('unavailable','RTC result exceeds storage bound');
+   // Refresh/revoke must immediately invalidate any saved result page.
+   const latest=await tools.resolve(db,{actor,serverName:target.name},settings);
+   if(!latest||latest.grantId!==grant.grantId||latest.origin!==grant.origin)
+     return fail('outside_scope','RTC grant changed before result storage');
+   try {
+    const saved=await tools.storeResult(db,actor,grant.grantId,target.name,result,settings);
+    return {ok:true,result:{name:args.name,server:target.name,
+      correlationId,upstreamLogId,stored:true,...saved}};
+   } catch{return fail('unavailable','RTC encrypted result storage unavailable');}
+  }
   return {ok:true,result};
  }
  if(name==='hub_batch') {
