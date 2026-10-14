@@ -63,7 +63,9 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>160)))
     return fail('invalid_args','Invalid search parameters');
   const limit=args.limit??10;
-  const owned=args.server||args.area&&args.area!=='gateway'?[]:
+  if(args.server==='hub')return runBroker('hub_search_tools',
+    {query:args.query,limit},actor);
+  const owned=args.cursor||args.server||args.area&&args.area!=='gateway'?[]:
     runBroker('hub_search_tools',{query:args.query,limit},actor).result.tools;
   const targets=await tools.list(db,actor,{limit:100});
   const matching=targets.filter(t=>(!args.server||t.name===args.server)&&
@@ -77,7 +79,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
    if(offset===null||offset>=matching.length)
     return fail('invalid_args','Search continuation invalid or expired');
   }
-  const chosen=matching.slice(offset,offset+3);
+  const chosen=matching.slice(offset,offset+Math.min(3,limit));
   const settled=await Promise.allSettled(chosen.map(async target=>{
    if(args.area&&!target.areas.includes(args.area))return {tools:[],incomplete:false};
    const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
