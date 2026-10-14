@@ -237,7 +237,7 @@ it('browses every page of one selected RTC service with sealed caller-bound cont
   verifiedAt:'2026-10-14T16:00:00Z',grantId:t.name+'-grant'}));
  const deps=setup(all);
  deps.search.mockImplementation(async(grant,args)=>{
-  const page=args.cursor==='provider_page_2'?2:1;
+  const page=args.cursor?.kind==='cursor'&&args.cursor.value==='provider_page_2'?2:1;
   return {tools:[{name:grant.prefix+'_read_'+page,area:'billing',
    description:'Scoped page '+page,writes:false,money:false,destructive:false}],
    next:page===1?{kind:'cursor',value:'provider_page_2'}:null,incomplete:page===1};
