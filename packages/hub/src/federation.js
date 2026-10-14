@@ -135,7 +135,14 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     phase:'outcome',outcome,upstreamLogId});}
   catch{return fail('unavailable','RTC audit completion unavailable');}
   if(!response)return fail('unavailable','RTC read outcome uncertain; do not retry automatically');
-  if(response.ok!==true)return fail('refused_by_guard','Upstream RTC declined the read');
+  if(response.ok!==true) {
+   const acceptedCodes=new Set(['needs_confirmation','refused_by_guard',
+    'not_found','permission','service_error','rate_limited','pass_expired',
+    'pass_revoked','invalid_args','outside_scope']);
+   const code=acceptedCodes.has(response?.error?.code)?
+     response.error.code:'refused_by_guard';
+   return fail(code,'Upstream RTC declined the read');
+  }
   const result={name:args.name,server:target.name,correlationId,
     upstreamLogId,result:response.result};
   let bytes;
