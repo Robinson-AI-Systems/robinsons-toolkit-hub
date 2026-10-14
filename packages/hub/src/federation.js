@@ -5,7 +5,9 @@ import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit,newRtcCorrelation} from './rtc-read-audit.js';
 import {storeRtcResult,readRtcResult} from './rtc-results.js';
 import {searchCursorScope,issueSearchCursor,openSearchCursor} from './search-cursor.js';
-import {issueProviderCursor,openProviderCursor} from './provider-cursor.js';
+import {issueProviderCursor,openProviderCursor,validProviderPage} from './provider-cursor.js';
+import {issueFleetCursor,openFleetCursor,maxFleetDepth} from './fleet-cursor.js';
+import {scopedCatalogueCache} from './catalogue-cache.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
@@ -49,7 +51,8 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   list:listEligibleRtcTargets,resolve:resolveActiveCallerGrant,
   search:searchPinnedRtcTools,describe:describePinnedRtcTool,
   read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
-  storeResult:storeRtcResult,readResult:readRtcResult,...deps};
+  storeResult:storeRtcResult,readResult:readRtcResult,
+  cache:scopedCatalogueCache,...deps};
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
   const targets=await tools.list(db,actor,{limit:100});
@@ -94,7 +97,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     (args.area!==undefined&&!areaPattern.test(args.area))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||
       args.limit<1||args.limit>20))||
-    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>384)))
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>1280)))
     return fail('invalid_args','Invalid search parameters');
   const limit=args.limit??10;
   if(args.server==='hub')return runBroker('hub_search_tools',
@@ -106,74 +109,121 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     (!args.area||t.areas.includes(args.area)));
   if(args.server&&!matching.length)return fail('not_found','No authorized RTC service');
   const scope=searchCursorScope(actor,args,matching);
-  // A selected service can follow its own RTC next page; broad search
-  // continues to page across services, never multiplying fan-out.
   const focused=Boolean(args.server && matching.length===1);
-  let offset=0,providerCursor=null;
-  if(args.cursor!==undefined){
+  let offset=0,providerCursor=null,pending=[];
+  if(args.cursor!==undefined) {
    try {
     if(focused)providerCursor=openProviderCursor(args.cursor,scope,settings);
-    else offset=openSearchCursor(args.cursor,scope,settings);
-   } catch{return fail('unavailable','RTC search continuation unavailable');}
-   if((focused && providerCursor===null)||
-      (!focused && (offset===null||offset>=matching.length)))
+    else if(args.cursor.startsWith('f.')) {
+     const state=openFleetCursor(args.cursor,scope,settings);
+     if(state){offset=state.o;pending=state.p;}
+     else offset=null;
+    } else offset=openSearchCursor(args.cursor,scope,settings);
+   }catch{return fail('unavailable','RTC search continuation unavailable');}
+   if((focused&&providerCursor===null)||
+      (!focused&&(offset===null||offset>matching.length||
+       offset===matching.length&&pending.length===0)))
     return fail('invalid_args','Search continuation invalid or expired');
   }
-  const chosen=matching.slice(offset,offset+(focused?1:Math.min(3,limit)));
-  const settled=await Promise.allSettled(chosen.map(async target=>{
-   if(args.area&&!target.areas.includes(args.area))return {tools:[],incomplete:false};
+  // Each broad GET requests exactly one result per provider. This prevents
+  // a page from silently discarding provider tools when the shared result
+  // budget fills. The provider's real next selector is retained in a sealed
+  // fleet step, while the roster advances by at most three origins per turn.
+  const jobs=[];
+  let nextPending=[];
+  if(focused) jobs.push({index:0,depth:0,cursor:providerCursor});
+  else {
+   const capacity=Math.min(3,limit);
+   const resumed=pending.slice(0,capacity);
+   nextPending=pending.slice(capacity);
+   for(const state of resumed)jobs.push({
+    index:state.i,depth:state.d,cursor:state.n
+   });
+   while(jobs.length<capacity&&offset<matching.length) {
+    jobs.push({index:offset,depth:0,cursor:null});
+    offset++;
+   }
+  }
+  const chosen=jobs.map(job=>matching[job.index]);
+  const settled=await Promise.allSettled(jobs.map(async(job,i)=>{
+   const target=chosen[i];
+   if(args.area&&!target.areas.includes(args.area))
+    return {tools:[],incomplete:false,next:null};
    const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
    if(!grant)throw new Error('Grant unavailable');
-   const discovered=await tools.search(grant,{query:args.query,
-    area:args.area,limit:Math.min(limit,10),
-    ...(providerCursor!==null?{cursor:providerCursor}:{})});
+   const request={query:args.query,area:args.area,
+    limit:focused?Math.min(limit,10):1,
+    ...(job.cursor!==null?{cursor:job.cursor}:{})};
+   // Only the verified real pinned metadata provider uses the shared
+   // in-process cache by default. Injected fake transports remain uncached
+   // unless a test opts into an isolated cache. This is metadata-only;
+   // executable tool schemas and POST are always fresh.
+   const get=()=>tools.search(grant,request);
+   const discovered=(tools.search===searchPinnedRtcTools||deps.cache)
+    ?await tools.cache.getOrFetch(actor,target,grant,request,settings,get)
+    :await get();
+   // Never forward a fabricated page selector or malformed catalogue.
+   if(!discovered||!Array.isArray(discovered.tools)||
+      discovered.next!=null&&!validProviderPage(discovered.next))
+    throw new Error('RTC provider pagination refused');
    const refreshed=await tools.resolve(db,{actor,serverName:target.name},settings);
    if(!sameGrant(grant,refreshed))
     throw new Error('RTC grant changed during metadata lookup');
    return discovered;
   }));
-  // Reserve one result from every scanned service before local tools or
-  // extra results consume the page budget. Otherwise a full first provider
-  // can hide later providers even though the cursor advances past them.
   const found=[],failures=[],candidates=[];
-  let incomplete=matching.length>offset+chosen.length;
+  let incomplete=!focused&&offset<matching.length;
   for(let i=0;i<settled.length;i++) {
-   const state=settled[i];
+   const state=settled[i],job=jobs[i];
    if(state.status==='rejected'){
     failures.push({server:chosen[i].name,code:'unavailable'});
     incomplete=true;
    } else {
-    incomplete ||= state.value.incomplete===true||state.value.next!=null;
-    candidates.push({server:chosen[i].name,tools:state.value.tools,
-      next:state.value.next??null});
+    const page=state.value;
+    incomplete ||= page.incomplete===true||page.next!=null;
+    // Mark a provider that violates the requested one-result bound as
+    // incomplete; never invent a fake continuation or repeat its POST.
+    if(!focused&&page.tools.length>1)incomplete=true;
+    candidates.push({server:chosen[i].name,tools:page.tools,
+      next:page.next??null,index:job.index});
+    if(!focused&&page.next!=null) {
+     if(job.depth+1<=maxFleetDepth)
+      nextPending.push({i:job.index,n:page.next,d:job.depth+1});
+     else incomplete=true;
+    }
    }
   }
   function include(entry) {
    if(found.length>=limit ||
-     Buffer.byteLength(JSON.stringify([...found,entry]),'utf8')>6500) {
+      Buffer.byteLength(JSON.stringify([...found,entry]),'utf8')>6500) {
     incomplete=true;
     return false;
    }
    found.push(entry);
    return true;
   }
-  // At most min(3, limit) services are scanned, so normal-sized matches
-  // from distinct services each have an available result slot.
+  // Cross-service fairness: every scanned provider gets a reserved first
+  // slot before Hub-owned results and extra focused-service metadata.
   for(const provider of candidates) {
    if(provider.tools.length)include({...provider.tools[0],server:provider.server});
   }
   for(const tool of owned)include(tool);
   for(const provider of candidates) {
+   // A conforming broad source sends at most one. Keep this conservative
+   // fallback for legacy synthetic transports that ignore the limit.
    for(const tool of provider.tools.slice(1))
     include({...tool,server:provider.server});
   }
   let next=null;
-  if(focused && candidates.length===1 && candidates[0].next!==null) {
-    try{next=issueProviderCursor(scope,candidates[0].next,settings);}
-    catch{return fail('unavailable','RTC provider continuation unavailable');}
-  } else if(!focused && offset+chosen.length<matching.length) {
-    try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
-    catch{return fail('unavailable','RTC search continuation unavailable');}
+  if(focused&&candidates.length===1&&candidates[0].next!==null) {
+   try{next=issueProviderCursor(scope,candidates[0].next,settings);}
+   catch{return fail('unavailable','RTC provider continuation unavailable');}
+  }else if(!focused&&nextPending.length) {
+   try{next=issueFleetCursor(scope,{o:offset,p:nextPending},settings);}
+   catch{return fail('unavailable','RTC fleet continuation unavailable');}
+  }else if(!focused&&offset<matching.length) {
+   try{next=issueSearchCursor(scope,offset,settings);}
+   catch{return fail('unavailable','RTC search continuation unavailable');}
   }
   return {ok:true,result:{tools:found.slice(0,limit),failures,
     incomplete,next,scanned:chosen.length,authorizedTargets:matching.length}};
