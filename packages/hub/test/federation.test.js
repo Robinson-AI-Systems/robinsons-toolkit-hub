@@ -37,7 +37,7 @@ it('returns selective, grant-scoped real RTC metadata through the fixed native M
   .toEqual(['stripe_read_list']);
  expect(result.result.structuredContent.scanned).toBe(1);
  expect(result.result.structuredContent.incomplete).toBe(false);
- expect(deps.resolve).toHaveBeenCalledTimes(1);
+ expect(deps.resolve).toHaveBeenCalledTimes(4);
  expect(deps.search).toHaveBeenCalledWith(expect.objectContaining({
   profile:'read_only',areas:['billing']}),expect.objectContaining({
     area:'billing',limit:5}));
@@ -123,4 +123,36 @@ it('does not enable provider execution or grant metadata to other identities',as
  expect((await mcpFederatedReply(req('hub_call',
   {name:'stripe_send_money',args:{}}),actor,{},{},deps)).error).toBeDefined();
  expect(deps.search).not.toHaveBeenCalled();
+});
+
+it('withholds searched RTC metadata after grant revocation or replacement during GET',async()=>{
+ const deps=provider();
+ let calls=0;
+ deps.resolve=vi.fn(async(_db,{serverName})=>{
+  calls++;
+  if(serverName==='google' && calls===2)return null;
+  return {server:serverName,prefix:serverName,grantId:serverName+'-grant',
+   origin:'https://rtc.example.com',areas:['gmail','billing','database'],
+   profile:'read_only',mode:'test'};
+ });
+ const result=await runFederatedBroker('hub_search_tools',
+  {query:'read',limit:10},actor,{},{},deps);
+ expect(result.ok).toBe(true);
+ expect(result.result.failures).toContainEqual({server:'google',code:'unavailable'});
+ expect(result.result.tools.some(t=>t.server==='google')).toBe(false);
+ expect(result.result.incomplete).toBe(true);
+ expect(deps.search).toHaveBeenCalledTimes(3);
+});
+it('refuses schema disclosure after a verified RTC grant is replaced during metadata GET',async()=>{
+ const deps=provider();
+ deps.resolve=vi.fn().mockResolvedValueOnce({
+  grantId:'original',server:'stripe',prefix:'stripe',
+  origin:'https://old.example.com',areas:['billing']})
+ .mockResolvedValueOnce({
+  grantId:'replacement',server:'stripe',prefix:'stripe',
+  origin:'https://new.example.com',areas:['billing']});
+ const result=await runFederatedBroker('hub_describe_tool',
+  {name:'stripe_invoice_list'},actor,{},{},deps);
+ expect(result.error.code).toBe('outside_scope');
+ expect(deps.describe).toHaveBeenCalledTimes(1);
 });
