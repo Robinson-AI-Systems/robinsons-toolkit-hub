@@ -1,3 +1,18 @@
+## H-3 direct HTTPS RTC federation — implementation PR in review
+
+The existing `/api/tools` GET search/schema and POST call/batch HTTP doors now
+share H-3's native MCP upstream selection, active exact-caller TEST read_only
+grant re-resolution, metadata safety checks, durable attempt/outcome audit,
+single-shot DNS-pinned HTTPS POST and independent batch refusal. Empty Hub
+catalogue and Hub-owned calls retain their prior backward-compatible HTTP
+shapes. Handler-level tests use a synthetic independently scoped RTC service
+and assert positive read, audit linkage, no-retry, denied writes/live actors,
+absent grants, HTTP status and bounded results. HTTPS source parity is a
+proposed change, not yet merged, deployed or independently accepted. Actual
+provider readbacks, migration 008 on hosted Postgres, 2-service Hub identity,
+revocation, RTC1 certification, handles/pagination and measured scale remain
+OPEN. No provider mutation, public access widening or manual release.
+
 ## H-3 guarded upstream RTC read execution — PR #160 proposed
 
 Native Hub `hub_call` and sequential read-only `hub_batch` now have
