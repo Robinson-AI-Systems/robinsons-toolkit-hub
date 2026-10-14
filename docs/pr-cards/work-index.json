@@ -9,7 +9,7 @@
     "L",
     "S"
   ],
-  "process": "Just-in-time cards from approved designs; S cards only on Chris's request. Session execution and queued deployed acceptance follow docs/SESSION-START.md.",
+  "process": "Just-in-time cards from approved designs; S cards only on Chris's request. Session execution and queued deployed acceptance follow docs/SESSION-START.md. Adjacent small approved slices are combined into outcome-sized PRs; context-safe recovery replaces all PR-count and multiple-of-five quotas.",
   "cards": [
     {
       "id": "K-0",
