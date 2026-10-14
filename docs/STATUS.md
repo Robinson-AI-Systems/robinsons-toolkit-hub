@@ -80,7 +80,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H3-HTTP-BROKERS",
     "priority": 4,
-    "requiredRevision": "b48bc90edb2be13a0b98cca850da437fb1866cb9",
+    "requiredRevision": "c910f267cf077df7c14e98ae17b653c5263f956e",
     "task": "Prove native and Hub-pass HTTPS broker parity under the same independently authenticated TEST grant: search, schema, scoped call, sequential batch, health and denial/readback",
     "procedure": "docs/pr-cards/H-3.md",
     "gates": "Checked Hub live deployment; additive hosted grants/audit migration; independent Hub TEST pass and active verified RTC upstream grant; no provider writes",
