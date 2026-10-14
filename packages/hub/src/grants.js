@@ -126,10 +126,12 @@ export async function revokeCallerGrant(db,{ownerId,id},{ownerVerified=false}={}
 export async function listCallerGrants(db,ownerId,{ownerVerified=false}={}) {
   owner(ownerId,ownerVerified);
   const {rows}=await db.query(`SELECT id,server_name,caller_kind,caller_id,areas,
-    expires_at,revoked_at FROM hub_server_grants
+    to_jsonb(hub_server_grants)->'area_ceiling' AS area_ceiling,
+    verified_at,expires_at,revoked_at FROM hub_server_grants
     WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 100`,[ownerId]);
   return rows.map(r=>({id:r.id,server:r.server_name,callerKind:r.caller_kind,
-    callerId:r.caller_id,areas:r.areas,expiresAt:r.expires_at,
+    callerId:r.caller_id,areas:effectiveGrantAreas(r),originalAreas:[...r.areas],
+    expiresAt:r.expires_at,verified:r.verified_at!==null,
     revoked:r.revoked_at!==null,callable:false}));
 }
 // Never expose this from owner HTML, tools or logs. H-3 may invoke it only
@@ -179,6 +181,8 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   [actor.ownerId,actor.id,actor.clientId?'oauth':'pass',serverName]);
   const row=rows[0];
   if(!row) return null;
+  const limitedAreas=effectiveGrantAreas(row);
+  if(!limitedAreas.length)return null;
   // Never dispatch a credential toward a changed or malformed registry target.
   const origin=validateStagedOrigin(row.target_origin);
   if(!namePattern.test(row.target_prefix||'')) throw new Error('Invalid active service prefix');
@@ -188,7 +192,7 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   const pass=Buffer.concat([decipher.update(row.ciphertext),decipher.final()]).toString('utf8');
   if(!passPattern.test(pass)) throw new Error('Invalid encrypted upstream credential');
   return {pass,grantId:row.id,origin,prefix:row.target_prefix,server:serverName,
-    areas:[...row.areas],profile:row.profile,mode:row.mode};
+    areas:limitedAreas,profile:row.profile,mode:row.mode};
 }
 
 
@@ -207,6 +211,7 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     !Number.isInteger(limit)||limit<1||limit>100) return [];
   const callerKind=actor.clientId?'oauth':'pass';
   const {rows}=await db.query(`SELECT s.name,s.prefix,s.origin,s.claimed_counts,g.areas,
+           to_jsonb(g)->'area_ceiling' AS area_ceiling,
            g.id AS grant_id,g.verified_at
     FROM hub_servers s JOIN hub_server_grants g
       ON g.server_name=s.name AND g.owner_id=s.owner_id
@@ -250,12 +255,12 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit,
       Array.isArray(actor.serverNames) ? actor.serverNames : null]);
   return rows.map(row=>({name:row.name,prefix:row.prefix,
-    claimedCounts:row.claimed_counts,areas:[...row.areas],
+    claimedCounts:row.claimed_counts,areas:effectiveGrantAreas(row),
     // Private cursor scope inputs only: never shown to callers in the
     // Hub namespace/search result or sent to an upstream provider.
     grantId:row.grant_id,origin:row.origin,
     verifiedAt:row.verified_at?.toISOString?.()??String(row.verified_at??''),
-    state:'active',readOnlyGrant:true}));
+    state:'active',readOnlyGrant:true})).filter(row=>row.areas.length>0);
 }
 
 export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
