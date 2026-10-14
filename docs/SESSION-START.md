@@ -31,12 +31,19 @@ Read the authoritative work index/roadmap and the highest-priority eligible card
 State its observable result and finite acceptance before editing. Read only its named
 code seams, design sections and fixtures; reuse existing helpers and task/packet tools.
 Group compatible adjacent roadmap slices into a complete usable workflow,
-including callers, real integration and tests. Plan a suitable coherent PR
-around ~500–800 production lines plus tests; this is advisory and not a
-reason to pad a smaller valid outcome or fragment a larger one. Explicitly
-list included slice IDs and acceptance criteria before writing code. Larger
-cohesive PRs require extra integration/risk/verification coverage. Preserve actual
-migration ordering, risk isolation and every business/security/financial decision gate.
+including callers, real integration and tests. Across a rolling five merged
+substantive implementation PRs (or fewer if not yet available), target an
+**average 400–800 changed production-code lines** and **2–5 fully completed
+roadmap slices per PR**. These are advisory averages, never per-PR quotas:
+a smaller coherent outcome or larger inseparable one is valid; do not
+pad code, merge unrelated risks or split features to match them. Production
+lines exclude tests, docs, fixtures and generated code. Cite each completed
+slice ID from the existing card, with finished eligible engineering,
+integration and required checks; record live external acceptance separately.
+Use existing PR diffs and permanent handoffs to calculate the averages,
+without starting a second tracker. Larger cohesive PRs require extra
+integration/risk/verification coverage. Preserve actual migration ordering,
+risk isolation and every business/security/financial decision gate.
 Do not revisit passing hardening without a demonstrated defect or approved requirement.
 
 ## 2. Finish the current roadmap outcome
@@ -145,11 +152,18 @@ Report implemented source, meaningful automated tests, deployed exact revision a
 authenticated end-to-end acceptance separately; retain missing proof as OPEN.
 
 Normal implementation sessions complete as many fully verified, cohesive roadmap
-slices as fit a safe, recoverable chat context. A suitable PR may integrate
-several adjacent small slices (typically targeting ~500–800 production lines
-plus tests), but contracts, review risk and end-to-end behavior determine size;
-a complete smaller slice or a safe larger slice is legitimate. No fixed
-number of PRs, five-PR cadence, next-multiple alignment, or filler quota.
+slices as fit a safe, recoverable chat context. Plan for a rolling average
+of 400–800 changed production lines and 2–5 completed slices per
+substantive implementation PR, without hard caps or filler. Record completed
+slice IDs and production-only diff counts in the existing PR/handoff;
+keep unaccepted provider/deployment evidence OPEN. The existing
+`npm run session:status` now prints remaining approved indexed roadmap
+units by status and batch next to, but separate from, release acceptance
+obligations. These coarse indexed units do **not** estimate remaining
+fine-grained slices or total effort; cite card-specific unfinished slices
+when making an estimate. No standing fixed PR-count or multiple-of-five
+rule; an explicit **next-session** owner request for five full PRs governs
+that session only, with all safety gates and context recovery intact.
 Do not count a passing helper as a completed outcome. After each verified
 merge, checkpoint the exact head/CI/reviews, completed slices, implementation
 and deployed/real-acceptance state, and one next action. Start another slice
