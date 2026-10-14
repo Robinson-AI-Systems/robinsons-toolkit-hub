@@ -101,7 +101,18 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   const secret=key(settings);
   const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,s.prefix AS target_prefix FROM hub_server_grants g
     JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
-    WHERE g.owner_id=$1 AND g.caller_id=$2 AND g.caller_kind=$3 AND g.server_name=$4
+    WHERE g.owner_id=$1 AND g.caller_kind=$3
+      AND (g.caller_id=$2 OR (g.caller_kind='oauth' AND EXISTS (
+        SELECT 1 FROM hub_oauth_sessions fresh
+        JOIN hub_oauth_sessions initial ON initial.family_id=fresh.family_id
+        WHERE fresh.id=$2 AND initial.id=g.caller_id
+        AND fresh.owner_id=g.owner_id AND initial.owner_id=g.owner_id
+        AND fresh.client_id=initial.client_id AND fresh.profile=initial.profile
+        AND fresh.areas=initial.areas AND fresh.mode=initial.mode
+        AND fresh.mode='test' AND fresh.revoked_at IS NULL
+        AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
+        AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+          WHERE compromised.family_id=fresh.family_id AND compromised.revoked_at IS NOT NULL)))) AND g.server_name=$4
       AND g.revoked_at IS NULL AND g.expires_at>now() AND s.state='active'
       AND g.verified_at IS NOT NULL AND g.profile='read_only' AND g.mode='test'
       AND (
