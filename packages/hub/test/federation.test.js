@@ -88,6 +88,19 @@ it('limits fan-out to three active targets, with no broad automatic fallback',as
   {query:'read',server:'nonexistent'},actor,{},{},deps);
  expect(denied.error.code).toBe('not_found');
 });
+it('selects a matching authorized area beyond the first three services',async()=>{
+ const deps=provider();
+ deps.list=vi.fn(async()=>[...targets,{name:'vercel',prefix:'vercel',
+   areas:['projects'],claimedCounts:{tools:100}}]);
+ const out=await runFederatedBroker('hub_search_tools',
+   {query:'read',area:'projects',limit:3},actor,{},{},deps);
+ expect(out.ok).toBe(true);
+ expect(out.result.authorizedTargets).toBe(1);
+ expect(out.result.scanned).toBe(1);
+ expect(out.result.tools.map(t=>t.name)).toEqual(['vercel_read_list']);
+ expect(deps.resolve).toHaveBeenCalledWith(expect.anything(),
+   {actor,serverName:'vercel'},expect.anything());
+});
 it('does not enable provider execution or grant metadata to other identities',async()=>{
  const deps=provider();
  for(const illegal of [{...actor,mode:'live'},{...actor,allowWrites:true},
