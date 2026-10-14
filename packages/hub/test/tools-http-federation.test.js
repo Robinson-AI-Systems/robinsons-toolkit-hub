@@ -255,7 +255,7 @@ it('browses authorized RTC tools without a guessed query while preserving the de
  expect(broad.body.result.tools.some(t=>t.name==='hub_health')).toBe(true);
  expect(upstream.search).toHaveBeenCalledTimes(2);
  expect(upstream.search).toHaveBeenLastCalledWith(grant,
-  expect.objectContaining({query:'',limit:5}));
+  expect.objectContaining({query:'',limit:1}));
  expect(JSON.stringify([selected.body,broad.body])).not.toContain(grant.pass);
 });
 
