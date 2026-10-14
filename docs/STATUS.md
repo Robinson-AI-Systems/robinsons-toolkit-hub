@@ -1,3 +1,11 @@
+## October 14 H-3 grant/endpoint-bound federation cursors — PR #179 (source proposal)
+A signed Hub search/namespace continuation now fails closed when the
+actual caller's active grant changes or the destination/verification rotates,
+even when public service names and areas remain the same. A disposable
+Postgres selector test confirms private identity pins; synthetic native
+cursor tests ensure no provider call on stale replay. No secrets returned;
+deployed two-service and revocation acceptance remain OPEN.
+
 ## October 14 H-3 owner-authenticated setup readiness — PR #178 (source proposal)
 The owner can inspect the exact H-3 schema, encryption-key and active TEST
 grant prerequisites from a no-store, independently password-verified mobile
