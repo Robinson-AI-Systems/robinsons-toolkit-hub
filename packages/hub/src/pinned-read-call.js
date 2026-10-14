@@ -2,6 +2,7 @@ import {lookup as systemLookup} from 'node:dns';
 import {request as httpsRequest} from 'node:https';
 import {choosePublicIpv4} from './pinned-contract.js';
 import {validateStagedOrigin} from './registry.js';
+import {ownsRtcToolName} from './rtc-prefix.js';
 
 const toolName=/^[a-z][a-z0-9_]{2,119}$/;
 const passPattern=/^rtc_pass_[A-Za-z0-9_-]{43}$/;
@@ -14,7 +15,7 @@ export async function pinnedRtcReadCall(target,name,args={},
   {lookup=systemLookup,request=httpsRequest}={}) {
  if(!target||typeof target.prefix!=='string'||
    !/^[a-z][a-z0-9_]{1,59}$/.test(target.prefix)||
-   !toolName.test(name||'')||!name.startsWith(target.prefix+'_')||
+   !toolName.test(name||'')||!ownsRtcToolName(target.prefix,name)||
    !passPattern.test(target.pass||'')||
    target.profile!=='read_only'||target.mode!=='test'||
    !object(args))throw new TypeError('Invalid scoped RTC read request');
