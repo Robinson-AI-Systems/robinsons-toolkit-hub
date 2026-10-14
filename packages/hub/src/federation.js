@@ -8,6 +8,13 @@ const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
 const ownNames=new Set(['hub_whoami','hub_health']);
+function ownerOfTool(targets,name) {
+  // Registry enforces unique prefixes, not prefix-free names. Choose the
+  // longest prefix followed by '_' so nested services route deterministically.
+  const matches=targets.filter(target=>name.startsWith(target.prefix+'_'));
+  matches.sort((left,right)=>right.prefix.length-left.prefix.length);
+  return matches[0]??null;
+}
 const fail=(code,what)=>({ok:false,error:{code,what}});
 function plain(a) {
  return a&&typeof a==='object'&&!Array.isArray(a)&&
@@ -90,7 +97,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     return fail('invalid_args','Invalid RTC read call arguments');
   if(ownNames.has(args.name))return runBroker('hub_call',args,actor);
   const targets=await tools.list(db,actor,{limit:50});
-  const target=targets.find(t=>args.name.startsWith(t.prefix+'_'));
+  const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','RTC tool not granted to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!grant)return fail('outside_scope','RTC grant unavailable');
@@ -157,7 +164,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     return fail('invalid_args','Invalid tool name');
   if(ownNames.has(args.name))return runBroker(name,args,actor);
   const targets=await tools.list(db,actor,{limit:50});
-  const target=targets.find(t=>args.name.startsWith(t.prefix+'_'));
+  const target=ownerOfTool(targets,args.name);
   if(!target)return fail('not_found','Tool is not available to caller');
   const grant=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!grant)return fail('outside_scope','RTC grant unavailable');
