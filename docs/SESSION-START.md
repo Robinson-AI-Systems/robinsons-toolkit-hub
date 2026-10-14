@@ -76,6 +76,9 @@ Keep a short progress note on interrupted branches: head, done/proof, one next a
 CI/review state, successor and exact blocker. Diagnose and attempt authorized remedies
 before deferring; isolate the operation and continue approved independent work. Limited
 release frequency is planned queued acceptance, never a project-wide stop.
+Record an exact re-entry trigger and next action for every true external blocker.
+Report implemented source, meaningful automated tests, deployed exact revision and
+authenticated end-to-end acceptance separately; retain missing proof as OPEN.
 
 Normal implementation sessions deliver five substantial merged PRs including inherited
 work; adjust to the next higher PR-number multiple of five using actual allocation and
