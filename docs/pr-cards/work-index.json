@@ -419,7 +419,7 @@
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "H-3 source through #180: guarded native/HTTPS TEST search/schema/read/batch with audit, encrypted result paging, scoped cursor invalidation, verified-owner readiness/TEST retirement and bounded metadata. Independently verified hosted migrations 004-006/008/009 installed and sensitive HUB_GRANTS_KEY configured for a future checked deployment; zero staged/active upstream grants on last independent readback. Source successor: encrypted selected-service upstream next-page continuation (provider GET cursor under pinned HTTPS) with native/HTTP regressions; pending exact-head CI/merge and checked release. Main != live READY at #173. Real independent two-service, same-pass revocation, D-4 routes and cleanup remain OPEN; H-3 is IN_PROGRESS.",
+      "note": "H-3 source merged through #182 selected-service paging; current cohesive source proposal adds complete fleet-wide upstream provider page navigation and 15-second grant-safe metadata caching under the existing TEST/read_only fixed MCP/HTTPS broker. Synthetic tests do not close real acceptance. Hosted H2/H3 tables were independently installed at last check, but no staged/active upstream TEST grants or genuine Hub two-service calls verified. Daily checked main→live release must include the source before HUB-H3-FLEET-PAGES acceptance; preserve eight earlier pending queue items, D4 separate paths and no autonomous spending. Remains IN_PROGRESS.",
       "pr": [
         "#158 (bounded DNS-pinned authenticated upstream search and on-demand read-only schema; no Hub dispatch yet)",
         "#159 (native MCP selective grant-scoped discovery, describe, namespaces, discovery-only health)",

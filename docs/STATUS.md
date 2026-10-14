@@ -1,3 +1,26 @@
+## H-3 fleet-wide complete RTC catalogue paging and scoped metadata cache — source awaiting reviewed PR
+Broad read_only TEST search can now continue past both the next authorized
+service and the individual RTC provider's next catalogue page in one
+Hub search flow. Each turn contacts at most three scoped providers and takes
+one tool per provider so page-budget overflow does not silently skip tools.
+An AES-256-GCM sealed five-minute fleet token carries at most three upstream
+continuations, a bounded service index and per-service page counts; tokens
+are bound to the exact owner, caller, query, grant roster, verified origin,
+areas and service identity. The existing single-provider sealed continuation
+and legacy signed between-service token remain supported.
+An in-memory, 15-second, 64-entry/128-KiB cache reduces repeated authorized
+RTC metadata GETs. Keys are one-way keyed digests binding owner, caller,
+grant, origin, verification, area, query and typed upstream page selector.
+The Hub still resolves the actual active caller grant both before and after
+each metadata lookup. Cache never covers executable schema validation,
+provider POST, stored results, or authorization. All provider services remain
+standalone, with no new network destinations, write methods or spending.
+Synthetic tests exercise 5 and 100 services, all three independently observed
+RTC pagination shapes, denial/replay, grant/origin rotation, outage isolation,
+MCP/HTTPS parity, cache expiry/bounds/rotation and no secret disclosure.
+Production deployment and genuine multi-provider TEST access/revocation
+remain **PENDING** as HUB-H3-FLEET-PAGES, not verified by source or CI.
+
 ## H-3 encrypted selected-provider RTC catalogue pages — source branch
 A selected granted read_only TEST service can resume its own upstream
 GET /api/tools `next` through MCP or authenticated HTTPS, rather than
@@ -250,6 +273,19 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Source-only selected-service upstream cursor transport and encrypted Hub continuation added on implementation branch; no new READY production release, staged RTC grants, genuine provider paging, denials or same-pass revocation verified."
+  },
+  {
+    "id": "HUB-H3-FLEET-PAGES",
+    "priority": 9,
+    "requiredRevision": "86a8d98fd1ab7240a99f05285fc8d33dce9301a5",
+    "task": "Prove one genuine authorized cross-service Hub search traverses upstream RTC provider page 2 and then all remaining scoped services through native MCP and HTTPS; verify bounded no-duplicate results, denied stale/forged cursor, same-pass grant revocation, audit/readback and standalone service independence",
+    "procedure": "docs/pr-cards/H-3.md",
+    "gates": "Checked READY deployment at least required source revision; two distinct independently verified RTC1 TEST origins with separately issued owner/scoped read_only grants; caller connection, no live writes, safe fixture cleanup",
+    "dependsOn": [
+      "HUB-H3-UPSTREAM-PAGES"
+    ],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Source and synthetic 5/100-service/HTTP/MCP/cache/revocation tests assembled in one H-3 feature PR; no newly verified ready deployment, provider-paged two-service acceptance, same-pass revocation or real fixture cleanup."
   }
 ]
 ```
