@@ -155,6 +155,14 @@ changes reopen affected proof. NEVER copy credentials/private fixture IDs into t
 
 ## Anti-stall recovery: a partial source commit is never a stopping condition
 
+When authoring GitHub-hosted code through string patches, never feed literal
+replacement strings containing JavaScript `$` patterns (including `$'`)
+to `String.replace` directly: these are replacement metacharacters and
+can silently duplicate/truncate source. Use a callback replacer, compare
+the resulting complete function/file to the intended diff, and run targeted
+syntax/import validation before the broad CI gate. Repair confirmed parser
+errors at their source, not by weakening tests or discarding valid work.
+
 A pushed branch, a successful helper, a written implementation card, or a
 single green focused check is a recoverable checkpoint, **not** a completed
 subsection and not the end of the requested session. When work pauses after a
