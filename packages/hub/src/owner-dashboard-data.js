@@ -14,7 +14,9 @@ export function checkedDashboardSelection(input){
    Object.keys(input).some(k=>!['tab','page'].includes(k)))
    throw new TypeError('Invalid owner dashboard selection');
  const tab=input.tab??'overview',raw=input.page??'0';
- if(!validTabs.has(tab)||typeof raw!=='string'||!/^(0|[1-9]|[1-9][0-9])$/.test(raw))
+ if(!validTabs.has(tab)||!(
+   (typeof raw==='string'&&/^(0|[1-9]|[1-9][0-9])$/.test(raw))||
+   (Number.isInteger(raw)&&raw>=0&&raw<=99)))
    throw new TypeError('Invalid dashboard tab or page');
  return {tab,page:Number(raw)};
 }
