@@ -249,10 +249,13 @@ loss of independent money-out owner approval or shared limit accounting, mutable
 in-memory lockout substituted for SQL, policy widening, secret-bearing tarballs,
 “unchanged tests” claimed after dropped assertions, or partial release called K-3 done.
 
-## 7. Remaining planned work — bounded JIT recipes
+## 7. Historical route map — superseded by the October 14 concrete contracts below
 
-All paths in this table are **proposed** unless explicitly called existing. These
-are dependency/evidence packets; do not implement them from this document alone.
+This is a preserved early snapshot, not the current implementation route or
+dependency graph. The **Concrete implementation contracts** below and actual
+current source supersede its proposed paths and old K-3/H-1 ordering. In
+particular H-1 does not wait for K-3 or two deployed services; those services
+gate genuine federation acceptance, not synthetic implementation.
 
 | Unit / prerequisite | Integration and ordered slices to resolve in its JIT card | Concrete fixtures / proof / inherited output |
 |---|---|---|
@@ -285,3 +288,186 @@ fresh; future agents do not need to read this whole guide.
 For new approved K-3 slices use [DEVELOPMENT-EFFICIENCY](DEVELOPMENT-EFFICIENCY.md) for exact current
 helpers, five targeted fixtures and source/release compatibility acceptance. This augments §6; it does
 not revise any card, source version, financial control or independent service adoption gate.
+
+
+## Concrete implementation contracts — owner-requested review, October 14, 2026
+
+The owner requested the same implementation detail across all six active MCP
+repositories, specifically for Sol 5.6. This section fills routine design details
+inside the approved roadmap. It is a design supplement, not another roadmap,
+process, new countable subsection or claim that code/acceptance is complete.
+Existing cards/public schemas and later owner decisions win over historical
+recipes; reconcile mechanical drift with current main before coding. Do not
+replace working code simply because a proposed filename below differs.
+
+### Shared input, state and result contract
+
+- Freeze the existing subsection IDs and complete scope first. In the current
+  card, list each public tool from TOOL-CATALOG, its exact schema, the existing
+  wrapped handler/client export and the corresponding provider operation. A
+  future path below is proposed until it exists. Build the complete coherent
+  outcome; do not publish one helper as a completed subsection.
+- Keep public ABI compatibility. For new compound implementations use an internal
+  plan `{operation, account, mode, target, steps}`. Each ordered step has a stable
+  `id`, exact wrapped `tool`, validated `args`, before-state requirements,
+  intended after predicate and inverse-or-reason. Account/mode come from trusted
+  context, never caller-supplied credentials. Translate these internal records
+  into the existing public tool schema; do not invent a second external envelope.
+- Explicit IDs beat free-text guesses. Resolve friendly names with authorized
+  reads; zero matches is missing, multiple matches requires disambiguation.
+  Reject unknown fields/enums and conflicting targets before dispatch. Omitted
+  means retain; explicit empty/false/null clears only where the provider supports
+  that operation. Whitelist path/query/body fields; never forward local safety,
+  pagination/presentation or request-key arguments into provider payloads.
+- A new workflow's observable details use ordered per-step rows with stable IDs,
+  target, outcome, safe reason and provider/audit references when actually known.
+  Outcomes distinguish `planned`, `refused`, `confirmed`, `unverified`, `failed`,
+  `unknown` and `not_attempted`. Aggregate success requires every required step
+  to be confirmed; optional unavailable items remain explicitly unavailable.
+  An HTTP 200/202/204 or an outer `done:true` alone is never provider confirmation.
+- Preview validates the entire plan and uses child `dryRun:true`; provider writes
+  are zero. Existing preview audit logging is allowed. Execution requires the
+  original operation-specific confirmation/owner authority; a single workflow
+  confirm never creates financial, access or production authority. Recheck
+  mutable target/protection/account state before each dependent write.
+- Execute dependent steps in order. Persist existing run/replay checkpoints
+  before/after ambiguous effects where the approved design requires durability.
+  A failed dependent step stops its descendants; untouched rows are
+  `not_attempted`. Independent read sections can continue and return partial
+  coverage. No blind retry after an uncertain POST, no automatic rollback and
+  no new background scheduler merely to finish a synchronous workflow.
+- If a request times out after dispatch, mark its outcome unknown and reconcile
+  the original target/request key before resuming. Reuse the service's replay
+  mechanism; a second generic UUID is not recovery. Explicit undo only follows
+  recorded, still-valid inverses through wrapped tools and fresh guards.
+- Bound existing time/page/byte budgets, return an explicit continuation where
+  supported and use connection-owned result handles. A cursor/handle is bound
+  to account, connection/grant and query; expired/revoked/foreign ones refuse.
+  Do not silently truncate and label the result complete.
+
+### Build and prove one complete outcome
+
+1. Read the exact provider operation in the pinned SDK/OpenAPI/GraphQL fixture;
+   capture argument → path/query/body → response selector and credential type in
+   the current card. Research genuinely changed provider behavior in official
+   primary documentation. The owner is not the source for API facts or pricing.
+2. Implement normalization/planning, then wrapped apply/readback/intent comparison,
+   then all callers, registry, profile/area metadata, summary/output schema and
+   documentation. Reuse existing shared guards, clients, secrets and run stores.
+   Add SQL only when the existing design actually needs durable new state.
+3. Arrange stateful realistic fakes and capture the actual outbound request.
+   Required cases: normal/empty/two pages; denied scope/profile/account; omitted
+   versus explicit clearing; preview and missing confirmation with zero writes;
+   mismatch/unreadable readback; ambiguous timeout and same-key retry; partial
+   failure plus untouched descendants; foreign run/handle; budget exhaustion.
+   Add the domain-specific cases below. Do not weaken fakes to fit a guessed API.
+4. Validate the assembled outcome through every existing direct/broker/HTTP door
+   with shared write-contract and provider-shape tests; use disposable Postgres
+   for persistence, atomic claims, refresh/revocation and concurrent reservations.
+   Run focused checks at meaningful seams, then the full mandatory gates once
+   the coherent tree is ready. Record real command results, never assumed green.
+5. Keep implementation, automated verification, deployed exact revision and real
+   custom-service/provider acceptance separate. Update the existing card/status/
+   queue with precise remaining proof. These design documents close no feature
+   status and authorize no real account writes, spending or release.
+
+Answered decisions do not require another approval. Missing credentials, actual
+tenant/resource identity, independent financial consent and production activation
+are still real gates. Build configurable/synthetic paths where permitted; keep
+only their dependent execution closed and continue eligible roadmap work.
+
+
+### Hub: concrete remaining-subsection contracts and current seams
+
+Inspected baseline: `4c3c493` (#199). Current source exists under
+`packages/hub/src/` (identity/OAuth/registry/grants/federation/results/owner
+flows), `packages/cli/src/` (http/dispatch/config/relay/local tools),
+`packages/relay/src/` and `packages/conformance/`. Historical §7 rows that call
+these proposed or require K-3 before H-1 are superseded here. H-1 → H-2 → H-3
+gateway order remains authoritative; optional core extraction never blocks
+standalone services or RTC connectivity. L is not a shortcut around eligible H.
+
+| Subsection | Concrete input, state, output and sequence | Finite fixtures / completion |
+| --- | --- | --- |
+| K-3 | Exact reviewed upstream commit/export and immutable artifact digest → original assertion/source trace → fake/SQL/HTTP parity → separately gated package release/adoption. Preserve current gates and existing package interfaces. | Missing assertion, stale source CI, modified export, unverified artifact each refuses release; no claim rehearsal means published or every service adopted. |
+| K-4 | New-server name/destination plus exact released template/dependency version → exclusive directory creation → complete minimal independent server files and local checks. Reuse CLI private-path patterns; template may contain demonstrative fake provider only as explicitly labelled dev fixture. | Existing/symlink destination unchanged; generated repo installs/checks/conforms in isolation; empty-catalog semantics explicitly tested, no silent probe skips or fake production tool. |
+| D-4 | Original service-issued TEST read_only identity and independently READY source → direct route proof, then actually restricted GitHub-only relay proof, then allowlisted Sandbox proof, then same-pass revocation negatives. Use existing agent/fleet/relay/revocation runners and original private checkpoint. | Matrix below, two real standalone services for federation acceptance separately; public manifest or fake transport cannot close a real route. |
+| H-1 | Existing identity/OAuth/HTTP runtime → finish each actual RTC door, own authenticated identity, durable refresh/revoke/rate semantics and explicit manifest version only after all required behavior exists. | PKCE/refresh reuse, independent instances, wrong profile/account, no bearer/SQL leakage; Hub itself conformant versus reference-only evidence. |
+| H-2 | Registry name/origin metadata from protected owner setup, separately sealed caller-bound upstream grant → pinned contract+whoami → verified active grant. Reuse registry.js/grants.js/owner-servers.js/owner-verify-grant.js. | DNS/private-address/redirect/origin swap, forged TEST identity, grant/session substitution and revocation; no broad owner grant shared across callers. |
+| H-3 | Existing federation.js/broker.js/tools-http.js and pinned read call/schema/result helpers → authorized server selection → bounded search/on-demand describe/call/read-only batch → per-service failures and owned result pages. | Two prefixes/ambiguous name,100 servers/10000 tools fixed broker schema, Unicode byte cap, query-bound cursor, changed revision/expired grant, absolute batch deadline and uncertain POST no retry. |
+| H-4 | Protected owner pass/OAuth-family selection and requested subset → intersection with original ceiling and upstream grant → atomic one-way reduction, audit and result/cache invalidation. Reuse grant-lifecycle/owner-service-scope/owner-connections. | Removed server/area fails after refresh, concurrent narrowing never widens, old result handle denied, independent upstream revocation respected; actual original-service permissions not rewritten by Hub. |
+| H-5 | Existing routed-call audit records → safe stable log schema and authorized read filters by caller/server/tool/time/cursor, optional separately authorized service log read. No full args/provider bodies. | Log failure blocks claimed audited success; original provider refusal/unknown state retained; dry-run distinct; foreign caller and revoked grant cannot read earlier protected results. |
+| C-1 | Workflow kind, typed parameters, runId/requestKey from trusted caller → durable plan hash/step list → child previews → explicit execution claim → sequential guarded RTC calls, checkpointing every returned audit ID/inverse. | Crash after step2 unknown, two workers one claim, changed plan rejected, step2 failure leaves step3 unattempted; explicit reverse-order undo only for supported unchanged inverses. |
+| C-2 | Project requirements + selected available services + one runId → actual per-server developer schemas → one combined plan → ordered GitHub/Neon/Vercel/Stripe/Workspace optional steps → per-service owned receipts. Down uses same runId/original grant lineage and exact cleanup APIs. | Missing service listed, not fabricated success; another run untouched; source app/production never changed; purchase/secret-safe handoff absent remains explicit needs-setup stage. |
+| C-3 | Explicit time window and authorized server subset → bounded read-only per-service digest -> data plus named coverage gaps. Return content; do not create a schedule implicitly. | One server unavailable leaves others, no writes/sends, Denver display and no mixed currencies; optional scheduling would need actual separately authorized scheduling interface. |
+| L-1 | Existing local files/git/shell modules, explicit local roots and typed paths/argv → canonical root checks including symlinks → bounded read or confirmed mutation → private output paths. Hosted Hub/relay never exposes local tools. | ../, symlink/TOCTOU escape, command substitution, wrong cwd, sudo, timeout/process cleanup, output cap and stale-hash edit; no shell string built from arguments. |
+| L-2 | Exact configured OLLAMA_BASE_URL, model and typed request → local-only bounded HTTP adapter → validated response/explicit stream completion. Missing endpoint disables only this family. | Wrong host/config, timeout/malformed/truncated stream, oversized response; no cloud fallback, service bearer forwarding or hosted exposure. |
+| L-3 | Configured local browser hosts + exact URL/action → public destination/redirect/subresource policy → bounded headless session → screenshots as private allowed-root files and path metadata. | Off-allowlist redirect/subresource, download/path escape, browser cleanup after error; no screenshot bytes or ambient credential dump. |
+| L-4 | `rtool guide <server> <setting>` → authenticated exact §11 steps → visible owner browser and explicit pause for each action → registered read-only verifyWith via same narrowed service grant. | Password/2FA fields never filled/read/stored; cancel stops; untrusted steps cannot select arbitrary tool/write; missing readback remains unverified. |
+
+S-messaging and other new service projects remain ON_REQUEST. This detail does
+not schedule a provider, enumerate a fixed Hub family list or revive the original
+Toolkit. Provider handlers/state/permissions stay in each standalone service.
+
+### D-4 exact route acceptance packet (complete the existing subsection)
+
+| Stage | Preconditions and action | Required evidence / failure disposition |
+| --- | --- | --- |
+| Identity | Independently verify source commit, READY deployment/origin and original temporary service-issued credential whoami: mode TEST, profile read_only, exact expected account/areas. | Safe timestamps/revisions and identity agreement; preview/sandbox/production label is not TEST. No protected call until identity passes. |
+| Direct | Original direct CLI/SDK runner in actual HTTPS-capable local/authorized environment; describe and call one approved harmless read. | Exact route, tool/alias/schema compatibility, status/envelope/result shape, exit code; fake server and standard provider connector excluded. |
+| Relay | Private one-repo Issues-only actor/issue/server binding, signed ingress, encrypted request/response and durable replay guard; genuinely GitHub-restricted runner. | Received same logical authorized read, GitHub ciphertext only, cleanup receipts, wrong actor/issue and replay denial. Ordinary unrestricted HTTP runner is not relay proof. |
+| Sandbox | Explicitly permitted Sandbox environment and network allowlist, same independently scoped original service grant; harmless read via actual route. | Sandbox runtime and network/route evidence. No new paid Sandbox purchase without independent cost authority; unavailable route stays open. |
+| Negative scopes | Wrong account/area/read_only mutation attempts through applicable actual service doors without provider mutation. | Genuine service-native refusal and unchanged scoped state; HTML deployment protection is not service permission proof. |
+| Revoke | Owner/service revokes that exact original temporary grant after safe resource/transport cleanup; re-use same pass fingerprint privately on each route previously accepted. | Genuine service-native revoked response, not timeout/SSO/expired substitute; sanitized report binds prior success and later rejection without exposing pass. |
+
+Use `packages/cli/src/agent-check.js`, `fleet-probe.js`, `revocation-check.js`,
+`scripts/agent-check.mjs` and the named probes in `docs/pr-cards/D-4.md`.
+Resolve supported source/identity/configuration defects in their owning repo;
+record exact unavailable external prerequisites without another micro-hardening
+PR when the existing finite scenario can simply be executed. Owner IN-06
+already approves limited read-only nonproduction route tests; no repeated
+approval is needed within that scope. It does not authorize paid resources,
+provider writes or production activation.
+
+### Workflow engine states and recovery (C-1/C-2)
+
+New internal run state: `planned → running → complete | failed | unknown`;
+`needs_setup` is a non-success checkpoint for a specific missing prerequisite.
+Steps begin `not_attempted`; preview records `planned`; executed steps retain
+their confirmed/unverified/failed/unknown receipt. Persist the plan/owner/grant
+binding before claiming execution; atomically claim a step before dispatch.
+Never claim exactly-once provider effects: after a lost POST result the durable
+step stays unknown until reconciled against that server's request/run evidence.
+No replan/replay under a new caller or wider grant.
+
+Proposed internal step example (not a new public RTC schema):
+```json
+{"id":"database-fixture","server":"neon","tool":"neon_dev_branch_create","args":{"runId":"fixture-run"},"status":"planned","serverLogId":null}
+```
+Resolve the actual live tool name/schema from approved service metadata; this
+example does not assert the step is currently eligible. Combine previews before
+any execution. If service A confirms and B fails, persist A's exact receipt,
+leave later dependent steps not_attempted and offer explicit `hub_undo_run`.
+The inverse order is B's completed reversible effects then A's; never invent an
+inverse for money, sent mail, permanently deleted data or an unknown write.
+
+Secret wiring is a distinct requirement, not ordinary workflow output. Use
+only existing owner-protected service/runner handoff interfaces that keep
+credentials out of chat, ledger and Hub results. If a source and destination
+lack an approved secret-safe bridge, stop that dependent wiring step at
+needs_setup and return destination setup instructions; resume only after its
+private handoff/readback. Do not define an undocumented secret-bearing RTC
+response, repurpose a normal result handle for passwords, or auto-authorize
+new provider scopes. Other explicitly independent requested stages may proceed.
+
+### Optional-package and owner-input boundaries
+
+K-3 publication, service adoption and K-4 generated dependency are separate;
+no speculative dependency on an unpublished package. H runtime uses existing
+Hub-owned source and service RTC doors regardless. H1/H2/H3 historical design
+placeholder FK/export names must be reconciled to actual SQL migrations, not
+recreated as duplicate tables. The owner-provisioned auth/settings and genuine
+TEST credentials remain actual external facts; safely configurable code can be
+built without declaring those facts proven. Do not re-request approved IN-06,
+widen current TEST/read-only upstream grants or treat this design work as a
+new RTC version, production grant or release permission.
