@@ -1,3 +1,27 @@
+
+## H-4 atomic owner multi-service area reduction — source implementation
+
+Existing H-4 permission subsection remains IN_PROGRESS. The verified owner can
+now preview and atomically narrow 1–10 individually registered TEST service
+areas on one Hub pass or an entire OAuth refresh family. The owner submits
+canonical service:area|area pairs; duplicated service names, invalid areas,
+missing identification and unauthorized owners refuse before any commit.
+Previews are metadata-only and do not become durable approval tokens. The
+separate authenticated commit acquires the same PostgreSQL client, orders
+services canonically, and runs the original row-guarded service-specific
+reduction, audit and encrypted-result invalidation statements inside one
+BEGIN/COMMIT transaction. A late refusal or database error ROLLBACKs all
+prior service changes, audit inserts and page deletions; all service grants
+are checked again at execution time. OAuth policy reductions propagate to
+all refresh generations as before. This is not external provider rollback.
+
+Evidence: unit form/refusal tests and throwaway SQL tests for both caller
+kinds, preview purity, late failure rollback, encrypted handle invalidation,
+current grant narrowing, audit accounting and refresh. The checked exact-head
+CI/review is required before source merge. Hosted adoption, migration 018,
+verified provider deployment revisions and actual direct/relay/Sandbox TEST
+reads stay in the preexisting acceptance queue, not satisfied by fixtures.
+
 ## H-4 owner-selected initial service-area restrictions — source candidate
 
 Initial pass and OAuth PKCE consent accept per-service area ceilings,
