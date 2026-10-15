@@ -26,7 +26,7 @@ export const LOCAL_WORKSPACE_READ_TOOLS=Object.freeze([
   description:'List a bounded recursive source tree (up to 80 returned entries, depth 1–4), skipping hidden paths, dependencies and symlinks.',
   inputSchema:{type:'object',additionalProperties:false,
    properties:{root:rootField,path:{type:'string',maxLength:1024},
-    depth:{type:'integer',minimum:1,maximum:MAX_DEPTH}},annotations:meta
+    depth:{type:'integer',minimum:1,maximum:MAX_DEPTH}}},annotations:meta
  })
 ]);
 function validateRelative(p,allowEmpty=false){
