@@ -357,7 +357,7 @@ when making an estimate. No fixed session PR quota applies. Session count follow
 gates and context recovery intact.
 Do not count a passing helper as a completed outcome. After each verified
 merge, checkpoint the exact head/CI/reviews, completed slices, implementation
-and deployed/real-acceptance state, and one next action. Continue the planned bundle after checkpoints. A demonstrated execution limit
+and deployed/real-acceptance state, and one next action. Continue the planned bundle after checkpoints. A demonstrated execution limit, including exhausted remaining context,
 requires an explicitly incomplete handoff with exact recovery action; a clean
 checkpoint or speculative context concern does not establish bundle completion.
 Persist unfinished work on its existing approved card, not only in chat.
