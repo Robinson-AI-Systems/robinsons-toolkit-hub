@@ -21,6 +21,26 @@ The rolling sample used for per-PR workload statistics is not a session quota.
 
 ## PR workload is measured in predefined batch subsections — owner clarification 2026-10-14
 
+**Bundle, card and PR boundaries — owner alignment 2026-10-15.** A card defines
+approved subsection scope; it is not automatically a PR or bundle boundary.
+A bundle is a coherent usable implementation outcome, normally averaging 2–5
+fully completed existing subsections and 400–800 meaningful production-code
+lines (tests/docs/generated/formatting excluded). Select the related cards and
+full acceptance before coding. One substantial subsection can qualify when its
+full workload naturally warrants it; merely finishing a smaller card does not
+make it a bundle. Larger coherent outcomes are allowed when reliably reviewable.
+There is no 500/800-line ceiling, file-count ceiling, one-migration quota or
+blanket one-risk-area rule. Related migrations may share a PR with explicit
+ordering, upgrade/restore proof and safe rollout. Keep every distinct risk,
+permission, confirmation and provider boundary independently enforced/tested;
+shared delivery never combines or relaxes those controls. Split delivery only
+for a concrete migration, dependency, safety or reviewability reason; record
+that reason and the unfinished integration. A bundle spanning PRs counts once
+when its intended outcome is fully implemented, verified and merged. The current
+owner prompt sets bundle count, never a standing repository quota. These rules
+supersede older numeric/grouping restrictions in recipes or example cards.
+
+
 **The countable work unit is a predefined batch subsection** in the authoritative
 approved roadmap/design, such as H-3, H-4 or B-5 (use this repository's actual IDs).
 The target is **2–5 fully completed batch subsections per substantive PR on
@@ -261,7 +281,9 @@ Build what the current card asks. Other ideas go in `docs/ROADMAP.md`. Owner dec
 
 - **Approved designs, just-in-time cards** (`docs/designs/BATCH-*.md`, `docs/pr-cards/`). A missing card means write it.
 - **Drift protocol** (`docs/implementation-contracts/DRIFT-PROTOCOL.md`): A before each PR, B inside each PR, C per batch.
-- **PR size:** ~500 production lines, ~15 files, advisory size estimate, one migration, one risk area.
+- **PR boundary:** follow the bundle/card/PR rule above and PLAYBOOK Step 3a. Related whole
+  subsections may share a PR; no line/file ceiling, one-migration quota or blanket one-risk-area rule
+  forces fragmentation. Document a concrete migration/dependency/safety/reviewability reason to split.
 - **Model:** Sol 5.6 is the routine implementer (light for docs and patterned CLI commands; medium for passes, relay,
   federation, workflows, local shell tools, SQL). A missing decision is never solved by guessing.
 - **Branches:** `ai/<tool>/<topic>`.
@@ -332,7 +354,7 @@ plain-English report to Chris: what changed, how it was verified, what he must d
 
 Use [the focused implementation and CI recipes](docs/implementation-contracts/DEVELOPMENT-EFFICIENCY.md)
 for approved work. Group cohesive, complete related capabilities (normally 450–800 production lines where
-natural), while preserving the advisory size estimate, one risk area, reviewability and all hard gates.
+natural), while preserving the bundle workload averages, explicit independent risk review and all actual hard gates.
 Use `npm run test:focus -- <group>` only inside a slice; full check, unit, DB, immutable upstream source
 CI and exact-head aggregate `ci` remain mandatory. Never split by endpoint merely to increase PR count.
 

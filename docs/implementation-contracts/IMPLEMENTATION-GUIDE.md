@@ -33,8 +33,8 @@ before their prerequisites exist. Keep the corresponding facts in each card pack
 ## 2. The executable card packet
 
 Extend the existing 40–100-line card, normally with compact tables. Do not create
-distant cards or mark proposed files READY/MERGED. Budget remains AGENTS' ~500
-production-line target / ~800 hard maximum (README's ≤500 is a planning budget).
+distant cards or mark proposed files READY/MERGED. Use AGENTS' bundle/card/PR rule: 2–5 whole subsections and 400–800 meaningful
+production lines on average, no hard numeric ceiling and no per-card quota.
 
 1. Baseline: hub SHA, source server SHA if any, predecessor PR/dispositions,
    changed-path comparison and required owner gates. An absent deployment is not

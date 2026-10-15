@@ -1,3 +1,20 @@
+### October 15 — owner-requested bundle guidance consistency review
+
+Reviewed current main 8169af07afa2df4fe9cacb195b5382f9c04fc7e0. Aligned existing governing instructions, session
+procedure and applicable playbook/card/recipe references: cards define approved
+scope; related whole subsections form coherent bundles; PR splits need concrete
+migration/dependency/safety/reviewability reasons. Removed stale numeric ceilings
+and blanket one-risk/one-migration fragmentation rules where present. Session target
+comes from the current owner, not PR count; incidental fixes/checkpoints do not end
+an unfinished bundle. Remaining engineering must not be hidden as external proof.
+Removed a stale generic session sentence that called future work maintenance.
+All original subsection IDs, roadmap order, source/provider acceptance, independent
+approval/guard/cleanup rules, CI/review and hosting/cost gates remain unchanged.
+This is explicitly requested guidance maintenance, zero product bundles; no provider
+operation or release. Required exact-head checks and review disposition govern merge.
+Preserve concurrent implementation branches; resume actual current main and the
+implementing agent's active approved outcome after reading this alignment.
+
 
 ## H-4 exact SQL across native MCP and direct HTTPS — source acceptance candidate
 
