@@ -144,11 +144,11 @@ function scopeRows(data){
 function auditRows(part,type){
  if(part.state!=='readable')return state(part);
  return empty(part.rows)+detail(part.rows.map(row=>
-  '<li-placeholder>'+e(String(row.at))+' — '+e(row.kind)+' '+e(row.callerId)+
+  e(String(row.at))+' — '+e(row.kind)+' '+e(row.callerId)+
   ' / '+e(row.server)+' reduced to '+(type==='areas'?
     showList(row.areas):e(row.profile))+
   '; affected sessions '+e(row.affectedSessions)+
-  '; invalidated pages '+e(row.purgedHandles)+'</li-placeholder>'));
+  '; invalidated pages '+e(row.purgedHandles)));
 }
 function audits(data){
  return '<h2>Area reductions (most recent 20)</h2>'+
