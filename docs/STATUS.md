@@ -1,3 +1,12 @@
+## L-1 namespace diagnostics and confirmed plan log capture — source candidate
+
+The optional local developer sandbox can explicitly probe a read-only Bubblewrap
+namespace instead of treating installation as runtime readiness, and confirmed
+multi-step plans can write bounded create-only step logs without exposing their
+content in MCP results. Monotonic total deadline and early-stop semantics remain
+in force. Kernel/real-machine acceptance is still OPEN; no hosted changes or
+provider permissions are granted.
+
 ## H-4 initial profile selection before pass or OAuth PKCE consent — source candidate
 
 Owner consent and one-time pass issuance can include explicit read_only or

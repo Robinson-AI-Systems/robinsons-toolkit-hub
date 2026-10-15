@@ -173,3 +173,71 @@ it('sandbox plan does not continue after a failed or indeterminate runtime',asyn
  expect(result).toMatchObject({completed:0,reason:'execution_refused_or_failed',
   stoppedAt:1});
 }));
+
+it('explicit read-only namespace probe distinguishes installation, kernel failure and success',async()=>fixture(async({root})=>{
+ if(process.platform!=='linux')return;
+ let launched=0;
+ const run=async(_runtime,args,timeout)=>{
+  launched++;
+  expect(timeout).toBe(2000);
+  expect(args[args.indexOf('--ro-bind')+1]).toBe('/usr');
+  const at=args.lastIndexOf('--ro-bind');
+  expect(args.slice(at,at+3)).toEqual(['--ro-bind',root,'/work']);
+  expect(args.slice(args.indexOf('--')+1))
+   .toEqual(['/usr/bin/test','-d','/work']);
+  return {stdout:'',stderr:'',exitCode:0};
+ };
+ const defaultStatus=await readLocalSandboxStatus([root],{},{
+   findRuntime:async()=>'/usr/bin/bwrap',run});
+ expect(defaultStatus.probe).toBe('not_requested');
+ expect(launched).toBe(0);
+ const success=await readLocalSandboxStatus([root],{probe:true},{
+   findRuntime:async()=>'/usr/bin/bwrap',run});
+ expect(success).toMatchObject({probe:'passed',
+   actualNamespaceAcceptance:'local-probe-only',unsandboxedFallback:false});
+ expect(launched).toBe(1);
+ const denied=await readLocalSandboxStatus([root],{probe:true},{
+   findRuntime:async()=>'/usr/bin/bwrap',
+   run:async()=>{throw Error('user namespaces disabled');}});
+ expect(denied).toMatchObject({probe:'failed',
+   actualNamespaceAcceptance:'not-probed'});
+ const unavailable=await readLocalSandboxStatus([root],{probe:true},{
+   findRuntime:async()=>null,run:async()=>{throw Error('must not run');}});
+ expect(unavailable.probe).toBe('unavailable');
+ await expect(readLocalSandboxStatus([root],{probe:'true'})).rejects.toThrow();
+}));
+it('confirmed plans capture each requested step privately without overwriting files',async()=>fixture(async({root})=>{
+ if(process.platform!=='linux')return;
+ const args={confirm:true,steps:[
+  {argv:['npm','test'],outputFile:'step-one.log'},
+  {argv:['npm','run','build'],outputFile:'step-two.log'},
+  {argv:['git','status']}
+ ]};
+ let calls=0;
+ const first=await executeConfirmedSandboxPlan([root],args,{
+  findRuntime:async()=>'/usr/bin/bwrap',
+  run:async()=>({stdout:'receipt '+(++calls)+'\\n',stderr:'',exitCode:0})
+ });
+ expect(first).toMatchObject({completed:3,reason:'success',
+   results:[{outputFile:'step-one.log',contentReturned:false},
+    {outputFile:'step-two.log',contentReturned:false},{stdout:'receipt 3\\n'}]});
+ expect(await readFile(join(root,'step-one.log'),'utf8')).toBe('receipt 1\\n');
+ expect(await readFile(join(root,'step-two.log'),'utf8')).toBe('receipt 2\\n');
+ expect(JSON.stringify(first)).not.toContain('receipt 1\\n');
+ expect(calls).toBe(3);
+ const second=await executeConfirmedSandboxPlan([root],args,{
+  findRuntime:async()=>'/usr/bin/bwrap',
+  run:async()=>{calls++;return {stdout:'unsafe',stderr:'',exitCode:0};}
+ });
+ expect(second).toMatchObject({completed:0,stoppedAt:1,
+   reason:'execution_refused_or_failed',noRollback:true});
+ expect(calls).toBe(4); // execution was possible; the output write refused
+ expect(await readFile(join(root,'step-one.log'),'utf8')).toBe('receipt 1\\n');
+ expect(()=>checkedSandboxPlan({confirm:true,steps:[
+  {argv:['node','--version'],outputFile:'same.log'},
+  {argv:['node','--version'],outputFile:'same.log'}
+ ]})).toThrow();
+ expect(()=>checkedSandboxPlan({confirm:true,steps:[
+  {argv:['node','--version'],outputFile:'../outside.log'}
+ ]})).toThrow();
+}));
