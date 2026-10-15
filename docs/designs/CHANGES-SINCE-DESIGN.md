@@ -18,7 +18,7 @@ claim. Unknown write outcomes require service change-log inspection.
 ## D-4a — 2026-10-11
 D-4 real-run card remains owner-gated. K-3 implementer must verify the current
 Stripe repo A–C and actual core candidates before writing its JIT extraction card.
-Five-PR concise handoff is permanent; this session explicitly stops at #20.
+Concise handoffs remain required; session count and scope come only from the current owner prompt.
 
 ## K-3 prerequisite inspection — 2026-10-11
 

@@ -173,7 +173,7 @@ keep unaccepted provider/deployment evidence OPEN. The existing
 units by status and batch next to, but separate from, release acceptance
 obligations. These coarse indexed units do **not** estimate remaining
 completed batch subsections or total effort; cite card-specific unfinished slices
-when making an estimate. Session PR count follows only the current owner prompt, with all safety
+when making an estimate. No fixed session PR quota applies. Session count follows only the current owner prompt, with all safety
 gates and context recovery intact.
 Do not count a passing helper as a completed outcome. After each verified
 merge, checkpoint the exact head/CI/reviews, completed slices, implementation
