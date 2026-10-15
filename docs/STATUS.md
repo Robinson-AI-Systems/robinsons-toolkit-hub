@@ -536,7 +536,7 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H4-ACTIVE-GRANT-RENEWAL",
     "priority": 19,
-    "requiredRevision": "NEW_SOURCE_PIN_TO_BE_SET",
+    "requiredRevision": "a3b8cd84c90ba96d7bed0994e0ddc796670d6729",
     "introducedFile": "packages/hub/migrations/016-hub-grant-renewal.sql",
     "task": "Verify owner-only staging of a fresh independent TEST credential on an active service, pinned RTC identity refusal, atomic verified replacement without a read outage, old encrypted result handle invalidation, auditable cancellation and new-caller enrollment in real hosted two-service TEST",
     "procedure": "docs/pr-cards/H-4.md",

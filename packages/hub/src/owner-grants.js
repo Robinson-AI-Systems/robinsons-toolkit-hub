@@ -1,6 +1,7 @@
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
   verifyOwnerLogin} from './owner-login.js';
-import {cancelStagedGrant,listGrantLifecycleAudit} from './grant-lifecycle.js';
+import {cancelStagedGrant,listGrantLifecycleAudit,
+  reclaimExpiredStagedGrants,listOwnerGrantReadiness} from './grant-lifecycle.js';
 import {stageCallerGrant,listCallerGrants,revokeCallerGrant,
   narrowCallerGrantAreas} from './grants.js';
 
@@ -54,7 +55,17 @@ function form() {
     '<form method="POST" action="/api/owner/grants">'+
     '<input type="hidden" name="action" value="audit">'+
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
-    '<button type="submit">Review grant onboarding and renewal audit</button></form>');
+    '<button type="submit">Review grant onboarding and renewal audit</button></form>'+
+    '<form method="POST" action="/api/owner/grants">'+
+    '<input type="hidden" name="action" value="readiness">'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<button type="submit">Review staged, active and expired grant slots</button></form>'+
+    '<form method="POST" action="/api/owner/grants">'+
+    '<input type="hidden" name="action" value="reclaim_expired">'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<p>Reclaim at most 30 expired never-verified TEST grants. Does not '+
+    'revoke, reverify, refresh or interrupt any verified provider credential.</p>'+
+    '<button type="submit">Reclaim expired staged grants</button></form>');
 }
 function listing(rows) {
   return page('<p>Metadata only, at most 100; never displays pass material.</p><ul>'+
@@ -64,6 +75,16 @@ function listing(rows) {
       escapeHtml((r.originalAreas||r.areas||[]).join(','))+' — '+
       (r.revoked?'revoked':r.verified?'verified':'staged')+
       ', scoped TEST credential: yes</li>').join('')+'</ul>');
+}
+function readinessDisplay(rows) {
+ return page('<h2>Grant lifecycle readiness (local metadata only)</h2>'+
+   '<p>Verified locally does not mean a deployed RTC pass remains valid '+
+   'upstream. Verification is separately controlled.</p><ul>'+
+   rows.map(r=>'<li><code>'+escapeHtml(r.id)+'</code> '+
+     escapeHtml(r.server)+' / '+escapeHtml(r.callerKind)+' '+
+     escapeHtml(r.callerId)+' — '+escapeHtml(r.state)+
+     '; allowed areas '+escapeHtml(r.areas.join(', '))+
+     '; expires '+escapeHtml(String(r.expiresAt))+'</li>').join('')+'</ul>');
 }
 function auditDisplay(rows) {
   return page('<h2>Owner RTC grant onboarding/renewal history</h2>'+
@@ -84,10 +105,10 @@ function parseAreas(raw) {
   return parts;
 }
 function validate(input) {
-  if(!input||!['stage','list','revoke','narrow_areas','cancel_staged','audit'].includes(input.action)||
+  if(!input||!['stage','list','revoke','narrow_areas','cancel_staged','audit','readiness','reclaim_expired'].includes(input.action)||
     typeof input.password!=='string'||!input.password||input.password.length>256)
     return null;
-  if(['list','audit'].includes(input.action)) return {};
+  if(['list','audit','readiness','reclaim_expired'].includes(input.action)) return {};
   if(input.action==='cancel_staged')return uuid.test(input.id||'')?{}:null;
   if(input.action==='revoke') return uuid.test(input.id||'')?{}:null;
   if(input.action==='narrow_areas') {
@@ -103,7 +124,8 @@ function validate(input) {
 export async function handleOwnerGrants(req,res,{withDb,env=process.env,
   verify=verifyOwnerLogin,stage=stageCallerGrant,list=listCallerGrants,
   revoke=revokeCallerGrant,narrow=narrowCallerGrantAreas,
-  cancel=cancelStagedGrant,history=listGrantLifecycleAudit}={}) {
+  cancel=cancelStagedGrant,history=listGrantLifecycleAudit,
+  reclaim=reclaimExpiredStagedGrants,readiness=listOwnerGrantReadiness}={}) {
   htmlHeaders(res);
   res.setHeader('Pragma','no-cache');
   if(!['GET','POST'].includes(req.method)) {
@@ -125,6 +147,14 @@ export async function handleOwnerGrants(req,res,{withDb,env=process.env,
       if(!verdict.approved) {
         if(verdict.retryAfter)res.setHeader('Retry-After',String(verdict.retryAfter));
         return res.status(verdict.retryAfter?429:401).send('Owner verification denied');
+      }
+      if(fields.action==='readiness')
+        return res.status(200).send(readinessDisplay(
+          await readiness(db,env.HUB_OWNER_ID,{ownerVerified:true})));
+      if(fields.action==='reclaim_expired'){
+        const result=await reclaim(db,env.HUB_OWNER_ID,{ownerVerified:true});
+        return res.status(200).send('Reclaimed '+result.reclaimed+
+          ' expired never-verified staged TEST grants. Verified grants unchanged.');
       }
       if(fields.action==='audit')return res.status(200).send(
         auditDisplay(await history(db,env.HUB_OWNER_ID,{ownerVerified:true})));

@@ -5,7 +5,8 @@ import {randomBytes} from 'node:crypto';
 import {issueHubPass,authenticateHubPass} from '../../src/identity.js';
 import {stageCallerGrant,activateVerifiedCallerGrant,resolveActiveCallerGrant,
   listEligibleRtcTargets} from '../../src/grants.js';
-import {cancelStagedGrant,listGrantLifecycleAudit} from '../../src/grant-lifecycle.js';
+import {cancelStagedGrant,listGrantLifecycleAudit,
+  reclaimExpiredStagedGrants,listOwnerGrantReadiness} from '../../src/grant-lifecycle.js';
 import {storeRtcResult,readRtcResult} from '../../src/rtc-results.js';
 const pepper='synthetic-credential-renewal-pepper-abcdef123456';
 const settings={pepper,grantsKey:randomBytes(32).toString('base64url'),
@@ -103,4 +104,39 @@ it('refuses broadening, missing owner and cancel after verification',async()=>{
   .toMatchObject({grantId:first.id});
  expect((await listGrantLifecycleAudit(db,'owner',owner))[0])
   .toMatchObject({action:'cancel_staged'});
+});
+
+it('reclaims expired, unverified grant slots without changing a live replacement',async()=>{
+ const actor=await caller(),working=await stage(actor,['billing'],pass());
+ await verify(working.id);
+ const abandoned=await stage(actor,['billing'],pass());
+ // Advance both historical issuance and expiry to preserve DB CHECKs.
+ // This models a missed owner verification after a session expires.
+ await db.query(`UPDATE hub_server_grants
+   SET created_at=now()-interval '2 hours',
+     expires_at=now()-interval '1 hour' WHERE id=$1`,[abandoned.id]);
+ expect((await listOwnerGrantReadiness(db,'owner',owner)).find(
+   x=>x.id===abandoned.id)).toMatchObject({state:'expired',
+    locallyVerified:false,hasActivePredecessor:true});
+ expect((await reclaimExpiredStagedGrants(db,'owner',owner)).reclaimed).toBe(1);
+ expect((await reclaimExpiredStagedGrants(db,'owner',owner)).reclaimed).toBe(0);
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings)).grantId)
+  .toBe(working.id);
+ const next=await stage(actor,['billing'],pass());
+ expect(next.serverAlreadyActive).toBe(true);
+ const canceled=await cancelStagedGrant(db,{ownerId:'owner',id:next.id},owner);
+ expect(canceled).toBe(true);
+ expect((await listGrantLifecycleAudit(db,'owner',owner)).some(
+   item=>item.action==='expire_staged')).toBe(true);
+});
+it('owner readiness never exposes RTC credentials and fails closed for wrong owner',async()=>{
+ const state=await listOwnerGrantReadiness(db,'owner',owner);
+ expect(state.length).toBeGreaterThan(0);
+ expect(state.some(x=>x.state==='verified_locally')).toBe(true);
+ expect(JSON.stringify(state)).not.toContain('rtc_pass_');
+ expect(await listOwnerGrantReadiness(db,'other',{ownerVerified:true}))
+  .toEqual([]);
+ await expect(reclaimExpiredStagedGrants(db,'owner',{limit:500,
+  ownerVerified:true})).rejects.toThrow();
+ await expect(listOwnerGrantReadiness(db,'owner')).rejects.toThrow();
 });

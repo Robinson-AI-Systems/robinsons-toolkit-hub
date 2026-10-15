@@ -145,3 +145,85 @@ export async function listGrantLifecycleAudit(db,ownerId,
    retiredId:r.retired_grant_id,action:r.action,areas:[...r.areas],
    purgedHandles:Number(r.purged_handles)}));
 }
+
+/**
+ * Bounded owner-verified cleanup of expired, never-activated grants.
+ * An expired staged grant still occupies the unique staged slot until it
+ * is revoked. Reclaiming that slot makes an independent replacement possible
+ * without interrupting any currently verified credential.
+ *
+ * Only grant rows that were NEVER verified are eligible; existing verified
+ * grants must instead be renewed or deliberately revoked. Skip locked rows
+ * to avoid interfering with a concurrent identity verification.
+ */
+export async function reclaimExpiredStagedGrants(db,ownerId,
+ {ownerVerified=false,limit=30}={}) {
+ verified(ownerId,ownerVerified);
+ if(!Number.isInteger(limit)||limit<1||limit>50)
+   throw new TypeError('Invalid staged grant cleanup limit');
+ const {rows}=await db.query(`WITH selected AS (
+   SELECT id FROM hub_server_grants WHERE owner_id=$1
+     AND revoked_at IS NULL AND verified_at IS NULL
+     AND expires_at<=now()
+   ORDER BY expires_at,id LIMIT $2 FOR UPDATE SKIP LOCKED
+ ), retired AS (
+   UPDATE hub_server_grants g SET revoked_at=now()
+   FROM selected s WHERE g.id=s.id AND g.owner_id=$1
+     AND g.revoked_at IS NULL AND g.verified_at IS NULL
+   RETURNING g.id,g.server_name,g.caller_kind,g.caller_id,g.areas
+ ), recorded AS (
+   INSERT INTO hub_grant_lifecycle_audit
+     (owner_id,server_name,caller_kind,caller_id,
+      staged_grant_id,action,purged_handles,areas)
+   SELECT $1,r.server_name,r.caller_kind,r.caller_id,r.id,
+      'expire_staged',0,r.areas FROM retired r RETURNING staged_grant_id
+ )
+ SELECT staged_grant_id FROM recorded`,[ownerId,limit]);
+ return {reclaimed:rows.length,grantIds:rows.map(r=>r.staged_grant_id)};
+}
+/**
+ * Owner-only operational view, not a provider probe or claim that an RTC
+ * TEST pass is valid upstream. Shows at most 100 local grant slots with a
+ * named reason why a caller is not able to route: canceled/expired,
+ * awaiting independent identity verification or active local verification.
+ */
+export async function listOwnerGrantReadiness(db,ownerId,
+ {ownerVerified=false,limit=60}={}) {
+ verified(ownerId,ownerVerified);
+ if(!Number.isInteger(limit)||limit<1||limit>100)
+   throw new TypeError('Invalid readiness listing bound');
+ const {rows}=await db.query(`SELECT g.id,g.server_name,g.caller_kind,g.caller_id,
+   g.profile,g.mode,g.areas,g.verified_at,g.revoked_at,g.expires_at,
+   s.state AS server_state,
+   to_jsonb(g)->'area_ceiling' AS area_ceiling,
+   EXISTS(SELECT 1 FROM hub_server_grants active
+     WHERE active.owner_id=g.owner_id AND active.server_name=g.server_name
+       AND active.caller_kind=g.caller_kind AND active.caller_id=g.caller_id
+       AND active.id<>g.id AND active.revoked_at IS NULL
+       AND active.verified_at IS NOT NULL AND active.expires_at>now())
+     AS has_active_predecessor
+   FROM hub_server_grants g JOIN hub_servers s ON s.name=g.server_name
+     AND s.owner_id=g.owner_id
+   WHERE g.owner_id=$1 ORDER BY g.created_at DESC,g.id LIMIT $2`,
+  [ownerId,limit]);
+ return rows.map(r=>{
+   const expired=new Date(r.expires_at).getTime()<=Date.now();
+   const state=r.revoked_at!==null?'revoked':
+     expired?'expired':
+     r.verified_at===null?
+       r.has_active_predecessor?'replacement_awaiting_verification':
+       'awaiting_independent_verification':
+     r.server_state==='active'?'verified_locally':'server_not_active';
+   const granted=r.area_ceiling??r.areas;
+   if(!validGrantAreas(r.areas)||!validGrantAreas(granted)||
+     !granted.every(a=>r.areas.includes(a)))
+     throw new Error('Malformed RTC area scope in owner readiness');
+   return {id:r.id,server:r.server_name,callerKind:r.caller_kind,
+     callerId:r.caller_id,profile:r.profile,mode:r.mode,
+     areas:[...granted],originalAreas:[...r.areas],state,
+     hasActivePredecessor:Boolean(r.has_active_predecessor),
+     expiresAt:r.expires_at,locallyVerified:r.verified_at!==null,
+     // No credential, pass digest, host URL, ciphertext or provider result.
+     providerIdentityStillValid:'not_rechecked'};
+ });
+}

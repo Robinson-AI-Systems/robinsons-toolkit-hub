@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS hub_grant_lifecycle_audit (
  caller_id TEXT NOT NULL,
  staged_grant_id UUID NOT NULL REFERENCES hub_server_grants(id),
  retired_grant_id UUID REFERENCES hub_server_grants(id),
- action TEXT NOT NULL CHECK(action IN ('additional_caller','renewal','cancel_staged')),
+ action TEXT NOT NULL CHECK(action IN ('additional_caller','renewal','cancel_staged','expire_staged')),
  purged_handles INTEGER NOT NULL CHECK(purged_handles>=0),
  areas TEXT[] NOT NULL CHECK(cardinality(areas) BETWEEN 1 AND 32)
 );
