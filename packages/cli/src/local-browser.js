@@ -19,7 +19,7 @@ function origin(value){
  if(!ascii(value)||value.length>180||value.length<10)fail();
  let url;
  try{url=new URL(value);}catch{fail();}
- if(url.origin!==value||url.username||url.password||url.pathname!=='/'||
+ if(url.origin!==value||url.hostname.includes('*')||url.username||url.password||url.pathname!=='/'||
    url.search||url.hash||
    !(url.protocol==='https:'||
       (url.protocol==='http:'&&loopback.has(url.hostname))))fail();
