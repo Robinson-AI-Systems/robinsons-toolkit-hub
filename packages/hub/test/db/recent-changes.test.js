@@ -10,7 +10,6 @@ import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,
 import {stageCallerGrant,activateVerifiedCallerGrant} from '../../src/grants.js';
 import {appendRtcReadAudit} from '../../src/rtc-read-audit.js';
 import {listHubRecentChanges} from '../../src/recent-changes.js';
-import {runFederatedBroker} from '../../src/federation.js';
 import {mcpFederatedReply} from '../../src/http-door.js';
 import {handleHubTools} from '../../src/tools-http.js';
 const owner='h5_owner',pepper='synthetic-h5-owner-key-123456789012345678901';
@@ -31,7 +30,8 @@ beforeAll(async()=>{
   '011-hub-oauth-server-scopes.sql','012-hub-grant-area-ceilings.sql',
   '015-hub-caller-service-area-policy.sql','016-hub-grant-renewal.sql',
   '017-hub-caller-service-profile-policy.sql',
-  '018-hub-initial-oauth-service-areas.sql'
+  '018-hub-initial-oauth-service-areas.sql',
+  '019-hub-change-history.sql'
  ]) await db.query(await readFile(new URL('../../migrations/'+name,import.meta.url),'utf8'));
  for(const service of ['stripe','workspace'])
   await db.query(`INSERT INTO hub_servers(name,owner_id,prefix,origin,
