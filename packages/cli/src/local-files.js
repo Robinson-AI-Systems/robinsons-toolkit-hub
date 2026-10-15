@@ -1,6 +1,7 @@
 // Owner-opted-in local filesystem door: read-only by default, explicit confirmation for create-only writes.
 // Never used by hosted Hub/relay.
 import { constants } from 'node:fs';
+import {configuredLocalOllama,invokeLocalOllama} from './local-ollama.js';
 import { open, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
@@ -49,7 +50,7 @@ function relativeInput(value) {
   }
   return value;
 }
-export async function createLocalFiles(folders) {
+export async function createLocalFiles(folders,{env=process.env}={}) {
   if (!Array.isArray(folders) || !folders.length || folders.length > 8 ||
       folders.some((f) => typeof f !== 'string' || !f.trim())) {
     bad('Local file access requires 1–8 explicitly enabled folders');
@@ -76,7 +77,10 @@ export async function createLocalFiles(folders) {
     if (!inside(root, path)) bad('Local path is outside enabled folder');
     return { path, rootIndex, relative };
   };
+  const ollamaConfigured=Boolean(configuredLocalOllama(env));
   const invoke = async (name, args = {}) => {
+    if(name.startsWith('local.ollama_'))
+      return invokeLocalOllama(name,roots,args,{env});
     if(name==='local.shell_execute')
       return executeConfirmedLocalSandbox(roots,args);
     if(name==='local.shell_plan')
@@ -154,5 +158,5 @@ export async function createLocalFiles(folders) {
       bad('Local file operation failed');
     }
   };
-  return Object.freeze({ roots: Object.freeze([...roots]), invoke });
+  return Object.freeze({ roots: Object.freeze([...roots]), invoke,ollamaConfigured });
 }
