@@ -1,3 +1,20 @@
+## H-4 initial profile selection before pass or OAuth PKCE consent — source candidate
+
+Owner consent and one-time pass issuance can include explicit read_only or
+disabled per-service ceilings. Each policy is bound to the initial identity
+and carried across OAuth code exchange and refresh; a missing hosted
+migration must not fall back to broad issuance. Pending genuine owner and
+service-origin TEST acceptance remains in the existing H-4 queue.
+
+## H-4 caller-specific per-service profile restrictions — source candidate
+
+Hub pass and OAuth family owners can make a selected TEST/read_only service
+permanently unavailable or explicitly retain read_only; original provider
+credentials never widen. New OAuth refresh sessions carry the same profile
+policy; active SQL discovery, dispatch, result reauthorization and owner
+scope preview enforce it. Migration 017 and actual owner/provider TEST
+acceptance remain OPEN. No LIVE write, spend or upstream changes.
+
 ## L-1 sandboxed sequential confirmed plans — source candidate
 
 The opt-in Linux bubblewrap-only command door also supports explicit
@@ -609,6 +626,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: proposed local source/test only; no hosted migration, renewal or genuine RTC TEST receipt."
+  },
+  {
+    "id": "HUB-H4-PROFILE-POLICY",
+    "priority": 20,
+    "requiredRevision": "a2e2b91fccbab94a0e64109642191dd835792473",
+    "introducedFile": "packages/hub/migrations/017-hub-caller-service-profile-policy.sql",
+    "task": "Verify checked hosted TEST owner service-profile ceilings on Hub passes and OAuth refresh families, immediate disabled-service native/HTTP/batch/result denials and new-refresh inheritance against independently attested read_only provider grants",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Exact READY live Hub deployment containing SQL 017, independent verified owner and two distinct service-owned RTC TEST/read_only grants, durable audit and negative no-write provider evidence; direct/relay/Sandbox separately",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "Source H-4 profile policy, owner UI, initial PKCE/HUB-pass selection and disposable PostgreSQL tests proposed; migration 017, independent provider TEST, actual owner readback, direct/relay/Sandbox acceptance PENDING."
   }
 ]
 ```

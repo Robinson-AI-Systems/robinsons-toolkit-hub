@@ -1,5 +1,6 @@
 import { issueHubPass, revokeHubPass, narrowHubPassServers,
   listHubPassScopes } from './identity.js';
+import {parseInitialServiceProfiles,narrowPassServiceProfile,listOwnerProfileAudit} from './service-profile-policy.js';
 import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from './owner-service-scope.js';
 import {narrowHubPassServiceAreas,parseServiceAreas} from './service-area-policy.js';
 import { parseOwnerServerSelection } from './server-selection.js';
@@ -20,6 +21,10 @@ function passForm() {
     'autocomplete="current-password" required></label>' +
     '<label>Authorized RTC servers (registered names, comma separated) ' +
     '<input name="servers" maxlength="1300" required></label>' +
+    '<label>Optional initial service profiles, e.g. stripe=read_only,neon=disabled ' +
+    '<input name="profiles" maxlength="1300"></label>' +
+    '<p>Any chosen disabled service is unavailable from first issuance. ' +
+    'All permitted services remain limited by independent read_only RTC passes.</p>' +
     '<p>This pass cannot discover or call other servers, even if additional ' +
     'upstream grants are configured. Every selected service still needs its ' +
     'separate verified TEST read-only grant.</p>' +
@@ -50,6 +55,17 @@ function passForm() {
     'for this service are deleted immediately.</p>' +
     '<button type="submit">Reduce this pass service areas</button></form>' +
     '<form method="POST" action="/api/owner/passes">' +
+    '<input type="hidden" name="action" value="narrow_profile">' +
+    '<label>Pass ID <input name="id" maxlength="36" required></label>' +
+    '<label>Registered RTC service <input name="server" maxlength="60" required></label>' +
+    '<label>New ceiling (read_only or disabled) ' +
+    '<select name="profile"><option value="read_only">Read only</option>' +
+    '<option value="disabled">Disable this service permanently</option></select></label>' +
+    '<label>Owner passphrase <input type="password" name="password" required></label>' +
+    '<p>One-way reduction; disabled connections cannot be re-enabled or read ' +
+    'prior encrypted result pages without a NEW owner-approved connection.</p>' +
+    '<button type="submit">Permanently narrow service profile</button></form>' +
+    '<form method="POST" action="/api/owner/passes">' +
     '<input type="hidden" name="action" value="inspect_service">' +
     '<label>Pass ID <input name="id" maxlength="36" required></label>' +
     '<label>RTC server <input name="server" maxlength="60" required></label>' +
@@ -59,6 +75,10 @@ function passForm() {
     '<input type="hidden" name="action" value="audit">' +
     '<label>Owner passphrase <input type="password" name="password" required></label>' +
     '<button type="submit">Review service area policy audit</button></form>' +
+    '<form method="POST" action="/api/owner/passes">' +
+    '<input type="hidden" name="action" value="profile_audit">' +
+    '<label>Owner passphrase <input type="password" name="password" required></label>' +
+    '<button type="submit">Review service-profile restrictions</button></form>' +
     '<form method="POST" action="/api/owner/passes">' +
     '<input type="hidden" name="action" value="revoke">' +
     '<label>Pass identifier <input name="id" maxlength="36" required></label>' +
@@ -78,6 +98,7 @@ function ownerScopeDetail(info) {
   return page('<h2>Current RTC service scope (metadata only)</h2><p>'+
     'Service '+escapeHtml(info.server)+'; callable '+String(info.callable)+
     '; profile '+escapeHtml(info.profile??'unavailable')+
+    '; permanent profile ceiling '+escapeHtml(info.callerProfileLimit??'unset')+
     '; provider areas '+escapeHtml((info.originalAreas??[]).join(', '))+
     '; already narrowed grant '+escapeHtml((info.grantAreas??[]).join(', '))+
     '; connection policy '+escapeHtml((info.callerAreaLimit??[]).join(', '))+
@@ -91,6 +112,13 @@ function ownerAuditDetail(rows) {
       ': '+escapeHtml(r.areas.join(', '))+'; prior pages purged '+
       escapeHtml(String(r.purgedHandles))+'</li>').join('')+'</ul>');
 }
+function ownerProfileAuditDetail(rows){
+ return page('<h2>Permanent RTC service-profile changes</h2><ul>'+
+   rows.map(row=>'<li>'+escapeHtml(String(row.at))+' '+escapeHtml(row.kind)+
+   ' '+escapeHtml(row.callerId)+' / '+escapeHtml(row.server)+
+   ': '+escapeHtml(row.profile)+'; invalidated pages '+
+   escapeHtml(String(row.purgedHandles))+'</li>').join('')+'</ul>');
+}
 function scopeDisplay(rows) {
   const items=rows.map(row=>'<li><code>'+escapeHtml(row.id)+'</code> '+
     escapeHtml(row.state)+'; '+escapeHtml(row.profile)+' '+escapeHtml(row.mode)+
@@ -98,6 +126,7 @@ function scopeDisplay(rows) {
       '(legacy: exact caller grants only)' : row.serverNames.join(', '))+
     '; areas: '+escapeHtml(row.areas.join(', '))+
     '; service area limits: '+escapeHtml(JSON.stringify(row.serviceAreas??{}))+
+    '; service profile ceilings: '+escapeHtml(JSON.stringify(row.serviceProfiles??{}))+
     '; expires: '+escapeHtml(String(row.expiresAt))+'</li>').join('');
   return page('<h2>Owner-only Hub pass scopes</h2>'+
     '<p>Stored metadata only; no bearer tokens, pass digests or RTC credentials.</p>'+
@@ -111,6 +140,7 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
   verify = verifyOwnerLogin, issue = issueHubPass, revoke = revokeHubPass,
   narrow = narrowHubPassServers, list = listHubPassScopes,
   narrowAreas = narrowHubPassServiceAreas,
+  narrowProfile = narrowPassServiceProfile,profileAudit = listOwnerProfileAudit,
   inspectService = inspectOwnerServiceScope,auditAreas = listOwnerServiceAreaAudit } = {}) {
   htmlHeaders(res);
   res.setHeader('Pragma', 'no-cache');
@@ -124,15 +154,24 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
   if (!String(req.headers?.['content-type'] || '').startsWith('application/x-www-form-urlencoded'))
     return res.status(415).send('Unsupported content type');
   const fields = formFields(req);
-  if (!fields || !['issue', 'revoke', 'narrow', 'narrow_areas', 'list', 'inspect_service', 'audit'].includes(fields.action) ||
+  if (!fields || !['issue', 'revoke', 'narrow', 'narrow_areas', 'narrow_profile', 'list', 'inspect_service', 'audit', 'profile_audit'].includes(fields.action) ||
     typeof fields.password !== 'string' || fields.password.length === 0 ||
-    (['revoke','narrow','narrow_areas','inspect_service'].includes(fields.action) && !uuid.test(fields.id || '')))
+    (['revoke','narrow','narrow_areas','narrow_profile','inspect_service'].includes(fields.action) && !uuid.test(fields.id || '')))
     return res.status(400).send('Invalid request');
   const selected = ['issue','narrow'].includes(fields.action) ?
     parseOwnerServerSelection(fields.servers) : null;
   if (['issue','narrow'].includes(fields.action) && !selected)
     return res.status(400).send('Select 1–20 registered RTC servers');
+  let initialProfiles=null;
+  try {
+    if(fields.action==='issue')
+      initialProfiles=parseInitialServiceProfiles(fields.profiles,selected);
+  }catch{return res.status(400).send('Invalid initial service profiles');}
   const areas=fields.action==='narrow_areas'?parseServiceAreas(fields.areas):null;
+  if(fields.action==='narrow_profile'&&
+    (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||
+      !['read_only','disabled'].includes(fields.profile)))
+    return res.status(400).send('Invalid permanent service-profile restriction');
   if(fields.action==='inspect_service' &&
     !/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||''))
     return res.status(400).send('Invalid RTC service');
@@ -146,6 +185,9 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
         if (decision.retryAfter) res.setHeader('Retry-After', String(decision.retryAfter));
         return res.status(decision.retryAfter ? 429 : 401).send('Owner verification denied');
       }
+      if(fields.action==='profile_audit')
+        return res.status(200).send(ownerProfileAuditDetail(await profileAudit(db,
+          env.HUB_OWNER_ID,{ownerVerified:true})));
       if(fields.action==='audit')
         return res.status(200).send(ownerAuditDetail(await auditAreas(db,
           env.HUB_OWNER_ID,{ownerVerified:true})));
@@ -156,6 +198,13 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
       if (fields.action === 'list') {
         const rows=await list(db,env.HUB_OWNER_ID,{ownerVerified:true});
         return res.status(200).send(scopeDisplay(rows));
+      }
+      if(fields.action==='narrow_profile'){
+        const result=await narrowProfile(db,{ownerId:env.HUB_OWNER_ID,id:fields.id,
+          serverName:fields.server,profile:fields.profile},{ownerVerified:true});
+        return res.status(result.updated?200:404).send(result.updated?
+          'Service profile permanently narrowed, prior RTC pages invalidated.' :
+          'Pass or service unavailable, or the request would widen permissions.');
       }
       if(fields.action==='narrow_areas') {
         const result=await narrowAreas(db,{ownerId:env.HUB_OWNER_ID,id:fields.id,
@@ -183,6 +232,7 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
         mode: 'test',
         areas: ['gateway'],
         serverNames: selected,
+        ...(initialProfiles?{serviceProfiles:initialProfiles}:{}),
         allowWrites: false,
         ttlSeconds: 86400
       }, { ownerVerified: true, pepper: settings.pepper });

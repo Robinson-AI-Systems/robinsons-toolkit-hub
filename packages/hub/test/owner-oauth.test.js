@@ -97,3 +97,27 @@ it('owner can only one-way narrow an exact OAuth family after password verificat
  const {res}=await send('GET');
  expect(res.html).toContain('Permanently narrow this family');
 });
+
+it('OAuth family profile ceilings are owner verified and show sanitized history',async()=>{
+ const narrowProfile=vi.fn(async()=>({updated:true,profile:'disabled'}));
+ const params='action=narrow_profile&password=synthetic-owner-passphrase&id='+id+
+  '&server=workspace&profile=disabled';
+ expect((await send('POST',params.replace('synthetic-owner-passphrase','wrong'),
+  {narrowProfile})).res.statusCode).toBe(401);
+ for(const invalid of [params.replace('profile=disabled','profile=full'),
+  params.replace('server=workspace','server=..'),params.replace(id,'bad')])
+  expect((await send('POST',invalid,{narrowProfile})).res.statusCode).toBe(400);
+ expect((await send('POST',params,{narrowProfile})).res.statusCode).toBe(200);
+ expect(narrowProfile).toHaveBeenCalledWith({},{
+  ownerId:'owner-a',id,serverName:'workspace',profile:'disabled'
+ },{ownerVerified:true});
+ const profileAudit=vi.fn(async()=>[{
+  at:'today',kind:'oauth',callerId:id,server:'<img>',
+  profile:'disabled',purgedHandles:1
+ }]);
+ const {res}=await send('POST',
+  'action=profile_audit&password=synthetic-owner-passphrase',{profileAudit});
+ expect(res.statusCode).toBe(200);
+ expect(res.html).not.toContain('<img>');
+ expect(profileAudit).toHaveBeenCalledWith({},'owner-a',{ownerVerified:true});
+});

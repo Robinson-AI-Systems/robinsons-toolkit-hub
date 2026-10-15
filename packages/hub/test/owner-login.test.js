@@ -76,3 +76,28 @@ it('OAuth consent requires an explicit valid server subset before password verif
  expect(html).toContain('name="servers"');
  expect(html).not.toContain('rtc_pass_');
 });
+
+it('owner OAuth consent binds initially selected per-service profile ceilings',async()=>{
+ const db={query:vi.fn(async sql=>({rows:sql.includes('hub_request_limits') ?
+  [{hits:1}]:[{owner_id:'single-owner'}]}))};
+ const issue=vi.fn(async()=> 'synthetic-oauth-code');
+ const req={method:'POST',socket:{remoteAddress:'127.0.0.1'}};
+ const input={...request,password:raw,servers:'stripe,workspace',
+  profiles:'stripe=disabled,workspace=read_only'};
+ const result=await authorizeOwnerConnection(db,req,input,{env,issue});
+ expect(result.status).toBe(303);
+ expect(issue).toHaveBeenCalledWith(db,expect.objectContaining({
+  profile:'read_only',mode:'test',serverNames:['stripe','workspace'],
+  serviceProfiles:{stripe:'disabled',workspace:'read_only'}
+ }),{pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
+ issue.mockClear();
+ for(const invalid of ['stripe=full','third=disabled',
+  'stripe=disabled,stripe=read_only']){
+  const denied=await authorizeOwnerConnection(db,req,
+    {...input,profiles:invalid},{env,issue});
+  expect(denied.status).toBe(400);
+ }
+ expect(issue).not.toHaveBeenCalled();
+ const html=htmlForm('/api/oauth/authorize',request);
+ expect(html).toContain('name="profiles"');
+});
