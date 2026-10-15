@@ -7,6 +7,7 @@ import {constants} from 'node:fs';
 import {access,realpath,lstat,stat} from 'node:fs/promises';
 import {execFile as executeChild} from 'node:child_process';
 import {resolve,sep,isAbsolute} from 'node:path';
+import {performance} from 'node:perf_hooks';
 import {createConfirmedLocalFile} from './local-file-create.js';
 import {ToolError} from './http.js';
 
@@ -29,12 +30,13 @@ const safeEnv=Object.freeze({HOME:'/tmp',PATH:'/usr/bin:/bin',
  CI:'1',NO_COLOR:'1'});
 const descriptiveSchema={
  type:'object',additionalProperties:false,
- properties:{root:{type:'integer',minimum:0}},
+ properties:{root:{type:'integer',minimum:0},
+  probe:{type:'boolean'}},
 };
 export const LOCAL_SANDBOX_TOOLS=Object.freeze([
  Object.freeze({
   name:'local.shell_sandbox_status',
-  description:'Check whether a Linux bubblewrap runtime is installed for confirmed, locally confined processes. A binary check is NOT a kernel-isolation acceptance proof.',
+  description:'Inspect Linux bubblewrap installation or explicitly probe a read-only namespace. No host fallback; local-machine probe is not remote acceptance.',
   inputSchema:descriptiveSchema,
   annotations:{readOnlyHint:true,destructiveHint:false,
    idempotentHint:true,openWorldHint:false}
@@ -51,7 +53,8 @@ export const LOCAL_SANDBOX_TOOLS=Object.freeze([
        argv:{type:'array',minItems:1,maxItems:MAX_ARGS,
         items:{type:'string',minLength:1,maxLength:MAX_ARG}},
        workdir:{type:'string',maxLength:1024},
-       timeoutMs:{type:'integer',minimum:MIN_TIMEOUT,maximum:10000}
+       timeoutMs:{type:'integer',minimum:MIN_TIMEOUT,maximum:10000},
+       outputFile:{type:'string',minLength:1,maxLength:1024}
       },required:['argv']}},
     confirm:{type:'boolean',const:true}
    },required:['steps','confirm']},
@@ -143,19 +146,48 @@ async function findBubblewrap() {
  }
  return null;
 }
+/**
+ * A probe is an explicit, harmless child process, not just a stat of bwrap.
+ * It uses the approved root READ-ONLY and runs only fixed /usr/bin/test argv.
+ * Installation alone, a probe failure, and a successful local probe must be
+ * different observations. None is substituted for real agent/OS acceptance.
+ */
 export async function readLocalSandboxStatus(roots,args,
- {findRuntime=findBubblewrap}={}) {
+ {findRuntime=findBubblewrap,run=invokeSandboxRuntime}={}) {
  if(!args||typeof args!=='object'||Array.isArray(args)||
-    Object.keys(args).some(k=>k!=='root'))err();
+    Object.keys(args).some(k=>!['root','probe'].includes(k))||
+    (args.probe!==undefined&&typeof args.probe!=='boolean'))err();
  const index=args.root??0;
  if(!Number.isInteger(index)||index<0||index>=roots.length)err();
  const runtime=await findRuntime();
+ const installed=process.platform==='linux'&&Boolean(runtime);
+ let probe='not_requested';
+ if(args.probe===true){
+   probe='unavailable';
+   if(installed){
+     // Verify the actual previously approved directory before launching.
+     // The probe has no network, host HOME or writable owner mount.
+     const root=roots[index];
+     await existingScopedDir(root,'');
+     const words=buildBubblewrapCommand(root,'/work',
+       ['/usr/bin/test','-d','/work']);
+     const at=words.indexOf('--bind');
+     if(at<0||words[at+1]!==root)err();
+     words[at]='--ro-bind';
+     probe='failed';
+     try{
+       const result=await run(runtime,words,2000);
+       if(result?.exitCode===0&&result.stdout===''&&result.stderr==='')
+         probe='passed';
+     }catch{ /* Never claim that a failed probe proves isolation. */ }
+   }
+ }
  return {root:index,backend:'linux-bubblewrap',
-   runtimeInstalled:process.platform==='linux'&&Boolean(runtime),
+   runtimeInstalled:installed,probe,
    confirmedExecutionRequired:true,
    networkInsideSandbox:'disabled',
    writableMounts:'selected-approved-root-only',
-   actualNamespaceAcceptance:'not-probed',
+   actualNamespaceAcceptance:probe==='passed'?'local-probe-only':'not-probed',
    unsandboxedFallback:false};
 }
 /**
@@ -285,14 +317,19 @@ export function checkedSandboxPlan(args) {
  if(!Number.isInteger(index)||index<0)err();
  const steps=args.steps.map(step=>{
    if(!step||typeof step!=='object'||Array.isArray(step)||
-     Object.keys(step).some(k=>!['argv','workdir','timeoutMs'].includes(k)))err();
+     Object.keys(step).some(k=>!['argv','workdir','timeoutMs','outputFile'].includes(k)))err();
    const request=checkedSandboxRequest({
      root:index,argv:step.argv,workdir:step.workdir,
-     timeoutMs:step.timeoutMs??5000,confirm:true
+     timeoutMs:step.timeoutMs??5000,
+     outputFile:step.outputFile,confirm:true
    });
    checkedRelative(request.workdir,{allowEmpty:true});
+   if(request.outputFile!==null)checkedRelative(request.outputFile);
    return request;
  });
+ const outputPaths=steps.map(step=>step.outputFile).filter(Boolean);
+ if(new Set(outputPaths).size!==outputPaths.length)
+   err('Plan capture files must be distinct, create-only destinations');
  if(steps.reduce((total,step)=>total+step.timeoutMs,0)>MAX_TIMEOUT)
    err('Sandbox plan exceeds 20-second total timeout');
  return {root:index,steps};
@@ -305,11 +342,11 @@ export async function executeConfirmedSandboxPlan(roots,args,deps={}) {
  const findRuntime=deps.findRuntime??findBubblewrap;
  if(process.platform!=='linux'||!await findRuntime())
    err('Linux sandbox unavailable; no plan commands executed');
- const started=Date.now();
+ const started=performance.now();
  const results=[];
- let totalOutput=0;
+ let totalOutput=0,totalCaptured=0;
  for(let i=0;i<plan.steps.length;i++) {
-   const elapsed=Date.now()-started;
+   const elapsed=performance.now()-started;
    const remaining=MAX_TIMEOUT-elapsed;
    if(remaining<MIN_TIMEOUT)
      return {sandboxed:true,completed:results.length,
@@ -320,7 +357,8 @@ export async function executeConfirmedSandboxPlan(roots,args,deps={}) {
    try {
      result=await executeConfirmedLocalSandbox(roots,{
        root:plan.root,argv:step.argv,workdir:step.workdir,
-       timeoutMs:Math.min(remaining,step.timeoutMs),confirm:true
+       timeoutMs:Math.min(remaining,step.timeoutMs),
+       ...(step.outputFile?{outputFile:step.outputFile}:{}),confirm:true
      },deps);
    } catch {
      // Do not execute another command after uncertainty about termination
@@ -329,14 +367,27 @@ export async function executeConfirmedSandboxPlan(roots,args,deps={}) {
        stoppedAt:i+1,reason:'execution_refused_or_failed',
        results,noRollback:true,networkDisabled:true};
    }
-   totalOutput+=Buffer.byteLength(result.stdout,'utf8')+
-     Buffer.byteLength(result.stderr,'utf8');
-   if(totalOutput>MAX_STDOUT+MAX_STDERR)
-     return {sandboxed:true,completed:results.length,stoppedAt:i+1,
-       reason:'output_budget_exhausted',results,
-       noRollback:true,networkDisabled:true};
-   results.push({step:i+1,command:step.argv[0],exitCode:result.exitCode,
-     stdout:result.stdout,stderr:result.stderr});
+   // Captured output is a private, create-only artifact; do not also
+   // return its contents in the MCP reply or count it as inline bytes.
+   if(result.contentReturned===false){
+     if(!step.outputFile||result.outputFile!==step.outputFile||
+       !Number.isInteger(result.bytes)||result.bytes<0||
+       result.bytes>MAX_CAPTURE_TEXT)err();
+     totalCaptured+=result.bytes;
+     if(totalCaptured>3*MAX_CAPTURE_TEXT)err();
+     results.push({step:i+1,command:step.argv[0],exitCode:result.exitCode,
+       outputFile:result.outputFile,bytes:result.bytes,contentReturned:false});
+   }else{
+     if(typeof result.stdout!=='string'||typeof result.stderr!=='string')err();
+     totalOutput+=Buffer.byteLength(result.stdout,'utf8')+
+       Buffer.byteLength(result.stderr,'utf8');
+     if(totalOutput>MAX_STDOUT+MAX_STDERR)
+       return {sandboxed:true,completed:results.length,stoppedAt:i+1,
+         reason:'output_budget_exhausted',results,
+         noRollback:true,networkDisabled:true};
+     results.push({step:i+1,command:step.argv[0],exitCode:result.exitCode,
+       stdout:result.stdout,stderr:result.stderr});
+   }
    if(result.exitCode!==0)
      return {sandboxed:true,completed:results.length,
        stoppedAt:i+1,reason:'nonzero_exit',results,
