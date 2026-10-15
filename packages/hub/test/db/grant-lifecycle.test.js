@@ -1,12 +1,15 @@
 import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {readFile} from 'node:fs/promises';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,createHash} from 'node:crypto';
+import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,
+  authenticateOAuth,rotateOAuthRefresh} from '../../src/oauth.js';
 import {issueHubPass,authenticateHubPass} from '../../src/identity.js';
 import {stageCallerGrant,activateVerifiedCallerGrant,resolveActiveCallerGrant,
   listEligibleRtcTargets} from '../../src/grants.js';
 import {cancelStagedGrant,listGrantLifecycleAudit,
-  reclaimExpiredStagedGrants,listOwnerGrantReadiness} from '../../src/grant-lifecycle.js';
+  reclaimExpiredStagedGrants,listOwnerGrantReadiness,
+  revokeOwnerVerifiedGrant} from '../../src/grant-lifecycle.js';
 import {storeRtcResult,readRtcResult} from '../../src/rtc-results.js';
 const pepper='synthetic-credential-renewal-pepper-abcdef123456';
 const settings={pepper,grantsKey:randomBytes(32).toString('base64url'),
@@ -22,7 +25,8 @@ beforeAll(async()=>{
  for(const file of ['001-hub-foundation.sql','002-hub-oauth.sql',
   '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql',
   '008-hub-rtc-audit.sql','009-hub-rtc-results.sql',
-  '010-hub-pass-servers.sql','012-hub-grant-area-ceilings.sql',
+  '010-hub-pass-servers.sql','011-hub-oauth-server-scopes.sql',
+  '012-hub-grant-area-ceilings.sql','015-hub-caller-service-area-policy.sql',
   '016-hub-grant-renewal.sql'])
   await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
  await db.query("INSERT INTO hub_servers(name,owner_id,prefix,origin,claimed_rtc,claimed_counts) VALUES('stripe','owner','stripe','https://stripe.example.com',1,'{\"tools\":3,\"writes\":0,\"money\":0}')");
@@ -139,4 +143,47 @@ it('owner readiness never exposes RTC credentials and fails closed for wrong own
  await expect(reclaimExpiredStagedGrants(db,'owner',{limit:500,
   ownerVerified:true})).rejects.toThrow();
  await expect(listOwnerGrantReadiness(db,'owner')).rejects.toThrow();
+});
+
+it('renews an OAuth family original caller after access expiry when matching refreshed session is valid',async()=>{
+ const clientId='renewal_oauth_client',redirectUri='https://agent.example.com/return';
+ const verifier='synthetic-pkce-verifier-only-abcdefghijklmnopqrstuvwxyz-12345';
+ await registerOAuthClient(db,{ownerId:'owner',clientId,redirectUri},owner);
+ const code=await issueOAuthCode(db,{ownerId:'owner',clientId,redirectUri,
+  challenge:createHash('sha256').update(verifier).digest('base64url'),
+  profile:'read_only',mode:'test',areas:['gateway'],serverNames:['stripe']},
+  {...owner,pepper});
+ const access=await exchangeOAuthCode(db,{code,clientId,redirectUri,verifier},{pepper});
+ const first=await authenticateOAuth(db,access.access_token,{pepper});
+ const original=await stageCallerGrant(db,{ownerId:'owner',serverName:'stripe',
+  callerKind:'oauth',callerId:first.id,areas:['billing','reports'],
+  pass:pass(),ttlSeconds:3600},{...owner,settings});
+ await verify(original.id);
+ const rotated=await rotateOAuthRefresh(db,{refreshToken:access.refresh_token,clientId},{pepper});
+ const fresh=await authenticateOAuth(db,rotated.access_token,{pepper});
+ await db.query(`UPDATE hub_oauth_sessions SET access_expires_at=now()-interval '1 second'
+   WHERE id=$1`,[first.id]);
+ expect((await resolveActiveCallerGrant(db,{actor:fresh,serverName:'stripe'},settings)).grantId)
+  .toBe(original.id);
+ const renewed=await stageCallerGrant(db,{ownerId:'owner',serverName:'stripe',
+  callerKind:'oauth',callerId:first.id,areas:['billing'],
+  pass:pass(),ttlSeconds:3600},{...owner,settings});
+ await verify(renewed.id);
+ expect((await resolveActiveCallerGrant(db,{actor:fresh,serverName:'stripe'},settings)))
+  .toMatchObject({grantId:renewed.id,areas:['billing']});
+});
+it('owner revocation purges old RTC pages and records nonsecret audit',async()=>{
+ const actor=await caller(),g=await stage(actor,['billing'],pass());
+ await verify(g.id);
+ const result=await storeRtcResult(db,actor,g.id,'stripe',{data:'sensitive'},settings);
+ expect(await readRtcResult(db,actor,result.handle,0,settings)).not.toBeNull();
+ expect(await revokeOwnerVerifiedGrant(db,{ownerId:'other',id:g.id},owner))
+  .toBe(false);
+ expect(await revokeOwnerVerifiedGrant(db,{ownerId:'owner',id:g.id},owner))
+  .toBe(true);
+ expect(await revokeOwnerVerifiedGrant(db,{ownerId:'owner',id:g.id},owner))
+  .toBe(false);
+ expect(await readRtcResult(db,actor,result.handle,0,settings)).toBeNull();
+ expect((await listGrantLifecycleAudit(db,'owner',owner)).find(
+  r=>r.stagedId===g.id)).toMatchObject({action:'revoke',purgedHandles:1});
 });

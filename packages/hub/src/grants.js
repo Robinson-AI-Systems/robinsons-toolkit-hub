@@ -56,7 +56,19 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
     `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes,
         to_jsonb(s)->'allowed_servers' AS allowed_servers
        FROM hub_oauth_sessions s WHERE id=$1 AND owner_id=$2
-       AND revoked_at IS NULL AND access_expires_at>now()
+       AND revoked_at IS NULL
+       AND (s.access_expires_at>now() OR EXISTS (
+         SELECT 1 FROM hub_oauth_sessions current
+         WHERE current.family_id=s.family_id AND current.owner_id=s.owner_id
+           AND current.client_id=s.client_id AND current.profile=s.profile
+           AND current.mode=s.mode AND current.areas=s.areas
+           AND (to_jsonb(current)->'allowed_servers') IS NOT DISTINCT FROM
+               (to_jsonb(s)->'allowed_servers')
+           AND (to_jsonb(current)->'service_area_policy') IS NOT DISTINCT FROM
+               (to_jsonb(s)->'service_area_policy')
+           AND current.revoked_at IS NULL
+           AND current.access_expires_at>now() AND current.refresh_expires_at>now()
+       ))
        AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
          WHERE compromised.family_id=s.family_id AND compromised.revoked_at IS NOT NULL)`;
   const {rows}=await db.query(sql,[callerId,ownerId]);

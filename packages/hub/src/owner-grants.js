@@ -1,8 +1,9 @@
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
   verifyOwnerLogin} from './owner-login.js';
 import {cancelStagedGrant,listGrantLifecycleAudit,
-  reclaimExpiredStagedGrants,listOwnerGrantReadiness} from './grant-lifecycle.js';
-import {stageCallerGrant,listCallerGrants,revokeCallerGrant,
+  reclaimExpiredStagedGrants,listOwnerGrantReadiness,
+  revokeOwnerVerifiedGrant} from './grant-lifecycle.js';
+import {stageCallerGrant,listCallerGrants,
   narrowCallerGrantAreas} from './grants.js';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -123,7 +124,7 @@ function validate(input) {
 }
 export async function handleOwnerGrants(req,res,{withDb,env=process.env,
   verify=verifyOwnerLogin,stage=stageCallerGrant,list=listCallerGrants,
-  revoke=revokeCallerGrant,narrow=narrowCallerGrantAreas,
+  revoke=revokeOwnerVerifiedGrant,narrow=narrowCallerGrantAreas,
   cancel=cancelStagedGrant,history=listGrantLifecycleAudit,
   reclaim=reclaimExpiredStagedGrants,readiness=listOwnerGrantReadiness}={}) {
   htmlHeaders(res);

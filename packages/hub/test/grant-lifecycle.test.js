@@ -1,7 +1,8 @@
 import {it,expect} from 'vitest';
 import {replacementScopeAllowed,completeActiveGrantActivation,
   cancelStagedGrant,listGrantLifecycleAudit,
-  reclaimExpiredStagedGrants,listOwnerGrantReadiness} from '../src/grant-lifecycle.js';
+  reclaimExpiredStagedGrants,listOwnerGrantReadiness,
+  revokeOwnerVerifiedGrant} from '../src/grant-lifecycle.js';
 const staged={id:'00000000-0000-4000-8000-000000000001',
   owner_id:'owner',server_name:'stripe',areas:['billing']};
 it('a renewal can only preserve or narrow a separately verified area scope',()=>{
@@ -30,4 +31,12 @@ it('bounded owner lifecycle maintenance refuses unverified or too broad access',
   .rejects.toThrow();
  await expect(listOwnerGrantReadiness(db,'owner',{ownerVerified:true,limit:101}))
   .rejects.toThrow();
+});
+
+it('owner grant revocation requires exact owner authentication and UUID',async()=>{
+ const db={query:()=>{throw Error('No SQL');}};
+ await expect(revokeOwnerVerifiedGrant(db,{ownerId:'owner',
+   id:staged.id})).rejects.toThrow();
+ await expect(revokeOwnerVerifiedGrant(db,{ownerId:'owner',
+   id:'invalid'},{ownerVerified:true})).rejects.toThrow();
 });

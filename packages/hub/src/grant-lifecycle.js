@@ -227,3 +227,29 @@ export async function listOwnerGrantReadiness(db,ownerId,
      providerIdentityStillValid:'not_rechecked'};
  });
 }
+
+/**
+ * Verified owner's immediate local revocation, stale encrypted result-page
+ * cleanup and immutable nonsecret audit in ONE PostgreSQL statement.
+ * Does not issue provider revocation, activate LIVE or disclose pass material.
+ */
+export async function revokeOwnerVerifiedGrant(db,{ownerId,id},
+ {ownerVerified=false}={}) {
+ verified(ownerId,ownerVerified);
+ if(!uuid.test(id||''))throw new TypeError('Invalid RTC grant selector');
+ const {rows}=await db.query(`WITH retired AS (
+    UPDATE hub_server_grants g SET revoked_at=now()
+    WHERE g.id=$1 AND g.owner_id=$2 AND g.revoked_at IS NULL
+    RETURNING g.id,g.server_name,g.caller_kind,g.caller_id,g.areas
+  ), erased AS (
+    DELETE FROM hub_rtc_result_handles h USING retired r
+    WHERE h.grant_id=r.id RETURNING h.handle_digest
+  )
+  INSERT INTO hub_grant_lifecycle_audit
+    (owner_id,server_name,caller_kind,caller_id,staged_grant_id,
+     action,purged_handles,areas)
+  SELECT $2,r.server_name,r.caller_kind,r.caller_id,r.id,
+     'revoke',(SELECT count(*) FROM erased),r.areas
+  FROM retired r RETURNING id`,[id,ownerId]);
+ return rows.length===1;
+}
