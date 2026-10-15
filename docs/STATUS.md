@@ -1,4 +1,4 @@
-## H-5 resumed implementation — pending exact-head review
+## H-5 source implementation — PR #207 (external acceptance OPEN)
 
 The new owner/agent history reads Hub's existing mandatory H-3 RTC audit
 attempts and outcomes through additive SQL view migration 019. It gives the
