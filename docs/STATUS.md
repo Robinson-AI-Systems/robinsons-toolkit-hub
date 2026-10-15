@@ -1,4 +1,27 @@
 
+## H-4 exact SQL across native MCP and direct HTTPS — source acceptance candidate
+
+A real disposable PostgreSQL integration runs two independently staged and
+locally verified synthetic provider RTC 1 grants, one Hub pass, a separate
+OAuth PKCE caller and refresh family through actual SQL grant selection,
+discovery, schema, GET/POST, batch, durable RTC audit and stored result-page
+revocation. Both native MCP handler and HTTPS broker use the same production
+federation and grant resolver with injected harmless TEST-only transport
+implementations. Attempts and denied/widening tools recheck effective current
+service-area/profile policies after awaited metadata operations; stale actors
+or revoked credentials cannot reuse previously cached authorization. A provider
+never sees the Hub's own OAuth or owner password. The new native-handler
+injection seam is server-internal, unavailable to untrusted HTTP callers and
+defaults to the existing production implementation.
+
+Source CI/PG gate is the only proof this establishes. Exact deployed main/live
+revisions, owner-authenticated real two-provider TEST reads, provider-side
+grant issuance/denial and all three independent direct/relay/Sandbox routes
+remain OPEN. No RTC 0 alias is rebranded as RTC 1, and no LIVE provider or
+money transfer path is authorized. Full H-4 release acceptance must still be
+separately checked; no external acceptance row is closed by these fixtures.
+
+
 ## H-4 owner-only consolidated control center — source implementation
 
 The new `/api/owner/dashboard` GET serves only a static mobile-viewport form.
