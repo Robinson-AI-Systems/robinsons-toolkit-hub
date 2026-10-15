@@ -171,7 +171,12 @@ async function protectedUnlink(roots,args,{destination=null}={}){
    linked=true;
    const atNew=await hashLocalFile(targetInfo.target);
    const atOld=await hashLocalFile(original.target);
-   if(!pairEqual(original.original,atOld) ||
+   // A successful hard-link publication legitimately changes inode ctime
+   // and link count; recheck its bytes, inode, device and mtime, not ctime.
+   if(atOld.sha256!==original.original.sha256||
+      atOld.info.ino!==original.original.info.ino||
+      atOld.info.dev!==original.original.info.dev||
+      atOld.info.mtimeNs!==original.original.info.mtimeNs||
       atNew.sha256!==original.original.sha256||
       atNew.info.ino!==original.original.info.ino||
       atNew.info.dev!==original.original.info.dev)refused();

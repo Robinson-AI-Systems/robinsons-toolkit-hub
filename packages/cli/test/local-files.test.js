@@ -39,8 +39,8 @@ describe('folder-scoped local MCP reads', () => {
       expect((await absent.dispatch({ jsonrpc: '2.0', id: 1, method: 'tools/list' })).result.tools).toHaveLength(0);
       const mcp = await localMcp(folder);
       const list = (await mcp.dispatch({ jsonrpc: '2.0', id: 1, method: 'tools/list' })).result.tools;
-      expect(list.filter((tool) => tool.name.startsWith('local.file_')).map((tool) => tool.name)).toEqual(['local.file_list', 'local.file_stat', 'local.file_read', 'local.file_search', 'local.file_hash', 'local.file_create', 'local.file_update']);
-      expect(list.filter((tool) => !['local.file_create', 'local.file_update'].includes(tool.name)).every((tool) => tool.annotations.readOnlyHint)).toBe(true);
+      expect(list.filter((tool) => tool.name.startsWith('local.file_')).map((tool) => tool.name)).toEqual(['local.file_list', 'local.file_stat', 'local.file_read', 'local.file_search', 'local.file_hash', 'local.file_create', 'local.file_update', 'local.file_patch', 'local.file_move', 'local.file_delete']);
+      expect(list.filter((tool) => !['local.file_create', 'local.file_update', 'local.file_patch', 'local.file_move', 'local.file_delete'].includes(tool.name)).every((tool) => tool.annotations.readOnlyHint)).toBe(true);
       expect(list.find((tool) => tool.name === 'local.file_create').annotations.readOnlyHint).toBe(false);
     }));
 
@@ -85,7 +85,7 @@ describe('rtool MCP local CLI integration', () => {
       });
       input.end(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) + '\n');
       expect(await running).toBe(0);
-      expect(JSON.parse(out).result.tools).toHaveLength(11);
+      expect(JSON.parse(out).result.tools).toHaveLength(18);
       expect(err).toBe('');
     }));
 });

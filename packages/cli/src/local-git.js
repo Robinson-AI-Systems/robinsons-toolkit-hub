@@ -20,7 +20,11 @@ export const LOCAL_GIT_TOOLS = Object.freeze([
     openWorldHint: false }
 })));
 
-export async function inspectLocalGit(name, root) {
+export async function runReadOnlyGit(root,commandArgs) {
+ if(!Array.isArray(commandArgs)||!commandArgs.length||
+   commandArgs.some(arg=>typeof arg!=='string'||arg.length>1100))
+  readError();
+
   const gitDir = join(root, '.git');
   try {
     // Reject external linked worktrees or a symlinked git metadata directory.
@@ -29,17 +33,10 @@ export async function inspectLocalGit(name, root) {
     const canonical = await realpath(gitDir);
     if (!canonical.startsWith(root + sep)) readError();
   } catch { readError(); }
-  const commands = {
-    'local.git_status': ['status', '--short', '--untracked-files=no'],
-    'local.git_diff': ['diff', '--no-ext-diff', '--no-textconv', '--stat', '--', '.'],
-    'local.git_log': ['log', '--max-count=10', '--format=%h %s']
-  };
-  if (!Object.hasOwn(commands, name)) readError();
-
   const args = ['--no-pager', '--no-optional-locks',
     '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
     '-c', 'color.ui=false',
-    '--git-dir', gitDir, '--work-tree', root, ...commands[name]];
+    '--git-dir', gitDir, '--work-tree', root, ...commandArgs];
   try {
     const { stdout } = await run('git', args, {
       cwd: root, shell: false, windowsHide: true,
@@ -55,6 +52,15 @@ export async function inspectLocalGit(name, root) {
       }
     });
     if (Buffer.byteLength(stdout, 'utf8') > MAX_OUTPUT) readError();
-    return { action: name, root: true, output: stdout };
+    return stdout;
   } catch { readError(); }
+}
+export async function inspectLocalGit(name,root){
+ const commands={
+   'local.git_status':['status','--short','--untracked-files=no'],
+   'local.git_diff':['diff','--no-ext-diff','--no-textconv','--stat','--','.'],
+   'local.git_log':['log','--max-count=10','--format=%h %s']
+ };
+ if(!Object.hasOwn(commands,name))readError();
+ return {action:name,root:true,output:await runReadOnlyGit(root,commands[name])};
 }

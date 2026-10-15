@@ -1,3 +1,11 @@
+## L-1 local read-only Git inspection — source candidate
+
+Opt-in local agents can read bounded working/staged source patches, immutable
+commit-file snapshots, tracked paths and path-specific history using fixed
+Git subcommands. Existing local no-provider and no-shell policy remains in
+force. Real local fixture testing is distinct from any OS-wide sandbox or
+external-machine proof.
+
 ## L-1 opt-in confirmed local refactor operations — source candidate
 
 The local MCP gains exact-match conditional patch, same-root no-overwrite
