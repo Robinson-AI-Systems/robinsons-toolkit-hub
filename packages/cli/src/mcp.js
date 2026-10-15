@@ -5,6 +5,7 @@ import { ToolError } from './http.js';
 import { byName, send } from './dispatch.js';
 import { LOCAL_FILE_TOOLS } from './local-files.js';
 import {LOCAL_OLLAMA_TOOLS} from './local-ollama.js';
+import {LOCAL_BROWSER_TOOLS} from './local-browser.js';
 import { LOCAL_GIT_TOOLS } from './local-git.js';
 import {LOCAL_GIT_DETAIL_TOOLS} from './local-git-details.js';
 import {LOCAL_SANDBOX_TOOLS} from './local-sandbox.js';
@@ -53,7 +54,8 @@ export function localToolCatalog(servers, env = process.env, localFiles = null) 
   }
   if (localFiles) {
     for (const tool of [...LOCAL_FILE_TOOLS, ...LOCAL_GIT_TOOLS, ...LOCAL_GIT_DETAIL_TOOLS, ...LOCAL_SANDBOX_TOOLS,
-      ...(localFiles.ollamaConfigured?LOCAL_OLLAMA_TOOLS:[])]) {
+      ...(localFiles.ollamaConfigured?LOCAL_OLLAMA_TOOLS:[]),
+      ...(localFiles.browserConfigured?LOCAL_BROWSER_TOOLS:[])]) {
       routes.set(tool.name, { local: true, action: tool.name });
       tools.push(tool);
     }
