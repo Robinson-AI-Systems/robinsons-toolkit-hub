@@ -6,6 +6,8 @@ import { isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
 import { inspectLocalGit } from './local-git.js';
 import { runLocalShell, LOCAL_SHELL_TOOL } from './local-shell.js';
+import { LOCAL_FILE_REFACTOR_TOOLS,patchConfirmedLocalFile,
+  moveConfirmedLocalFile,deleteConfirmedLocalFile } from './local-file-refactor.js';
 import { createConfirmedLocalFile, LOCAL_FILE_CREATE_TOOL } from './local-file-create.js';
 import { searchLocalSources, LOCAL_FILE_SEARCH_TOOL } from './local-file-search.js';
 import { hashLocalFile, updateConfirmedLocalFile, LOCAL_FILE_HASH_TOOL, LOCAL_FILE_UPDATE_TOOL } from './local-file-update.js';
@@ -30,7 +32,7 @@ export const LOCAL_FILE_TOOLS = Object.freeze([
       properties: { root: { type: 'integer', minimum: 0 }, path: { type: 'string' } } } }
 ].map((tool) => Object.freeze({ ...tool, annotations: {
   readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false
-} })).concat(LOCAL_FILE_SEARCH_TOOL, LOCAL_FILE_HASH_TOOL, LOCAL_FILE_CREATE_TOOL, LOCAL_FILE_UPDATE_TOOL, LOCAL_SHELL_TOOL));
+} })).concat(LOCAL_FILE_SEARCH_TOOL, LOCAL_FILE_HASH_TOOL, LOCAL_FILE_CREATE_TOOL, LOCAL_FILE_UPDATE_TOOL, ...LOCAL_FILE_REFACTOR_TOOLS, LOCAL_SHELL_TOOL));
 
 function relativeInput(value) {
   if (value === undefined || value === '') return '';
@@ -70,6 +72,9 @@ export async function createLocalFiles(folders) {
   };
   const invoke = async (name, args = {}) => {
     if (name === 'local.file_create') return createConfirmedLocalFile(roots, args);
+    if (name === 'local.file_patch') return patchConfirmedLocalFile(roots, args);
+    if (name === 'local.file_move') return moveConfirmedLocalFile(roots, args);
+    if (name === 'local.file_delete') return deleteConfirmedLocalFile(roots, args);
     if (name === 'local.file_update') return updateConfirmedLocalFile(roots, args);
     const { path, rootIndex, relative } = await access(args);
     try {

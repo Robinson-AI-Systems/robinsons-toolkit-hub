@@ -1,3 +1,11 @@
+## L-1 opt-in confirmed local refactor operations — source candidate
+
+The local MCP gains exact-match conditional patch, same-root no-overwrite
+rename-like move and SHA-confirmed file deletion in explicitly enabled
+local folders. No hosted Hub API, remote account or provider grant changes.
+Local shell general sandbox acceptance remains pending; these local tests
+are not proof of OS-wide isolation from noncooperating processes.
+
 ## H-4 owner-safe active-service grant enrollment and renewal — source candidate
 
 An active, owner-owned service can receive a separately independently issued
