@@ -95,6 +95,15 @@ it('one H-3 RTC call gives exactly one H-5 correlated history entry and no secre
   actor,db,settings);
  expect(native.result.structuredContent.changes.map(x=>x.correlationId))
   .toContain(successful);
+ const nested=await mcpFederatedReply({jsonrpc:'2.0',id:8,method:'tools/call',
+  params:{name:'hub_batch',arguments:{calls:[
+   {name:'hub_recent_changes',args:{server:'stripe'}},
+   {name:'hub_whoami',args:{}}
+  ]}}},actor,db,settings);
+ expect(nested.result.structuredContent.results.map(x=>x.ok))
+  .toEqual([true,true]);
+ expect(nested.result.structuredContent.results[0].result.changes
+  .map(x=>x.correlationId)).toContain(successful);
  const direct=res();
  await handleHubTools({method:'POST',query:{name:'hub_recent_changes'},
    body:{server:'stripe'},headers:{authorization:'Bearer synthetic'}},
