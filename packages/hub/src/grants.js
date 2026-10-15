@@ -52,10 +52,12 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
   const sql=callerKind==='pass' ?
     `SELECT id,owner_id,profile,allowed_areas AS areas,mode,allow_writes
        ,to_jsonb(hub_callers)->'allowed_servers' AS allowed_servers
+       ,to_jsonb(hub_callers)->'service_profile_policy' AS service_profile_policy
        FROM hub_callers WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL
        AND expires_at>now()` :
     `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes,
-        to_jsonb(s)->'allowed_servers' AS allowed_servers
+        to_jsonb(s)->'allowed_servers' AS allowed_servers,
+        to_jsonb(s)->'service_profile_policy' AS service_profile_policy
        FROM hub_oauth_sessions s WHERE id=$1 AND owner_id=$2
        AND revoked_at IS NULL
        AND (s.access_expires_at>now() OR EXISTS (
@@ -77,7 +79,8 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
   if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!=='test'||a.allow_writes===true||
     !Array.isArray(a.areas)||!a.areas.includes('gateway')||
     (Array.isArray(a.allowed_servers) &&
-      !a.allowed_servers.includes(serverName)))
+      !a.allowed_servers.includes(serverName))||
+    a.service_profile_policy?.[serverName]==='disabled')
     throw new Error('Caller scope refuses grant');
 }
 export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={}) {

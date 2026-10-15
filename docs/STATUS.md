@@ -630,14 +630,14 @@ open obligations, original fixture ownership, approvals and deployment provenanc
   {
     "id": "HUB-H4-PROFILE-POLICY",
     "priority": 20,
-    "requiredRevision": "ec4951f06810f968e99946e74de6313db1edea44",
+    "requiredRevision": "a2e2b91fccbab94a0e64109642191dd835792473",
     "introducedFile": "packages/hub/migrations/017-hub-caller-service-profile-policy.sql",
     "task": "Verify checked hosted TEST owner service-profile ceilings on Hub passes and OAuth refresh families, immediate disabled-service native/HTTP/batch/result denials and new-refresh inheritance against independently attested read_only provider grants",
     "procedure": "docs/pr-cards/H-4.md",
     "gates": "Exact READY live Hub deployment containing SQL 017, independent verified owner and two distinct service-owned RTC TEST/read_only grants, durable audit and negative no-write provider evidence; direct/relay/Sandbox separately",
     "dependsOn": [],
     "status": "PENDING",
-    "lastEvidence": "Source and disposable PostgreSQL integration only; no checked hosted migration or real two-service TEST evidence."
+    "lastEvidence": "Source H-4 profile policy, owner UI, initial PKCE/HUB-pass selection and disposable PostgreSQL tests proposed; migration 017, independent provider TEST, actual owner readback, direct/relay/Sandbox acceptance PENDING."
   }
 ]
 ```

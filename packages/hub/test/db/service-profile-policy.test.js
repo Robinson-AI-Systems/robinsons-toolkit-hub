@@ -146,3 +146,59 @@ it('fails closed when profile ceiling SQL is invoked without owner challenge',as
  await expect(listOwnerProfileAudit(db,'wrong owner',
   {ownerVerified:true})).rejects.toThrow();
 });
+
+it('initial pass issuance selects disabled service before any grant can be staged',async()=>{
+ const issued=await issueHubPass(db,{ownerId:owner,mode:'test',
+  profile:'read_only',areas:['gateway'],allowWrites:false,
+  serverNames:['stripe','workspace'],
+  serviceProfiles:{stripe:'disabled',workspace:'read_only'},
+  ttlSeconds:3600},{ownerVerified:true,pepper});
+ const actor=await authenticateHubPass(db,'Bearer '+issued.pass,{pepper});
+ expect((await listHubPassScopes(db,owner,{ownerVerified:true}))
+   .find(x=>x.id===actor.id).serviceProfiles)
+   .toEqual({stripe:'disabled',workspace:'read_only'});
+ await expect(stageCallerGrant(db,{ownerId:owner,
+  serverName:'stripe',callerKind:'pass',callerId:actor.id,
+  areas:['billing'],pass,ttlSeconds:3600},
+  {ownerVerified:true,settings})).rejects.toThrow('scope');
+ await grant(actor,'pass','workspace');
+ expect((await listEligibleRtcTargets(db,actor)).map(x=>x.name))
+  .toEqual(['workspace']);
+ expect(await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings))
+  .toBeNull();
+});
+it('initial OAuth authorization profile ceilings bind code, first token and every refresh',async()=>{
+ const clientId='initial_profile_oauth_client',
+  redirectUri='https://agent.example.com/initial/callback';
+ const verifier='synthetic-initial-profile-verifier-abcdefghijklmnopqrstuvwxyz';
+ await registerOAuthClient(db,{ownerId:owner,clientId,redirectUri},
+  {ownerVerified:true});
+ const issue={ownerId:owner,clientId,redirectUri,
+  profile:'read_only',mode:'test',areas:['gateway'],
+  challenge:createHash('sha256').update(verifier).digest('base64url'),
+  serverNames:['stripe','workspace'],
+  serviceProfiles:{stripe:'disabled',workspace:'read_only'}};
+ await expect(issueOAuthCode(db,{...issue,serviceProfiles:{neon:'read_only'}},
+  {pepper,ownerVerified:true})).rejects.toThrow();
+ const code=await issueOAuthCode(db,issue,{pepper,ownerVerified:true});
+ const firstToken=await exchangeOAuthCode(db,{code,clientId,redirectUri,verifier},{pepper});
+ const first=await authenticateOAuth(db,firstToken.access_token,{pepper});
+ expect((await listOwnerOAuthFamilies(db,owner,{ownerVerified:true}))
+   .find(x=>x.id===first.id).serviceProfiles)
+   .toEqual({stripe:'disabled',workspace:'read_only'});
+ await expect(stageCallerGrant(db,{ownerId:owner,
+  serverName:'stripe',callerKind:'oauth',callerId:first.id,
+  areas:['billing'],pass,ttlSeconds:3600},
+  {ownerVerified:true,settings})).rejects.toThrow('scope');
+ await grant(first,'oauth','workspace');
+ const secondToken=await rotateOAuthRefresh(db,{
+  clientId,refreshToken:firstToken.refresh_token},{pepper});
+ const second=await authenticateOAuth(db,secondToken.access_token,{pepper});
+ expect((await listEligibleRtcTargets(db,second)).map(x=>x.name))
+  .toEqual(['workspace']);
+ expect((await listOwnerOAuthFamilies(db,owner,{ownerVerified:true}))
+   .find(x=>x.id===second.id).serviceProfiles)
+   .toEqual({stripe:'disabled',workspace:'read_only'});
+ expect(await resolveActiveCallerGrant(db,{actor:second,serverName:'stripe'},settings))
+  .toBeNull();
+});

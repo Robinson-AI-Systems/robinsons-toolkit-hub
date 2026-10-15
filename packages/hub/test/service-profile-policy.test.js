@@ -1,5 +1,6 @@
 import {it,expect} from 'vitest';
 import {ownerServiceProfiles,limitedServiceProfile,
+ parseInitialServiceProfiles,checkedInitialServiceProfiles,
  narrowPassServiceProfile,narrowOAuthServiceProfile,
  listOwnerProfileAudit} from '../src/service-profile-policy.js';
 const example={ownerId:'owner',id:'00000000-0000-4000-8000-000000000001',
@@ -38,4 +39,17 @@ it('never invokes SQL without an exact independently verified owner/profile',asy
  await expect(listOwnerProfileAudit(db,'owner')).rejects.toThrow();
  await expect(listOwnerProfileAudit(db,'owner',
   {ownerVerified:true,limit:1000})).rejects.toThrow();
+});
+
+it('validates initial permission ceilings without widening or binding unknown providers',()=>{
+ expect(parseInitialServiceProfiles('stripe=read_only,workspace=disabled',
+  ['stripe','workspace'])).toEqual({stripe:'read_only',workspace:'disabled'});
+ expect(parseInitialServiceProfiles('', ['stripe'])).toBeNull();
+ expect(checkedInitialServiceProfiles({stripe:'disabled'},['stripe']))
+  .toEqual({stripe:'disabled'});
+ for(const raw of ['neon=disabled','stripe=full',
+  'stripe=read_only,stripe=disabled','stripe','stripe=','stripe=read_only,'])
+  expect(()=>parseInitialServiceProfiles(raw,['stripe'])).toThrow();
+ expect(()=>checkedInitialServiceProfiles({stripe:'full'},['stripe'])).toThrow();
+ expect(()=>checkedInitialServiceProfiles({neon:'disabled'},['stripe'])).toThrow();
 });
