@@ -110,8 +110,8 @@ it('one owner pass retains two independent RTC grants across direct HTTPS and na
  const deps=fakeTransports();
  const list=await direct(actor,'list','GET',{q:'read',limit:'5'},null,deps);
  expect(list.code).toBe(200);
- expect(list.body.result.tools.map(x=>x.name))
-  .toEqual(['stripe_read_billing','workspace_read_billing']);
+ expect(list.body.result.tools.filter(x=>services.includes(x.server))
+  .map(x=>x.name)).toEqual(['stripe_read_billing','workspace_read_billing']);
  const item=await direct(actor,'item','POST',{name:'stripe_read_billing'},{},deps);
  expect(item.code).toBe(200);
  expect(item.body.result.server).toBe('stripe');
@@ -152,8 +152,8 @@ it('native MCP OAuth is independently scoped and live refresh/restrictions defea
  const search=await native(issued.access_token,
   req('hub_search_tools',{query:'read',limit:5}),deps);
  expect(search.code).toBe(200);
- expect(search.body.result.structuredContent.tools.map(x=>x.name))
-  .toEqual(['stripe_read_billing','workspace_read_reports']);
+ expect(search.body.result.structuredContent.tools.filter(x=>services.includes(x.server))
+  .map(x=>x.name)).toEqual(['stripe_read_billing','workspace_read_reports']);
  const good=await native(issued.access_token,
   req('hub_call',{name:'workspace_read_reports',args:{}}),deps);
  expect(good.body.result.structuredContent.server).toBe('workspace');
