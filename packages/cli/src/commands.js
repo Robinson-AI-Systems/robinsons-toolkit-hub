@@ -197,7 +197,7 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
     if (command === 'mcp') {
       if (words.length && (words.length !== 2 || words[0] !== '--local'))
         throw new ToolError('Usage: rtool mcp [--local FOLDER[,FOLDER...]]');
-      const localFiles = words.length ? await createLocalFiles(words[1].split(',')) : null;
+      const localFiles = words.length ? await createLocalFiles(words[1].split(','),{env}) : null;
       await serveLocalStdio({ servers, env, input, output: out, localFiles });
       return 0;
     }

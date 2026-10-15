@@ -555,12 +555,16 @@
         "L-1"
       ],
       "card": "docs/pr-cards/L-2.md",
-      "status": "APPROVED",
+      "status": "MERGED",
       "units": [
         "L-2"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "pr": [
+        "L-2 source implementation PR (exact PR number captured in linked merge)"
+      ],
+      "note": "Approved L-2 complete local-only source implementation: opt-in rtool mcp --local with independently provided strict loopback OLLAMA_BASE_URL, six metadata/inference/embedding tools, fixed HTTP transport, downloaded-model and no-cloud filtering, bounded timeouts/output and create-only confirmed captures; focused real loopback HTTP and MCP tests. Owner-machine actual Ollama/GPU execution remains external acceptance OPEN; L-1 actual OS Bubblewrap verification remains independently OPEN. Main/CI/merge source required before final completion claim."
     },
     {
       "id": "L-3",
