@@ -8,6 +8,7 @@ import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,
 import {stageCallerGrant,activateVerifiedCallerGrant,resolveActiveCallerGrant,
   listEligibleRtcTargets} from '../../src/grants.js';
 import {narrowHubPassServiceAreas,narrowOAuthFamilyServiceAreas} from '../../src/service-area-policy.js';
+import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from '../../src/owner-service-scope.js';
 import {storeRtcResult,readRtcResult} from '../../src/rtc-results.js';
 const owner='owner',pepper='synthetic-service-area-policy-pepper-123456';
 const settings={pepper,grantsKey:randomBytes(32).toString('base64url'),
@@ -51,6 +52,10 @@ it('owner narrows one pass per-service; SQL discovery, dispatch, results and aud
  const id=await grant(actor,'pass');
  const before=await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings);
  expect(before.areas).toEqual(['billing','reports']);
+ const ownerPreview=await inspectOwnerServiceScope(db,{ownerId:owner,
+   callerKind:'pass',callerId:actor.id,serverName:'stripe'},{ownerVerified:true});
+ expect(ownerPreview).toMatchObject({callable:true,profile:'read_only',
+   authorizedAreas:['billing','reports']});
  const saved=await storeRtcResult(db,actor,id,'stripe',{area:'billing'},settings);
  expect(await readRtcResult(db,actor,saved.handle,0,settings)).not.toBeNull();
  const previous=(await db.query('SELECT ciphertext,nonce,tag FROM hub_server_grants WHERE id=$1',[id])).rows[0];
@@ -61,6 +66,12 @@ it('owner narrows one pass per-service; SQL discovery, dispatch, results and aud
   .toEqual(['reports']);
  expect((await listEligibleRtcTargets(db,actor))[0].areas).toEqual(['reports']);
  expect(await readRtcResult(db,actor,saved.handle,0,settings)).toBeNull();
+ expect((await inspectOwnerServiceScope(db,{ownerId:owner,
+   callerKind:'pass',callerId:actor.id,serverName:'stripe'},
+   {ownerVerified:true})).authorizedAreas).toEqual(['reports']);
+ const recent=await listOwnerServiceAreaAudit(db,owner,{ownerVerified:true});
+ expect(recent[0]).toMatchObject({kind:'pass',server:'stripe',
+   areas:['reports'],purgedHandles:1});
  const sealed=(await db.query('SELECT ciphertext,nonce,tag FROM hub_server_grants WHERE id=$1',[id])).rows[0];
  for(const field of ['ciphertext','nonce','tag'])
   expect(sealed[field].equals(previous[field])).toBe(true);
@@ -96,10 +107,27 @@ it('OAuth per-service policy remains attached to an entire rotated family and is
   expect((await listEligibleRtcTargets(db,current))[0].areas).toEqual(['billing']);
  }
  expect(await readRtcResult(db,actor,old.handle,0,settings)).toBeNull();
+ expect((await inspectOwnerServiceScope(db,{ownerId:owner,callerKind:'oauth',
+   callerId:fresh.id,serverName:'workspace'},{ownerVerified:true}))
+   .authorizedAreas).toEqual(['billing']);
+ expect((await listOwnerServiceAreaAudit(db,owner,{ownerVerified:true}))[0])
+   .toMatchObject({kind:'oauth',server:'workspace',areas:['billing'],
+     affectedSessions:2,purgedHandles:1});
  expect((await narrowOAuthFamilyServiceAreas(db,{ownerId:owner,id:fresh.id,
   serverName:'workspace',areas:['reports']},{ownerVerified:true})).updated).toBe(false);
  const next=await rotateOAuthRefresh(db,{refreshToken:rotated.refresh_token,clientId},{pepper});
  const newest=await authenticateOAuth(db,next.access_token,{pepper});
  expect((await resolveActiveCallerGrant(db,{actor:newest,serverName:'workspace'},settings)).areas)
   .toEqual(['billing']);
+});
+
+it('owner inspector fails closed for another owner and invalid caller ID',async()=>{
+ expect(await inspectOwnerServiceScope(db,{ownerId:'other',callerKind:'pass',
+   callerId:'00000000-0000-4000-8000-000000000001',serverName:'stripe'},
+   {ownerVerified:true})).toMatchObject({available:false,callable:false});
+ await expect(inspectOwnerServiceScope(db,{ownerId:owner,callerKind:'pass',
+   callerId:'invalid',serverName:'stripe'},{ownerVerified:true})).rejects.toThrow();
+ await expect(listOwnerServiceAreaAudit(db,owner)).rejects.toThrow();
+ await expect(listOwnerServiceAreaAudit(db,owner,{ownerVerified:true,limit:500}))
+   .rejects.toThrow();
 });

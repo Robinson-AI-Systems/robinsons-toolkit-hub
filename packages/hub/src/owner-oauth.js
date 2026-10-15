@@ -1,5 +1,6 @@
 import {listOwnerOAuthFamilies,revokeOwnerOAuthFamily,
   narrowOwnerOAuthFamilyServers} from './oauth.js';
+import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from './owner-service-scope.js';
 import {parseServiceAreas,narrowOAuthFamilyServiceAreas} from './service-area-policy.js';
 import {parseOwnerServerSelection} from './server-selection.js';
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
@@ -44,7 +45,33 @@ function form() {
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
     '<p>This irreversibly narrows the entire refresh family and removes prior '+
     'result pages for that service. New refresh tokens retain the restriction.</p>'+
-    '<button type="submit">Reduce this OAuth family service areas</button></form>');
+    '<button type="submit">Reduce this OAuth family service areas</button></form>'+
+    '<form method="POST" action="/api/owner/oauth">'+
+    '<input type="hidden" name="action" value="inspect_service">'+
+    '<label>Connection session ID <input name="id" maxlength="36" required></label>'+
+    '<label>RTC server <input name="server" maxlength="60" required></label>'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<button type="submit">Inspect current effective service scope</button></form>'+
+    '<form method="POST" action="/api/owner/oauth">'+
+    '<input type="hidden" name="action" value="audit">'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<button type="submit">Review service-area policy audit</button></form>');
+}
+function displayScope(result) {
+  return page('<h2>Effective RTC service scope</h2><p>'+
+    escapeHtml(result.server)+'; callable '+String(result.callable)+
+    '; read-only TEST; original areas '+
+    escapeHtml((result.originalAreas??[]).join(', '))+
+    '; currently authorized '+escapeHtml((result.authorizedAreas??[]).join(', '))+
+    '; connection policy '+escapeHtml((result.callerAreaLimit??[]).join(', '))+
+    '</p><p>Metadata only; no tokens, provider credentials or calls.</p>');
+}
+function displayAudit(rows) {
+  return page('<h2>Service area policy reductions</h2><ul>'+
+    rows.map(r=>'<li>'+escapeHtml(String(r.at))+' '+escapeHtml(r.kind)+
+      ' '+escapeHtml(r.callerId)+' / '+escapeHtml(r.server)+
+      ': '+escapeHtml(r.areas.join(', '))+'; pages purged '+
+      escapeHtml(String(r.purgedHandles))+'</li>').join('')+'</ul>');
 }
 function display(rows) {
   return page('<h2>Active family metadata (max 30)</h2>'+
@@ -61,7 +88,8 @@ function display(rows) {
 export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
   verify=verifyOwnerLogin,list=listOwnerOAuthFamilies,
   revoke=revokeOwnerOAuthFamily,
-  narrow=narrowOwnerOAuthFamilyServers,narrowAreas=narrowOAuthFamilyServiceAreas}={}) {
+  narrow=narrowOwnerOAuthFamilyServers,narrowAreas=narrowOAuthFamilyServiceAreas,
+  inspectService=inspectOwnerServiceScope,auditAreas=listOwnerServiceAreaAudit}={}) {
   htmlHeaders(res);
   res.setHeader('Pragma','no-cache');
   if(!['GET','POST'].includes(req.method)) {
@@ -74,15 +102,18 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
   if(!String(req.headers?.['content-type']||'').startsWith('application/x-www-form-urlencoded'))
     return res.status(415).send('Unsupported content type');
   const fields=formFields(req);
-  if(!fields||!['list','revoke','narrow','narrow_areas'].includes(fields.action)||
+  if(!fields||!['list','revoke','narrow','narrow_areas','inspect_service','audit'].includes(fields.action)||
      typeof fields.password!=='string'||!fields.password||
      fields.password.length>256||
-     (['revoke','narrow','narrow_areas'].includes(fields.action)&&!uuid.test(fields.id||'')))
+     (['revoke','narrow','narrow_areas','inspect_service'].includes(fields.action)&&!uuid.test(fields.id||'')))
     return res.status(400).send('Invalid request');
   const selection=fields.action==='narrow' ? parseOwnerServerSelection(fields.servers) : null;
   if(fields.action==='narrow'&&!selection)
     return res.status(400).send('Select 1–20 canonical RTC servers');
   const areas=fields.action==='narrow_areas'?parseServiceAreas(fields.areas):null;
+  if(fields.action==='inspect_service' &&
+    !/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||''))
+    return res.status(400).send('Invalid RTC service');
   if(fields.action==='narrow_areas' &&
     (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||!areas))
     return res.status(400).send('Select one canonical service and 1–32 areas');
@@ -93,6 +124,13 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
         if(decision.retryAfter)res.setHeader('Retry-After',String(decision.retryAfter));
         return res.status(decision.retryAfter?429:401).send('Owner verification denied');
       }
+      if(fields.action==='audit')
+        return res.status(200).send(displayAudit(await auditAreas(db,
+          env.HUB_OWNER_ID,{ownerVerified:true})));
+      if(fields.action==='inspect_service')
+        return res.status(200).send(displayScope(await inspectService(db,{
+          ownerId:env.HUB_OWNER_ID,callerKind:'oauth',
+          callerId:fields.id,serverName:fields.server},{ownerVerified:true})));
       if(fields.action==='list') return res.status(200).send(
         display(await list(db,env.HUB_OWNER_ID,{ownerVerified:true})));
       if(fields.action==='narrow_areas') {
