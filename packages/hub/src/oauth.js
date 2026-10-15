@@ -72,6 +72,24 @@ async function storeSession(db, row, pepper, familyId=randomUUID()) {
   const selected = serverSelection(row.allowed_servers);
   const identity=[randomUUID(),familyId,row.owner_id,row.client_id,
     digestPass(access,pepper),digestPass(refresh,pepper),row.profile,row.areas,row.mode];
+
+  // H-4: a rotated refresh family must inherit every current per-service
+  // caller area reduction. Migration 015 is required only for narrowed
+  // families; untouched legacy token exchange continues unchanged.
+  const servicePolicy=row.service_area_policy??null;
+  if(servicePolicy!==null) {
+    const columns=selected?'allowed_servers,service_area_policy':'service_area_policy';
+    const params=selected?[...identity,selected,servicePolicy]:[...identity,servicePolicy];
+    const sql='INSERT INTO hub_oauth_sessions '+
+      '(id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,'+
+      'access_expires_at,refresh_expires_at,'+columns+') '+
+      'VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'+
+      "now()+interval '1 hour',now()+interval '30 days'," +
+      (selected?'$10,$11)':'$10)');
+    await db.query(sql,params);
+    return {access_token:access,refresh_token:refresh,
+      token_type:'Bearer',expires_in:3600};
+  }
   if (selected) {
     await db.query(`INSERT INTO hub_oauth_sessions
       (id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,
@@ -106,7 +124,8 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
     WHERE refresh_digest=$1 AND client_id=$2 AND refresh_used_at IS NULL
     AND revoked_at IS NULL AND refresh_expires_at>now()
     RETURNING owner_id,client_id,profile,areas,mode,family_id,
-      to_jsonb(hub_oauth_sessions)->'allowed_servers' AS allowed_servers`,
+      to_jsonb(hub_oauth_sessions)->'allowed_servers' AS allowed_servers,
+      to_jsonb(hub_oauth_sessions)->'service_area_policy' AS service_area_policy`,
   [digestPass(input.refreshToken,pepper),input.clientId]);
   if (!used.rows.length) {
     // A second use of an already-rotated bearer is a compromised family,
