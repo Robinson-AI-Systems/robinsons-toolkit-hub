@@ -1,6 +1,8 @@
 // Owner-opted-in local filesystem door: read-only by default, explicit confirmation for create-only writes.
 // Never used by hosted Hub/relay.
 import { constants } from 'node:fs';
+import {configuredLocalBrowser,playwrightInstalled,
+ invokeLocalBrowser} from './local-browser.js';
 import {configuredLocalOllama,invokeLocalOllama} from './local-ollama.js';
 import { open, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
@@ -50,7 +52,8 @@ function relativeInput(value) {
   }
   return value;
 }
-export async function createLocalFiles(folders,{env=process.env}={}) {
+export async function createLocalFiles(folders,{env=process.env,
+  browserAvailable=playwrightInstalled()}={}) {
   if (!Array.isArray(folders) || !folders.length || folders.length > 8 ||
       folders.some((f) => typeof f !== 'string' || !f.trim())) {
     bad('Local file access requires 1–8 explicitly enabled folders');
@@ -78,7 +81,12 @@ export async function createLocalFiles(folders,{env=process.env}={}) {
     return { path, rootIndex, relative };
   };
   const ollamaConfigured=Boolean(configuredLocalOllama(env));
+  const browserConfigured=Boolean(configuredLocalBrowser(env)&&browserAvailable);
   const invoke = async (name, args = {}) => {
+    if(name.startsWith('local.browser_')){
+      if(!browserConfigured)bad('Local browser unavailable');
+      return invokeLocalBrowser(name,roots,args,{env});
+    }
     if(name.startsWith('local.ollama_'))
       return invokeLocalOllama(name,roots,args,{env});
     if(name==='local.shell_execute')
@@ -158,5 +166,5 @@ export async function createLocalFiles(folders,{env=process.env}={}) {
       bad('Local file operation failed');
     }
   };
-  return Object.freeze({ roots: Object.freeze([...roots]), invoke,ollamaConfigured });
+  return Object.freeze({ roots: Object.freeze([...roots]), invoke,ollamaConfigured,browserConfigured });
 }
