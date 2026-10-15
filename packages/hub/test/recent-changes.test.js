@@ -68,6 +68,7 @@ it('owner history never needs caller identity and preserves real pending/uncerta
  expect(db.query.mock.calls[0][1][6]).toBeNull();
 });
 it('optional provider history requires one exact advertised read-only capability; no broad fallback',async()=>{
+ const fixedGrantId=randomUUID();
  const transport={
    history:vi.fn(async()=>({changes:[],count:0,next:null})),
    list:vi.fn(async()=>[{name:'stripe',prefix:'stripe',areas:['billing']}]),
