@@ -1,3 +1,25 @@
+## L-3 opt-in headless local browser — source implementation
+
+The local-only CLI now supports read-only Playwright Chromium status,
+allowlisted navigation, bounded links and screenshots. Both
+`rtool mcp --local <root>` and an explicit exact origin allowlist are
+required, plus locally installed Playwright+Chromium. Missing runtime or
+invalid origin config disables browser tools only and leaves Git/files/Ollama
+unchanged. Per-request fresh contexts block service workers, disallowed
+cross-origin requests, redirects, WebSockets, downloads and popups.
+Screenshots are private bounded create-only PNG files under approved roots,
+only with explicit confirmation; replies disclose path and byte count, not
+image bytes. Source mocks and real filesystem tests cover failure closure,
+network interception and no-overwrite. Hosted tools, provider passes,
+remote cloud/browser and L-4 guided settings controls remain unchanged.
+
+Source full CI and review required before merge. Owner-PC Playwright
+installation, actual Chromium browsing/network interception, real kernel
+confinement and L-4 owner-visible approvals remain OPEN external evidence.
+The host allowlist is not a kernel firewall or anti-DNS-rebinding guarantee.
+No automatic binary install, production activation, cloud purchase or
+autonomous spending. Concurrent independent documentation PR #208 preserved.
+
 ## L-2 local Ollama — source implementation pending exact-head CI
 
 Local `rtool mcp --local` conditionally exposes a six-tool Ollama capability
