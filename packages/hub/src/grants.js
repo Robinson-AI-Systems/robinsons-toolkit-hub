@@ -1,3 +1,4 @@
+import {completeActiveGrantActivation,replacementScopeAllowed} from './grant-lifecycle.js';
 import {effectiveServiceAreas} from './service-area-policy.js';
 import {inspectScopedRtcIdentity} from './pinned-identity.js';
 import {allowedByHubPass} from './server-selection.js';
@@ -55,7 +56,19 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
     `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes,
         to_jsonb(s)->'allowed_servers' AS allowed_servers
        FROM hub_oauth_sessions s WHERE id=$1 AND owner_id=$2
-       AND revoked_at IS NULL AND access_expires_at>now()
+       AND revoked_at IS NULL
+       AND (s.access_expires_at>now() OR EXISTS (
+         SELECT 1 FROM hub_oauth_sessions current
+         WHERE current.family_id=s.family_id AND current.owner_id=s.owner_id
+           AND current.client_id=s.client_id AND current.profile=s.profile
+           AND current.mode=s.mode AND current.areas=s.areas
+           AND (to_jsonb(current)->'allowed_servers') IS NOT DISTINCT FROM
+               (to_jsonb(s)->'allowed_servers')
+           AND (to_jsonb(current)->'service_area_policy') IS NOT DISTINCT FROM
+               (to_jsonb(s)->'service_area_policy')
+           AND current.revoked_at IS NULL
+           AND current.access_expires_at>now() AND current.refresh_expires_at>now()
+       ))
        AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
          WHERE compromised.family_id=s.family_id AND compromised.revoked_at IS NOT NULL)`;
   const {rows}=await db.query(sql,[callerId,ownerId]);
@@ -76,10 +89,25 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
     throw new TypeError('Invalid separately scoped TEST grant');
   const secret=key(settings);
   await checkCaller(db,{ownerId,callerKind,callerId,serverName});
-  const host=await db.query(`SELECT state FROM hub_servers WHERE name=$1 AND owner_id=$2`,
-    [serverName,ownerId]);
-  if(host.rows.length!==1||host.rows[0].state!=='pending')
-    throw new Error('Only owned pending services can stage grants');
+  const host=await db.query(`SELECT state FROM hub_servers
+    WHERE name=$1 AND owner_id=$2`,[serverName,ownerId]);
+  if(host.rows.length!==1||!['pending','active'].includes(host.rows[0].state))
+    throw new Error('Only owned pending or active RTC services can stage grants');
+  if(host.rows[0].state==='active') {
+    // An existing caller may renew only to the same or narrower effective
+    // provider areas. Another caller can independently receive its own
+    // separately issued TEST/read_only pass on an already active service.
+    const {rows}=await db.query(`SELECT areas,
+      to_jsonb(hub_server_grants)->'area_ceiling' AS area_ceiling
+      FROM hub_server_grants WHERE owner_id=$1 AND server_name=$2
+       AND caller_kind=$3 AND caller_id=$4
+       AND revoked_at IS NULL AND verified_at IS NOT NULL
+       AND expires_at>now() LIMIT 2`,
+      [ownerId,serverName,callerKind,callerId]);
+    if(rows.length>1||rows.length===1&&!replacementScopeAllowed(areas,
+       rows[0].area_ceiling??rows[0].areas))
+      throw new Error('Renewal cannot expand independently verified RTC areas');
+  }
   const row={id:randomUUID(),owner_id:ownerId,server_name:serverName,caller_kind:callerKind,
     caller_id:callerId,profile:'read_only',mode:'test',areas:[...areas]};
   const nonce=randomBytes(12);
@@ -95,7 +123,8 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
     callerKind==='oauth'?callerId:null,row.areas,ciphertext,nonce,cipher.getAuthTag(),ttlSeconds
   ]);
   return {id:row.id,server:serverName,callerKind,callerId,profile:'read_only',
-    areas:[...areas],mode:'test',state:'staged',callable:false};
+    areas:[...areas],mode:'test',state:'staged',callable:false,
+    activationRequired:true,serverAlreadyActive:host.rows[0].state==='active'};
 }
 /**
  * Verified owner can only remove effective areas of one exact grant.
@@ -315,6 +344,10 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
     throw new Error('Scoped RTC identity not verified');
   await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
     serverName:row.server_name});
+  if(row.state==='active')return completeActiveGrantActivation(db,
+    {ownerId,id,staged:row,recheckCaller:()=>checkCaller(db,{
+      ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
+      serverName:row.server_name})},{ownerVerified:true});
   const accepted=await db.query(`UPDATE hub_server_grants g
     SET verified_at=now() FROM hub_servers s
     WHERE g.id=$1 AND g.owner_id=$2 AND g.server_name=s.name
