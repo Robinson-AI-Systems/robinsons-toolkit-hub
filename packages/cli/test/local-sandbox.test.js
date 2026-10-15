@@ -5,7 +5,8 @@ import {tmpdir} from 'node:os';
 import {createLocalFiles} from '../src/local-files.js';
 import {createLocalMcp} from '../src/mcp.js';
 import {checkedSandboxRequest,buildBubblewrapCommand,
- executeConfirmedLocalSandbox,readLocalSandboxStatus}
+ executeConfirmedLocalSandbox,readLocalSandboxStatus,
+ checkedSandboxPlan,executeConfirmedSandboxPlan}
  from '../src/local-sandbox.js';
 const rpc=(mcp,name,args)=>mcp.dispatch({jsonrpc:'2.0',id:1,
  method:'tools/call',params:{name,arguments:args}});
@@ -112,4 +113,63 @@ it('status is truthful about unprobed kernel acceptance',async()=>fixture(async(
    findRuntime:async()=>'/usr/bin/bwrap'});
  expect(s.actualNamespaceAcceptance).toBe('not-probed');
  expect(s.runtimeInstalled).toBe(process.platform==='linux');
+}));
+
+it('validates ALL sandbox plan inputs before any command can run',()=>{
+ const valid=checkedSandboxPlan({confirm:true,steps:[
+  {argv:['node','--version'],timeoutMs:2000},
+  {argv:['npm','test'],workdir:'src',timeoutMs:5000}
+ ]});
+ expect(valid.steps).toHaveLength(2);
+ for(const x of [
+  {steps:[{argv:['node','--version']}]},
+  {confirm:true,steps:[]},
+  {confirm:true,steps:Array(4).fill({argv:['node','--version']})},
+  {confirm:true,steps:[{argv:['node','ok'],timeoutMs:19000},
+    {argv:['npm','test'],timeoutMs:4000}]},
+  {confirm:true,steps:[{argv:['sudo','whoami']}]},
+  {confirm:true,steps:[{argv:['node','ok'],unknown:true}]}
+ ])expect(()=>checkedSandboxPlan(x)).toThrow();
+});
+it('executes sequential confirmed steps, stops on failure, and exposes no unconfined fallback',async()=>fixture(async({root})=>{
+ if(process.platform!=='linux')return;
+ const calls=[],sequence=[0,3];
+ const run=async(_binary,args)=>{
+  calls.push(args);
+  const n=sequence.shift();
+  return {stdout:'test\n',stderr:'',exitCode:n};
+ };
+ const results=await executeConfirmedSandboxPlan([root],{
+  confirm:true,steps:[
+   {argv:['node','--version']},{argv:['npm','test']},
+   {argv:['git','status']}
+  ]},{findRuntime:async()=>'/usr/bin/bwrap',run});
+ expect(results).toMatchObject({completed:2,reason:'nonzero_exit',stoppedAt:2,
+  noRollback:true,networkDisabled:true});
+ expect(results.results.map(r=>r.command)).toEqual(['node','npm']);
+ expect(calls).toHaveLength(2);
+ for(const args of calls){
+  expect(args).toContain('--unshare-all');
+  expect(args).not.toContain('--share-net');
+ }
+ let touched=false;
+ await expect(executeConfirmedSandboxPlan([root],{
+  confirm:true,steps:[{argv:['node','--version']}]},{
+  findRuntime:async()=>null,run:async()=>{touched=true;return {};}
+ })).rejects.toThrow();
+ expect(touched).toBe(false);
+}));
+it('sandbox plan does not continue after a failed or indeterminate runtime',async()=>fixture(async({root})=>{
+ if(process.platform!=='linux')return;
+ let runs=0;
+ const result=await executeConfirmedSandboxPlan([root],{
+  confirm:true,steps:[
+   {argv:['npm','test']},{argv:['npm','run','build']}
+  ]},{
+  findRuntime:async()=>'/usr/bin/bwrap',
+  run:async()=>{runs++;throw new Error('sandbox denied');}
+ });
+ expect(runs).toBe(1);
+ expect(result).toMatchObject({completed:0,reason:'execution_refused_or_failed',
+  stoppedAt:1});
 }));

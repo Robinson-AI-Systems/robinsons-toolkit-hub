@@ -5,7 +5,8 @@ import { open, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
 import { inspectLocalGit } from './local-git.js';
-import {executeConfirmedLocalSandbox,readLocalSandboxStatus} from './local-sandbox.js';
+import {executeConfirmedLocalSandbox,readLocalSandboxStatus,
+  executeConfirmedSandboxPlan} from './local-sandbox.js';
 import {LOCAL_GIT_DETAIL_TOOLS,inspectLocalGitDetail} from './local-git-details.js';
 import {LOCAL_WORKSPACE_READ_TOOLS,readLocalFileBundle,
   readLocalWorkspaceTree} from './local-workspace-read.js';
@@ -78,6 +79,8 @@ export async function createLocalFiles(folders) {
   const invoke = async (name, args = {}) => {
     if(name==='local.shell_execute')
       return executeConfirmedLocalSandbox(roots,args);
+    if(name==='local.shell_plan')
+      return executeConfirmedSandboxPlan(roots,args);
     if(name==='local.shell_sandbox_status')
       return readLocalSandboxStatus(roots,args);
     if (name === 'local.file_create') return createConfirmedLocalFile(roots, args);

@@ -1,3 +1,10 @@
+## L-1 sandboxed sequential confirmed plans — source candidate
+
+The opt-in Linux bubblewrap-only command door also supports explicit
+confirmed plans of up to three bounded developer subprocesses, executed
+in order in fresh isolated namespaces, with early stop on failure and no
+implicit rollback. Source tests do not prove a real host namespace works.
+
 ## L-1 isolated opt-in local subprocess source — proposed
 
 A new confirmed, Linux-bubblewrap-gated `local.shell_execute` allows

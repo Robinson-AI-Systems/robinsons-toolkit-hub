@@ -40,6 +40,25 @@ export const LOCAL_SANDBOX_TOOLS=Object.freeze([
    idempotentHint:true,openWorldHint:false}
  }),
  Object.freeze({
+  name:'local.shell_plan',
+  description:'Run 1–3 explicitly confirmed developer commands sequentially in fresh Linux network-isolated namespaces. Stops on first failure; no rollback.',
+  inputSchema:{type:'object',additionalProperties:false,
+   properties:{
+    root:{type:'integer',minimum:0},
+    steps:{type:'array',minItems:1,maxItems:3,
+     items:{type:'object',additionalProperties:false,
+      properties:{
+       argv:{type:'array',minItems:1,maxItems:MAX_ARGS,
+        items:{type:'string',minLength:1,maxLength:MAX_ARG}},
+       workdir:{type:'string',maxLength:1024},
+       timeoutMs:{type:'integer',minimum:MIN_TIMEOUT,maximum:10000}
+      },required:['argv']}},
+    confirm:{type:'boolean',const:true}
+   },required:['steps','confirm']},
+  annotations:{readOnlyHint:false,destructiveHint:true,
+   idempotentHint:false,openWorldHint:false}
+ }),
+ Object.freeze({
   name:'local.shell_execute',
   description:'Explicitly confirmed sandboxed developer subprocess. Linux bubblewrap mandatory, no host shell fallback, no network, writable approved root only; 1–20 s timeout and bounded output.',
   inputSchema:{type:'object',additionalProperties:false,
@@ -248,4 +267,82 @@ export async function executeConfirmedLocalSandbox(roots,args,
   root:request.rootIndex,command:request.argv[0],
   exitCode:actual.exitCode,stdout:output,stderr:errors,
   timeoutMs:request.timeoutMs,contentReturned:true};
+}
+
+/**
+ * Build the whole plan and validate ALL steps before the first execution.
+ * Each step runs in its own fresh bwrap namespace, preventing state leaks
+ * between processes other than intentional worktree modifications. A failed
+ * command stops execution; previous worktree effects are NOT rolled back.
+ * Plans are never implicitly confirmed by the presence of a local root.
+ */
+export function checkedSandboxPlan(args) {
+ if(!args||typeof args!=='object'||Array.isArray(args)||
+   Object.keys(args).some(k=>!['root','steps','confirm'].includes(k))||
+   args.confirm!==true||!Array.isArray(args.steps)||
+   args.steps.length<1||args.steps.length>3)err();
+ const index=args.root??0;
+ if(!Number.isInteger(index)||index<0)err();
+ const steps=args.steps.map(step=>{
+   if(!step||typeof step!=='object'||Array.isArray(step)||
+     Object.keys(step).some(k=>!['argv','workdir','timeoutMs'].includes(k)))err();
+   const request=checkedSandboxRequest({
+     root:index,argv:step.argv,workdir:step.workdir,
+     timeoutMs:step.timeoutMs??5000,confirm:true
+   });
+   checkedRelative(request.workdir,{allowEmpty:true});
+   return request;
+ });
+ if(steps.reduce((total,step)=>total+step.timeoutMs,0)>MAX_TIMEOUT)
+   err('Sandbox plan exceeds 20-second total timeout');
+ return {root:index,steps};
+}
+export async function executeConfirmedSandboxPlan(roots,args,deps={}) {
+ const plan=checkedSandboxPlan(args);
+ if(typeof roots?.[plan.root]!=='string')err();
+ // Check runtime and root once even before step one; each operation also
+ // independently checks its exact current source root/workdir.
+ const findRuntime=deps.findRuntime??findBubblewrap;
+ if(process.platform!=='linux'||!await findRuntime())
+   err('Linux sandbox unavailable; no plan commands executed');
+ const started=Date.now();
+ const results=[];
+ let totalOutput=0;
+ for(let i=0;i<plan.steps.length;i++) {
+   const elapsed=Date.now()-started;
+   const remaining=MAX_TIMEOUT-elapsed;
+   if(remaining<MIN_TIMEOUT)
+     return {sandboxed:true,completed:results.length,
+       stoppedAt:i+1,reason:'total_timeout',results,
+       noRollback:true,networkDisabled:true};
+   const step=plan.steps[i];
+   let result;
+   try {
+     result=await executeConfirmedLocalSandbox(roots,{
+       root:plan.root,argv:step.argv,workdir:step.workdir,
+       timeoutMs:Math.min(remaining,step.timeoutMs),confirm:true
+     },deps);
+   } catch {
+     // Do not execute another command after uncertainty about termination
+     // or failed namespace setup. The current step may have changed files.
+     return {sandboxed:true,completed:results.length,
+       stoppedAt:i+1,reason:'execution_refused_or_failed',
+       results,noRollback:true,networkDisabled:true};
+   }
+   totalOutput+=Buffer.byteLength(result.stdout,'utf8')+
+     Buffer.byteLength(result.stderr,'utf8');
+   if(totalOutput>MAX_STDOUT+MAX_STDERR)
+     return {sandboxed:true,completed:results.length,stoppedAt:i+1,
+       reason:'output_budget_exhausted',results,
+       noRollback:true,networkDisabled:true};
+   results.push({step:i+1,command:step.argv[0],exitCode:result.exitCode,
+     stdout:result.stdout,stderr:result.stderr});
+   if(result.exitCode!==0)
+     return {sandboxed:true,completed:results.length,
+       stoppedAt:i+1,reason:'nonzero_exit',results,
+       noRollback:true,networkDisabled:true};
+ }
+ return {sandboxed:true,completed:results.length,
+   stoppedAt:null,reason:'success',results,
+   noRollback:true,networkDisabled:true};
 }
