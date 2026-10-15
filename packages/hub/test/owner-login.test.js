@@ -101,3 +101,28 @@ it('owner OAuth consent binds initially selected per-service profile ceilings',a
  const html=htmlForm('/api/oauth/authorize',request);
  expect(html).toContain('name="profiles"');
 });
+
+it('consent parses exact initial service areas before owner authentication and binds PKCE issue',async()=>{
+ const db={query:vi.fn(async sql=>({rows:sql.includes('hub_request_limits')?
+  [{hits:1}]:[{owner_id:'single-owner'}]}))};
+ const issue=vi.fn(async()=> 'synthetic-oauth-code');
+ const req={method:'POST',socket:{remoteAddress:'127.0.0.1'}};
+ const input={...request,password:raw,servers:'stripe,workspace',
+  service_areas:'stripe:billing|reports,workspace:drive'};
+ const accepted=await authorizeOwnerConnection(db,req,input,{env,issue});
+ expect(accepted.status).toBe(303);
+ expect(issue).toHaveBeenCalledWith(db,expect.objectContaining({
+  serverNames:['stripe','workspace'],serviceAreas:{
+   stripe:['billing','reports'],workspace:['drive']}}),
+  {pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
+ issue.mockClear();
+ for(const malformed of ['stripe:billing|billing','unknown:billing',
+  'stripe:','stripe:billing,stripe:reports','stripe:billing|BAD',
+  'stripe:billing:reports']){
+  const denied=await authorizeOwnerConnection(db,req,{...input,
+    service_areas:malformed},{env,issue});
+  expect(denied.status).toBe(400);
+ }
+ expect(issue).not.toHaveBeenCalled();
+ expect(htmlForm('/api/oauth/authorize',request)).toContain('name="service_areas"');
+});

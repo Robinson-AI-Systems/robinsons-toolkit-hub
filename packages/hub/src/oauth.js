@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { digestPass } from './identity.js';
 import { serverSelection } from './server-selection.js';
 import {checkedInitialServiceProfiles,ownerServiceProfiles} from './service-profile-policy.js';
-import {sanitizedServicePolicy} from './service-area-policy.js';
+import {sanitizedServicePolicy,checkedInitialServiceAreas} from './service-area-policy.js';
 const codePattern = /^[A-Za-z0-9_-]{43}$/;
 const allowedProfile = new Set(['read_only','everyday','full']);
 function token() { return randomBytes(32).toString('base64url'); }
@@ -41,6 +41,7 @@ export async function issueOAuthCode(db, input, { pepper, ownerVerified=false } 
   if (!found.rows.length) throw new Error('Client redirect not owner-authorized');
   const selected = serverSelection(input.serverNames);
   const policies=checkedInitialServiceProfiles(input.serviceProfiles,selected);
+  const areaPolicy=checkedInitialServiceAreas(input.serviceAreas,selected);
   if (selected) {
     const owned = await db.query("SELECT name FROM hub_servers WHERE owner_id=$1 AND name=ANY($2::text[])",
       [input.ownerId, selected]);
@@ -49,7 +50,18 @@ export async function issueOAuthCode(db, input, { pepper, ownerVerified=false } 
       throw new Error('Selected RTC server must be registered to this owner');
   }
   const code = token();
-  if(selected&&policies){
+  if(selected&&areaPolicy){
+    // Missing OAuth-code migration 018 must refuse restricted issuance.
+    const extra=policies?',service_profile_policy':'';
+    await db.query(`INSERT INTO hub_oauth_codes
+      (code_digest,client_id,owner_id,redirect_uri,challenge,profile,
+       areas,mode,expires_at,allowed_servers,service_area_policy${extra})
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,
+       now()+interval '5 minutes',$9,$10${policies?',$11':''})`,
+      [digestPass(code,pepper),input.clientId,input.ownerId,input.redirectUri,
+       input.challenge,input.profile,[...new Set(input.areas)],input.mode,
+       selected,areaPolicy,...(policies?[policies]:[])]);
+  }else if(selected&&policies){
     // Consent persists exact profile ceilings in its single-use code.
     // Absent migration 017 denies consent rather than minting a wider token.
     await db.query(`INSERT INTO hub_oauth_codes
@@ -114,6 +126,7 @@ export async function exchangeOAuthCode(db, input, { pepper }={}) {
     AND consumed_at IS NULL AND expires_at>now()
     RETURNING owner_id,client_id,profile,areas,mode,challenge,
       to_jsonb(hub_oauth_codes)->'allowed_servers' AS allowed_servers,
+      to_jsonb(hub_oauth_codes)->'service_area_policy' AS service_area_policy,
       to_jsonb(hub_oauth_codes)->'service_profile_policy' AS service_profile_policy`,
   [digestPass(input.code,pepper),input.clientId,input.redirectUri]);
   if (used.rows.length !== 1 || used.rows[0].challenge !== challenge) return null;

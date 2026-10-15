@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { serverSelection } from './server-selection.js';
 import {checkedInitialServiceProfiles,ownerServiceProfiles} from './service-profile-policy.js';
-import {sanitizedServicePolicy} from './service-area-policy.js';
+import {sanitizedServicePolicy,checkedInitialServiceAreas} from './service-area-policy.js';
 
 // The Hub authenticates its own callers. Upstream RTC passes live in separately
 // encrypted, caller-scoped grants added by H-2; never use this pass upstream.
@@ -45,6 +45,7 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
   // programmatic issuance retains the previous exact-caller grant gate.
   const selected = serverSelection(input.serverNames);
   const policies=checkedInitialServiceProfiles(input.serviceProfiles,selected);
+  const areaPolicy=checkedInitialServiceAreas(input.serviceAreas,selected);
   if (selected) {
     const owned = await db.query(`SELECT name FROM hub_servers
       WHERE owner_id=$1 AND name=ANY($2::text[])`, [input.ownerId, selected]);
@@ -54,7 +55,18 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
   }
   const pass = 'rtc_pass_' + randomBytes(32).toString('base64url');
   const id = randomUUID();
-  if(selected&&policies){
+  if(selected&&areaPolicy){
+    // Missing 015 refuses initial area restrictions rather than minting wider access.
+    const extra=policies?',service_profile_policy':'';
+    await db.query(`INSERT INTO hub_callers
+      (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,
+       expires_at,allowed_servers,service_area_policy${extra})
+      VALUES($1,$2,$3,$4,$5,$6,FALSE,
+       now()+$7::INTEGER*interval '1 second',$8,$9${policies?',$10':''})`,
+      [id,input.ownerId,digestPass(pass,pepper),input.profile,
+       [...new Set(input.areas)],input.mode,input.ttlSeconds,selected,
+       areaPolicy,...(policies?[policies]:[])]);
+  }else if(selected&&policies){
     // Missing profile SQL 017 refuses the entire selected issuance.
     await db.query(`INSERT INTO hub_callers
       (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,

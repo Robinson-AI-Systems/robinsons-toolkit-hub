@@ -2,7 +2,7 @@ import { issueHubPass, revokeHubPass, narrowHubPassServers,
   listHubPassScopes } from './identity.js';
 import {parseInitialServiceProfiles,narrowPassServiceProfile,listOwnerProfileAudit} from './service-profile-policy.js';
 import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from './owner-service-scope.js';
-import {narrowHubPassServiceAreas,parseServiceAreas} from './service-area-policy.js';
+import {narrowHubPassServiceAreas,parseServiceAreas,parseInitialServiceAreas} from './service-area-policy.js';
 import { parseOwnerServerSelection } from './server-selection.js';
 import { escapeHtml, formFields, htmlHeaders, publicHubOrigin,
   verifyOwnerLogin } from './owner-login.js';
@@ -22,7 +22,9 @@ function passForm() {
     '<label>Authorized RTC servers (registered names, comma separated) ' +
     '<input name="servers" maxlength="1300" required></label>' +
     '<label>Optional initial service profiles, e.g. stripe=read_only,neon=disabled ' +
-    '<input name="profiles" maxlength="1300"></label>' +
+    '<input name="profiles" maxlength="1300"></label>'+
+    '<label>Optional initial RTC areas (stripe:billing|reports,workspace:drive) '+
+    '<input name="service_areas" maxlength="2048"></label>' +
     '<p>Any chosen disabled service is unavailable from first issuance. ' +
     'All permitted services remain limited by independent read_only RTC passes.</p>' +
     '<p>This pass cannot discover or call other servers, even if additional ' +
@@ -162,11 +164,13 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
     parseOwnerServerSelection(fields.servers) : null;
   if (['issue','narrow'].includes(fields.action) && !selected)
     return res.status(400).send('Select 1–20 registered RTC servers');
-  let initialProfiles=null;
+  let initialProfiles=null,initialAreas=null;
   try {
-    if(fields.action==='issue')
+    if(fields.action==='issue'){
       initialProfiles=parseInitialServiceProfiles(fields.profiles,selected);
-  }catch{return res.status(400).send('Invalid initial service profiles');}
+      initialAreas=parseInitialServiceAreas(fields.service_areas,selected);
+    }
+  }catch{return res.status(400).send('Invalid initial RTC service restrictions');}
   const areas=fields.action==='narrow_areas'?parseServiceAreas(fields.areas):null;
   if(fields.action==='narrow_profile'&&
     (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||
@@ -233,6 +237,7 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
         areas: ['gateway'],
         serverNames: selected,
         ...(initialProfiles?{serviceProfiles:initialProfiles}:{}),
+        ...(initialAreas?{serviceAreas:initialAreas}:{}),
         allowWrites: false,
         ttlSeconds: 86400
       }, { ownerVerified: true, pepper: settings.pepper });

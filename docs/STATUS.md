@@ -1,3 +1,13 @@
+## H-4 owner-selected initial service-area restrictions — source candidate
+
+Initial pass and OAuth PKCE consent accept per-service area ceilings,
+persisting across OAuth authorization-code exchange and every refresh.
+Migration 018 adds the one-time OAuth-code scope column. Previously
+installed 015 retains the caller/session policies. Missing schema must
+fail closed. Provider credentials, independent read_only service grants,
+spending and LIVE remain unchanged; real deployed provider/direct/relay/
+Sandbox TEST acceptance remains PENDING separately from synthetic CI.
+
 ## L-1 namespace diagnostics and confirmed plan log capture — source candidate
 
 The optional local developer sandbox can explicitly probe a read-only Bubblewrap
