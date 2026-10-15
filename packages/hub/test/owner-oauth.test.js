@@ -121,3 +121,33 @@ it('OAuth family profile ceilings are owner verified and show sanitized history'
  expect(res.html).not.toContain('<img>');
  expect(profileAudit).toHaveBeenCalledWith({},'owner-a',{ownerVerified:true});
 });
+
+it('OAuth multi-service preview and atomic family narrowing use fresh independent owner approval',async()=>{
+ const previewAreaPlan=vi.fn(async()=>({canApply:false,scopes:[{
+   server:'workspace',before:['reports'],after:['billing'],available:false
+ }]}));
+ const executeAreaPlan=vi.fn(async()=>({updated:true,services:['workspace'],atomic:true}));
+ const params='&id='+id+'&password=synthetic-owner-passphrase'+
+  '&area_plan=workspace%3Areports';
+ const invalid=await send('POST','action=narrow_area_plan'+params.replace(
+  'workspace%3Areports','workspace%3Areports%2Cworkspace%3Abilling'),{executeAreaPlan});
+ expect(invalid.res.statusCode).toBe(400);
+ expect(invalid.verify).not.toHaveBeenCalled();
+ expect((await send('POST','action=narrow_area_plan'+params.replace(
+  'synthetic-owner-passphrase','wrong'),{executeAreaPlan})).res.statusCode).toBe(401);
+ expect(executeAreaPlan).not.toHaveBeenCalled();
+ const preview=(await send('POST','action=preview_area_plan'+params,{previewAreaPlan})).res;
+ expect(preview.statusCode).toBe(200);
+ expect(preview.html).toContain('Eligible: false');
+ expect(previewAreaPlan).toHaveBeenCalledWith({},{
+  ownerId:'owner-a',callerKind:'oauth',id,plan:{workspace:['reports']}
+ },{ownerVerified:true});
+ const committed=(await send('POST','action=narrow_area_plan'+params,{executeAreaPlan})).res;
+ expect(committed.statusCode).toBe(200);
+ expect(executeAreaPlan).toHaveBeenCalledWith({},{
+  ownerId:'owner-a',callerKind:'oauth',id,plan:{workspace:['reports']}
+ },{ownerVerified:true});
+ expect((await send('POST','action=narrow_area_plan'+params,{
+  executeAreaPlan:async()=>({updated:false})})).res.statusCode).toBe(404);
+ expect((await send('GET')).res.html).toContain('name="area_plan"');
+});
