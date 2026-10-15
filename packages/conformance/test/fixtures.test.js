@@ -33,10 +33,17 @@ describe('server-owned fixture selectors retain RTC assertions',()=>{
   });
 });
 describe('complete bounded numbered result recovery',()=>{
-  const initial={data:{ok:true,handle:'owned-result'}};
+  const initial={status:200,data:{ok:true,handle:'owned-result'}};
   const chunks=['α'.repeat(2000),'B'.repeat(2000)];
   const bytes=Buffer.byteLength(chunks.join(''));
   const page=n=>({status:200,data:{ok:true,result:{page:n,pages:2,bytes,content:chunks[n-1],next:n===1?2:null}}});
+  it('retains the original successful initial-envelope assertion before reading a handle',async()=>{
+    for(const invalid of [{...initial,status:500},{status:200,data:{ok:false,handle:'owned-result'}}]){
+      let calls=0;
+      await expect(recoverResult(async()=>{calls++;return page(1);},'http://localhost','in-memory',invalid)).rejects.toThrow(/§7/);
+      expect(calls).toBe(0);
+    }
+  });
   it('recovers UTF-8 bytes and follows the exact owned handle on every page',async()=>{
     const paths=[];
     const result=await recoverResult(async(_url,_pass,path)=>{paths.push(path);return page(paths.length);},'http://localhost','in-memory',initial);

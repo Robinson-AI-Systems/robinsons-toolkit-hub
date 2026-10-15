@@ -26,7 +26,7 @@ export function fixtureOptions(input) {
 
 export async function recoverResult(call, url, pass, initial) {
   const handle = initial.data?.handle;
-  if (typeof handle !== 'string' || !handle || JSON.stringify(initial.data).length > 8192)
+  if (initial.status !== 200 || initial.data?.ok !== true || typeof handle !== 'string' || !handle || JSON.stringify(initial.data).length > 8192)
     throw new Error('§7: >8 KB result must return a bounded handle envelope');
   let path = '/api/results/' + encodeURIComponent(handle), content = '', page = 1, bytes;
   for (let count = 0; count < 256; count++) {
