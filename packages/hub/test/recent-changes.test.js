@@ -73,7 +73,7 @@ it('optional provider history requires one exact advertised read-only capability
    history:vi.fn(async()=>({changes:[],count:0,next:null})),
    list:vi.fn(async()=>[{name:'stripe',prefix:'stripe',areas:['billing']}]),
    resolve:vi.fn(async()=>({
-     grantId:randomUUID(),server:'stripe',prefix:'stripe',areas:['billing'],
+     grantId:fixedGrantId,server:'stripe',prefix:'stripe',areas:['billing'],
      profile:'read_only',mode:'test',origin:'https://stripe.example.com'})),
    search:vi.fn(async()=>({tools:[{
      name:'stripe_recent_changes',server:'stripe',area:'billing',
