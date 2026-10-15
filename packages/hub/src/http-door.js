@@ -70,7 +70,8 @@ export async function mcpFederatedReply(request,actor,db,settings,deps={}) {
  }
 }
 
-export async function handleMcp(req,res,{withDb,authorize}) {
+export async function handleMcp(req,res,{withDb,authorize,
+  federate=mcpFederatedReply}) {
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
   if (req.method!=='POST') {
@@ -103,7 +104,7 @@ export async function handleMcp(req,res,{withDb,authorize}) {
         !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway') ||
         state.actor.allowWrites===true)
         return res.status(403).json({error:'outside_scope'});
-      const reply=await mcpFederatedReply(body,state.actor,db,settings);
+      const reply=await federate(body,state.actor,db,settings);
       if (!reply) return res.status(202).end();
       return res.status(200).json(reply);
     });
