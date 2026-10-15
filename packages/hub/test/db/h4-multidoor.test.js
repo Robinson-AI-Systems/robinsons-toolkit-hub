@@ -47,7 +47,7 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{if(db){if(schema)await db.query('DROP SCHEMA "'+schema+'" CASCADE');await db.end();}});
 async function stage(actor,kind,server){
- const pass='synthetic_service_'+server+'_'+randomBytes(32).toString('base64url');
+ const pass='rtc_pass_'+randomBytes(32).toString('base64url');
  const staged=await stageCallerGrant(db,{ownerId:owner,serverName:server,
   callerKind:kind,callerId:actor.id,areas:['billing','reports'],pass,
   ttlSeconds:3600},{ownerVerified:true,settings});
@@ -181,5 +181,5 @@ it('native MCP OAuth is independently scoped and live refresh/restrictions defea
   {name:'workspace_read_reports',args:{}},{name:'stripe_read_billing',args:{}}]}),deps);
  expect(mixed.body.result.structuredContent.results.map(x=>x.ok))
   .toEqual([false,true]);
- expect(JSON.stringify(mixed.body)).not.toContain('synthetic_service_');
+ expect(JSON.stringify(mixed.body)).not.toContain('rtc_pass_');
 });
