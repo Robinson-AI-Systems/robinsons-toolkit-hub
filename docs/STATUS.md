@@ -1847,3 +1847,12 @@ decisions, work index with validator, first card K-1.
 ## Blocked
 
 Nothing. Owner inputs open: IN-02 … IN-05 (`OWNER-INPUTS.md`).
+
+### October 15 Workspace P8-5 dependency — conformance fixture inputs
+
+Consumer-requested K-2 completion: explicit bounded provider fixture arguments,
+complete authorized catalog traversal and strict numbered UTF-8 result recovery.
+The runner's existing assertions, negative reference cases and secret boundaries
+remain. New fixture/invalid-input/paging tests prove selectors cannot waive checks.
+This is a dependency of the same unfinished Google Workspace P8-4/P8-5/P8-7
+workload, not a new Hub bundle or external D-4 acceptance. No deployment/spend.
