@@ -1,3 +1,24 @@
+## L-2 local Ollama — source implementation pending exact-head CI
+
+Local `rtool mcp --local` conditionally exposes a six-tool Ollama capability
+only if the local CLI environment supplies a valid HTTP loopback
+`OLLAMA_BASE_URL`. Absent/invalid config disables Ollama only; other local
+file/Git utilities continue working. Fixed model list, running models,
+version, generate, chat and embedding calls use an already-downloaded
+digest-identified local model, no automatic cloud/download/provider fallback,
+no credentials, no proxy routes, no externally supplied endpoint, no
+unbounded/streaming response. Expensive output must be complete within
+bounded inline limits or saved via existing confirmed create-only private
+file handler under the selected approved local root.
+
+Real ephemeral loopback HTTP and opted-in local MCP tests exercise requests,
+failures, model filtering, confirmed captures and unchanged other local tools.
+Source CI/review/merge gates remain necessary. Actual owner's PC/Ollama model
+availability, local resource/GPU behavior and L-1 OS Bubblewrap isolation
+must be tested independently; neither is asserted by synthetic tests.
+No Vercel-hosted Ollama, provider writes, autonomous spending or production
+activation. Concurrent independent documentation PR #208 preserved.
+
 ## H-5 source implementation — PR #207 (external acceptance OPEN)
 
 The new owner/agent history reads Hub's existing mandatory H-3 RTC audit
