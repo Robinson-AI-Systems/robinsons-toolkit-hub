@@ -116,3 +116,25 @@ it('rejects narrowing without an exact ID, real selected subset or owner review'
  ])expect((await send('POST',params,{narrow})).statusCode).toBe(400);
  expect(narrow).not.toHaveBeenCalled();
 });
+
+it('profile actions authenticate the owner and reject unsupported upgrades',async()=>{
+ const narrowProfile=vi.fn(async()=>({updated:true,profile:'disabled'}));
+ const body='action=narrow_profile&id='+id+'&server=stripe&profile=disabled&password=synthetic-owner-auth';
+ expect((await send('POST',body.replace('synthetic-owner-auth','wrong'),
+  {narrowProfile})).statusCode).toBe(401);
+ for(const invalid of [body.replace('profile=disabled','profile=full'),
+  body.replace('server=stripe','server=..'),body.replace(id,'invalid')])
+  expect((await send('POST',invalid,{narrowProfile})).statusCode).toBe(400);
+ expect(narrowProfile).not.toHaveBeenCalled();
+ expect((await send('POST',body,{narrowProfile})).statusCode).toBe(200);
+ expect(narrowProfile).toHaveBeenCalledWith({},{
+  ownerId:'owner-one',id,serverName:'stripe',profile:'disabled'
+ },{ownerVerified:true});
+ const audit=vi.fn(async()=>[{at:'today',kind:'pass',callerId:id,
+  server:'<script>',profile:'disabled',purgedHandles:3}]);
+ const result=await send('POST','action=profile_audit&password=synthetic-owner-auth',
+  {profileAudit:audit});
+ expect(result.statusCode).toBe(200);
+ expect(result.html).not.toContain('<script>');
+ expect(audit).toHaveBeenCalledWith({},'owner-one',{ownerVerified:true});
+});
