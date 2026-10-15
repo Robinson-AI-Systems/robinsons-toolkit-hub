@@ -153,6 +153,36 @@ Execute cleared checks promptly, record sanitized read/write/denial/readback/cle
 failed/uncertain fixture recovery tasks. New changes, rollback, authorization or environment
 changes reopen affected proof. NEVER copy credentials/private fixture IDs into the queue.
 
+## Anti-stall recovery: a partial source commit is never a stopping condition
+
+A pushed branch, a successful helper, a written implementation card, or a
+single green focused check is a recoverable checkpoint, **not** a completed
+subsection and not the end of the requested session. When work pauses after a
+partial seam (e.g. a change-history SQL reader without its MCP, HTTPS, owner
+workflow and integration tests), the **very next action** is to reopen that
+branch, compare it with current main and open PRs, and finish the same
+predefined subsection before starting another. Never recreate the partial
+work on a second branch simply because the chat resumed.
+
+Maintain on the active card one short, current **execution pointer** with
+branch/head, remaining actual acceptance criteria, check/PR state and next
+command/API action. Update it when pausing mid-feature or when a gate fails;
+remove or resolve it after the complete source outcome is checked and merged.
+If no PR exists, open one only after enough connected source, tests and
+failure/recovery coverage exist to make it reviewable; do not end the
+session at create-file, create-branch or create-PR. For a red CI run,
+inspect actual failed job logs, fix the root cause once, then recheck the
+exact head without weakening gates or repeating unrelated passing work.
+
+Before handoff, reconcile all branches and PRs created by this session.
+For each unfinished one, either complete/review/merge under the normal gates,
+or leave a precise execution pointer and reason grounded in actual external
+access, authorization or limits. Return to the remaining approved work if
+the preferred path is blocked; don't issue a generic continuation prompt
+or report an internal technical step as a finished bundle. The user prompt's
+bundle workload remains the target, and all original financial, provider,
+security, production and release limits continue unchanged.
+
 ## 5. Checkpoint and finish
 
 Keep a short progress note on interrupted branches: head, done/proof, one next action,
