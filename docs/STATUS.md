@@ -1,3 +1,60 @@
+## October 15 — L-3 guarded local headless browser source, PR #210 verified
+
+Reconciled previously unfinished L-3 against main after explicit owner direction
+to finish and merge. The optional `rtool mcp --local` Playwright Chromium
+door requires a valid owner-selected exact HTTPS or loopback origin allowlist
+and locally installed Playwright. Four compact tools inspect status, visit,
+list approved links or save a confirmed create-only owner-root PNG. Fresh
+browser contexts, blocked service workers/WebSockets, download/pop-up refusal,
+origin-guarded GET/HEAD-only routes, output bounds and cleanup are verified
+with injected browser behaviors and real filesystem tests. All other newer
+main work and its acceptance records preserved.
+
+L-3 PR #210 first CI found and reproduced one wildcard-origin parser defect
+(WHATWG URL accepted '*' as a hostname label); corrected fail-closed validation
+without weakening the test. Exact-head source CI passed at
+`e5eef06ef07f6aaf5d934e4dd7fc12af2b1577eb`: `ci`,
+`release-policy`, check/lint/index/secrets, unit (801 tests), disposable
+PostgreSQL 17, and both pinned Stripe owner HTTP/SQL compatibility jobs.
+No open review threads or submitted reviews as inspected; final publication
+commit must pass its own gates before merge. On successful PR #210 merge,
+L-3 source is MERGED; no live-owner acceptance is inferred.
+
+Current verified release separation: Vercel production READY
+`8169af07afa2df4fe9cacb195b5382f9c04fc7e0` from `live`
+(independently checked Vercel production deployment); source main
+`a66e814554c04ded17dd1ea234a6a4e58bc4338a` before #210.
+The custom Hub TEST cloud adapter connected and reported `mode:test`,
+`allowWrites:false`, RTC 0, `upstreamEnabled:false`, zero verified RTC
+grants/targets. These adapter metadata reads do NOT prove genuine RTC 1
+direct, encrypted private relay, Sandbox or revocation acceptance. All **20 of 20** recorded release-acceptance minimum source revisions
+were explicitly compared against verified READY/live
+`8169af07afa2df4fe9cacb195b5382f9c04fc7e0` on October 15 and
+were **confirmed in its deployed ancestry** (including all H-3 and H-4
+minimum revisions). The `main`/`live` gap **cannot be used to defer**
+any of those tests. All 20 rows remain PENDING only because their
+specific independent owner/provider TEST grants, verified RTC 1 upstream
+targets, protected runner evidence, installed hosted migration proof or
+owner-confirmed fixture steps have not been furnished/performed per each
+row's `gates` and `procedure`. Current custom Hub TEST cloud
+connection proves only RTC 0 foundation/metadata, with zero upstream
+targets; it is not RTC 1 or direct/relay/Sandbox read acceptance.
+
+Next: in an owner-approved protected non-production context, verify
+service deployment identity and issue the actual scoped TEST grants,
+stage/verify genuine Hub RTC 1 targets and applicable hosted migrations,
+then execute each queue row's read/denial/revocation/readback/cleanup
+procedure. Do all independent routes separately. Check public fleet
+GET /api/contract from an authorized runner: attempted web-based
+observation on October 15 could not access all five protected inventory
+origins, so it supplies **no** status/pass evidence. Keep all rows OPEN;
+do not require newer unreleased L-2/L-3 code for their already-deployed
+H-3/H-4 behavior.
+
+Actual owner-machine
+Chromium execution remains OPEN external acceptance, distinct from source proof.
+No hosted browser, production activation, provider money-out or spending.
+
 ### October 15 — owner-requested bundle guidance consistency review
 
 Reviewed current main 8169af07afa2df4fe9cacb195b5382f9c04fc7e0. Aligned existing governing instructions, session
