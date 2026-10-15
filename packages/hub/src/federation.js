@@ -1,4 +1,5 @@
 import {runBroker} from './broker.js';
+import {listHubRecentChanges} from './recent-changes.js';
 import {listEligibleRtcTargets,resolveActiveCallerGrant} from './grants.js';
 import {searchPinnedRtcTools,describePinnedRtcTool} from './pinned-tools.js';
 import {pinnedRtcReadCall} from './pinned-read-call.js';
@@ -54,6 +55,50 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
   storeResult:storeRtcResult,readResult:readRtcResult,
   cache:scopedCatalogueCache,schemaCache:scopedSchemaCache,...deps};
+ if(name==='hub_recent_changes') {
+  if(Object.keys(args).some(k=>!['server','limit','cursor','includeUpstream'].includes(k))||
+    (args.server!==undefined&&!serverPattern.test(args.server))||
+    (args.limit!==undefined&&(!Number.isInteger(args.limit)||args.limit<1||args.limit>20))||
+    (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>540))||
+    (args.includeUpstream!==undefined&&typeof args.includeUpstream!=='boolean')||
+    (args.includeUpstream===true&&!args.server))
+    return fail('invalid_args','Invalid scoped RTC history query');
+  let history;
+  try {
+    history=await listHubRecentChanges(db,{
+      ownerId:actor.ownerId,actor,serverName:args.server??null,
+      limit:args.limit??10,cursor:args.cursor??null
+    },settings);
+  }catch{return fail('unavailable','Scoped RTC history cannot be verified');}
+  if(args.includeUpstream!==true)return {ok:true,result:history};
+  // External history is always explicitly opt-in, for exactly one selected
+  // currently granted RTC service. An advertised exact capability is required;
+  // guessing a tool name and submitting an unauthorized POST is forbidden.
+  const candidate=args.server+'_recent_changes';
+  const discovered=await runFederatedBroker('hub_search_tools',{
+    query:'recent_changes',server:args.server,limit:10
+  },actor,db,settings,deps);
+  if(!discovered.ok || !discovered.result.tools?.some(t=>
+      t.name===candidate&&t.server===args.server&&t.writes===false&&
+      t.money===false&&t.destructive===false&&t.annotations?.readOnlyHint===true))
+    return {ok:true,result:{...history,upstream:{
+      server:args.server,status:'unavailable',reason:'not_advertised_or_not_authorized'}}};
+  // Existing H-3 call path performs fresh pinned schema validation, SQL grant
+  // resolution, an audited single POST and post-call reauthorization. Never
+  // automatically retry an uncertain call or alter the Hub audit snapshot.
+  const result=await runFederatedBroker('hub_call',{
+    name:candidate,args:{limit:Math.min(args.limit??10,10)}
+  },actor,db,settings,deps);
+  const upstream=result.ok?{server:args.server,status:'read_only_test',
+    result:result.result}:{
+    server:args.server,status:'unavailable',
+    reason:result.error?.code??'unavailable'};
+  const combined={...history,upstream};
+  if(Buffer.byteLength(JSON.stringify(combined),'utf8')>8000)
+    return {ok:true,result:{...history,upstream:{
+      server:args.server,status:'unavailable',reason:'response_budget'}}};
+  return {ok:true,result:combined};
+ }
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
   const targets=await tools.list(db,actor,{limit:100});
