@@ -464,12 +464,13 @@
         "H-4"
       ],
       "card": "docs/pr-cards/H-5.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "H-5"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [],
+      "note": "H-5 source on ai/gpt6/h5-audited-recent-changes: derived migration 019 hub_change_log from durable H-3 RTC attempts/outcomes, scoped signed-cursor native MCP/HTTPS, optional single exact read-only upstream history, separately approved owner HTML, full unit+PG tests. Exact-head CI/review and merge pending. No real deployed provider/relay/Sandbox acceptance claimed."
     },
     {
       "id": "C-1",
