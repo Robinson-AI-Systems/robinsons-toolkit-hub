@@ -1,5 +1,6 @@
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { serverSelection } from './server-selection.js';
+import {ownerServiceProfiles} from './service-profile-policy.js';
 import {sanitizedServicePolicy} from './service-area-policy.js';
 
 // The Hub authenticates its own callers. Upstream RTC passes live in separately
@@ -138,7 +139,8 @@ export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
   verifiedOwnerScope(ownerId,ownerVerified);
   const {rows}=await db.query(`SELECT id,profile,mode,allowed_areas,
     to_jsonb(hub_callers)->'allowed_servers' AS server_names,
-    to_jsonb(hub_callers)->'service_area_policy' AS service_area_policy,expires_at,
+    to_jsonb(hub_callers)->'service_area_policy' AS service_area_policy,
+    to_jsonb(hub_callers)->'service_profile_policy' AS service_profile_policy,expires_at,
     CASE WHEN revoked_at IS NOT NULL THEN 'revoked'
       WHEN expires_at<=now() THEN 'expired' ELSE 'current' END AS state
     FROM hub_callers WHERE owner_id=$1
@@ -149,6 +151,7 @@ export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
     serverNames:Array.isArray(row.server_names)?
       [...serverSelection(row.server_names)]:null,
     serviceAreas:sanitizedServicePolicy(row.service_area_policy),
+    serviceProfiles:ownerServiceProfiles(row.service_profile_policy),
     expiresAt:row.expires_at,state:row.state
   }));
 }

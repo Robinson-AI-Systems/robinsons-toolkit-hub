@@ -1,4 +1,5 @@
 import {completeActiveGrantActivation,replacementScopeAllowed} from './grant-lifecycle.js';
+import {limitedServiceProfile} from './service-profile-policy.js';
 import {effectiveServiceAreas} from './service-area-policy.js';
 import {inspectScopedRtcIdentity} from './pinned-identity.js';
 import {allowedByHubPass} from './server-selection.js';
@@ -183,7 +184,11 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
     CASE WHEN g.caller_kind='pass' THEN
       (SELECT to_jsonb(c)->'service_area_policy' FROM hub_callers c WHERE c.id=$2)
     ELSE (SELECT to_jsonb(o)->'service_area_policy'
-      FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_area_policy
+      FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_area_policy,
+    CASE WHEN g.caller_kind='pass' THEN
+      (SELECT to_jsonb(c)->'service_profile_policy' FROM hub_callers c WHERE c.id=$2)
+    ELSE (SELECT to_jsonb(o)->'service_profile_policy'
+      FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_profile_policy
     FROM hub_server_grants g
     JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
     WHERE g.owner_id=$1 AND g.caller_kind=$3
@@ -198,6 +203,10 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
             (to_jsonb(initial)->'allowed_servers')
         AND (to_jsonb(fresh)->'service_area_policy') IS NOT DISTINCT FROM
             (to_jsonb(initial)->'service_area_policy')
+        AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
+            (to_jsonb(initial)->'service_profile_policy')
+        AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
+            (to_jsonb(initial)->'service_profile_policy')
         AND fresh.mode='test' AND fresh.revoked_at IS NULL
         AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
         AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -226,7 +235,9 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   const row=rows[0];
   if(!row) return null;
   const limitedAreas=authorizedGrantAreas(row);
-  if(!limitedAreas.length)return null;
+  const selectedProfile=limitedServiceProfile(row.profile,actor.profile,
+    row.caller_profile_policy,row.server_name);
+  if(!limitedAreas.length||!selectedProfile)return null;
   // Never dispatch a credential toward a changed or malformed registry target.
   const origin=validateStagedOrigin(row.target_origin);
   if(!namePattern.test(row.target_prefix||'')) throw new Error('Invalid active service prefix');
@@ -236,7 +247,7 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   const pass=Buffer.concat([decipher.update(row.ciphertext),decipher.final()]).toString('utf8');
   if(!passPattern.test(pass)) throw new Error('Invalid encrypted upstream credential');
   return {pass,grantId:row.id,origin,prefix:row.target_prefix,server:serverName,
-    areas:limitedAreas,profile:row.profile,mode:row.mode};
+    areas:limitedAreas,profile:selectedProfile,mode:row.mode};
 }
 
 
@@ -261,7 +272,11 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
              (SELECT to_jsonb(c)->'service_area_policy' FROM hub_callers c WHERE c.id=$2)
            ELSE (SELECT to_jsonb(o)->'service_area_policy'
              FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_area_policy,
-           g.server_name
+           CASE WHEN g.caller_kind='pass' THEN
+             (SELECT to_jsonb(c)->'service_profile_policy' FROM hub_callers c WHERE c.id=$2)
+           ELSE (SELECT to_jsonb(o)->'service_profile_policy'
+             FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_profile_policy,
+           g.profile AS grant_profile,g.server_name
     FROM hub_servers s JOIN hub_server_grants g
       ON g.server_name=s.name AND g.owner_id=s.owner_id
     WHERE s.owner_id=$1 AND g.caller_kind=$3
@@ -307,11 +322,13 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
       Array.isArray(actor.serverNames) ? actor.serverNames : null]);
   return rows.map(row=>({name:row.name,prefix:row.prefix,
     claimedCounts:row.claimed_counts,areas:authorizedGrantAreas(row),
+    effectiveProfile:limitedServiceProfile(row.grant_profile,actor.profile,
+      row.caller_profile_policy,row.server_name),
     // Private cursor scope inputs only: never shown to callers in the
     // Hub namespace/search result or sent to an upstream provider.
     grantId:row.grant_id,origin:row.origin,
     verifiedAt:row.verified_at?.toISOString?.()??String(row.verified_at??''),
-    state:'active',readOnlyGrant:true})).filter(row=>row.areas.length>0);
+    state:'active',readOnlyGrant:true})).filter(row=>row.areas.length>0 && row.effectiveProfile!==null);
 }
 
 export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,

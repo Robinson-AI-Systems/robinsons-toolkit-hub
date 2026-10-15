@@ -1,6 +1,7 @@
 // H-4 owner-only scope inspector and immutable area-policy audit readback.
 // No upstream credential, bearer, ciphertext, tool parameters or provider
 // result may appear in this UI or the returned record.
+import {limitedServiceProfile,ownerServiceProfiles} from './service-profile-policy.js';
 import {effectiveGrantAreas} from './grants.js';
 import {effectiveServiceAreas,sanitizedServicePolicy} from './service-area-policy.js';
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
@@ -20,7 +21,9 @@ export async function inspectOwnerServiceScope(db,{ownerId,callerKind,callerId,s
   // now-stale session or UI. A missing/retired upstream grant is never
   // presented as callable. The selected client must still be TEST-only.
   const passSQL=`SELECT g.id,g.areas,g.area_ceiling,g.profile,g.mode,
-    c.service_area_policy AS policy,g.expires_at,s.name AS server_name
+    c.service_area_policy AS policy,
+    c.service_profile_policy AS profile_policy,c.profile AS caller_profile,
+    g.expires_at,s.name AS server_name
     FROM hub_callers c JOIN hub_server_grants g
       ON g.caller_id=c.id AND g.owner_id=c.owner_id AND g.caller_kind='pass'
     JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
@@ -32,7 +35,9 @@ export async function inspectOwnerServiceScope(db,{ownerId,callerKind,callerId,s
       AND g.verified_at IS NOT NULL AND g.mode='test' AND g.profile='read_only'
     LIMIT 2`;
   const oauthSQL=`SELECT g.id,g.areas,g.area_ceiling,g.profile,g.mode,
-    s.service_area_policy AS policy,g.expires_at,server.name AS server_name
+    s.service_area_policy AS policy,
+    s.service_profile_policy AS profile_policy,s.profile AS caller_profile,
+    g.expires_at,server.name AS server_name
     FROM hub_oauth_sessions s JOIN hub_oauth_sessions initial
       ON initial.family_id=s.family_id AND initial.owner_id=s.owner_id
     JOIN hub_server_grants g ON g.caller_id=initial.id
@@ -46,10 +51,12 @@ export async function inspectOwnerServiceScope(db,{ownerId,callerKind,callerId,s
       AND (s.allowed_servers IS NULL OR $3=ANY(s.allowed_servers))
       AND initial.revoked_at IS NULL
       AND (initial.service_area_policy IS NOT DISTINCT FROM s.service_area_policy)
+      AND (initial.service_profile_policy IS NOT DISTINCT FROM s.service_profile_policy)
       AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions bad
         WHERE bad.family_id=s.family_id AND
           (bad.revoked_at IS NOT NULL
-           OR bad.service_area_policy IS DISTINCT FROM s.service_area_policy))
+           OR bad.service_area_policy IS DISTINCT FROM s.service_area_policy
+           OR bad.service_profile_policy IS DISTINCT FROM s.service_profile_policy))
       AND server.state='active' AND g.revoked_at IS NULL
       AND g.expires_at>now() AND g.verified_at IS NOT NULL
       AND g.profile='read_only' AND g.mode='test'
@@ -65,8 +72,12 @@ export async function inspectOwnerServiceScope(db,{ownerId,callerKind,callerId,s
   const grantEffective=effectiveGrantAreas(row);
   const policy=sanitizedServicePolicy(row.policy);
   const effective=effectiveServiceAreas(grantEffective,policy,row.server_name);
+  const chosen=limitedServiceProfile(row.profile,row.caller_profile,
+    row.profile_policy,row.server_name);
+  const profileLimits=ownerServiceProfiles(row.profile_policy);
   return {available:true,server:row.server_name,
-    callable:effective.length>0,profile:'read_only',mode:'test',
+    callable:effective.length>0&&chosen!==null,profile:chosen??'disabled',mode:'test',
+    callerProfileLimit:profileLimits[serverName]??null,
     grantId:row.id,originalAreas:original,grantAreas:grantEffective,
     callerAreaLimit:policy[serverName]??null,authorizedAreas:effective,
     expiresAt:row.expires_at};
