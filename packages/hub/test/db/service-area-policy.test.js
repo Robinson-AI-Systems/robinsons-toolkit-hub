@@ -9,6 +9,7 @@ import {stageCallerGrant,activateVerifiedCallerGrant,resolveActiveCallerGrant,
   listEligibleRtcTargets} from '../../src/grants.js';
 import {narrowHubPassServiceAreas,narrowOAuthFamilyServiceAreas} from '../../src/service-area-policy.js';
 import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from '../../src/owner-service-scope.js';
+import {readOwnerDashboard} from '../../src/owner-dashboard-data.js';
 import {parseOwnerServiceAreaPlan,previewOwnerServiceAreaPlan,
  executeOwnerServiceAreaPlan} from '../../src/service-area-plan.js';
 import {storeRtcResult,readRtcResult} from '../../src/rtc-results.js';
@@ -270,4 +271,28 @@ it('multi-service OAuth family narrowing survives refresh and refuses cross-owne
  const latest=await authenticateOAuth(db,third.access_token,{pepper});
  expect((await resolveActiveCallerGrant(db,{actor:latest,serverName:'workspace'},settings)).areas)
   .toEqual(['reports']);
+});
+
+it('owner control center inventories live SQL pass, OAuth and grants without credentials',async()=>{
+ const issued=await issueHubPass(db,{ownerId:owner,profile:'read_only',
+   mode:'test',allowWrites:false,areas:['gateway'],ttlSeconds:3600,
+   serverNames:['stripe','workspace']},{ownerVerified:true,pepper});
+ const actor=await authenticateHubPass(db,'Bearer '+issued.pass,{pepper});
+ const id=await grant(actor,'pass','stripe');
+ const scope=await readOwnerDashboard(db,owner,settings,{tab:'scopes',page:0});
+ expect(scope.state).toBe('readable');
+ expect(scope.rows.some(x=>x.callerId===actor.id&&x.server==='stripe'&&
+   x.grantId===id&&x.authorizedAreas.includes('billing'))).toBe(true);
+ const overview=await readOwnerDashboard(db,owner,settings,{tab:'overview',page:0});
+ expect(overview.parts.passes.state).toBe('readable');
+ expect(overview.parts.grants.state).toBe('readable');
+ expect(overview.parts.passes.rows.some(x=>x.id===actor.id)).toBe(true);
+ expect(JSON.stringify(overview)).not.toContain(issued.pass);
+ expect(JSON.stringify(overview)).not.toContain(rtcPass);
+ const health=await readOwnerDashboard(db,owner,settings,{tab:'readiness',page:0});
+ expect(health.externalAcceptance).toBe('unverified');
+ expect(health.readiness.installedTables).toBe(4);
+ const audit=await readOwnerDashboard(db,owner,settings,{tab:'audit',page:0});
+ expect(audit.parts.areas.state).toBe('readable');
+ expect(audit.parts.profiles.state).toBe('readable');
 });
