@@ -14,6 +14,7 @@ function page(content) {
     '<title>Toolkit Hub owner passes</title><main><h1>Hub connection passes</h1>' +
     '<p>These passes access only the Hub in read-only TEST mode. ' +
     'Upstream service passes must be issued and scoped independently.</p>' +
+    '<p><a href="/api/owner/dashboard">Open private owner control center</a></p>' +
     content + '</main></html>';
 }
 function passForm() {
