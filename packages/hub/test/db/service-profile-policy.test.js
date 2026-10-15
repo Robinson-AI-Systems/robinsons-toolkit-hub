@@ -29,7 +29,7 @@ beforeAll(async()=>{
   '008-hub-rtc-audit.sql','009-hub-rtc-results.sql',
   '010-hub-pass-servers.sql','011-hub-oauth-server-scopes.sql',
   '012-hub-grant-area-ceilings.sql','015-hub-caller-service-area-policy.sql',
-  '017-hub-caller-service-profile-policy.sql'])
+  '016-hub-grant-renewal.sql','017-hub-caller-service-profile-policy.sql'])
   await db.query(await readFile(new URL('../../migrations/'+filename,import.meta.url),'utf8'));
  for(const name of ['stripe','workspace']) await db.query(
   "INSERT INTO hub_servers(name,owner_id,prefix,origin,claimed_rtc,claimed_counts) VALUES($1,$2,$1,$3,1,'{\"tools\":3,\"writes\":0,\"money\":0}')",
