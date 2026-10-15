@@ -9,7 +9,7 @@
     "L",
     "S"
   ],
-  "process": "Just-in-time cards from approved designs; S cards only on owner request. Session execution and release-dependent acceptance follow docs/SESSION-START.md. Plan for rolling averages of 400–800 changed production lines and 2–5 completed approved roadmap slices per substantive implementation PR, without padding, fragmentation or safety/CI compromise. Existing card units provide coarse remaining approved-work counts; pending real acceptance is tracked separately in docs/STATUS.md. Explicit owner-directed next-session PR counts do not become permanent quotas.",
+  "process": "Just-in-time cards from approved designs; S cards only on owner request. Session execution and release-dependent acceptance follow docs/SESSION-START.md. Plan for rolling averages of 400–800 changed production lines and 2–5 completed approved roadmap slices per substantive implementation PR, without padding, fragmentation or safety/CI compromise. Existing card units provide coarse remaining approved-work counts; pending real acceptance is tracked separately in docs/STATUS.md. Explicit owner-directed next-session PR counts do not become permanent quotas. Owner clarification 2026-10-14: PR workload accounting counts whole predefined batch subsections in the authoritative roadmap/design, never a function, UI hookup, guard, helper or execution-packet subtask. Partial subsections count zero completed batch subsections; count each subsection once with full eligible engineering and pre-merge evidence. Group related subsections into substantial PRs; use focused checks during work and full required gates on the coherent PR. Existing acceptance and safety gates remain.",
   "cards": [
     {
       "id": "K-0",
