@@ -1,25 +1,179 @@
-## L-3 opt-in headless local browser — source implementation
+## October 15 — L-3 guarded local headless browser source pending review
 
-The local-only CLI now supports read-only Playwright Chromium status,
-allowlisted navigation, bounded links and screenshots. Both
-`rtool mcp --local <root>` and an explicit exact origin allowlist are
-required, plus locally installed Playwright+Chromium. Missing runtime or
-invalid origin config disables browser tools only and leaves Git/files/Ollama
-unchanged. Per-request fresh contexts block service workers, disallowed
-cross-origin requests, redirects, WebSockets, downloads and popups.
-Screenshots are private bounded create-only PNG files under approved roots,
-only with explicit confirmation; replies disclose path and byte count, not
-image bytes. Source mocks and real filesystem tests cover failure closure,
-network interception and no-overwrite. Hosted tools, provider passes,
-remote cloud/browser and L-4 guided settings controls remain unchanged.
+Reconciled previously unfinished L-3 against main after explicit owner direction
+to finish and merge. The optional `rtool mcp --local` Playwright Chromium
+door requires a valid owner-selected exact HTTPS or loopback origin allowlist
+and locally installed Playwright. Four compact tools inspect status, visit,
+list approved links or save a confirmed create-only owner-root PNG. Fresh
+browser contexts, blocked service workers/WebSockets, download/pop-up refusal,
+origin-guarded GET/HEAD-only routes, output bounds and cleanup are verified
+with injected browser behaviors and real filesystem tests. All other newer
+main work and its acceptance records preserved.
 
-Source full CI and review required before merge. Owner-PC Playwright
-installation, actual Chromium browsing/network interception, real kernel
-confinement and L-4 owner-visible approvals remain OPEN external evidence.
-The host allowlist is not a kernel firewall or anti-DNS-rebinding guarantee.
-No automatic binary install, production activation, cloud purchase or
-autonomous spending. Concurrent independent documentation PR #208 preserved.
+L-3 code merge requires exact-head CI and review. Actual owner-machine
+Chromium execution remains OPEN external acceptance, distinct from source proof.
+No hosted browser, production activation, provider money-out or spending.
 
+### October 15 — owner-requested bundle guidance consistency review
+
+Reviewed current main 8169af07afa2df4fe9cacb195b5382f9c04fc7e0. Aligned existing governing instructions, session
+procedure and applicable playbook/card/recipe references: cards define approved
+scope; related whole subsections form coherent bundles; PR splits need concrete
+migration/dependency/safety/reviewability reasons. Removed stale numeric ceilings
+and blanket one-risk/one-migration fragmentation rules where present. Session target
+comes from the current owner, not PR count; incidental fixes/checkpoints do not end
+an unfinished bundle. Remaining engineering must not be hidden as external proof.
+Removed a stale generic session sentence that called future work maintenance.
+All original subsection IDs, roadmap order, source/provider acceptance, independent
+approval/guard/cleanup rules, CI/review and hosting/cost gates remain unchanged.
+Dated PR-count instructions/credits below are historical to their original
+sessions, never standing quotas or credits toward the current target.
+This is explicitly requested guidance maintenance, zero product bundles; no provider
+operation or release. Required exact-head checks and review disposition govern merge.
+Preserve concurrent implementation branches; resume actual current main and the
+implementing agent's active approved outcome after reading this alignment.
+
+
+## H-4 exact SQL across native MCP and direct HTTPS — source acceptance candidate
+
+A real disposable PostgreSQL integration runs two independently staged and
+locally verified synthetic provider RTC 1 grants, one Hub pass, a separate
+OAuth PKCE caller and refresh family through actual SQL grant selection,
+discovery, schema, GET/POST, batch, durable RTC audit and stored result-page
+revocation. Both native MCP handler and HTTPS broker use the same production
+federation and grant resolver with injected harmless TEST-only transport
+implementations. Attempts and denied/widening tools recheck effective current
+service-area/profile policies after awaited metadata operations; stale actors
+or revoked credentials cannot reuse previously cached authorization. A provider
+never sees the Hub's own OAuth or owner password. The new native-handler
+injection seam is server-internal, unavailable to untrusted HTTP callers and
+defaults to the existing production implementation.
+
+Source CI/PG gate is the only proof this establishes. Exact deployed main/live
+revisions, owner-authenticated real two-provider TEST reads, provider-side
+grant issuance/denial and all three independent direct/relay/Sandbox routes
+remain OPEN. No RTC 0 alias is rebranded as RTC 1, and no LIVE provider or
+money transfer path is authorized. Full H-4 release acceptance must still be
+separately checked; no external acceptance row is closed by these fixtures.
+
+
+## H-4 owner-only consolidated control center — source implementation
+
+The new `/api/owner/dashboard` GET serves only a static mobile-viewport form.
+Each private POST repeats independent owner password verification and shared
+SQL lockout before reading bounded pass, OAuth family, staged/active grant,
+current service-area/profile, audit and H-3 readiness records. Owner identifiers
+come only from the configured owner, never from the browser. Sections are
+isolated on database migration/fetch failure and report unavailable rather
+than an empty or successful provider state. The UI never loads provider APIs,
+reuses an authenticated session, sends/prints a pass, or performs writes by
+itself. Scope action forms POST to existing independently verified owner
+routes, so the newest SQL policy and grant are checked again before any
+irreversible reduction/revocation; all credentials must be entered afresh.
+
+Bounded source regression tests cover owner/password/method/selector refusals,
+no-store/CSP, script escaping, partial database outage, metadata projection,
+mobile HTML action forms, current disposable SQL grant readback, no secret
+publication and readiness explicitly UNVERIFIED. Existing owner pages link
+to the center; no host-only or browser control is silently activated.
+
+H-2/H-3/H-4 source engineering and external deployment remain separate.
+Current Hub connector advertising RTC 0/upstreamDisabled cannot close genuine
+connected direct, relay, Sandbox and two-service authenticated TEST proof.
+This is one connected H-4 owner workflow improvement, not an invented new
+batch subsection, not a provider or production activation, and not yet full
+H-4 acceptance. CI/review evidence is required before merge.
+
+
+## H-4 atomic owner multi-service area reduction — source implementation
+
+Existing H-4 permission subsection remains IN_PROGRESS. The verified owner can
+now preview and atomically narrow 1–10 individually registered TEST service
+areas on one Hub pass or an entire OAuth refresh family. The owner submits
+canonical service:area|area pairs; duplicated service names, invalid areas,
+missing identification and unauthorized owners refuse before any commit.
+Previews are metadata-only and do not become durable approval tokens. The
+separate authenticated commit acquires the same PostgreSQL client, orders
+services canonically, and runs the original row-guarded service-specific
+reduction, audit and encrypted-result invalidation statements inside one
+BEGIN/COMMIT transaction. A late refusal or database error ROLLBACKs all
+prior service changes, audit inserts and page deletions; all service grants
+are checked again at execution time. OAuth policy reductions propagate to
+all refresh generations as before. This is not external provider rollback.
+
+Evidence: unit form/refusal tests and throwaway SQL tests for both caller
+kinds, preview purity, late failure rollback, encrypted handle invalidation,
+current grant narrowing, audit accounting and refresh. The checked exact-head
+CI/review is required before source merge. Hosted adoption, migration 018,
+verified provider deployment revisions and actual direct/relay/Sandbox TEST
+reads stay in the preexisting acceptance queue, not satisfied by fixtures.
+
+## H-4 owner-selected initial service-area restrictions — source candidate
+
+Initial pass and OAuth PKCE consent accept per-service area ceilings,
+persisting across OAuth authorization-code exchange and every refresh.
+Migration 018 adds the one-time OAuth-code scope column. Previously
+installed 015 retains the caller/session policies. Missing schema must
+fail closed. Provider credentials, independent read_only service grants,
+spending and LIVE remain unchanged; real deployed provider/direct/relay/
+Sandbox TEST acceptance remains PENDING separately from synthetic CI.
+
+## L-1 namespace diagnostics and confirmed plan log capture — source candidate
+
+The optional local developer sandbox can explicitly probe a read-only Bubblewrap
+namespace instead of treating installation as runtime readiness, and confirmed
+multi-step plans can write bounded create-only step logs without exposing their
+content in MCP results. Monotonic total deadline and early-stop semantics remain
+in force. Kernel/real-machine acceptance is still OPEN; no hosted changes or
+provider permissions are granted.
+
+## H-4 initial profile selection before pass or OAuth PKCE consent — source candidate
+
+Owner consent and one-time pass issuance can include explicit read_only or
+disabled per-service ceilings. Each policy is bound to the initial identity
+and carried across OAuth code exchange and refresh; a missing hosted
+migration must not fall back to broad issuance. Pending genuine owner and
+service-origin TEST acceptance remains in the existing H-4 queue.
+
+## H-4 caller-specific per-service profile restrictions — source candidate
+
+Hub pass and OAuth family owners can make a selected TEST/read_only service
+permanently unavailable or explicitly retain read_only; original provider
+credentials never widen. New OAuth refresh sessions carry the same profile
+policy; active SQL discovery, dispatch, result reauthorization and owner
+scope preview enforce it. Migration 017 and actual owner/provider TEST
+acceptance remain OPEN. No LIVE write, spend or upstream changes.
+
+## L-1 sandboxed sequential confirmed plans — source candidate
+
+The opt-in Linux bubblewrap-only command door also supports explicit
+confirmed plans of up to three bounded developer subprocesses, executed
+in order in fresh isolated namespaces, with early stop on failure and no
+implicit rollback. Source tests do not prove a real host namespace works.
+
+## L-1 isolated opt-in local subprocess source — proposed
+
+A new confirmed, Linux-bubblewrap-gated `local.shell_execute` allows
+bounded developer tool subprocesses ONLY in explicitly enabled local roots.
+It has no unsandboxed fallback and does not inherit host cloud credentials
+or network access. A separate owner-approved create-only capture file
+supports long command logs. CI's injected process tests prove only source
+routing, not real Linux kernel isolation; L-1 remains IN_PROGRESS until
+real-world sandbox acceptance and original shell limits are confirmed.
+
+## Owner-requested design detail — October 14, 2026
+
+Completed a code-grounded remaining-design review in `docs/implementation-contracts/IMPLEMENTATION-GUIDE.md` and linked
+it from AGENTS. Concrete per-subsection state, input/output, failure/recovery,
+file integration and test contracts supplement existing approved designs. No
+runtime code, roadmap status/dependencies, acceptance queue, credentials,
+resources, production switch or release changed. No completed product batch
+subsection is claimed. Implementing sessions resume the authoritative roadmap
+order, reconciling current main/concurrent cards and actual owner inputs first.
+This dated design note is not a new implementation priority or replacement handoff.
+
+Reconciled the concurrent implementation merge without changing its source,
+roadmap state, evidence or active agent branch.
 ## L-2 local Ollama — source implementation pending exact-head CI
 
 Local `rtool mcp --local` conditionally exposes a six-tool Ollama capability

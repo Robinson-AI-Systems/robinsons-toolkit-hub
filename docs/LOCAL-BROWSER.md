@@ -43,7 +43,7 @@ relative traversal, Git metadata and oversized images are refused.
 Each navigation uses a fresh headless Chromium context, with no persisted
 cookies/profile, downloads disabled, no automatic login or form entry,
 service workers blocked and all network requests routed against the
-owner-selected exact origins. WebSockets are closed. A page attempting
+owner-selected exact origins; any non-GET/HEAD request is blocked. WebSockets are closed. A page attempting
 disallowed redirects/subresources refuses as a whole. The browser is closed
 on success or failure; navigations have a bounded 1–15 second deadline.
 

@@ -15,20 +15,20 @@ async function fixture(run){
  finally{await rm(root,{recursive:true,force:true});}
 }
 function fakeBrowser({url='https://docs.example.com/',title='Docs example',
- subresource=null,websocket=false,failAt=null,body='Safe read-only docs'}={}){
+ subresource=null,subresourceMethod='GET',websocket=false,failAt=null,body='Safe read-only docs'}={}){
  const calls=[],contexts=[],browsers=[];
  const page={
   goto:vi.fn(async target=>{
    calls.push(['goto',target]);
    if(failAt==='goto')throw Error('Navigation refused');
    const route=contexts.at(-1).routeHandler;
-   const make=url=>({
-    request:()=>({url:()=>url}),
+   const make=(url,method='GET')=>({
+    request:()=>({url:()=>url,method:()=>method}),
     continue:async()=>{calls.push(['continue',url]);},
     abort:async()=>{calls.push(['abort',url]);}
    });
    await route(make(target));
-   if(subresource)await route(make(subresource));
+   if(subresource)await route(make(subresource,subresourceMethod));
    if(websocket)await contexts.at(-1).wsHandler({
      close:async()=>{calls.push(['websocket-blocked']);}
    });
@@ -125,6 +125,14 @@ it('refuses both cross-origin subresources and redirected navigation; always clo
   expect(fake.calls.slice(-2)).toEqual([['context-closed'],['browser-closed']]);
   if(options.subresource)expect(fake.calls).toContainEqual(['abort',options.subresource]);
  }
+});
+it('refuses automated POSTs even when a page scripts to its own allowed origin',async()=>{
+ const fake=fakeBrowser({subresource:'https://docs.example.com/api/modify',
+   subresourceMethod:'POST'});
+ await expect(guardedVisit(fake.launch,'https://docs.example.com/',
+  ['https://docs.example.com'],3000)).rejects.toThrow();
+ expect(fake.calls).toContainEqual(['abort','https://docs.example.com/api/modify']);
+ expect(fake.calls.slice(-2)).toEqual([['context-closed'],['browser-closed']]);
 });
 it('extracts only allowed same-origin links and does not return foreign navigation suggestions',async()=>fixture(async({root,env})=>{
  const fake=fakeBrowser();

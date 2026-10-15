@@ -149,7 +149,9 @@ export async function guardedVisit(launch,target,origins,timeoutMs,
   context.setDefaultNavigationTimeout(timeoutMs);
   await context.route('**/*',async route=>{
    let approved=false;
-   try{approved=origins.includes(new URL(route.request().url()).origin);}
+   try{const request=route.request();
+    approved=['GET','HEAD'].includes(request.method())&&
+      origins.includes(new URL(request.url()).origin);}
    catch{approved=false;}
    if(!approved){blocked=true;await route.abort('blockedbyclient');}
    else await route.continue();

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "order": [
     "K",
     "D",
@@ -582,7 +582,7 @@
       "readiness": "READY",
       "externalGates": [],
       "pr": [],
-      "note": "L-3 source is preserved on ai/gpt6/l3-local-browser; NO PR OPENED and NOT MERGED at owner's direction (October 15, 2026). Browser implementation, fixed MCP catalog, local screenshot path, mock tests and docs committed. Current main must be reconciled before future publication; focused/full CI, review and merge remain outstanding. No L-3 subsection or bundle counted. Owner-machine real Playwright/Chromium acceptance separately OPEN; no hosted activation."
+      "note": "Existing L-3 branch reconciled to main with owner authorization to finish and merge. Four guarded local Chromium tools, strict exact-origin and GET/HEAD-only routing, confirmed create-only screenshot, injected browser/failure and real file tests. Exact-head CI and review pending; count subsection only after merge. Owner-machine installed Playwright/Chromium acceptance OPEN separately; no Hub-hosted browser."
     },
     {
       "id": "L-4",
