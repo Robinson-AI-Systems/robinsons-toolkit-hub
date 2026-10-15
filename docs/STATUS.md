@@ -1,3 +1,11 @@
+## H-4 initial profile selection before pass or OAuth PKCE consent — source candidate
+
+Owner consent and one-time pass issuance can include explicit read_only or
+disabled per-service ceilings. Each policy is bound to the initial identity
+and carried across OAuth code exchange and refresh; a missing hosted
+migration must not fall back to broad issuance. Pending genuine owner and
+service-origin TEST acceptance remains in the existing H-4 queue.
+
 ## H-4 caller-specific per-service profile restrictions — source candidate
 
 Hub pass and OAuth family owners can make a selected TEST/read_only service

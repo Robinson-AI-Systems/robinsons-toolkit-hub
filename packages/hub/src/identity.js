@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { serverSelection } from './server-selection.js';
-import {ownerServiceProfiles} from './service-profile-policy.js';
+import {checkedInitialServiceProfiles,ownerServiceProfiles} from './service-profile-policy.js';
 import {sanitizedServicePolicy} from './service-area-policy.js';
 
 // The Hub authenticates its own callers. Upstream RTC passes live in separately
@@ -44,6 +44,7 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
   // An explicit selection is additional least privilege. Legacy trusted
   // programmatic issuance retains the previous exact-caller grant gate.
   const selected = serverSelection(input.serverNames);
+  const policies=checkedInitialServiceProfiles(input.serviceProfiles,selected);
   if (selected) {
     const owned = await db.query(`SELECT name FROM hub_servers
       WHERE owner_id=$1 AND name=ANY($2::text[])`, [input.ownerId, selected]);
@@ -53,7 +54,16 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
   }
   const pass = 'rtc_pass_' + randomBytes(32).toString('base64url');
   const id = randomUUID();
-  if (selected) {
+  if(selected&&policies){
+    // Missing profile SQL 017 refuses the entire selected issuance.
+    await db.query(`INSERT INTO hub_callers
+      (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,
+       expires_at,allowed_servers,service_profile_policy)
+      VALUES($1,$2,$3,$4,$5,$6,FALSE,
+       now()+$7::INTEGER*interval '1 second',$8,$9)`,
+      [id,input.ownerId,digestPass(pass,pepper),input.profile,
+       [...new Set(input.areas)],input.mode,input.ttlSeconds,selected,policies]);
+  } else if (selected) {
     // Fail closed if the additive migration is not installed: the selected
     // credential must never silently fall back to unrestricted legacy mode.
     await db.query(`INSERT INTO hub_callers

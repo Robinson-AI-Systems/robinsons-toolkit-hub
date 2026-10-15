@@ -1,6 +1,6 @@
 import { issueHubPass, revokeHubPass, narrowHubPassServers,
   listHubPassScopes } from './identity.js';
-import {narrowPassServiceProfile,listOwnerProfileAudit} from './service-profile-policy.js';
+import {parseInitialServiceProfiles,narrowPassServiceProfile,listOwnerProfileAudit} from './service-profile-policy.js';
 import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from './owner-service-scope.js';
 import {narrowHubPassServiceAreas,parseServiceAreas} from './service-area-policy.js';
 import { parseOwnerServerSelection } from './server-selection.js';
@@ -21,6 +21,10 @@ function passForm() {
     'autocomplete="current-password" required></label>' +
     '<label>Authorized RTC servers (registered names, comma separated) ' +
     '<input name="servers" maxlength="1300" required></label>' +
+    '<label>Optional initial service profiles, e.g. stripe=read_only,neon=disabled ' +
+    '<input name="profiles" maxlength="1300"></label>' +
+    '<p>Any chosen disabled service is unavailable from first issuance. ' +
+    'All permitted services remain limited by independent read_only RTC passes.</p>' +
     '<p>This pass cannot discover or call other servers, even if additional ' +
     'upstream grants are configured. Every selected service still needs its ' +
     'separate verified TEST read-only grant.</p>' +
@@ -158,6 +162,11 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
     parseOwnerServerSelection(fields.servers) : null;
   if (['issue','narrow'].includes(fields.action) && !selected)
     return res.status(400).send('Select 1–20 registered RTC servers');
+  let initialProfiles=null;
+  try {
+    if(fields.action==='issue')
+      initialProfiles=parseInitialServiceProfiles(fields.profiles,selected);
+  }catch{return res.status(400).send('Invalid initial service profiles');}
   const areas=fields.action==='narrow_areas'?parseServiceAreas(fields.areas):null;
   if(fields.action==='narrow_profile'&&
     (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||
@@ -223,6 +232,7 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
         mode: 'test',
         areas: ['gateway'],
         serverNames: selected,
+        ...(initialProfiles?{serviceProfiles:initialProfiles}:{}),
         allowWrites: false,
         ttlSeconds: 86400
       }, { ownerVerified: true, pepper: settings.pepper });

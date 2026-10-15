@@ -1,6 +1,7 @@
 import { scryptSync, timingSafeEqual } from 'node:crypto';
 import { takeBudget } from './limits.js';
 import { registerOAuthClient, issueOAuthCode } from './oauth.js';
+import {parseInitialServiceProfiles} from './service-profile-policy.js';
 import { parseOwnerServerSelection } from './server-selection.js';
 
 export function publicHubOrigin(env=process.env) {
@@ -86,6 +87,11 @@ export function htmlForm(action,fields) {
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
     '<label>Authorized RTC servers (registered names, comma separated) '+
     '<input name="servers" maxlength="1300" required></label>'+
+    '<label>Optional per-service profile ceilings '+
+    '(stripe=read_only,workspace=disabled) '+
+    '<input name="profiles" maxlength="1300"></label>'+
+    '<p>Disabled services are unavailable from first authorization, and '+
+    'all others remain limited by independently issued TEST/read_only grants.</p>'+
     '<p>Only separately issued TEST read-only grants on these exact servers '+
     'may be used after owner consent. This cannot authorize LIVE or writes.</p>'+
     '<label>Owner passphrase <input type="password" name="password" autocomplete="current-password" required></label>'+
@@ -112,12 +118,16 @@ export async function authorizeOwnerConnection(db, req, input, {env=process.env,
     code_challenge_method:'S256',response_type:'code'}};
   const selected=parseOwnerServerSelection(input.servers);
   if (!selected) return {status:400};
+  let profiles;
+  try{profiles=parseInitialServiceProfiles(input.profiles,selected);}
+  catch{return {status:400};}
   const verified=await verifyOwnerLogin(db,req,input.password,{env});
   if (!verified.approved) return {status:verified.retryAfter?429:401,
     retryAfter:verified.retryAfter||null};
   const code=await issue(db,{ownerId:env.HUB_OWNER_ID,clientId:request.clientId,
     redirectUri:request.redirectUri,challenge:request.challenge,
-    profile:'read_only',mode:'test',areas:['gateway'],serverNames:selected},
+    profile:'read_only',mode:'test',areas:['gateway'],serverNames:selected,
+    ...(profiles?{serviceProfiles:profiles}:{})},
   {pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
   const destination=new URL(request.redirectUri);
   destination.searchParams.set('code',code);

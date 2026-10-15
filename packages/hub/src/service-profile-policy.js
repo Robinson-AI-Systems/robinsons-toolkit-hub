@@ -129,3 +129,37 @@ export async function listOwnerProfileAudit(db,ownerId,{ownerVerified=false,limi
    profile:row.profile,affectedSessions:Number(row.affected_sessions),
    purgedHandles:Number(row.purged_handles)}));
 }
+
+/**
+ * Optional owner-selected initial service profile ceilings. This is a public
+ * form parser only; there is no client-supplied provider credential or
+ * writable profile. Null means legacy, exact-call-grant read_only behavior.
+ */
+export function parseInitialServiceProfiles(raw,serverNames) {
+ if(raw===undefined||raw===null||raw==='')return null;
+ if(typeof raw!=='string'||raw.length>1300||!Array.isArray(serverNames)||
+   serverNames.length<1||serverNames.length>20)
+  throw new TypeError('Invalid initial service-profile selection');
+ const entries=raw.split(',');
+ if(!entries.length||entries.length>20)throw new TypeError('Too many service profiles');
+ const names=new Set(serverNames);
+ const result={};
+ for(const item of entries){
+  const parts=item.split('=');
+  if(parts.length!==2||!service.test(parts[0])||
+    !['read_only','disabled'].includes(parts[1])||
+    !names.has(parts[0])||Object.hasOwn(result,parts[0]))
+   throw new TypeError('Unknown, duplicate or widening service profile');
+  result[parts[0]]=parts[1];
+ }
+ return result;
+}
+export function checkedInitialServiceProfiles(value,serverNames) {
+ if(value===undefined||value===null)return null;
+ const policies=ownerServiceProfiles(value);
+ if(!Array.isArray(serverNames)||serverNames.length<1||
+    Object.keys(policies).some(name=>!serverNames.includes(name)||
+      !['read_only','disabled'].includes(policies[name])))
+  throw new TypeError('Initial profiles must be read-only and owner-scoped');
+ return Object.keys(policies).length?policies:null;
+}
