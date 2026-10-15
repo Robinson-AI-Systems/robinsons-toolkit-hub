@@ -54,7 +54,8 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   search:searchPinnedRtcTools,describe:describePinnedRtcTool,
   read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
   storeResult:storeRtcResult,readResult:readRtcResult,
-  cache:scopedCatalogueCache,schemaCache:scopedSchemaCache,...deps};
+  cache:scopedCatalogueCache,schemaCache:scopedSchemaCache,
+  history:listHubRecentChanges,...deps};
  if(name==='hub_recent_changes') {
   if(Object.keys(args).some(k=>!['server','limit','cursor','includeUpstream'].includes(k))||
     (args.server!==undefined&&!serverPattern.test(args.server))||
@@ -65,7 +66,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     return fail('invalid_args','Invalid scoped RTC history query');
   let history;
   try {
-    history=await listHubRecentChanges(db,{
+    history=await tools.history(db,{
       ownerId:actor.ownerId,actor,serverName:args.server??null,
       limit:args.limit??10,cursor:args.cursor??null
     },settings);
