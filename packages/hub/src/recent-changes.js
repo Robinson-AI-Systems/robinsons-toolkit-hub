@@ -2,6 +2,7 @@
 // receipts. An absent outcome is PENDING, never rewritten as success.
 // No provider credentials, arguments, return bodies or ciphertext are stored.
 import {createHmac,timingSafeEqual} from 'node:crypto';
+import {listEligibleRtcTargets} from './grants.js';
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
 const server=/^[a-z][a-z0-9_]{1,59}$/;
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
@@ -83,6 +84,13 @@ function project(row) {
  */
 export async function listHubRecentChanges(db,input,settings,opts={}){
  const scope=parseScope(input,opts);
+ // A historic receipt never becomes a permanent metadata capability. Recheck
+ // the caller's currently eligible independently verified grants, including
+ // server/area/profile/family reductions and revocation, before every page.
+ const permitted=scope.kind===null?null:
+   (await (opts.eligible??listEligibleRtcTargets)(db,input.actor,{limit:100}))
+     .map(target=>target.name);
+
  const until=scope.cursor===null?null:readHubChangeCursor(scope.cursor,scope,settings,opts);
  const query=`SELECT a.id::text,a.occurred_at,a.caller_kind,a.caller_id,
     a.server_name,a.tool_name,a.correlation_id,
@@ -99,6 +107,7 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
     AND ($2::text IS NULL OR (a.caller_kind=$2 AND a.caller_id=$3))
     AND ($4::text IS NULL OR a.server_name=$4)
     AND ($5::bigint IS NULL OR a.id<$5)
+    AND ($7::text[] IS NULL OR a.server_name=ANY($7::text[]))
     AND ($2::text IS NULL OR
       (a.caller_kind='pass' AND EXISTS(
         SELECT 1 FROM hub_callers c WHERE c.id=$3 AND c.owner_id=$1
@@ -112,7 +121,7 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
           AND s.mode='test' AND 'gateway'=ANY(s.areas))))
    ORDER BY a.id DESC LIMIT $6`;
  const values=[scope.ownerId,scope.kind,scope.callerId,scope.serverName,
-   until,scope.limit+1];
+   until,scope.limit+1,permitted];
  const {rows}=await db.query(query,values);
  const chosen=rows.slice(0,scope.limit);
  const next=rows.length>scope.limit&&chosen.length?
