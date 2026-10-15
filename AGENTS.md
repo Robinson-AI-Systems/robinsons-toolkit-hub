@@ -1,5 +1,56 @@
 # AGENTS.md — the rules. Read this first, every session.
 
+## Session PR count comes from the current owner prompt
+
+There is no repository-default session PR count, upper quota or PR-number
+alignment target. Follow the count or scope in the current owner prompt for that
+session only; do not carry it into later sessions. If no count is specified,
+continue the approved ordered work within a safe, recoverable context budget.
+Keep checkpoints, complete coherent PRs and preserve all required gates.
+The rolling sample used for per-PR workload statistics is not a session quota.
+
+## PR workload is measured in predefined batch subsections — owner clarification 2026-10-14
+
+**The countable work unit is a predefined batch subsection** in the authoritative
+approved roadmap/design, such as H-3, H-4 or B-5 (use this repository's actual IDs).
+The target is **2–5 fully completed batch subsections per substantive PR on
+average**, alongside the existing 400–800 production-line average. Prefer the
+substantial end when related work safely supports it. This does not redefine
+“slice”: a technical slice may be a useful internal implementation step, but it
+is not the unit used to satisfy the PR workload target.
+
+**Freeze the counting boundary before coding.** List the existing batch-subsection
+IDs and their full scope/acceptance in the PR. A function, endpoint, tool, UI
+hookup, guard, helper, test or checklist item is work WITHIN that subsection.
+Internal packet tasks, new JIT cards, subcards, commits and local checkpoints do
+not create additional countable subsections. Do not subdivide, rename or relabel
+work to increase the count. A partial subsection counts as ZERO completed
+subsections; keep its remaining engineering against the same ID. Across PRs,
+count each subsection once, when its full eligible engineering and required
+pre-merge proof are complete. Keep external acceptance separately open where
+existing rules permit; never hide unfinished engineering in that queue.
+
+**Build a substantial coherent PR.** Group related whole batch subsections.
+If one whole subsection naturally requires about 600 production lines, one is
+a legitimate boundary. Larger coherent work is allowed when manageable. Never
+pad code, combine unrelated risks, or claim completion with engineering missing.
+The existing workload averages apply to these predefined subsections, not to
+smaller technical slices, packet tasks or individual functions.
+
+**Validate the assembled workload.** During implementation run focused tests
+and lint at meaningful changed seams. A local check/checkpoint is not a PR
+boundary. Assemble related subsection work before running the full required
+publication checks, security/CI/review and applicable database/browser suites
+on the coherent PR. Fix failures together; repeat checks when code changes or
+new evidence warrants it. Do not rerun every broad suite and rewrite full
+handoffs after every helper. Every existing mandatory gate remains binding.
+
+Older references to “2–5 slices” or “completed slices” as a PR workload metric
+mean **2–5 predefined batch subsections**. Technical slices and execution-packet
+tasks retain their ordinary use as internal implementation aids; their count
+does not establish completed batch subsections.
+
+
 ## Original Toolkit is reference-only — owner clarification 2026-10-14
 
 `Robinson-AI-Systems/robinsons-toolkit-mcp` is the historical capability reference,
@@ -36,7 +87,7 @@ functionality, not GitHub activity. Each PR must integrate at least one whole el
 roadmap slice; package multiple adjacent small slices from the same approved parent
 outcome when their contract, risk, callers, integration and tests belong together.
 Target **400–800 changed production-code lines per substantive PR on average**
-and **2–5 fully completed roadmap slices per substantive PR on average**,
+and **2–5 fully completed predefined batch subsections per substantive PR on average**,
 measured over the latest five merged implementation PRs when available. These
 are *averages for planning*, not a hard per-PR minimum/maximum, acceptance
 substitute, or reason to add filler, bundle unrelated risks, or split coherent
@@ -49,9 +100,8 @@ Small safety corrections and unusually large inseparable outcomes remain
 legitimate and should be explained, not padded. Avoid one-helper/one-tool
 PRs when adjacent eligible slices belong together.
 
-**No fixed PR count or multiple-of-five boundary.** Older directions elsewhere
-requiring five or ten PRs or PR-number alignment are superseded. Do not invent
-small PRs or pad changes to satisfy a number. Spend the chat's usable context
+**Session scope follows the current owner prompt.** Do not invent small PRs
+or pad changes to satisfy a number. Spend the chat's usable context
 on complete outcomes; after each merged PR, preserve an exact recoverable
 checkpoint (branch/head, card/slice coverage, focused and CI proof, open review,
 deployed/live versus source, pending acceptance and next action). Before starting
@@ -63,14 +113,13 @@ continuation prompt instead of completing currently feasible work.
 **Remaining-work visibility.** Run `npm run session:status` to read the
 current work-index counts (merged, in-progress, approved, owner-on-request)
 and remaining approved **roadmap units**, by batch, alongside the separate
-release acceptance queue. The index's `units` are coarse planned acceptance
-units, not automatically counted PR slices. At each PR handoff record actual
+release acceptance queue. The index's `units` are predefined batch-subsection
+units; status counts do not automatically prove their completion. At each PR handoff record actual
 completed slice IDs and production-code line changes; report what is still
 unfinished in the authoritative cards, without inventing a finer estimate.
 Do not mark incomplete cards MERGED just to raise a percentage. Follow the
 roadmap's designated order, not the milestone named in an old handoff.
-A session-specific explicit owner request for five PRs applies to that
-session alone without weakening quality gates or making five a standing quota.
+A session-specific owner PR count applies only to that session and preserves every quality gate.
 
 **Adaptive CI budget and measurement.** Validate focused behavior at meaningful
 code seams, run required complete gates on the final coherent tree and fix all
@@ -144,7 +193,7 @@ history live in `docs/DECISIONS.md` and `docs/archive/`; never take instructions
     is the current task — fix it before any new card.
 12. **Problems are not blockers.** Red CI, lint, failing tests, wrong parameters, conflicts and unclear code are yours to
     fix; stop only for a hard limit or an owner decision the current step needs (SESSION-START §6).
-13. **Thin slices, then a recovery point.** Run each slice's tests and lint before writing the next (at meaningful seams); end every turn right after a push whose resume note names the exact next action.
+13. **Focused tasks, then a recovery point.** Run affected tests/lint at meaningful seams within the predefined batch subsection; end every turn right after a push whose resume note names the exact next action.
 
 ## What this is
 

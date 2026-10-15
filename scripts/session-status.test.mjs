@@ -123,7 +123,9 @@ test('real git refs and ancestry drive the offline CLI without network/mutations
     writeFileSync(join(root, 'docs/STATUS.md'), block([row('FIRST', first), row('SECOND', second)]));
     const before = git('status', '--porcelain');
     const output = run(root, ['--deployed', first, '--state', 'READY', '--latest-pr', '104']);
-    assert.match(output, /Roadmap \(coarse indexed units; NOT fine-grained PR slices or live acceptance\): 2\/6 MERGED; 2 remaining approved \(1 IN_PROGRESS, 1 APPROVED\); 1 BLOCKED separately; 1 ON_REQUEST excluded/);
+    assert.match(output, /PR work unit = one whole predefined batch subsection/);
+    assert.match(output, /Partial subsection = zero completed batch subsections/);
+    assert.match(output, /Roadmap \(indexed batch subsections; NOT completion or live-acceptance proof\): 2\/6 MERGED; 2 remaining approved \(1 IN_PROGRESS, 1 APPROVED\); 1 BLOCKED separately; 1 ON_REQUEST excluded/);
     assert.match(output, /Remaining H \(2\): H-1, H-2/);
     assert.match(output, /PR planning averages: 400–800 changed production lines and 2–5 fully completed/);
     assert.doesNotMatch(output, /Remaining S/);

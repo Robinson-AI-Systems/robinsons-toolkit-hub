@@ -54,7 +54,9 @@ describe('outcome-first owner workflow remains authoritative',()=>{
     expect(start).toContain('remaining context');
     expect(agents).toContain('Roadmap-throughput and context-safe execution');
     expect(agents).toContain('400–800 changed production-code lines');
-    expect(agents).toContain('2–5 fully completed roadmap slices');
+    expect(agents).toContain('2–5 fully completed predefined batch subsections');
+    expect(agents).toContain('Session PR count comes from the current owner prompt');
+    expect(agents).toContain('A partial subsection counts as ZERO');
     expect(start).toContain('coarse indexed units');
     expect(start).toContain('deployment-dependent');
     expect(start).not.toContain('next higher PR-number multiple of five');
