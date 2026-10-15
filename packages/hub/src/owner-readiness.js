@@ -10,6 +10,7 @@ function configuredKey(value) {
 function intro() {
  return '<!doctype html><html lang="en"><meta charset="utf-8">'+
   '<title>Hub TEST federation readiness</title><main><h1>Hub H-3 TEST readiness</h1>'+
+  '<p><a href="/api/owner/dashboard">Open private owner control center</a></p>'+ 
   '<p>Only the verified owner may see current setup state. No upstream test, '+
   'grant issuance, service activation or provider write runs on this page.</p>';
 }

@@ -1,4 +1,32 @@
 
+## H-4 owner-only consolidated control center — source implementation
+
+The new `/api/owner/dashboard` GET serves only a static mobile-viewport form.
+Each private POST repeats independent owner password verification and shared
+SQL lockout before reading bounded pass, OAuth family, staged/active grant,
+current service-area/profile, audit and H-3 readiness records. Owner identifiers
+come only from the configured owner, never from the browser. Sections are
+isolated on database migration/fetch failure and report unavailable rather
+than an empty or successful provider state. The UI never loads provider APIs,
+reuses an authenticated session, sends/prints a pass, or performs writes by
+itself. Scope action forms POST to existing independently verified owner
+routes, so the newest SQL policy and grant are checked again before any
+irreversible reduction/revocation; all credentials must be entered afresh.
+
+Bounded source regression tests cover owner/password/method/selector refusals,
+no-store/CSP, script escaping, partial database outage, metadata projection,
+mobile HTML action forms, current disposable SQL grant readback, no secret
+publication and readiness explicitly UNVERIFIED. Existing owner pages link
+to the center; no host-only or browser control is silently activated.
+
+H-2/H-3/H-4 source engineering and external deployment remain separate.
+Current Hub connector advertising RTC 0/upstreamDisabled cannot close genuine
+connected direct, relay, Sandbox and two-service authenticated TEST proof.
+This is one connected H-4 owner workflow improvement, not an invented new
+batch subsection, not a provider or production activation, and not yet full
+H-4 acceptance. CI/review evidence is required before merge.
+
+
 ## H-4 atomic owner multi-service area reduction — source implementation
 
 Existing H-4 permission subsection remains IN_PROGRESS. The verified owner can
