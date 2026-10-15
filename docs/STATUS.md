@@ -27,9 +27,29 @@ Current verified release separation: Vercel production READY
 The custom Hub TEST cloud adapter connected and reported `mode:test`,
 `allowWrites:false`, RTC 0, `upstreamEnabled:false`, zero verified RTC
 grants/targets. These adapter metadata reads do NOT prove genuine RTC 1
-direct, encrypted private relay, Sandbox or revocation acceptance. The
-twenty existing release queue rows remain PENDING pending each row's
-genuine auth/provider/environment prerequisites and deployed ancestry.
+direct, encrypted private relay, Sandbox or revocation acceptance. All **20 of 20** recorded release-acceptance minimum source revisions
+were explicitly compared against verified READY/live
+`8169af07afa2df4fe9cacb195b5382f9c04fc7e0` on October 15 and
+were **confirmed in its deployed ancestry** (including all H-3 and H-4
+minimum revisions). The `main`/`live` gap **cannot be used to defer**
+any of those tests. All 20 rows remain PENDING only because their
+specific independent owner/provider TEST grants, verified RTC 1 upstream
+targets, protected runner evidence, installed hosted migration proof or
+owner-confirmed fixture steps have not been furnished/performed per each
+row's `gates` and `procedure`. Current custom Hub TEST cloud
+connection proves only RTC 0 foundation/metadata, with zero upstream
+targets; it is not RTC 1 or direct/relay/Sandbox read acceptance.
+
+Next: in an owner-approved protected non-production context, verify
+service deployment identity and issue the actual scoped TEST grants,
+stage/verify genuine Hub RTC 1 targets and applicable hosted migrations,
+then execute each queue row's read/denial/revocation/readback/cleanup
+procedure. Do all independent routes separately. Check public fleet
+GET /api/contract from an authorized runner: attempted web-based
+observation on October 15 could not access all five protected inventory
+origins, so it supplies **no** status/pass evidence. Keep all rows OPEN;
+do not require newer unreleased L-2/L-3 code for their already-deployed
+H-3/H-4 behavior.
 
 Actual owner-machine
 Chromium execution remains OPEN external acceptance, distinct from source proof.
