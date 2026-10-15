@@ -138,3 +138,33 @@ export function sanitizedServicePolicy(value) {
     throw new TypeError('Malformed service area policy');
   return Object.fromEntries(keys.sort().map(k=>[k,[...value[k]]]));
 }
+
+/** Initial owner restrictions: server:area|area,other:area. */
+export function parseInitialServiceAreas(raw,serverNames) {
+ if(raw===undefined||raw===null||raw==='')return null;
+ if(typeof raw!=='string'||Buffer.byteLength(raw,'utf8')>2048||
+   !Array.isArray(serverNames)||serverNames.length<1||serverNames.length>20)
+   throw new TypeError('Invalid initial RTC service areas');
+ const permitted=new Set(serverNames),entries=raw.split(','),result={};
+ if(entries.length<1||entries.length>20)
+   throw new TypeError('Too many initial RTC service areas');
+ for(const entry of entries){
+   const pivot=entry.indexOf(':');
+   if(pivot<1||pivot!==entry.lastIndexOf(':'))
+     throw new TypeError('Malformed initial RTC service area');
+   const name=entry.slice(0,pivot),areas=entry.slice(pivot+1).split('|');
+   if(!service.test(name)||!permitted.has(name)||
+     Object.hasOwn(result,name)||!validServiceAreas(areas))
+     throw new TypeError('Unregistered, duplicate or invalid RTC service area');
+   result[name]=areas;
+ }
+ return result;
+}
+export function checkedInitialServiceAreas(value,serverNames) {
+ if(value===undefined||value===null)return null;
+ const checked=sanitizedServicePolicy(value);
+ if(!Array.isArray(serverNames)||serverNames.length<1||
+   Object.keys(checked).some(name=>!serverNames.includes(name)))
+   throw new TypeError('Initial service areas must be owner-selected and scoped');
+ return Object.keys(checked).length?checked:null;
+}

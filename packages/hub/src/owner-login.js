@@ -2,6 +2,7 @@ import { scryptSync, timingSafeEqual } from 'node:crypto';
 import { takeBudget } from './limits.js';
 import { registerOAuthClient, issueOAuthCode } from './oauth.js';
 import {parseInitialServiceProfiles} from './service-profile-policy.js';
+import {parseInitialServiceAreas} from './service-area-policy.js';
 import { parseOwnerServerSelection } from './server-selection.js';
 
 export function publicHubOrigin(env=process.env) {
@@ -89,7 +90,9 @@ export function htmlForm(action,fields) {
     '<input name="servers" maxlength="1300" required></label>'+
     '<label>Optional per-service profile ceilings '+
     '(stripe=read_only,workspace=disabled) '+
-    '<input name="profiles" maxlength="1300"></label>'+
+    '<input name="profiles" maxlength="1300"></label>'+ 
+    '<label>Optional per-service RTC areas (stripe:billing|reports,workspace:drive) '+
+    '<input name="service_areas" maxlength="2048"></label>'+
     '<p>Disabled services are unavailable from first authorization, and '+
     'all others remain limited by independently issued TEST/read_only grants.</p>'+
     '<p>Only separately issued TEST read-only grants on these exact servers '+
@@ -118,8 +121,11 @@ export async function authorizeOwnerConnection(db, req, input, {env=process.env,
     code_challenge_method:'S256',response_type:'code'}};
   const selected=parseOwnerServerSelection(input.servers);
   if (!selected) return {status:400};
-  let profiles;
-  try{profiles=parseInitialServiceProfiles(input.profiles,selected);}
+  let profiles,serviceAreas;
+  try{
+    profiles=parseInitialServiceProfiles(input.profiles,selected);
+    serviceAreas=parseInitialServiceAreas(input.service_areas,selected);
+  }
   catch{return {status:400};}
   const verified=await verifyOwnerLogin(db,req,input.password,{env});
   if (!verified.approved) return {status:verified.retryAfter?429:401,
@@ -127,7 +133,8 @@ export async function authorizeOwnerConnection(db, req, input, {env=process.env,
   const code=await issue(db,{ownerId:env.HUB_OWNER_ID,clientId:request.clientId,
     redirectUri:request.redirectUri,challenge:request.challenge,
     profile:'read_only',mode:'test',areas:['gateway'],serverNames:selected,
-    ...(profiles?{serviceProfiles:profiles}:{})},
+    ...(profiles?{serviceProfiles:profiles}:{}),
+    ...(serviceAreas?{serviceAreas}:{})},
   {pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
   const destination=new URL(request.redirectUri);
   destination.searchParams.set('code',code);
