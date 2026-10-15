@@ -1869,3 +1869,5 @@ The runner's existing assertions, negative reference cases and secret boundaries
 remain. New fixture/invalid-input/paging tests prove selectors cannot waive checks.
 This is a dependency of the same unfinished Google Workspace P8-4/P8-5/P8-7
 workload, not a new Hub bundle or external D-4 acceptance. No deployment/spend.
+Follow-up review of #213 retained the original initial-success-envelope assertion
+at the new shared recovery boundary; failure cannot be laundered through a handle.
