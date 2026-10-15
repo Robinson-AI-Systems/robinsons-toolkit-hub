@@ -22,7 +22,7 @@ L-3 source is MERGED; no live-owner acceptance is inferred.
 
 Current verified release separation: Vercel production READY
 `8169af07afa2df4fe9cacb195b5382f9c04fc7e0` from `live`
-(deployment `dpl_FQDkeH4g3vHSP5LjGAu3KKRuV2T5`); source main
+(independently checked Vercel production deployment); source main
 `a66e814554c04ded17dd1ea234a6a4e58bc4338a` before #210.
 The custom Hub TEST cloud adapter connected and reported `mode:test`,
 `allowWrites:false`, RTC 0, `upstreamEnabled:false`, zero verified RTC
