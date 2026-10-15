@@ -229,7 +229,7 @@ authenticated end-to-end acceptance separately; retain missing proof as OPEN.
 
 When the current owner specifies N bundles, continue toward that target under
 the evidence-backed blocker/limit rule above. Without a specified target, use the
-available recoverable context for complete approved outcomes. Plan for a rolling average
+available recoverable context for complete, cohesive roadmap outcomes. Plan for a rolling average
 of 400–800 changed production lines and 2–5 completed batch subsections per
 substantive implementation PR, without hard caps or filler. Record completed
 slice IDs and production-only diff counts in the existing PR/handoff;
