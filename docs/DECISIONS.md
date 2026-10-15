@@ -109,3 +109,15 @@ Service dispatch/credentials/state/approvals stay service-owned behind frozen RT
 minimal grant narrowing/audit and bounded discovery/results are first-slice requirements; real two-service
 proof is separate from D-4 and package adoption. No frozen RTC wire change, production or spending approval.
 Explicit owner docs/planning request authorizes focused planning PRs; routine no-docs-only cadence is unchanged.
+
+## October 14, 2026 — owner-delegated concrete implementation designs
+
+The owner requested completing/revising remaining designs, then extending the
+same Sol 5.6 implementation detail to all six active custom MCP repositories.
+[IMPLEMENTATION-GUIDE.md](implementation-contracts/IMPLEMENTATION-GUIDE.md) adds typed state/argument/result
+contracts, domain-specific failure and recovery cases, current code seams and
+finite proof requirements for the remaining indexed scope. This is an explicit
+design-maintenance exception to routine no-docs-only implementation work, not a
+feature PR or completed subsection. Existing owner-specific missing inputs,
+spending/production/credential/cleanup authority remain gated; this entry does
+not mark them answered. The original Toolkit stays reference-only.
