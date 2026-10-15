@@ -1,3 +1,4 @@
+import { fixtureOptions, recoverResult } from './fixtures.js';
 // Wire-level RTC 1 conformance: every probe uses real HTTP requests, never a service credential.
 // Passes remain in memory and never enter a URL, assertion message or output.
 import { verifyRefreshSettings } from './oauth.js';
@@ -30,8 +31,12 @@ const call = async (url, pass, path, args, method) => {
 const toolsOf = (data) => Array.isArray(data?.result?.tools) ? data.result.tools : [];
 const available = (passes, key) => typeof passes[key] === 'string' && passes[key].length > 0;
 
-export async function runConformance({ url, passes = {}, oauth, instances } = {}) {
+export async function runConformance({ url, passes = {}, oauth, instances, fixtures } = {}) {
   if (!url || !/^https?:\/\/[^?#/]+/.test(url)) throw new TypeError('A server URL is required');
+  const fixture = fixtureOptions(fixtures);
+  const field = fixture?.field || 'value';
+  const valueArgument = fixture?.valueArgument || 'value';
+  const argsFor = role => fixture?.[role]?.args || {};
   const checks = [];
   const probe = async (name, run, { needs = [], requiresManifest = false } = {}) => {
     const missing = needs.filter((key) => !available(passes, key));
@@ -72,10 +77,19 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
   });
   let catalog = [];
   await probe('catalog', async () => {
-    const r = await call(url, passes.full, '/api/tools?limit=100&listing=catalog');
-    assert(r.status === 200 && r.data.ok === true, '§3: tools catalog unavailable');
-    catalog = toolsOf(r.data);
-    assert(catalog.length && catalog.length <= 100, '§3: tools catalog invalid or exceeds page limit');
+    const pages = new Set();
+    let next = '1';
+    while (next !== null) {
+      assert(typeof next === 'string' && /^[1-9][0-9]*$/.test(next) && !pages.has(next) && pages.size < 100,
+        '§3: invalid or cyclic catalog continuation');
+      pages.add(next);
+      const r = await call(url, passes.full, '/api/tools?limit=100&listing=catalog&page=' + next);
+      assert(r.status === 200 && r.data.ok === true, '§3: tools catalog unavailable');
+      const batch = toolsOf(r.data);
+      assert(batch.length && batch.length <= 100, '§3: tools catalog invalid or exceeds page limit');
+      catalog.push(...batch);
+      next = r.data.result?.next ?? null;
+    }
     const unique = new Set();
     for (const tool of catalog) {
       assert(typeof tool.name === 'string' && tool.name.startsWith(manifest.prefix + '_'),
@@ -98,9 +112,9 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
     assert(catalog.length <= manifest.counts.tools, '§1: catalog exceeds manifest tool count');
   }, { needs: ['full'], requiresManifest: true });
   const selection = () => {
-    const read = catalog.find((t) => !t.writes);
-    const write = catalog.find((t) => t.writes && !t.money && !t.destructive);
-    const guarded = catalog.find((t) => t.writes && (t.money || t.destructive));
+    const read = catalog.find((t) => !t.writes && (!fixture || t.name === fixture.read.name));
+    const write = catalog.find((t) => t.writes && !t.money && !t.destructive && (!fixture || t.name === fixture.write.name));
+    const guarded = catalog.find((t) => t.writes && (t.money || t.destructive) && (!fixture || t.name === fixture.guarded.name));
     assert(read && write && guarded, '§4: reference probes need read, write and guarded tools');
     return { read, write, guarded };
   };
@@ -112,7 +126,7 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
     assert(toolsOf(searched.data).some((x) => x.name === read.name), '§4: search failed');
     const described = await call(url, passes.full, '/api/tools/' + encodeURIComponent(read.name));
     assert(described.data.result?.name === read.name, '§4: describe failed');
-    const batch = await call(url, passes.full, '/api/tools/_batch', { calls: [{ name: read.name, args: {} }] });
+    const batch = await call(url, passes.full, '/api/tools/_batch', { calls: [{ name: read.name, args: argsFor('read') }] });
     assert(batch.data.ok === true && Array.isArray(batch.data.result?.results),
       '§4: read-only batch failed');
     const refused = await call(url, passes.full, '/api/tools/_batch',
@@ -126,15 +140,15 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
   await probe('reads', async () => {
     const { read } = selection();
     const path = '/api/tools/' + encodeURIComponent(read.name);
-    const summary = await call(url, passes.full, path, { detail: 'summary', fields: ['value'] });
-    assert(summary.data.ok && Object.keys(summary.data.result || {}).every((x) => x === 'value'),
+    const summary = await call(url, passes.full, path, { ...argsFor('read'), detail: 'summary', fields: field });
+    assert(summary.data.ok && Object.hasOwn(summary.data.result || {}, field) && Object.keys(summary.data.result).every((x) => x === field),
       '§7: fields projection failed');
-    const long = await call(url, passes.full, path, { detail: 'full' });
-    assert(long.data.ok && long.data.handle &&
-      JSON.stringify(long.data).length <= 8192, '§7: >8 KB result must return a handle');
-    const own = await call(url, passes.full, '/api/results/' + encodeURIComponent(long.data.handle));
-    assert(own.data.ok && typeof own.data.result?.payload === 'string' &&
-      own.data.result.payload.length > 8192, '§7: result handle cannot recover full data');
+    const largeName = fixture?.largeRead.name || read.name;
+    assert(catalog.some(t => t.name === largeName && !t.writes), '§7: large read must be an advertised read');
+    const long = await call(url, passes.full, '/api/tools/' + encodeURIComponent(largeName),
+      { ...argsFor('largeRead'), detail: 'full' });
+    const recovered = await recoverResult(call, url, passes.full, long);
+    assert(Buffer.byteLength(recovered) > 8192, '§7: result handle must recover the complete >8KB fixture');
     if (available(passes, 'readOnly')) {
       const other = await call(url, passes.readOnly,
         '/api/results/' + encodeURIComponent(long.data.handle));
@@ -145,20 +159,20 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
     const { read, write, guarded } = selection();
     const path = '/api/tools/' + encodeURIComponent(write.name);
     const readPath = '/api/tools/' + encodeURIComponent(read.name);
-    const before = await call(url, passes.full, readPath, { detail: 'summary', fields: ['value'] });
-    const dry = await call(url, passes.full, path, { dryRun: true, confirm: true, value: 'preview' });
-    const after = await call(url, passes.full, readPath, { detail: 'summary', fields: ['value'] });
+    const before = await call(url, passes.full, readPath, { ...argsFor('read'), detail: 'summary', fields: field });
+    const dry = await call(url, passes.full, path, { ...argsFor('write'), dryRun: true, confirm: true, [valueArgument]: 'preview' });
+    const after = await call(url, passes.full, readPath, { ...argsFor('read'), detail: 'summary', fields: field });
     assert(dry.data.ok && dry.data.result?.done === false &&
-      before.data.result?.value === after.data.result?.value,
+      Object.hasOwn(before.data.result || {}, field) && before.data.result[field] === after.data.result?.[field],
       '§6: dryRun must not change state');
     const unconfirmed = await call(url, passes.full,
-      '/api/tools/' + encodeURIComponent(guarded.name), { value: 'unconfirmed' });
+      '/api/tools/' + encodeURIComponent(guarded.name), { ...argsFor('guarded'), [valueArgument]: 'unconfirmed' });
     assert(unconfirmed.data.result?.needsConfirmation === true &&
       unconfirmed.data.result?.done === false, '§6: guarded write needs confirmation');
-    const done = await call(url, passes.full, path, { confirm: true, value: 'committed' });
-    const check = await call(url, passes.full, readPath, { fields: ['value'] });
+    const done = await call(url, passes.full, path, { ...argsFor('write'), confirm: true, [valueArgument]: 'committed' });
+    const check = await call(url, passes.full, readPath, { ...argsFor('read'), fields: field });
     assert(done.data.result?.confirmed === true && done.data.result?.logged?.id &&
-      check.data.result?.value === 'committed', '§6: write must read back and log its change');
+      check.data.result?.[field] === 'committed', '§6: write must read back and log its change');
   }, { needs: ['full'], requiresManifest: true });
   await probe('passes', async () => {
     const missing = await call(url, null, '/api/whoami');
@@ -168,7 +182,7 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
   await probe('passes.read_only', async () => {
     const { write } = selection();
     const blocked = await call(url, passes.readOnly,
-      '/api/tools/' + encodeURIComponent(write.name), { value: 'forbidden', confirm: true });
+      '/api/tools/' + encodeURIComponent(write.name), { ...argsFor('write'), [valueArgument]: 'forbidden', confirm: true });
     assert(blocked.status >= 400 && errorShape(blocked.data, 'refused_by_guard'),
       '§2: read-only pass must refuse all writes');
   }, { needs: ['readOnly'], requiresManifest: true });
@@ -182,7 +196,7 @@ export async function runConformance({ url, passes = {}, oauth, instances } = {}
   await probe('safety', async () => {
     const { read } = selection();
     const response = await call(url, passes.full,
-      '/api/tools/' + encodeURIComponent(read.name), { detail: 'summary' });
+      '/api/tools/' + encodeURIComponent(read.name), { ...argsFor('read'), detail: 'summary' });
     assert(!tokenPattern.test(JSON.stringify(response.data)), '§7: response contains a secret-shaped value');
     tokenPattern.lastIndex = 0;
     const bad = await call(url, passes.full, '/api/tools/definitely_not_a_tool');

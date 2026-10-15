@@ -29,7 +29,7 @@ const readBody = async (req) => {
   return text ? JSON.parse(text) : {};
 };
 const project = (value, fields) => fields?.length ? Object.fromEntries(
-  fields.filter((key) => Object.hasOwn(value, key)).map((key) => [key, value[key]])) : value;
+  (typeof fields === 'string' ? fields.split(',') : fields).filter((key) => Object.hasOwn(value, key)).map((key) => [key, value[key]])) : value;
 
 export async function startFakeServer({ prefix = 'fake', faults = [], passes: sharedPasses, rateLimit } = {}) {
   const bad = new Set(faults);
