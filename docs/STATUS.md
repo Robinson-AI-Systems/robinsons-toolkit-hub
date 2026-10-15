@@ -1,3 +1,25 @@
+## H-5 source implementation — PR #207 (external acceptance OPEN)
+
+The new owner/agent history reads Hub's existing mandatory H-3 RTC audit
+attempts and outcomes through additive SQL view migration 019. It gives the
+verified TEST caller only currently authorized service history; revocation
+and later service reductions reauthorize against active independently issued
+RTC grants before every page. HMAC-signed caller/filter/keyset cursor expires
+after five minutes. Native MCP and HTTPS use the same fixed schema and
+real SQL guard; owner HTML requires a fresh independent password on every
+page. Optional *single selected* provider history runs only when a matching
+read-only provider tool was actually advertised, through the existing
+non-retrying pinned H-3 RTC dispatcher. Provider refusal/timeout/missing
+capability is disclosed without falsifying the Hub's durable receipt.
+
+Current source branch: `ai/gpt6/h5-audited-recent-changes`. The prior stall
+after a source-only checkpoint is addressed in SESSION-START with a mandatory
+recover/finish-this-subsection rule and exact pointer on H-5's card.
+H-5 source exact-head CI and full disposable PostgreSQL gates must pass before
+engineering status can advance. Deployed 019, genuine independent service
+TEST read and provider log linkage, direct/relay/Sandbox and H-4's existing
+acceptance queue remain separately OPEN; no production activation or spending.
+
 
 ## H-4 exact SQL across native MCP and direct HTTPS — source acceptance candidate
 

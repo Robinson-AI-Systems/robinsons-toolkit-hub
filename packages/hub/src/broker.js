@@ -22,6 +22,13 @@ const catalog=Object.freeze([
       items:{type:'object',properties:{name:rtcName,args:{type:'object'}},required:['name'],
         additionalProperties:false}}},
       required:['calls'],additionalProperties:false}},
+  {name:'hub_recent_changes',description:'Read only your durable TEST RTC routed history; optionally query one exact authorized upstream history tool',
+    inputSchema:{type:'object',properties:{
+      server:{type:'string',pattern:'^[a-z][a-z0-9_]{1,59}$'},
+      limit:{type:'integer',minimum:1,maximum:20},
+      cursor:{type:'string',minLength:1,maxLength:540},
+      includeUpstream:{type:'boolean'}
+    },additionalProperties:false}},
   {name:'hub_namespaces',description:'List bounded accessible namespaces without fetching upstream tools',
     inputSchema:{type:'object',properties:{
       limit:{type:'integer',minimum:1,maximum:20},
