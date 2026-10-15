@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { digestPass } from './identity.js';
 import { serverSelection } from './server-selection.js';
+import {sanitizedServicePolicy} from './service-area-policy.js';
 const codePattern = /^[A-Za-z0-9_-]{43}$/;
 const allowedProfile = new Set(['read_only','everyday','full']);
 function token() { return randomBytes(32).toString('base64url'); }
@@ -71,6 +72,24 @@ async function storeSession(db, row, pepper, familyId=randomUUID()) {
   const selected = serverSelection(row.allowed_servers);
   const identity=[randomUUID(),familyId,row.owner_id,row.client_id,
     digestPass(access,pepper),digestPass(refresh,pepper),row.profile,row.areas,row.mode];
+
+  // H-4: a rotated refresh family must inherit every current per-service
+  // caller area reduction. Migration 015 is required only for narrowed
+  // families; untouched legacy token exchange continues unchanged.
+  const servicePolicy=row.service_area_policy??null;
+  if(servicePolicy!==null) {
+    const columns=selected?'allowed_servers,service_area_policy':'service_area_policy';
+    const params=selected?[...identity,selected,servicePolicy]:[...identity,servicePolicy];
+    const sql='INSERT INTO hub_oauth_sessions '+
+      '(id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,'+
+      'access_expires_at,refresh_expires_at,'+columns+') '+
+      'VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'+
+      "now()+interval '1 hour',now()+interval '30 days'," +
+      (selected?'$10,$11)':'$10)');
+    await db.query(sql,params);
+    return {access_token:access,refresh_token:refresh,
+      token_type:'Bearer',expires_in:3600};
+  }
   if (selected) {
     await db.query(`INSERT INTO hub_oauth_sessions
       (id,family_id,owner_id,client_id,access_digest,refresh_digest,profile,areas,mode,
@@ -105,7 +124,8 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
     WHERE refresh_digest=$1 AND client_id=$2 AND refresh_used_at IS NULL
     AND revoked_at IS NULL AND refresh_expires_at>now()
     RETURNING owner_id,client_id,profile,areas,mode,family_id,
-      to_jsonb(hub_oauth_sessions)->'allowed_servers' AS allowed_servers`,
+      to_jsonb(hub_oauth_sessions)->'allowed_servers' AS allowed_servers,
+      to_jsonb(hub_oauth_sessions)->'service_area_policy' AS service_area_policy`,
   [digestPass(input.refreshToken,pepper),input.clientId]);
   if (!used.rows.length) {
     // A second use of an already-rotated bearer is a compromised family,
@@ -178,9 +198,10 @@ export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}
   if(!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId||''))
     throw new TypeError('Invalid owner');
   const {rows}=await db.query(`SELECT id,family_id,client_id,profile,areas,mode,
-    allowed_servers,access_expires_at,refresh_expires_at FROM (
+    allowed_servers,service_area_policy,access_expires_at,refresh_expires_at FROM (
       SELECT s.id,s.family_id,s.client_id,s.profile,s.areas,s.mode,
         to_jsonb(s)->'allowed_servers' AS allowed_servers,
+        to_jsonb(s)->'service_area_policy' AS service_area_policy,
         s.access_expires_at,s.refresh_expires_at,
         row_number() OVER (PARTITION BY s.family_id
           ORDER BY s.refresh_expires_at DESC,s.access_expires_at DESC,s.id DESC) AS rank
@@ -193,6 +214,7 @@ export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}
     id:r.id,clientId:r.client_id,profile:r.profile,mode:r.mode,
     areas:[...r.areas],serverNames:Array.isArray(r.allowed_servers) ?
       [...serverSelection(r.allowed_servers)] : null,
+    serviceAreas:sanitizedServicePolicy(r.service_area_policy),
     accessExpiresAt:r.access_expires_at,refreshExpiresAt:r.refresh_expires_at
   }));
 }

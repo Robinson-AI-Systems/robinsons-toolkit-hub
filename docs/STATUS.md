@@ -1,3 +1,12 @@
+## H-4 per-service Hub caller area ceilings — source candidate
+
+H-4 owner controls add an irreversible service-specific area overlay for
+Hub passes and OAuth refresh families, with current-SQL intersection applied
+to discovery and call routing, encrypted result invalidation, and audit.
+Migration 015 and independent two-provider TEST refusal remain OPEN; no
+hosted credential, release or service-owned authority is assumed. H-4 remains
+IN_PROGRESS pending complete multi-door source proof and real hosted checks.
+
 ## H-4 permanent OAuth family server narrowing — source proposal
 
 Owner-only one-way reduction now updates every existing PKCE refresh family
@@ -501,6 +510,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: local HTTP/isolated PostgreSQL H-4 family narrowing and concurrency checks are not deployed owner or real provider TEST evidence."
+  },
+  {
+    "id": "HUB-H4-CALLER-AREAS",
+    "priority": 18,
+    "requiredRevision": "ffb468f3f13c624404ef41ffceda76f9a351516b",
+    "introducedFile": "packages/hub/migrations/015-hub-caller-service-area-policy.sql",
+    "task": "Verify verified-owner per-service Hub pass and OAuth family area restrictions, current-SQL discovery/schema/call/batch denial, refresh inheritance, owner readback/audit, old encrypted RTC result refusal, independently authenticated two-service TEST on native MCP and HTTPS",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Reviewed READY Hub deployment including SQL 015 and prior migrations; genuine independent owner login, service-issued TEST/read_only credentials, exact provider revisions and no-write provider audit; repeat direct/relay/Sandbox separately",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: Source integration and throwaway PostgreSQL tests only; new per-service caller policy is not released or owner-authenticated against genuine provider TEST."
   }
 ]
 ```

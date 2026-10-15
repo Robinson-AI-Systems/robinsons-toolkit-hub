@@ -1,3 +1,4 @@
+import {effectiveServiceAreas} from './service-area-policy.js';
 import {inspectScopedRtcIdentity} from './pinned-identity.js';
 import {allowedByHubPass} from './server-selection.js';
 import {validateStagedOrigin} from './registry.js';
@@ -38,6 +39,12 @@ export function effectiveGrantAreas(row) {
     return [...row.areas];
   if(!validAreas(row.area_ceiling))throw new TypeError('Invalid RTC area ceiling');
   return row.areas.filter(area=>row.area_ceiling.includes(area));
+}
+// Applying a pass/OAuth-specific ceiling is an additional intersection,
+// never a replacement for the provider's independent RTC permission.
+export function authorizedGrantAreas(row) {
+  return effectiveServiceAreas(effectiveGrantAreas(row),
+    row.caller_area_policy??null,row.server_name);
 }
 async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
   const sql=callerKind==='pass' ?
@@ -143,7 +150,12 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
     !allowedByHubPass(actor,serverName))
     return null;
   const secret=key(settings);
-  const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,s.prefix AS target_prefix FROM hub_server_grants g
+  const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,s.prefix AS target_prefix,
+    CASE WHEN g.caller_kind='pass' THEN
+      (SELECT to_jsonb(c)->'service_area_policy' FROM hub_callers c WHERE c.id=$2)
+    ELSE (SELECT to_jsonb(o)->'service_area_policy'
+      FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_area_policy
+    FROM hub_server_grants g
     JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
     WHERE g.owner_id=$1 AND g.caller_kind=$3
       AND (g.caller_id=$2 OR (g.caller_kind='oauth' AND EXISTS (
@@ -155,6 +167,8 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
         AND fresh.areas=initial.areas AND fresh.mode=initial.mode
         AND (to_jsonb(fresh)->'allowed_servers') IS NOT DISTINCT FROM
             (to_jsonb(initial)->'allowed_servers')
+        AND (to_jsonb(fresh)->'service_area_policy') IS NOT DISTINCT FROM
+            (to_jsonb(initial)->'service_area_policy')
         AND fresh.mode='test' AND fresh.revoked_at IS NULL
         AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
         AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -182,7 +196,7 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   [actor.ownerId,actor.id,actor.clientId?'oauth':'pass',serverName]);
   const row=rows[0];
   if(!row) return null;
-  const limitedAreas=effectiveGrantAreas(row);
+  const limitedAreas=authorizedGrantAreas(row);
   if(!limitedAreas.length)return null;
   // Never dispatch a credential toward a changed or malformed registry target.
   const origin=validateStagedOrigin(row.target_origin);
@@ -213,7 +227,12 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
   const callerKind=actor.clientId?'oauth':'pass';
   const {rows}=await db.query(`SELECT s.name,s.prefix,s.origin,s.claimed_counts,g.areas,
            to_jsonb(g)->'area_ceiling' AS area_ceiling,
-           g.id AS grant_id,g.verified_at
+           g.id AS grant_id,g.verified_at,
+           CASE WHEN g.caller_kind='pass' THEN
+             (SELECT to_jsonb(c)->'service_area_policy' FROM hub_callers c WHERE c.id=$2)
+           ELSE (SELECT to_jsonb(o)->'service_area_policy'
+             FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_area_policy,
+           g.server_name
     FROM hub_servers s JOIN hub_server_grants g
       ON g.server_name=s.name AND g.owner_id=s.owner_id
     WHERE s.owner_id=$1 AND g.caller_kind=$3
@@ -226,6 +245,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND fresh.areas=initial.areas AND fresh.mode=initial.mode
           AND (to_jsonb(fresh)->'allowed_servers') IS NOT DISTINCT FROM
               (to_jsonb(initial)->'allowed_servers')
+        AND (to_jsonb(fresh)->'service_area_policy') IS NOT DISTINCT FROM
+            (to_jsonb(initial)->'service_area_policy')
           AND fresh.mode='test' AND fresh.revoked_at IS NULL
           AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -256,7 +277,7 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit,
       Array.isArray(actor.serverNames) ? actor.serverNames : null]);
   return rows.map(row=>({name:row.name,prefix:row.prefix,
-    claimedCounts:row.claimed_counts,areas:effectiveGrantAreas(row),
+    claimedCounts:row.claimed_counts,areas:authorizedGrantAreas(row),
     // Private cursor scope inputs only: never shown to callers in the
     // Hub namespace/search result or sent to an upstream provider.
     grantId:row.grant_id,origin:row.origin,
