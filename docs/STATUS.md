@@ -1,4 +1,4 @@
-## October 15 — L-3 guarded local headless browser source pending review
+## October 15 — L-3 guarded local headless browser source, PR #210 verified
 
 Reconciled previously unfinished L-3 against main after explicit owner direction
 to finish and merge. The optional `rtool mcp --local` Playwright Chromium
@@ -10,7 +10,28 @@ origin-guarded GET/HEAD-only routes, output bounds and cleanup are verified
 with injected browser behaviors and real filesystem tests. All other newer
 main work and its acceptance records preserved.
 
-L-3 code merge requires exact-head CI and review. Actual owner-machine
+L-3 PR #210 first CI found and reproduced one wildcard-origin parser defect
+(WHATWG URL accepted '*' as a hostname label); corrected fail-closed validation
+without weakening the test. Exact-head source CI passed at
+`e5eef06ef07f6aaf5d934e4dd7fc12af2b1577eb`: `ci`,
+`release-policy`, check/lint/index/secrets, unit (801 tests), disposable
+PostgreSQL 17, and both pinned Stripe owner HTTP/SQL compatibility jobs.
+No open review threads or submitted reviews as inspected; final publication
+commit must pass its own gates before merge. On successful PR #210 merge,
+L-3 source is MERGED; no live-owner acceptance is inferred.
+
+Current verified release separation: Vercel production READY
+`8169af07afa2df4fe9cacb195b5382f9c04fc7e0` from `live`
+(deployment `dpl_FQDkeH4g3vHSP5LjGAu3KKRuV2T5`); source main
+`a66e814554c04ded17dd1ea234a6a4e58bc4338a` before #210.
+The custom Hub TEST cloud adapter connected and reported `mode:test`,
+`allowWrites:false`, RTC 0, `upstreamEnabled:false`, zero verified RTC
+grants/targets. These adapter metadata reads do NOT prove genuine RTC 1
+direct, encrypted private relay, Sandbox or revocation acceptance. The
+twenty existing release queue rows remain PENDING pending each row's
+genuine auth/provider/environment prerequisites and deployed ancestry.
+
+Actual owner-machine
 Chromium execution remains OPEN external acceptance, distinct from source proof.
 No hosted browser, production activation, provider money-out or spending.
 

@@ -575,14 +575,16 @@
         "L-2"
       ],
       "card": "docs/pr-cards/L-3.md",
-      "status": "IN_PROGRESS",
+      "status": "MERGED",
       "units": [
         "L-3"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "pr": [],
-      "note": "Existing L-3 branch reconciled to main with owner authorization to finish and merge. Four guarded local Chromium tools, strict exact-origin and GET/HEAD-only routing, confirmed create-only screenshot, injected browser/failure and real file tests. Exact-head CI and review pending; count subsection only after merge. Owner-machine installed Playwright/Chromium acceptance OPEN separately; no Hub-hosted browser."
+      "pr": [
+        "#210 (existing L-3 guarded local Playwright/browser branch, reviewed exact-head gates)"
+      ],
+      "note": "L-3 source engineering complete under existing approved subsection, with four local opt-in Playwright tools, exact-origin GET/HEAD-only and WebSocket route confinement, bounded read output and confirmed private PNG, real filesystem and fake browser plus local MCP tests. PR #210 mandatory exact-head CI/release-policy passed at e5eef06ef07f6aaf5d934e4dd7fc12af2b1577eb (initial wildcard-origin rejection found and repaired). As-if-merged ledger note is contingent on exact-head final checks and successful #210 merge. Owner-machine real Chromium and network proof separately OPEN; L-4 not included. No hosted release, spend or provider production activation."
     },
     {
       "id": "L-4",
