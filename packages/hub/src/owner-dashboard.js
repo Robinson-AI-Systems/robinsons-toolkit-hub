@@ -18,7 +18,8 @@ function frame(title,body){
   link('/api/owner/oauth','Manage OAuth families')+' | '+
   link('/api/owner/grants','Manage service grants')+' | '+
   link('/api/owner/servers','Manage server registry')+' | '+
-  link('/api/owner/readiness','Original readiness view')+
+  link('/api/owner/readiness','Original readiness view')+' | '+
+  link('/api/owner/changes','Recent routed read history')+
   '</nav>'+body+'</main></html>';
 }
 function requestForm(){
