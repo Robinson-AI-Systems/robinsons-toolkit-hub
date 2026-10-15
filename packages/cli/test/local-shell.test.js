@@ -52,11 +52,11 @@ describe('opt-in non-interpreting local command tool', () => {
         jsonrpc: '2.0', id: 1, method: 'tools/list'
       })).result.tools;
       const shell = tools.filter((tool) => tool.name.startsWith('local.shell_'));
-      expect(shell).toHaveLength(1);
-      expect(shell[0].annotations).toMatchObject({
+      expect(shell).toHaveLength(3);
+      expect(shell.find(x=>x.name==='local.shell_run').annotations).toMatchObject({
         readOnlyHint: true, destructiveHint: false, openWorldHint: false
       });
-      expect(shell[0].inputSchema.additionalProperties).toBe(false);
+      expect(shell.find(x=>x.name==='local.shell_run').inputSchema.additionalProperties).toBe(false);
     }));
 
   it('runs only the safe base commands without confirmation', async () =>

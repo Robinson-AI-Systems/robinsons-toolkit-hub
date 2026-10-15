@@ -1,3 +1,13 @@
+## L-1 isolated opt-in local subprocess source — proposed
+
+A new confirmed, Linux-bubblewrap-gated `local.shell_execute` allows
+bounded developer tool subprocesses ONLY in explicitly enabled local roots.
+It has no unsandboxed fallback and does not inherit host cloud credentials
+or network access. A separate owner-approved create-only capture file
+supports long command logs. CI's injected process tests prove only source
+routing, not real Linux kernel isolation; L-1 remains IN_PROGRESS until
+real-world sandbox acceptance and original shell limits are confirmed.
+
 ## L-1 compact workspace inspection and patch preview — source candidate
 
 New opt-in-only bounded local recursive tree, compact multi-file reads and
