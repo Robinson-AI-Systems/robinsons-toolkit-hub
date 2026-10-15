@@ -15,7 +15,8 @@ function page(content) {
     '<title>Toolkit Hub OAuth connections</title>'+
     '<main><h1>Owner OAuth connection families</h1>'+
     '<p>TEST, read-only Hub connections only. Each upstream provider still '+
-    'requires its own independently issued RTC TEST grant.</p>'+content+
+    'requires its own independently issued RTC TEST grant.</p>'+ 
+    '<p><a href="/api/owner/dashboard">Open private owner control center</a></p>'+content+
     '</main></html>';
 }
 function form() {
