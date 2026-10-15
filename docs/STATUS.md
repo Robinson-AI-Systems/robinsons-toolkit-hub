@@ -1,3 +1,27 @@
+## L-1 compact workspace inspection and patch preview — source candidate
+
+New opt-in-only bounded local recursive tree, compact multi-file reads and
+side-effect-free exact conditional patch preview support real coding-agent
+workflows without unbounded schemas, subprocesses or remote providers.
+Local source/CI tests are distinct from external-machine and OS sandbox
+acceptance; L-1 general shell remains IN_PROGRESS.
+
+## L-1 local read-only Git inspection — source candidate
+
+Opt-in local agents can read bounded working/staged source patches, immutable
+commit-file snapshots, tracked paths and path-specific history using fixed
+Git subcommands. Existing local no-provider and no-shell policy remains in
+force. Real local fixture testing is distinct from any OS-wide sandbox or
+external-machine proof.
+
+## L-1 opt-in confirmed local refactor operations — source candidate
+
+The local MCP gains exact-match conditional patch, same-root no-overwrite
+rename-like move and SHA-confirmed file deletion in explicitly enabled
+local folders. No hosted Hub API, remote account or provider grant changes.
+Local shell general sandbox acceptance remains pending; these local tests
+are not proof of OS-wide isolation from noncooperating processes.
+
 ## H-4 owner-safe active-service grant enrollment and renewal — source candidate
 
 An active, owner-owned service can receive a separately independently issued

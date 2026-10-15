@@ -31,7 +31,7 @@ describe('owner-enabled bounded local Git inspections', () => {
   it('inspects fixed Git status, diff and recent log, without accepting command parameters', async () =>
     fixture(async ({ root, mcp }) => {
       const tools = (await mcp.dispatch({ jsonrpc: '2.0', id: 1, method: 'tools/list' })).result.tools;
-      expect(tools.filter((tool) => tool.name.startsWith('local.git_'))).toHaveLength(3);
+      expect(tools.filter((tool) => tool.name.startsWith('local.git_'))).toHaveLength(7);
       expect(tools.filter((tool) => tool.name.startsWith('local.git_'))
         .every((tool) => tool.annotations.readOnlyHint)).toBe(true);
       expect((await call(mcp, 'local.git_log')).result.structuredContent.output)

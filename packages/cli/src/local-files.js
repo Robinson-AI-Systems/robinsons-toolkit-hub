@@ -5,7 +5,13 @@ import { open, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
 import { ToolError } from './http.js';
 import { inspectLocalGit } from './local-git.js';
+import {LOCAL_GIT_DETAIL_TOOLS,inspectLocalGitDetail} from './local-git-details.js';
+import {LOCAL_WORKSPACE_READ_TOOLS,readLocalFileBundle,
+  readLocalWorkspaceTree} from './local-workspace-read.js';
 import { runLocalShell, LOCAL_SHELL_TOOL } from './local-shell.js';
+import { LOCAL_FILE_REFACTOR_TOOLS,patchConfirmedLocalFile,
+  previewExactLocalPatch,
+  moveConfirmedLocalFile,deleteConfirmedLocalFile } from './local-file-refactor.js';
 import { createConfirmedLocalFile, LOCAL_FILE_CREATE_TOOL } from './local-file-create.js';
 import { searchLocalSources, LOCAL_FILE_SEARCH_TOOL } from './local-file-search.js';
 import { hashLocalFile, updateConfirmedLocalFile, LOCAL_FILE_HASH_TOOL, LOCAL_FILE_UPDATE_TOOL } from './local-file-update.js';
@@ -30,7 +36,7 @@ export const LOCAL_FILE_TOOLS = Object.freeze([
       properties: { root: { type: 'integer', minimum: 0 }, path: { type: 'string' } } } }
 ].map((tool) => Object.freeze({ ...tool, annotations: {
   readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false
-} })).concat(LOCAL_FILE_SEARCH_TOOL, LOCAL_FILE_HASH_TOOL, LOCAL_FILE_CREATE_TOOL, LOCAL_FILE_UPDATE_TOOL, LOCAL_SHELL_TOOL));
+} })).concat(LOCAL_FILE_SEARCH_TOOL, LOCAL_FILE_HASH_TOOL, LOCAL_FILE_CREATE_TOOL, LOCAL_FILE_UPDATE_TOOL, ...LOCAL_FILE_REFACTOR_TOOLS, ...LOCAL_WORKSPACE_READ_TOOLS, LOCAL_SHELL_TOOL));
 
 function relativeInput(value) {
   if (value === undefined || value === '') return '';
@@ -70,6 +76,24 @@ export async function createLocalFiles(folders) {
   };
   const invoke = async (name, args = {}) => {
     if (name === 'local.file_create') return createConfirmedLocalFile(roots, args);
+    if (name === 'local.file_patch') return patchConfirmedLocalFile(roots, args);
+    if (name === 'local.file_patch_preview')
+      return previewExactLocalPatch(roots, args);
+    if (name === 'local.file_read_many')
+      return readLocalFileBundle(roots, args);
+    if (name === 'local.file_tree')
+      return readLocalWorkspaceTree(roots, args);
+    if (name === 'local.file_move') return moveConfirmedLocalFile(roots, args);
+    if (name === 'local.file_delete') return deleteConfirmedLocalFile(roots, args);
+    if(LOCAL_GIT_DETAIL_TOOLS.some(tool=>tool.name===name)){
+      // File-local git readers require only the exact explicitly enabled
+      // root; raw Git argv never comes from caller-controlled strings.
+      if(!args||typeof args!=='object'||Array.isArray(args))bad('Invalid local Git arguments');
+      const index=args.root??0;
+      if(!Number.isInteger(index)||index<0||index>=roots.length)
+        bad('Unknown local root');
+      return inspectLocalGitDetail(name,roots[index],args);
+    }
     if (name === 'local.file_update') return updateConfirmedLocalFile(roots, args);
     const { path, rootIndex, relative } = await access(args);
     try {
