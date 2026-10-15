@@ -1,3 +1,5 @@
+import {parseOwnerServiceAreaPlan,previewOwnerServiceAreaPlan,
+ executeOwnerServiceAreaPlan} from './service-area-plan.js';
 import {listOwnerOAuthFamilies,revokeOwnerOAuthFamily,
   narrowOwnerOAuthFamilyServers} from './oauth.js';
 import {narrowOAuthServiceProfile,listOwnerProfileAudit} from './service-profile-policy.js';
@@ -22,6 +24,14 @@ function form() {
     '<label>Owner passphrase <input type="password" name="password" '+
       'autocomplete="current-password" required></label>'+
     '<button type="submit">Review active connection families</button></form>'+
+    '<form method="POST" action="/api/owner/oauth">'+
+    '<label>OAuth session ID <input name="id" maxlength="36" required></label>'+
+    '<label>Reduced areas for 1-10 services (stripe:billing|reports,workspace:drive) '+
+    '<input name="area_plan" maxlength="2048" required></label>'+
+    '<label>Owner passphrase <input type="password" name="password" required></label>'+
+    '<button name="action" value="preview_area_plan">Preview only</button>'+
+    '<button name="action" value="narrow_area_plan">Permanently narrow whole family</button>'+
+    '<p>Either every reduction commits or none.</p></form>'+
     '<form method="POST" action="/api/owner/oauth">'+
     '<input type="hidden" name="action" value="revoke">'+
     '<label>Connection session ID <input name="id" maxlength="36" required></label>'+
@@ -73,6 +83,15 @@ function form() {
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
     '<button type="submit">Review permanent service-profile audit</button></form>');
 }
+function displayAreaPlan(value) {
+  return page('<h2>Multi-service OAuth area preview</h2><p>No permissions changed. '+
+    'Eligible: '+escapeHtml(String(value.canApply))+
+    '. Submit a new narrow_area_plan owner confirmation to apply.</p><ul>'+
+    value.scopes.map(item=>'<li>'+escapeHtml(item.server)+
+      ': '+escapeHtml(item.before.join(', '))+' to '+
+      escapeHtml(item.after.join(', '))+'; eligible: '+
+      escapeHtml(String(item.available))+'</li>').join('')+'</ul>');
+}
 function displayScope(result) {
   return page('<h2>Effective RTC service scope</h2><p>'+
     escapeHtml(result.server)+'; callable '+String(result.callable)+
@@ -116,6 +135,7 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
   revoke=revokeOwnerOAuthFamily,
   narrow=narrowOwnerOAuthFamilyServers,narrowAreas=narrowOAuthFamilyServiceAreas,
   narrowProfile=narrowOAuthServiceProfile,profileAudit=listOwnerProfileAudit,
+  previewAreaPlan=previewOwnerServiceAreaPlan,executeAreaPlan=executeOwnerServiceAreaPlan,
   inspectService=inspectOwnerServiceScope,auditAreas=listOwnerServiceAreaAudit}={}) {
   htmlHeaders(res);
   res.setHeader('Pragma','no-cache');
@@ -129,15 +149,20 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
   if(!String(req.headers?.['content-type']||'').startsWith('application/x-www-form-urlencoded'))
     return res.status(415).send('Unsupported content type');
   const fields=formFields(req);
-  if(!fields||!['list','revoke','narrow','narrow_areas','narrow_profile','inspect_service','audit','profile_audit'].includes(fields.action)||
+  if(!fields||!['list','revoke','narrow','narrow_areas','narrow_profile','inspect_service','audit','profile_audit','preview_area_plan','narrow_area_plan'].includes(fields.action)||
      typeof fields.password!=='string'||!fields.password||
      fields.password.length>256||
-     (['revoke','narrow','narrow_areas','narrow_profile','inspect_service'].includes(fields.action)&&!uuid.test(fields.id||'')))
+     (['revoke','narrow','narrow_areas','narrow_profile','inspect_service','preview_area_plan','narrow_area_plan'].includes(fields.action)&&!uuid.test(fields.id||'')))
     return res.status(400).send('Invalid request');
   const selection=fields.action==='narrow' ? parseOwnerServerSelection(fields.servers) : null;
   if(fields.action==='narrow'&&!selection)
     return res.status(400).send('Select 1–20 canonical RTC servers');
   const areas=fields.action==='narrow_areas'?parseServiceAreas(fields.areas):null;
+  let areaPlan=null;
+  if(['preview_area_plan','narrow_area_plan'].includes(fields.action)){
+    try{areaPlan=parseOwnerServiceAreaPlan(fields.area_plan);}
+    catch{return res.status(400).send('Invalid multi-service area restrictions');}
+  }
   if(fields.action==='narrow_profile'&&
     (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||
      !['read_only','disabled'].includes(fields.profile)))
@@ -154,6 +179,17 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
       if(!decision.approved) {
         if(decision.retryAfter)res.setHeader('Retry-After',String(decision.retryAfter));
         return res.status(decision.retryAfter?429:401).send('Owner verification denied');
+      }
+      if(areaPlan){
+        const input={ownerId:env.HUB_OWNER_ID,callerKind:'oauth',
+          id:fields.id,plan:areaPlan};
+        if(fields.action==='preview_area_plan')
+          return res.status(200).send(displayAreaPlan(await previewAreaPlan(
+            db,input,{ownerVerified:true})));
+        const outcome=await executeAreaPlan(db,input,{ownerVerified:true});
+        return res.status(outcome.updated?200:404).send(outcome.updated?
+          'Entire OAuth family service areas permanently narrowed; old pages invalidated.' :
+          'No change committed: one or more service reductions were refused.');
       }
       if(fields.action==='profile_audit')
         return res.status(200).send(displayProfileAudit(await profileAudit(db,

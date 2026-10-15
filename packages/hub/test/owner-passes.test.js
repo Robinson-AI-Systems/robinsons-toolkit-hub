@@ -160,3 +160,34 @@ it('pass issuance starts with owner-selected area ceilings and refuses invalid s
  const form=await send('GET');
  expect(form.html).toContain('name="service_areas"');
 });
+
+it('multi-service pass plan validates before owner auth and previews/commits only after approval',async()=>{
+ const previewAreaPlan=vi.fn(async()=>({canApply:true,scopes:[{
+   server:'stripe',before:['billing','reports'],after:['billing'],available:true
+ }]}));
+ const executeAreaPlan=vi.fn(async()=>({updated:true,services:['stripe'],atomic:true}));
+ const base='&id='+id+'&password=synthetic-owner-auth'+
+  '&area_plan=stripe%3Abilling';
+ const malformed=await send('POST','action=narrow_area_plan'+base.replace(
+  'stripe%3Abilling','stripe%3ABilling'),{executeAreaPlan});
+ expect(malformed.statusCode).toBe(400);
+ expect(executeAreaPlan).not.toHaveBeenCalled();
+ const denied=await send('POST','action=preview_area_plan'+base.replace(
+  'synthetic-owner-auth','wrong'),{previewAreaPlan});
+ expect(denied.statusCode).toBe(401);
+ expect(previewAreaPlan).not.toHaveBeenCalled();
+ const preview=await send('POST','action=preview_area_plan'+base,{previewAreaPlan});
+ expect(preview.statusCode).toBe(200);
+ expect(preview.html).toContain('No permissions changed');
+ expect(previewAreaPlan).toHaveBeenCalledWith({},{
+  ownerId:'owner-one',callerKind:'pass',id,plan:{stripe:['billing']}
+ },{ownerVerified:true});
+ const applied=await send('POST','action=narrow_area_plan'+base,{executeAreaPlan});
+ expect(applied.statusCode).toBe(200);
+ expect(executeAreaPlan).toHaveBeenCalledWith({},{
+  ownerId:'owner-one',callerKind:'pass',id,plan:{stripe:['billing']}
+ },{ownerVerified:true});
+ expect((await send('POST','action=narrow_area_plan'+base,{
+  executeAreaPlan:async()=>({updated:false})})).statusCode).toBe(404);
+ expect((await send('GET')).html).toContain('name="area_plan"');
+});

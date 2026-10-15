@@ -9,6 +9,8 @@ import {stageCallerGrant,activateVerifiedCallerGrant,resolveActiveCallerGrant,
   listEligibleRtcTargets} from '../../src/grants.js';
 import {narrowHubPassServiceAreas,narrowOAuthFamilyServiceAreas} from '../../src/service-area-policy.js';
 import {inspectOwnerServiceScope,listOwnerServiceAreaAudit} from '../../src/owner-service-scope.js';
+import {parseOwnerServiceAreaPlan,previewOwnerServiceAreaPlan,
+ executeOwnerServiceAreaPlan} from '../../src/service-area-plan.js';
 import {storeRtcResult,readRtcResult} from '../../src/rtc-results.js';
 const owner='owner',pepper='synthetic-service-area-policy-pepper-123456';
 const settings={pepper,grantsKey:randomBytes(32).toString('base64url'),
@@ -187,5 +189,85 @@ it('initial OAuth service areas survive PKCE code exchange, refresh and current 
  expect((await narrowOAuthFamilyServiceAreas(db,{ownerId:owner,id:fresh.id,
   serverName:'stripe',areas:['reports']},{ownerVerified:true})).updated).toBe(true);
  expect((await resolveActiveCallerGrant(db,{actor:initial,serverName:'stripe'},settings)).areas)
+  .toEqual(['reports']);
+});
+
+it('multi-service pass plan previews current grants and atomically rolls back a late refusal',async()=>{
+ const issued=await issueHubPass(db,{ownerId:owner,profile:'read_only',mode:'test',
+   allowWrites:false,areas:['gateway'],ttlSeconds:3600,
+   serverNames:['stripe','workspace']},{ownerVerified:true,pepper});
+ const actor=await authenticateHubPass(db,'Bearer '+issued.pass,{pepper});
+ const stripe=await grant(actor,'pass','stripe');
+ const workspace=await grant(actor,'pass','workspace');
+ const first=await storeRtcResult(db,actor,stripe,'stripe',{key:'before'},settings);
+ const second=await storeRtcResult(db,actor,workspace,'workspace',{key:'before'},settings);
+ const baseAudit=(await db.query('SELECT count(*)::int AS n FROM hub_caller_service_area_audit WHERE caller_id=$1',
+   [actor.id])).rows[0].n;
+ const plan=parseOwnerServiceAreaPlan('workspace:reports,stripe:billing');
+ expect(Object.keys(plan)).toEqual(['stripe','workspace']);
+ const input={ownerId:owner,callerKind:'pass',id:actor.id,plan};
+ const preview=await previewOwnerServiceAreaPlan(db,input,{ownerVerified:true});
+ expect(preview).toMatchObject({canApply:true,transactional:true,
+   scopes:[{server:'stripe',before:['billing','reports'],after:['billing']},
+    {server:'workspace',after:['reports']}]});
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings)).areas)
+  .toEqual(['billing','reports']); // preview NEVER changes the grant
+ const failed=await executeOwnerServiceAreaPlan(db,{...input,
+  plan:{stripe:['billing'],workspace:['never_approved']}},{ownerVerified:true});
+ expect(failed).toMatchObject({updated:false,atomic:true,services:[]});
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings)).areas)
+  .toEqual(['billing','reports']);
+ expect((await db.query('SELECT count(*)::int AS n FROM hub_caller_service_area_audit WHERE caller_id=$1',
+   [actor.id])).rows[0].n).toBe(baseAudit);
+ expect(await readRtcResult(db,actor,first.handle,0,settings)).not.toBeNull();
+ expect(await readRtcResult(db,actor,second.handle,0,settings)).not.toBeNull();
+ const committed=await executeOwnerServiceAreaPlan(db,input,{ownerVerified:true});
+ expect(committed).toMatchObject({updated:true,services:['stripe','workspace'],atomic:true});
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings)).areas)
+  .toEqual(['billing']);
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'workspace'},settings)).areas)
+  .toEqual(['reports']);
+ expect(await readRtcResult(db,actor,first.handle,0,settings)).toBeNull();
+ expect(await readRtcResult(db,actor,second.handle,0,settings)).toBeNull();
+ expect((await db.query('SELECT count(*)::int AS n FROM hub_caller_service_area_audit WHERE caller_id=$1',
+   [actor.id])).rows[0].n).toBe(baseAudit+2);
+ expect((await executeOwnerServiceAreaPlan(db,{...input,
+   plan:{stripe:['reports'],workspace:['billing']}},{ownerVerified:true})).updated)
+  .toBe(false);
+});
+it('multi-service OAuth family narrowing survives refresh and refuses cross-owner widening',async()=>{
+ const clientId='atomic_oauth_client',redirectUri='https://agent.example.com/atomic/cb';
+ const verifier='atomic-plan-oauth-verifier-abcdefghijklmnopqrstuvwxyz012345';
+ await registerOAuthClient(db,{ownerId:owner,clientId,redirectUri},{ownerVerified:true});
+ const code=await issueOAuthCode(db,{ownerId:owner,clientId,redirectUri,
+   challenge:createHash('sha256').update(verifier).digest('base64url'),
+   profile:'read_only',mode:'test',areas:['gateway'],
+   serverNames:['stripe','workspace']},{pepper,ownerVerified:true});
+ const tokens=await exchangeOAuthCode(db,{code,clientId,redirectUri,verifier},{pepper});
+ const initial=await authenticateOAuth(db,tokens.access_token,{pepper});
+ const stripe=await grant(initial,'oauth','stripe');
+ await grant(initial,'oauth','workspace');
+ const old=await storeRtcResult(db,initial,stripe,'stripe',{kind:'stale'},settings);
+ const rotated=await rotateOAuthRefresh(db,{clientId,refreshToken:tokens.refresh_token},{pepper});
+ const current=await authenticateOAuth(db,rotated.access_token,{pepper});
+ const input={ownerId:owner,callerKind:'oauth',id:current.id,
+   plan:parseOwnerServiceAreaPlan('stripe:billing,workspace:reports')};
+ expect((await previewOwnerServiceAreaPlan(db,input,{ownerVerified:true})).canApply).toBe(true);
+ await expect(executeOwnerServiceAreaPlan(db,input)).rejects.toThrow();
+ const denied=await executeOwnerServiceAreaPlan(db,{...input,ownerId:'other'},
+   {ownerVerified:true});
+ expect(denied.updated).toBe(false);
+ const updated=await executeOwnerServiceAreaPlan(db,input,{ownerVerified:true});
+ expect(updated).toMatchObject({updated:true,services:['stripe','workspace']});
+ for(const actor of [initial,current]){
+   expect((await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings)).areas)
+    .toEqual(['billing']);
+   expect((await resolveActiveCallerGrant(db,{actor,serverName:'workspace'},settings)).areas)
+    .toEqual(['reports']);
+ }
+ expect(await readRtcResult(db,initial,old.handle,0,settings)).toBeNull();
+ const third=await rotateOAuthRefresh(db,{clientId,refreshToken:rotated.refresh_token},{pepper});
+ const latest=await authenticateOAuth(db,third.access_token,{pepper});
+ expect((await resolveActiveCallerGrant(db,{actor:latest,serverName:'workspace'},settings)).areas)
   .toEqual(['reports']);
 });
