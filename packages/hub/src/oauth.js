@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { digestPass } from './identity.js';
 import { serverSelection } from './server-selection.js';
+import {sanitizedServicePolicy} from './service-area-policy.js';
 const codePattern = /^[A-Za-z0-9_-]{43}$/;
 const allowedProfile = new Set(['read_only','everyday','full']);
 function token() { return randomBytes(32).toString('base64url'); }
@@ -178,9 +179,10 @@ export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}
   if(!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId||''))
     throw new TypeError('Invalid owner');
   const {rows}=await db.query(`SELECT id,family_id,client_id,profile,areas,mode,
-    allowed_servers,access_expires_at,refresh_expires_at FROM (
+    allowed_servers,service_area_policy,access_expires_at,refresh_expires_at FROM (
       SELECT s.id,s.family_id,s.client_id,s.profile,s.areas,s.mode,
         to_jsonb(s)->'allowed_servers' AS allowed_servers,
+        to_jsonb(s)->'service_area_policy' AS service_area_policy,
         s.access_expires_at,s.refresh_expires_at,
         row_number() OVER (PARTITION BY s.family_id
           ORDER BY s.refresh_expires_at DESC,s.access_expires_at DESC,s.id DESC) AS rank
@@ -193,6 +195,7 @@ export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}
     id:r.id,clientId:r.client_id,profile:r.profile,mode:r.mode,
     areas:[...r.areas],serverNames:Array.isArray(r.allowed_servers) ?
       [...serverSelection(r.allowed_servers)] : null,
+    serviceAreas:sanitizedServicePolicy(r.service_area_policy),
     accessExpiresAt:r.access_expires_at,refreshExpiresAt:r.refresh_expires_at
   }));
 }

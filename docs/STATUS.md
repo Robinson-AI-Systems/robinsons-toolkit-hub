@@ -1,3 +1,12 @@
+## H-4 per-service Hub caller area ceilings — source candidate
+
+H-4 owner controls add an irreversible service-specific area overlay for
+Hub passes and OAuth refresh families, with current-SQL intersection applied
+to discovery and call routing, encrypted result invalidation, and audit.
+Migration 015 and independent two-provider TEST refusal remain OPEN; no
+hosted credential, release or service-owned authority is assumed. H-4 remains
+IN_PROGRESS pending complete multi-door source proof and real hosted checks.
+
 ## H-4 permanent OAuth family server narrowing — source proposal
 
 Owner-only one-way reduction now updates every existing PKCE refresh family
