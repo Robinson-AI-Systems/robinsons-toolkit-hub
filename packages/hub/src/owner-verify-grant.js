@@ -6,6 +6,10 @@ function form() {
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
     '<title>RTC TEST connection verification</title><main>'+
     '<h1>Verify one scoped RTC TEST grant</h1>'+
+    '<p>This also verifies independently issued replacement grants on '+
+    'already active services. A successful replacement atomically retires '+
+    'the previous grant and invalidates its encrypted result pages; a '+
+    'failed provider probe never retires a working grant.</p>'+
     '<p>This probes only RTC contract and whoami over DNS-pinned HTTPS. '+
     'It never performs a provider tool call, broadens a pass or deploys code.</p>'+
     '<form method="POST" action="/api/owner/verify-grant">'+

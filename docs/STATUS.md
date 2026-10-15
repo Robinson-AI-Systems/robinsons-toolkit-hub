@@ -1,3 +1,13 @@
+## H-4 owner-safe active-service grant enrollment and renewal — source candidate
+
+An active, owner-owned service can receive a separately independently issued
+TEST/read_only pass for a new caller, or stage one replacement without taking
+its current caller offline. Identity is checked by pinned whoami before a
+transactional old-credential retirement, prior RTC result deletion, new
+verification and immutable redacted audit. Unverified staged grants are
+noncallable and independently cancelable. Hosted SQL 016 and genuine service
+TEST acceptance remain OPEN; no live authorization or spending.
+
 ## H-4 per-service Hub caller area ceilings — source candidate
 
 H-4 owner controls add an irreversible service-specific area overlay for
@@ -522,6 +532,18 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "2026-10-14: Source integration and throwaway PostgreSQL tests only; new per-service caller policy is not released or owner-authenticated against genuine provider TEST."
+  },
+  {
+    "id": "HUB-H4-ACTIVE-GRANT-RENEWAL",
+    "priority": 19,
+    "requiredRevision": "NEW_SOURCE_PIN_TO_BE_SET",
+    "introducedFile": "packages/hub/migrations/016-hub-grant-renewal.sql",
+    "task": "Verify owner-only staging of a fresh independent TEST credential on an active service, pinned RTC identity refusal, atomic verified replacement without a read outage, old encrypted result handle invalidation, auditable cancellation and new-caller enrollment in real hosted two-service TEST",
+    "procedure": "docs/pr-cards/H-4.md",
+    "gates": "Checked production READY Hub source including SQL 016, exact owner credential verification, independent TEST/read_only scoped service pass (no owner credential in chat), no provider writes or LIVE, separately verified direct/relay/Sandbox",
+    "dependsOn": [],
+    "status": "PENDING",
+    "lastEvidence": "2026-10-14: proposed local source/test only; no hosted migration, renewal or genuine RTC TEST receipt."
   }
 ]
 ```
