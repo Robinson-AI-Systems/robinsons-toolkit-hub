@@ -575,16 +575,14 @@
         "L-2"
       ],
       "card": "docs/pr-cards/L-3.md",
-      "status": "MERGED",
+      "status": "IN_PROGRESS",
       "units": [
         "L-3"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "pr": [
-        "L-3 source implementation (record actual merged PR once exact-head checks authorize merge)"
-      ],
-      "note": "Approved L-3 source outcome: four opt-in local Playwright tools (status/visit/links/screenshot), exact origin allowlist, fresh isolated Chromium context, no service workers, intercepted disallowed requests, blocked WebSockets, no file downloads/popups/cookie persistence, bounded page text, strict confirmed create-only private PNG capture, no hosted provider or default local exposure. Mock browser and real filesystem tests; CI/review required. Owner local Playwright installation, actual real browser/OS network acceptance and L-4 visible owner settings runner separately OPEN."
+      "pr": [],
+      "note": "L-3 source is preserved on ai/gpt6/l3-local-browser; NO PR OPENED and NOT MERGED at owner's direction (October 15, 2026). Browser implementation, fixed MCP catalog, local screenshot path, mock tests and docs committed. Current main must be reconciled before future publication; focused/full CI, review and merge remain outstanding. No L-3 subsection or bundle counted. Owner-machine real Playwright/Chromium acceptance separately OPEN; no hosted activation."
     },
     {
       "id": "L-4",
