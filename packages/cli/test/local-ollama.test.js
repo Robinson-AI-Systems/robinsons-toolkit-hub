@@ -97,7 +97,7 @@ it('genuine loopback GET and non-streaming POST return bounded, schema-limited r
   if(['generate','chat'].some(x=>request.url.endsWith(x)))
    expect(request.body.stream).toBe(false);
  }
- expect(calls.filter(x=>x.url==='/api/tags')).toHaveLength(3);
+ expect(calls.filter(x=>x.url==='/api/tags')).toHaveLength(4); // models inventory plus each model-validated POST
  expect(calls.find(x=>x.url==='/api/generate').body)
   .toMatchObject({model,stream:false,options:{num_predict:30}});
 }));
