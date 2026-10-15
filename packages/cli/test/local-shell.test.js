@@ -52,7 +52,7 @@ describe('opt-in non-interpreting local command tool', () => {
         jsonrpc: '2.0', id: 1, method: 'tools/list'
       })).result.tools;
       const shell = tools.filter((tool) => tool.name.startsWith('local.shell_'));
-      expect(shell).toHaveLength(3);
+      expect(shell).toHaveLength(4);
       expect(shell.find(x=>x.name==='local.shell_run').annotations).toMatchObject({
         readOnlyHint: true, destructiveHint: false, openWorldHint: false
       });
