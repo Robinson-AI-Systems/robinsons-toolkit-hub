@@ -138,3 +138,25 @@ it('profile actions authenticate the owner and reject unsupported upgrades',asyn
  expect(result.html).not.toContain('<script>');
  expect(audit).toHaveBeenCalledWith({},'owner-one',{ownerVerified:true});
 });
+
+it('pass issuance starts with owner-selected area ceilings and refuses invalid scopes',async()=>{
+ const issue=vi.fn(async()=>({id,pass:'synthetic-one-time-value'}));
+ const good='action=issue&password=synthetic-owner-auth&servers=stripe%2Cworkspace'+
+  '&service_areas=stripe%3Abilling%7Creports%2Cworkspace%3Adrive';
+ expect((await send('POST',good,{issue})).statusCode).toBe(201);
+ expect(issue).toHaveBeenCalledWith({},expect.objectContaining({
+  serverNames:['stripe','workspace'],serviceAreas:{
+   stripe:['billing','reports'],workspace:['drive']}}),
+  {ownerVerified:true,pepper:env.HUB_TOKEN_PEPPER});
+ issue.mockClear();
+ for(const denied of ['stripe%3ABilling','unknown%3Abilling','stripe%3A',
+   'stripe%3Abilling%2Cstripe%3Areports']){
+  const res=await send('POST',
+   'action=issue&password=synthetic-owner-auth&servers=stripe&service_areas='+denied,
+   {issue});
+  expect(res.statusCode).toBe(400);
+ }
+ expect(issue).not.toHaveBeenCalled();
+ const form=await send('GET');
+ expect(form.html).toContain('name="service_areas"');
+});

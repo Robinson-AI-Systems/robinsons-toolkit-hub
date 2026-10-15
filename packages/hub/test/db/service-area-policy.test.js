@@ -20,7 +20,8 @@ async function install(){
   '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql',
   '008-hub-rtc-audit.sql','009-hub-rtc-results.sql',
   '010-hub-pass-servers.sql','011-hub-oauth-server-scopes.sql',
-  '012-hub-grant-area-ceilings.sql','015-hub-caller-service-area-policy.sql'])
+  '012-hub-grant-area-ceilings.sql','015-hub-caller-service-area-policy.sql',
+  '018-hub-initial-oauth-service-areas.sql'])
   await db.query(await readFile(new URL('../../migrations/'+name,import.meta.url),'utf8'));
  for(const name of ['stripe','workspace']) await db.query(
   "INSERT INTO hub_servers(name,owner_id,prefix,origin,claimed_rtc,claimed_counts) VALUES($1,$2,$1,$3,1,'{\"tools\":3,\"writes\":0,\"money\":0}')",
@@ -130,4 +131,61 @@ it('owner inspector fails closed for another owner and invalid caller ID',async(
  await expect(listOwnerServiceAreaAudit(db,owner)).rejects.toThrow();
  await expect(listOwnerServiceAreaAudit(db,owner,{ownerVerified:true,limit:500}))
    .rejects.toThrow();
+});
+
+it('initial owner area restrictions constrain pass grant discovery, result and owner readback from issuance',async()=>{
+ const issued=await issueHubPass(db,{ownerId:owner,profile:'read_only',mode:'test',
+  allowWrites:false,areas:['gateway'],ttlSeconds:3600,
+  serverNames:['stripe','workspace'],
+  serviceAreas:{stripe:['billing'],workspace:['reports']}},
+  {ownerVerified:true,pepper});
+ const actor=await authenticateHubPass(db,'Bearer '+issued.pass,{pepper});
+ const primary=await grant(actor,'pass','stripe');
+ await grant(actor,'pass','workspace');
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'stripe'},settings)).areas)
+  .toEqual(['billing']);
+ expect((await resolveActiveCallerGrant(db,{actor,serverName:'workspace'},settings)).areas)
+  .toEqual(['reports']);
+ const targets=await listEligibleRtcTargets(db,actor);
+ expect(targets.map(t=>[t.name,t.areas])).toEqual([
+  ['stripe',['billing']],['workspace',['reports']]]);
+ const scope=await inspectOwnerServiceScope(db,{ownerId:owner,
+  callerKind:'pass',callerId:actor.id,serverName:'stripe'},
+  {ownerVerified:true});
+ expect(scope).toMatchObject({callerAreaLimit:['billing'],authorizedAreas:['billing']});
+ const old=await storeRtcResult(db,actor,primary,'stripe',{secret:'synthetic'},settings);
+ expect(await readRtcResult(db,actor,old.handle,0,settings)).not.toBeNull();
+ expect((await narrowHubPassServiceAreas(db,{ownerId:owner,id:actor.id,
+  serverName:'stripe',areas:['reports']},{ownerVerified:true})).updated).toBe(false);
+ expect((await narrowHubPassServiceAreas(db,{ownerId:owner,id:actor.id,
+  serverName:'stripe',areas:['billing']},{ownerVerified:true})).updated).toBe(true);
+ expect(await readRtcResult(db,actor,old.handle,0,settings)).toBeNull();
+});
+it('initial OAuth service areas survive PKCE code exchange, refresh and current family narrowing',async()=>{
+ const clientId='initial_area_policy_client',redirectUri='https://agent.example.com/area/cb';
+ const verifier='initial-oauth-area-verifier-abcdefghijklmnopqrstuvwxyz';
+ await registerOAuthClient(db,{ownerId:owner,clientId,redirectUri},{ownerVerified:true});
+ const code=await issueOAuthCode(db,{ownerId:owner,clientId,redirectUri,
+  challenge:createHash('sha256').update(verifier).digest('base64url'),
+  profile:'read_only',mode:'test',areas:['gateway'],
+  serverNames:['stripe','workspace'],serviceAreas:{stripe:['reports']}},
+  {pepper,ownerVerified:true});
+ const tokens=await exchangeOAuthCode(db,{code,clientId,redirectUri,verifier},{pepper});
+ const initial=await authenticateOAuth(db,tokens.access_token,{pepper});
+ await grant(initial,'oauth','stripe');
+ await grant(initial,'oauth','workspace');
+ expect((await resolveActiveCallerGrant(db,{actor:initial,serverName:'stripe'},settings)).areas)
+  .toEqual(['reports']);
+ const rotated=await rotateOAuthRefresh(db,{clientId,refreshToken:tokens.refresh_token},{pepper});
+ const fresh=await authenticateOAuth(db,rotated.access_token,{pepper});
+ expect((await resolveActiveCallerGrant(db,{actor:fresh,serverName:'stripe'},settings)).areas)
+  .toEqual(['reports']);
+ expect((await resolveActiveCallerGrant(db,{actor:fresh,serverName:'workspace'},settings)).areas)
+  .toEqual(['billing','reports']);
+ expect((await narrowOAuthFamilyServiceAreas(db,{ownerId:owner,id:fresh.id,
+  serverName:'stripe',areas:['billing']},{ownerVerified:true})).updated).toBe(false);
+ expect((await narrowOAuthFamilyServiceAreas(db,{ownerId:owner,id:fresh.id,
+  serverName:'stripe',areas:['reports']},{ownerVerified:true})).updated).toBe(true);
+ expect((await resolveActiveCallerGrant(db,{actor:initial,serverName:'stripe'},settings)).areas)
+  .toEqual(['reports']);
 });
