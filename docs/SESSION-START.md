@@ -1,5 +1,17 @@
 # SESSION-START — implement, then catch up released acceptance
 
+## Count complete predefined batch subsections
+
+The PR workload target is 2–5 whole predefined batch subsections on average,
+using the existing roadmap/design IDs such as H-3 or B-5. Technical slices,
+functions, tools, UI hookups, guards and packet checklist tasks are internal
+implementation steps, not countable batch subsections. List the subsection IDs
+and full scope before coding. Partial subsections count zero; count each once
+when eligible engineering and required pre-merge proof are complete, with
+external acceptance tracked separately. Use focused checks while building,
+then the full required gates on the substantial assembled PR. See the governing
+instructions' **PR workload is measured in predefined batch subsections** rule.
+
 ## 0. Reconcile and recover
 
 Read the governing instructions and the current permanent handoff, not historical
@@ -34,7 +46,7 @@ Group compatible adjacent roadmap slices into a complete usable workflow,
 including callers, real integration and tests. Across a rolling five merged
 substantive implementation PRs (or fewer if not yet available), target an
 **average 400–800 changed production-code lines** and **2–5 fully completed
-roadmap slices per PR**. These are advisory averages, never per-PR quotas:
+batch subsections per PR**. These are advisory averages, never per-PR quotas:
 a smaller coherent outcome or larger inseparable one is valid; do not
 pad code, merge unrelated risks or split features to match them. Production
 lines exclude tests, docs, fixtures and generated code. Cite each completed
@@ -153,17 +165,16 @@ authenticated end-to-end acceptance separately; retain missing proof as OPEN.
 
 Normal implementation sessions complete as many fully verified, cohesive roadmap
 slices as fit a safe, recoverable chat context. Plan for a rolling average
-of 400–800 changed production lines and 2–5 completed slices per
+of 400–800 changed production lines and 2–5 completed batch subsections per
 substantive implementation PR, without hard caps or filler. Record completed
 slice IDs and production-only diff counts in the existing PR/handoff;
 keep unaccepted provider/deployment evidence OPEN. The existing
 `npm run session:status` now prints remaining approved indexed roadmap
 units by status and batch next to, but separate from, release acceptance
 obligations. These coarse indexed units do **not** estimate remaining
-fine-grained slices or total effort; cite card-specific unfinished slices
-when making an estimate. No fixed standing PR-count or multiple-of-five
-rule; an explicit **next-session** owner request for five full PRs governs
-that session only, with all safety gates and context recovery intact.
+completed batch subsections or total effort; cite card-specific unfinished slices
+when making an estimate. No fixed session PR quota applies. Session count follows only the current owner prompt, with all safety
+gates and context recovery intact.
 Do not count a passing helper as a completed outcome. After each verified
 merge, checkpoint the exact head/CI/reviews, completed slices, implementation
 and deployed/real-acceptance state, and one next action. Start another slice
@@ -172,8 +183,7 @@ repair, merge and durable handoff; otherwise end at the clean checkpoint.
 Persist unfinished work on its existing approved card, not only in chat.
 Report completed roadmap slices and acceptance deltas, first-pass CI failures
 and correction cycles, not PR count as a productivity metric.
-This owner-requested repository optimization is scoped maintenance, not a five-feature
-batch. Preserve safety even when no further eligible work or an execution limit remains.
+This owner-requested repository optimization is scoped maintenance, not a product implementation batch. Preserve safety even when no further eligible work or an execution limit remains.
 At completed-session end update status/cards/index, verify final main, leave a permanent
 handoff on the final merged PR and automatically give a short continuation prompt:
 repository + verified handoff + next outcome + queue pointer. Refer to the repository
@@ -188,7 +198,7 @@ cleanup, secret handling and all required local/Actions tests are unchanged.
 
 ## RTC fleet acceptance procedure — preserve existing safety pins Mandatory RTC fleet check — every session, until all custom servers pass real acceptance
 
-After §0 and **again before the five-PR handoff**, run the hosted
+After §0 and **again before the session handoff**, run the hosted
 `node scripts/probe-rtc-fleet.mjs` using the reviewed `docs/rtc-fleet-origins.json` public-host inventory.
 `RTC_FLEET_ORIGINS` (JSON alias-to-origin map) may temporarily add a **verified**
 new host, but add permanent changes to the tracked inventory in a reviewed PR. Probe Stripe, GitHub, Vercel,

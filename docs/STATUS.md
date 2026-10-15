@@ -15,6 +15,30 @@ supports long command logs. CI's injected process tests prove only source
 routing, not real Linux kernel isolation; L-1 remains IN_PROGRESS until
 real-world sandbox acceptance and original shell limits are confirmed.
 
+## Owner-requested design detail — October 14, 2026
+
+Completed a code-grounded remaining-design review in `docs/implementation-contracts/IMPLEMENTATION-GUIDE.md` and linked
+it from AGENTS. Concrete per-subsection state, input/output, failure/recovery,
+file integration and test contracts supplement existing approved designs. No
+runtime code, roadmap status/dependencies, acceptance queue, credentials,
+resources, production switch or release changed. No completed product batch
+subsection is claimed. Implementing sessions resume the authoritative roadmap
+order, reconciling current main/concurrent cards and actual owner inputs first.
+This dated design note is not a new implementation priority or replacement handoff.
+
+### Owner workflow clarification — October 14, 2026
+
+PR workload is counted in whole predefined batch subsections from the approved
+roadmap/design, never technical slices or packet checklist tasks. Partial
+subsections count zero complete; retain all remaining engineering and separate
+external acceptance. Session PR count and scope come only from the current
+owner prompt, with no standing quota or PR-number alignment. Historical PR
+counts below record earlier work and do not instruct future sessions.
+This owner-requested maintenance changes guidance/report wording only; required
+CI/review, security, provider, spending and release gates remain unchanged.
+Focused reporting tests passed locally; exact-head full Actions gates are required
+before merge. No product subsection, deployment or provider acceptance claimed.
+
 ## L-1 compact workspace inspection and patch preview — source candidate
 
 New opt-in-only bounded local recursive tree, compact multi-file reads and
