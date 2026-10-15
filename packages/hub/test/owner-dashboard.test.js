@@ -52,7 +52,7 @@ it('no private reads on GET, refusals or malformed selection; passphrase not ech
  expect(refused.read).not.toHaveBeenCalled();
  const good=await send('POST','tab=overview&password=correct-owner-passphrase');
  expect(good.res.statusCode).toBe(200);
- expect(good.read).toHaveBeenCalledWith({},'owner-a',{},{
+ expect(good.read).toHaveBeenCalledWith(expect.objectContaining({query:expect.any(Function)}),'owner-a',{},{
    tab:'overview',page:0});
  expect(good.res.html).not.toContain('correct-owner-passphrase');
 });
