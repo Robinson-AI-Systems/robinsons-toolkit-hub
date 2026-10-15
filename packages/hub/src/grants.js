@@ -205,8 +205,6 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
             (to_jsonb(initial)->'service_area_policy')
         AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
             (to_jsonb(initial)->'service_profile_policy')
-        AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
-            (to_jsonb(initial)->'service_profile_policy')
         AND fresh.mode='test' AND fresh.revoked_at IS NULL
         AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
         AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
@@ -289,8 +287,10 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
           AND fresh.areas=initial.areas AND fresh.mode=initial.mode
           AND (to_jsonb(fresh)->'allowed_servers') IS NOT DISTINCT FROM
               (to_jsonb(initial)->'allowed_servers')
-        AND (to_jsonb(fresh)->'service_area_policy') IS NOT DISTINCT FROM
-            (to_jsonb(initial)->'service_area_policy')
+          AND (to_jsonb(fresh)->'service_area_policy') IS NOT DISTINCT FROM
+              (to_jsonb(initial)->'service_area_policy')
+          AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
+              (to_jsonb(initial)->'service_profile_policy')
           AND fresh.mode='test' AND fresh.revoked_at IS NULL
           AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
