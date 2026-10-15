@@ -1,10 +1,9 @@
 import {it,expect} from 'vitest';
-import {mkdtemp,mkdir,rm,readFile,writeFile,symlink} from 'node:fs/promises';
+import {mkdtemp,mkdir,rm,writeFile,symlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {promisify} from 'node:util';
 import {execFile} from 'node:child_process';
-import {createHash} from 'node:crypto';
 import {createLocalFiles} from '../src/local-files.js';
 import {createLocalMcp} from '../src/mcp.js';
 const git=promisify(execFile);

@@ -1,3 +1,11 @@
+## L-1 compact workspace inspection and patch preview — source candidate
+
+New opt-in-only bounded local recursive tree, compact multi-file reads and
+side-effect-free exact conditional patch preview support real coding-agent
+workflows without unbounded schemas, subprocesses or remote providers.
+Local source/CI tests are distinct from external-machine and OS sandbox
+acceptance; L-1 general shell remains IN_PROGRESS.
+
 ## L-1 local read-only Git inspection — source candidate
 
 Opt-in local agents can read bounded working/staged source patches, immutable

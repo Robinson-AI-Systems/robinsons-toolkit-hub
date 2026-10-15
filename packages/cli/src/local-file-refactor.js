@@ -33,6 +33,21 @@ export const LOCAL_FILE_REFACTOR_TOOLS=Object.freeze([
   annotations
  }),
  Object.freeze({
+  name:'local.file_patch_preview',
+  description:'Validate a requested literal patch against the current SHA and return planned new SHA/bytes without modifying the local file.',
+  inputSchema:{type:'object',additionalProperties:false,
+   properties:{root:rootProperty,path:fileProperty,
+    expectedSha256:digestProperty,
+    changes:{type:'array',minItems:1,maxItems:MAX_PATCHES,
+     items:{type:'object',additionalProperties:false,
+      properties:{before:{type:'string',minLength:1,maxLength:MAX_EDIT},
+       after:{type:'string',maxLength:MAX_EDIT}},
+      required:['before','after']}}},
+   required:['path','expectedSha256','changes']},
+  annotations:Object.freeze({readOnlyHint:true,destructiveHint:false,
+    idempotentHint:true,openWorldHint:false})
+ }),
+ Object.freeze({
   name:'local.file_move',
   description:'Move a verified local regular file to an unoccupied path in the SAME approved root. Hash and confirm required; never overwrite.',
   inputSchema:{type:'object',additionalProperties:false,
@@ -121,6 +136,21 @@ export function applyExactLiteralChanges(content,changes){
  }
  if(value===content)refused();
  return value;
+}
+export async function previewExactLocalPatch(roots,args){
+ // A preview is a wholly read-only operation, but still requires a
+ // caller-supplied exact snapshot hash and the same narrow input schema.
+ if(!args||typeof args!=='object'||Array.isArray(args)||
+   Object.keys(args).some(k=>!['root','path','expectedSha256','changes'].includes(k)))
+   refused();
+ checkedArguments({...args,confirm:true},['changes']);
+ const source=await verifiedSource(roots,args);
+ const contents=await noFollowText(source.target,args.expectedSha256);
+ const next=applyExactLiteralChanges(contents,args.changes);
+ return {valid:true,root:source.index,path:source.relative,
+   changes:args.changes.length,oldSha256:source.original.sha256,
+   newSha256:createHash('sha256').update(next,'utf8').digest('hex'),
+   bytes:Buffer.byteLength(next,'utf8'),written:false};
 }
 export async function patchConfirmedLocalFile(roots,args){
  checkedArguments(args,['changes']);
