@@ -94,16 +94,9 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
  const until=scope.cursor===null?null:readHubChangeCursor(scope.cursor,scope,settings,opts);
  const query=`SELECT a.id::text,a.occurred_at,a.caller_kind,a.caller_id,
     a.server_name,a.tool_name,a.correlation_id,
-    o.outcome,o.upstream_log_id
-   FROM hub_rtc_read_audit a
-   LEFT JOIN LATERAL (
-     SELECT b.outcome,b.upstream_log_id FROM hub_rtc_read_audit b
-     WHERE b.owner_id=a.owner_id AND b.caller_kind=a.caller_kind
-       AND b.caller_id=a.caller_id AND b.correlation_id=a.correlation_id
-       AND b.phase='outcome' AND b.id>a.id
-     ORDER BY b.id DESC LIMIT 1
-   ) o ON TRUE
-   WHERE a.owner_id=$1 AND a.phase='attempt'
+    a.outcome,a.upstream_log_id
+   FROM hub_change_log a
+   WHERE a.owner_id=$1
     AND ($2::text IS NULL OR (a.caller_kind=$2 AND a.caller_id=$3))
     AND ($4::text IS NULL OR a.server_name=$4)
     AND ($5::bigint IS NULL OR a.id<$5)
