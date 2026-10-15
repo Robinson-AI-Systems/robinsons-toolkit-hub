@@ -75,7 +75,14 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   // External history is always explicitly opt-in, for exactly one selected
   // currently granted RTC service. An advertised exact capability is required;
   // guessing a tool name and submitting an unauthorized POST is forbidden.
-  const candidate=args.server+'_recent_changes';
+  let selected;
+  try {
+    selected=(await tools.list(db,actor,{limit:100})).find(t=>t.name===args.server);
+  }catch{ /* Provider registry/grants are unavailable. */ }
+  if(!selected||!serverPattern.test(selected.prefix??''))
+    return {ok:true,result:{...history,upstream:{
+      server:args.server,status:'unavailable',reason:'not_authorized'}}};
+  const candidate=selected.prefix+'_recent_changes';
   const discovered=await runFederatedBroker('hub_search_tools',{
     query:'recent_changes',server:args.server,limit:10
   },actor,db,settings,deps);
