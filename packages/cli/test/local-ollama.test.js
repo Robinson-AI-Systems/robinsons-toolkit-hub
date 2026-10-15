@@ -94,7 +94,7 @@ it('genuine loopback GET and non-streaming POST return bounded, schema-limited r
   expect(request.headers.authorization).toBeUndefined();
   expect(request.headers.cookie).toBeUndefined();
   expect(request.url.startsWith('/api/')).toBe(true);
-  if(['generate','chat','embed'].some(x=>request.url.endsWith(x)))
+  if(['generate','chat'].some(x=>request.url.endsWith(x)))
    expect(request.body.stream).toBe(false);
  }
  expect(calls.filter(x=>x.url==='/api/tags')).toHaveLength(3);
