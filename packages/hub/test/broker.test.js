@@ -1,10 +1,10 @@
 import {it,expect} from 'vitest';
 import {brokerCatalog,runBroker} from '../src/broker.js';
 const actor={profile:'read_only',mode:'test',areas:['gateway'],allowWrites:false};
-it('maintains seven fixed brokers independent of the number of provider services',()=>{
+it('maintains eight fixed brokers independent of the number of provider services',()=>{
   const list=brokerCatalog();
   expect(list.map(x=>x.name)).toEqual(['hub_whoami','hub_health','hub_search_tools',
-    'hub_describe_tool','hub_call','hub_batch','hub_namespaces']);
+    'hub_describe_tool','hub_call','hub_batch','hub_recent_changes','hub_namespaces']);
   expect(list.every(x=>x.writes===false&&x.annotations.readOnlyHint===true)).toBe(true);
   expect(Buffer.byteLength(JSON.stringify(list))).toBeLessThan(5000*4);
   for(const size of [2,5,12,50,100]) {
