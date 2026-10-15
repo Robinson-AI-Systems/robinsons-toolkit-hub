@@ -464,13 +464,16 @@
         "H-4"
       ],
       "card": "docs/pr-cards/H-5.md",
-      "status": "IN_PROGRESS",
+      "status": "MERGED",
       "units": [
         "H-5"
       ],
       "readiness": "READY",
       "externalGates": [],
-      "note": "H-5 source on ai/gpt6/h5-audited-recent-changes: derived migration 019 hub_change_log from durable H-3 RTC attempts/outcomes, scoped signed-cursor native MCP/HTTPS, optional single exact read-only upstream history, separately approved owner HTML, full unit+PG tests. Exact-head CI/review and merge pending. No real deployed provider/relay/Sandbox acceptance claimed."
+      "note": "H-5 eligible SOURCE engineering completed in the checked PR #207 tree; final exact-head CI/review and merge control source publication. SQL 019 derived view preserves H-3 attempted/outcome records without dual writes; scoped signed cursor and reauthorization, optional exact advertised upstream read-only history, and password-gated owner UI. Genuine hosted 019 adoption, provider TEST log IDs, two-service native/direct/relay/Sandbox and H-4 predecessor acceptance remain independently OPEN, not satisfied by synthetic tests. No LIVE, money or provider write.",
+      "pr": [
+        "#207 — durable H-3 audit projection, scoped native/HTTPS/owner H-5 history, optional independently advertised TEST read, SQL+unit security proof"
+      ]
     },
     {
       "id": "C-1",
