@@ -9,7 +9,8 @@ const deny = code => ({ ok: false, error: { code } });
 const selectTool = name => brokerCatalog().find(tool => tool.name === name);
 const federatedHubTools = new Set([
   'hub_health', 'hub_search_tools', 'hub_describe_tool',
-  'hub_call', 'hub_batch', 'hub_namespaces', 'hub_recent_changes'
+  'hub_call', 'hub_batch', 'hub_namespaces', 'hub_recent_changes',
+  'hub_provider_read', 'hub_provider_describe'
 ]);
 function inScope(actor) {
   return actor?.mode === 'test' && Array.isArray(actor.areas) &&

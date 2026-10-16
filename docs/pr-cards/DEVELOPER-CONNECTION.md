@@ -1,3 +1,25 @@
+## October 16 — approved one-off ChatGPT Hub Cloud provider read alias
+
+The owner specifically approves an immediate checked release of the
+provider-agnostic Hub-native `hub_provider_read` and
+`hub_provider_describe` bridge. The owner-installed private ChatGPT adapter
+validates its **outer** `hub_call.name` with `^hub_[a-z0-9_]+$` and could not
+express a direct `workspace_whoami` call. The compatibility route uses
+existing `hub_call` with `{name:'hub_provider_read',args:{name:
+'workspace_whoami',args:{}}}` so the adapter accepts the outer name.
+The *inner* tool remains subject to the unmodified scoped H-3 route: exact
+provider name and pinned TLS, readOnly metadata, one-shot POST with durable
+attempt/outcome audit and owner-scoped grant and expiry checks before and after.
+This does not permit recursion or authorizations beyond the original grant.
+
+Existing direct native clients can also discover the aliases in a bounded,
+fixed Hub-owned menu; the old stable tools remain available. No provider
+secret or account content is committed. The user authorized one immediate
+off-cycle release **after** exact-head CI/release-policy and safe non-forced
+ancestry-checked live promotion; verify Vercel READY before real acceptance.
+The first test CI identified a stale eight-tool catalog assertion and a
+wrong synthetic response assertion; both were corrected before publication.
+
 ## October 16 — unified Hub → Workspace next-release transport readiness
 
 **Observed production:** Hub live/READY `4b0a3d4` contains working owner recovery

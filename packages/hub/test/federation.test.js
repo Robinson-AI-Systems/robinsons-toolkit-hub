@@ -181,3 +181,61 @@ it('discovers a hyphenated Workspace server through one scoped Hub TEST connecti
   name:'google-workspace-mcp',prefix:'workspace',rtc:1}));
  expect(JSON.stringify(found)).not.toContain('synthetic-injected-pass');
 });
+
+it('routes ChatGPT hub_-only alias into EXACT original provider describe and guarded read',async()=>{
+ const deps=provider();
+ const target=targets[1];
+ const grant={grantId:'stable-grant',server:'stripe',prefix:'stripe',
+   origin:'https://rtc.example.com',pass:'synthetic-injected-pass',
+   mode:'test',profile:'read_only',areas:['billing']};
+ deps.list=vi.fn(async()=>[target]);
+ deps.resolve=vi.fn(async()=>grant);
+ deps.describe=vi.fn(async()=>({
+  name:'stripe_invoice_list',area:'billing',description:'Scoped read',
+  profiles:['read_only'],inputSchema:{type:'object'},writes:false,
+  money:false,destructive:false,annotations:{readOnlyHint:true}}));
+ deps.correlation=vi.fn(()=>'synthetic-correlation');
+ deps.audit=vi.fn(async()=>({}));
+ deps.read=vi.fn(async()=>({ok:true,result:{items:[]}}));
+ const describe=await mcpFederatedReply(req('hub_call',{
+  name:'hub_provider_describe',args:{name:'stripe_invoice_list'}
+ }),actor,{},{},deps);
+ expect(describe.error).toBeUndefined();
+ expect(describe.result.structuredContent).toMatchObject({
+  name:'stripe_invoice_list',server:'stripe',writes:false});
+ const called=await mcpFederatedReply(req('hub_call',{
+  name:'hub_provider_read',args:{name:'stripe_invoice_list',args:{limit:1}}
+ }),actor,{},{},deps);
+ expect(called.error).toBeUndefined();
+ expect(called.result.structuredContent.result).toEqual({items:[]});
+ expect(called.result.structuredContent.name).toBe('stripe_invoice_list');
+ expect(deps.read).toHaveBeenCalledExactlyOnceWith(
+  expect.objectContaining({profile:'read_only',mode:'test'}),
+  'stripe_invoice_list',{limit:1});
+ expect(deps.audit).toHaveBeenCalledTimes(2);
+ expect(JSON.stringify(called)).not.toContain('synthetic-injected-pass');
+});
+it('rejects hub_-only adapter alias recursion, writes and out-of-grant names before provider calls',async()=>{
+ const deps=provider();
+ deps.read=vi.fn();
+ deps.describe=vi.fn(async(_grant,name)=>({
+  name,area:'billing',description:'Read-only guard is exact',
+  writes:name==='stripe_send_money',money:false,destructive:false,
+  annotations:{readOnlyHint:name!=='stripe_send_money'},
+  profiles:['read_only'],inputSchema:{type:'object'}
+ }));
+ for(const alias of ['hub_provider_read','hub_provider_describe']){
+  for(const input of [{name:'hub_health'}, {name:'stripe_send_money'},
+    {name:'../workspace_whoami'},{name:'workspace_delete_user',args:'bad'}]){
+   const out=await runFederatedBroker(alias,input,actor,{},{},deps);
+   expect(out.ok).toBe(false);
+  }
+ }
+ for(const blocked of [{...actor,mode:'live'},{...actor,allowWrites:true},
+   {...actor,areas:['mail']}]) {
+  const result=await runFederatedBroker('hub_provider_read',{
+    name:'stripe_invoice_list',args:{}},blocked,{},{},deps);
+  expect(result.ok).toBe(false);
+ }
+ expect(deps.read).not.toHaveBeenCalled();
+});

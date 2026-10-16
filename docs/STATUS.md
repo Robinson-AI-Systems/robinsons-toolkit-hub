@@ -1,3 +1,33 @@
+## October 16 — owner-authorized immediate read-only tool execution bridge
+
+The Hub's production owner-first Workspace connection and real Hub-mediated
+read-only tool discovery are VERIFIED on exact READY c654f58. The private
+ChatGPT Hub Cloud adapter is still restricted to **outer** tool names
+matching `^hub_[a-z0-9_]+$`; consequently it refuses attempts to
+execute directly discovered `workspace_` RTC tool names even though the
+Hub's H-3 router supports those names. The owner expressly authorized a
+one-off immediate checked release of a remedy.
+
+This compatibility update offers two new generic owned aliases:
+`hub_provider_describe` and `hub_provider_read`. Cloud callers use their
+existing `hub_call` with an outer alias and a separately supplied exact
+provider tool name in nested args. The alias ONLY delegates to the *same*
+federated `hub_describe_tool` / `hub_call` implementation that already
+verifies owner, TEST scope, readOnly profile, independently encrypted
+provider grant, exact tool metadata, audited one-shot POST, and post-read
+grant revalidation. Aliases refuse nested hub_* recursion, malformed names,
+extra selectors and non-TEST / write-enabled identities. Nothing mints,
+exposes, upgrades, or weakens a provider credential; no LIVE or write path
+was added. HTTP RTC and native JSON-RPC menus announce these owned aliases.
+
+The final proof still requires actually invoking `hub_call` with
+`name:'hub_provider_read'`, `args:{name:'workspace_whoami',args:{}}`
+from ChatGPT on the newly READY promoted revision. Only that genuine
+network read plus denial evidence qualifies for closure. An ordinary
+green CI result does not replace real acceptance. Owner-approved manual
+release requires exact-main CI and release-policy checks, ancestry,
+nonforced expected-head live update and Vercel READY readback.
+
 ## October 16 — unified Hub → Workspace next-release transport readiness
 
 **Observed production:** Hub live/READY `4b0a3d4` contains working owner recovery
