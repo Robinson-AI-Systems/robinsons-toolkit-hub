@@ -181,3 +181,44 @@ submit their own protected browser form and verify owner login. Remove
 the temporary env variables after successful setup. No credential is printed,
 no owner database row is deleted, no provider LIVE grants are altered, and no
 manual release is authorized solely by this maintenance request.
+
+## Protected production URL compatibility (October 15)
+
+Vercel Deployment Protection inserts a temporary access query parameter to
+serve the private owner recovery page. The previous ownerRecovery GET rejected
+all query parameters, producing HTTP 400 even with valid owner recovery
+configuration. Recovery GET is deliberately inert: ignore untrusted query
+parameters entirely, never interpret them as approval, and never reflect
+them into the HTML. The POST still requires the exact one-time Vercel
+production secret, owner-global rate limiting and transactional DB rotation.
+Owner-facing setup should never require manual RTC registry or grant IDs.
+
+## Owner-facing Workspace onboarding replacement — October 15
+
+New `/api/owner/connect-workspace` is the main owner action rather than
+manual `/api/owner/servers` then `/api/owner/grants` then
+`/api/owner/verify-grant`. In the first phase only the Hub owner passphrase
+is required; the service origin, exact RTC server/prefix, TEST mode and
+non-writing guard are code-defined and checked over pinned HTTPS. A
+read-only service-owned Workspace pass is independently required before
+routing, and can be entered once into the SAME password-protected page.
+The Hub does not mint or bypass a Workspace pass.
+
+Given a separately issued TEST/read_only credential, the single protected
+owner submit gets the real service whoami via socket-pinned TLS, validates
+the permitted provider areas, identifies exactly one eligible unrevoked
+Hub OAuth TEST caller (ambiguous/missing callers fail closed), stages the
+pass encrypted, and performs real pinned activation. No manual UUID, server
+name, RTC prefix, HTTPS origin, or comma-separated area list is requested.
+Every provider authority remains constrained by source pass scopes and
+Hub caller areas/profile. Existing conflict/disabled target, invalid write
+pass or probe denial must fail without reauthorizing a working grant.
+Existing advanced forms remain for manual recovery and fleet administration;
+they are not owner onboarding instructions.
+
+A Vercel share/bypass query on either owner-facing GET is ignored and never
+reflected into HTML. All POST forms authenticate with the stored owner
+passphrase and retain exact source grant authorization and crypto. Provider
+pass issuance, genuine network readback, multi-service D-4 acceptance and
+checked serving deployment remain separate pending tasks, not simulated
+by the new streamlined UI.
