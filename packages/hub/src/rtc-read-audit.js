@@ -1,7 +1,8 @@
 import {randomUUID} from 'node:crypto';
+import {serverNamePattern} from './server-name.js';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const toolName=/^[a-z][a-z0-9_]{2,119}$/;
-const serverName=/^[a-z][a-z0-9_]{1,59}$/;
+const serverName=serverNamePattern;
 export function newRtcCorrelation() {return randomUUID();}
 export async function appendRtcReadAudit(db,{actor,grantId,service,tool,
   correlationId,phase,outcome,upstreamLogId=null}) {

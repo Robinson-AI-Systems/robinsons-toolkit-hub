@@ -1,3 +1,38 @@
+## October 16 — release-readiness follow-up: actual routed read audit
+
+The checked immediate production bridge is LIVE/READY at revision
+`516065c`. The private ChatGPT adapter now successfully called the
+existing `hub_provider_describe` alias and received the real, independently
+authorized `workspace_whoami` read-only schema. The first real
+`hub_provider_read` call failed closed. Using the existing
+`hub_batch` interface to retain the Hub's actual error object showed
+`RTC audit storage unavailable` BEFORE any upstream POST.
+
+Root-cause inspection found the RTC read-audit source still used its own
+**underscore-only service name regex**. Every official
+`google-workspace-mcp` audit attempt failed that validation before
+SQL insertion, so the security audit deliberately blocked all Workspace
+POSTs even though the native grant and safe metadata reads were operational.
+Corrected `rtc-read-audit.js` to import the exact canonical service-name
+pattern already used across service registry, routing, history and result
+storage. No audit requirement was removed; attempts and outcomes remain
+durable and require valid owned OAuth/TEST/grant IDs. The hosted
+`hub_rtc_read_audit` table schema was separately read and has the
+correct FK reference, no conflicting old name CHECK. A genuine disposable
+PostgreSQL integration regression executes migrations 001/002/004/005/006/
+008/020 and inserts BOTH attempt/outcome audit rows for an original OAuth
+caller and actual hyphenated Workspace service name, with invalid names
+rejected and no secret material stored.
+
+The owner's existing explicit immediate-release approval encompasses
+completion of this observed live-acceptance blocker; every promotion must
+still pass exact-head ci + release-policy and merged-main CI, use non-forced
+expected-head `live` fast-forward and independently verify production
+Vercel READY. After the revised exact source goes live, run the existing
+private ChatGPT adapter's `hub_provider_read` and only then attest real
+Workspace execution. No provider writes/LIVE/spending. Full external D-4
+acceptance beyond this bounded read remains separately open.
+
 ## October 16 — approved one-off ChatGPT Hub Cloud provider read alias
 
 The owner specifically approves an immediate checked release of the
