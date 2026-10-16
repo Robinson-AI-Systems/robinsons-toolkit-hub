@@ -1,3 +1,23 @@
+## October 16 — owner-authorized immediate read-audit identity correction
+
+The first genuine Hosted TEST `hub_provider_read` after the manual READY
+release `516065c` reached the Hub's existing audited H-3 dispatch path
+and refused before provider POST with `RTC audit storage unavailable`.
+The root cause was an obsolete underscore-only server-name validator in
+`rtc-read-audit.js`, inconsistent with the already migrated and verified
+canonical `google-workspace-mcp` registration. The owner-authorized repair
+reuses the same anchored canonical identity pattern as registry, history,
+result storage and the Hub dispatcher, **retaining** the audit-before-POST
+requirement and secure deny behavior. Hosted `hub_rtc_read_audit`
+structure is already compatible. A new disposable PostgreSQL17 test
+authenticates a real synthetic OAuth caller, stages its canonical
+Workspace grant, persists both correlated durable attempt/outcome
+rows, rejects invalid names, and verifies no secret is stored.
+Do not mark genuine Workspace execution PASSED until the next checked
+off-cycle Vercel READY revision is actually tested through the installed
+ChatGPT Hub Cloud adapter. No provider writes, LIVE, or credentials
+changed. This is incident maintenance, not a new completion bundle.
+
 ## October 16 — owner-authorized immediate read-only tool execution bridge
 
 The Hub's production owner-first Workspace connection and real Hub-mediated
