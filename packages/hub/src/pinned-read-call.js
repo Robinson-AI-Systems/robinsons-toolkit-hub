@@ -1,6 +1,6 @@
 import {lookup as systemLookup} from 'node:dns';
 import {request as httpsRequest} from 'node:https';
-import {choosePublicIpv4} from './pinned-contract.js';
+import {pinnedRtcSocketLookup} from './pinned-contract.js';
 import {validateStagedOrigin} from './registry.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
 
@@ -38,15 +38,7 @@ export async function pinnedRtcReadCall(target,name,args={},
       headers:{accept:'application/json','content-type':'application/json',
        authorization:'Bearer '+target.pass,
        'content-length':Buffer.byteLength(serialized,'utf8')},
-      lookup:(requested,_opts,callback)=>{
-       if(requested!==hostname)return callback(new Error('Invalid RTC DNS host'));
-       lookup(requested,{all:true,family:4},(err,answers)=>{
-        if(err)return callback(new Error('RTC DNS failed'));
-        try{callback(null,choosePublicIpv4(answers),4);}
-        catch{callback(new Error('RTC DNS origin refused'));}
-       });
-      }
-     },res=>{
+      lookup:pinnedRtcSocketLookup(hostname,lookup),res=>{
       const mime=String(res.headers?.['content-type']||'');
       if(![200,400,401,403,404,409,422,429].includes(res.statusCode)||
         !/^application\/json(?:\s*;|$)/i.test(mime)){

@@ -26,6 +26,24 @@ export function choosePublicIpv4(answers) {
   return answers[0].address;
 }
 
+// Match the socket's requested Node DNS callback shape. Modern Node HTTPS
+// asks for {all:true}; returning a scalar then fails before TLS (even with
+// an otherwise valid public RTC origin). Every DNS answer is validated
+// BEFORE one vetted IPv4 is selected. Never return an unvetted fallback.
+export function pinnedRtcSocketLookup(hostname,dnsLookup=systemLookup) {
+  return (asked,options,callback)=>{
+    if(asked!==hostname) return callback(new Error('Unexpected RTC hostname'));
+    dnsLookup(asked,{all:true,family:4},(err,answers)=>{
+      if(err)return callback(new Error('RTC DNS unavailable'));
+      try {
+        const address=choosePublicIpv4(answers);
+        if(options?.all===true) callback(null,[{address,family:4}]);
+        else callback(null,address,4);
+      }catch {callback(new Error('RTC DNS origin refused'));}
+    });
+  };
+}
+
 // Only the RTC read-only listing and exact-tool-schema doors may extend the
 // original contract/whoami HTTPS allowlist; no user-supplied arbitrary path.
 function safeToolReadRoute(route) {
@@ -93,17 +111,7 @@ export async function pinnedRtcJsonGet(origin,route,
         signal:AbortSignal.timeout(timeoutMs),
         headers:{accept:'application/json',
           ...(pass===undefined?{}:{authorization:'Bearer '+pass})},
-        lookup:(asked,_options,callback)=>{
-          if(asked!==hostname) return callback(new Error('Unexpected RTC hostname'));
-          // DNS is resolved in the socket's connection lookup, not as an
-          // earlier preflight whose answer could be swapped by rebinding.
-          lookup(asked,{all:true,family:4},(err,answers)=>{
-            if(err) return callback(new Error('RTC DNS unavailable'));
-            try { callback(null,choosePublicIpv4(answers),4); }
-            catch { callback(new Error('RTC DNS origin refused')); }
-          });
-        }
-      },response=>{
+        lookup:pinnedRtcSocketLookup(hostname,lookup),response=>{
         const mime=String(response.headers?.['content-type']||'');
         if(response.statusCode!==200||!/^application\/json(?:\s*;|$)/i.test(mime)) {
           response.resume();

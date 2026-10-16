@@ -7,7 +7,7 @@ const target={server:'stripe',prefix:'stripe',profile:'read_only',
  mode:'test',origin:'https://stripe-mcp-psi.vercel.app',
  pass,areas:['billing']};
 function channel({answers=[{address:'8.8.8.8',family:4}],
- status=200,mime='application/json',result={ok:true,result:{items:[]}}}={}) {
+ modern=true,status=200,mime='application/json',result={ok:true,result:{items:[]}}}={}) {
  const requests=[];
  const lookup=vi.fn((_host,_options,cb)=>cb(null,answers));
  const request=vi.fn((options,onResponse)=>{
@@ -15,7 +15,9 @@ function channel({answers=[{address:'8.8.8.8',family:4}],
   req.setTimeout=vi.fn();req.destroy=vi.fn();
   req.end=body=>{
    requests.push({options,body});
-   options.lookup(options.hostname,{},(err)=>{
+   options.lookup(options.hostname,{all:modern},(err,resolved,family)=>{
+    if(!err&&modern&&(!Array.isArray(resolved)||resolved.length!==1||resolved[0].family!==4))err=new Error('modern Node array lookup required');
+    if(!err&&!modern&&(typeof resolved!=='string'||family!==4))err=new Error('legacy Node DNS address required');
     if(err){queueMicrotask(()=>req.emit('error',err));return;}
     queueMicrotask(()=>{
      const res=new EventEmitter();res.statusCode=status;
@@ -104,4 +106,19 @@ it('dispatches a canonical trailing-underscore workspace tool once and rejects d
  await expect(pinnedRtcReadCall(workspace,'stripe_invoice_list',{},fake))
   .rejects.toThrow();
  expect(fake.requests).toHaveLength(1);
+});
+
+it('realistic modern and legacy Node lookup response both permit one scoped POST',async()=>{
+ for(const modern of [true,false]){
+  const fake=channel({modern});
+  const result=await pinnedRtcReadCall(target,'stripe_invoice_list',{limit:1},fake);
+  expect(result.ok).toBe(true);
+  expect(fake.requests).toHaveLength(1);
+ }
+});
+it('mixed private/public DNS fails closed for both Node DNS modes before POST delivery',async()=>{
+ for(const modern of [true,false]){
+  const fake=channel({modern,answers:[{address:'8.8.8.8',family:4},{address:'10.0.0.9',family:4}]});
+  await expect(pinnedRtcReadCall(target,'stripe_invoice_list',{},fake)).rejects.toThrow('do not automatically retry');
+ }
 });
