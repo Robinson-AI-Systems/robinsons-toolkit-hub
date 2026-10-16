@@ -1,3 +1,19 @@
+## October 16 — D-4 Workspace remaining independent route acceptance
+
+Source and deployment reconciliation: Hub `main=live=f6f916b8`, Vercel
+READY; Workspace `42afbaaf`, RTC1. PR #224 previously accepted the
+real native audited Hub-to-Workspace read. A new genuine TEST read
+succeeded after the encrypted-only Workspace change; a write-tool
+probe was denied before dispatch without creating a read-attempt
+receipt. Preserved the existing active Hub grant.
+
+D-4 remains IN_PROGRESS for separately credentialed original CLI
+direct, encrypted private GitHub relay, Vercel Sandbox direct and
+same-temporary-pass service-native revocation. No disposable pass
+was issued or revoked. Relay is not bound; no named Sandbox exists.
+See `docs/pr-cards/D-4.md` for the exact evidence and blockers.
+No features, production configuration or release were changed.
+
 ## October 16 — owner-authorized immediate read-audit identity correction
 
 The first genuine Hosted TEST `hub_provider_read` after the manual READY
