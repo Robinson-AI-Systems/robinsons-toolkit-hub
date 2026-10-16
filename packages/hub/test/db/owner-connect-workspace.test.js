@@ -13,7 +13,7 @@ const providerPass='rtc_pass_'+randomBytes(32).toString('base64url');
 const clientId='workspace-onboarding-test-client';
 const redirectUri='https://example.net/auth/callback';
 let db,schema,actor;
-const account=(pass=providerPass)=>({ok:true,result:{profile:'read_only',mode:'test',
+const account=()=>({ok:true,result:{profile:'read_only',mode:'test',
   allow_writes:false,areas:null}});
 function transport({who=account(),confirmed=true}={}){
  const calls=[];
