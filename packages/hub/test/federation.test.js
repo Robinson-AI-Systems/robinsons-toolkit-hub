@@ -217,7 +217,13 @@ it('routes ChatGPT hub_-only alias into EXACT original provider describe and gua
 });
 it('rejects hub_-only adapter alias recursion, writes and out-of-grant names before provider calls',async()=>{
  const deps=provider();
- deps.read=vi.fn();deps.describe=vi.fn();
+ deps.read=vi.fn();
+ deps.describe=vi.fn(async(_grant,name)=>({
+  name,area:'billing',description:'Read-only guard is exact',
+  writes:name==='stripe_send_money',money:false,destructive:false,
+  annotations:{readOnlyHint:name!=='stripe_send_money'},
+  profiles:['read_only'],inputSchema:{type:'object'}
+ }));
  for(const alias of ['hub_provider_read','hub_provider_describe']){
   for(const input of [{name:'hub_health'}, {name:'stripe_send_money'},
     {name:'../workspace_whoami'},{name:'workspace_delete_user',args:'bad'}]){

@@ -323,7 +323,8 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
     !namePattern.test(args.name||'')||
     (args.args!==undefined&&!plain(args.args)))
     return fail('invalid_args','Invalid RTC read call arguments');
-  if(args.name==='hub_result_read'||args.name==='hub_recent_changes')
+  if(args.name==='hub_result_read'||args.name==='hub_recent_changes'||
+     args.name==='hub_provider_read'||args.name==='hub_provider_describe')
    return runFederatedBroker(args.name,args.args??{},actor,db,settings,deps);
   if(ownNames.has(args.name)) {
    // The indirect Hub-owned health read must reflect the same actual
