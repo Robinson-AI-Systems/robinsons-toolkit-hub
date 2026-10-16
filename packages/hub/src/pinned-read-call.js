@@ -38,7 +38,8 @@ export async function pinnedRtcReadCall(target,name,args={},
       headers:{accept:'application/json','content-type':'application/json',
        authorization:'Bearer '+target.pass,
        'content-length':Buffer.byteLength(serialized,'utf8')},
-      lookup:pinnedRtcSocketLookup(hostname,lookup),res=>{
+      lookup:pinnedRtcSocketLookup(hostname,lookup)
+     },res=>{
       const mime=String(res.headers?.['content-type']||'');
       if(![200,400,401,403,404,409,422,429].includes(res.statusCode)||
         !/^application\/json(?:\s*;|$)/i.test(mime)){

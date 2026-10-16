@@ -111,7 +111,8 @@ export async function pinnedRtcJsonGet(origin,route,
         signal:AbortSignal.timeout(timeoutMs),
         headers:{accept:'application/json',
           ...(pass===undefined?{}:{authorization:'Bearer '+pass})},
-        lookup:pinnedRtcSocketLookup(hostname,lookup),response=>{
+        lookup:pinnedRtcSocketLookup(hostname,lookup)
+      },response=>{
         const mime=String(response.headers?.['content-type']||'');
         if(response.statusCode!==200||!/^application\/json(?:\s*;|$)/i.test(mime)) {
           response.resume();
