@@ -15,7 +15,7 @@ export async function inspectScopedRtcIdentity(input,transport={}) {
   const who=value?.result;
   if(value?.ok!==true||!who||who.profile!=='read_only'||
     who.mode!=='test'||who.allowWrites===true||who.allow_writes===true||
-    !(who.areas===null||Array.isArray(who.areas))||
+    !((who.areas===null&&name==='google-workspace-mcp')||Array.isArray(who.areas))||
     (Array.isArray(who.areas)&&areas.some(a=>!who.areas.includes(a))))
     throw new Error('Upstream TEST read_only grant identity refused');
   // Workspace RTC issues all-areas passes with areas:null; an explicit Hub

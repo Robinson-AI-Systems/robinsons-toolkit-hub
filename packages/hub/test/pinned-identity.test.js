@@ -69,3 +69,16 @@ it('does not issue any remote request for malformed grant or areas',async()=>{
     expect(t.calls).toHaveLength(0);
   }
 });
+it('accepts Workspace all-areas TEST grants while rejecting null for unrelated providers',async()=>{
+ const w={origin:'https://google-workspace-mcp-chris-projects-de6cd1bf.vercel.app',
+  name:'google-workspace-mcp',prefix:'workspace',
+  areas:['mail','files'],pass:input.pass};
+ const who={ok:true,result:{profile:'read_only',mode:'test',
+  allow_writes:false,areas:null}};
+ const t=transport({who,rtc:{...manifest,server:w.name,prefix:w.prefix}});
+ const result=await inspectScopedRtcIdentity(w,t);
+ expect(result).toMatchObject({server:w.name,profile:'read_only',
+  areas:['mail','files'],identityVerified:true,callable:false});
+ expect(t.calls.map(c=>c.path)).toEqual(['/api/contract','/api/whoami']);
+ await expect(inspectScopedRtcIdentity(input,transport({who}))).rejects.toThrow();
+});

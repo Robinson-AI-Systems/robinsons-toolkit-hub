@@ -1,3 +1,31 @@
+## October 15 — Owner mobile onboarding + protected recovery correction (proposed)
+
+Owner's checked manual early promotion published merged source b62ee937 to
+Vercel production READY/live. The protected recovery GET returned HTTP
+400 Invalid request through Vercel's authorized share/bypass query because
+the handler incorrectly rejected all GET query parameters. Reproduced via
+Vercel control-plane protected URL fetch. This is a page display bug, not a
+password or credential failure. Corrected GET ignores (never parses,
+reflects or treats as approval) deployment-protection query values. Actual
+recovery POST remains one-time, owner-limited, transactional and cryptographic.
+Applied previously merged additive hosted migration 021 under authorized
+recovery work; readback verified owner row unchanged and zero spent codes.
+Vercel production sensitive recovery-code variable exists, but its value
+was not read; one-time reset has NOT been submitted or accepted.
+
+Owner rejected manually operating the three advanced registration, grants
+and verification forms. New owner Connect Workspace page derives canonical
+service identity/origin, read_only TEST scope, eligible exact Hub caller
+and pinned TLS verification from approved source. First owner registration
+requires only Hub passphrase; a Workspace-issued read-only pass is still an
+independent service authorization and may be supplied once through that
+same page. Absent/ambiguous Hub callers, tampered origin, write-mode
+service passes and pinned identity failures fail closed. No provider
+credentials are minted from Hub approval. Source only; genuine live
+routed reads, replay denial, TEST provider setup and scoped grant activation
+remain open. Hosted SQL migration 020 must be applied through authorized
+deployment procedure before hyphenated Workspace registry staging.
+
 ## October 15 — owner-approved passphrase recovery (pending deployment)
 
 Owner reported that the Hub passphrase was unknown. Independently checked:
