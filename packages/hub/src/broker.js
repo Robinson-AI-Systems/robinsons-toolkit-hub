@@ -18,6 +18,14 @@ const catalog=Object.freeze([
   {name:'hub_call',description:'Call an independently granted RTC read tool',
     inputSchema:{type:'object',properties:{name:rtcName,args:{type:'object'}},
       required:['name'],additionalProperties:false}},
+  // Cloud-hosted ChatGPT adapters that accept only the stable hub_* outer
+  // name can still invoke a provider read through this owned alias. The
+  // inner provider name is validated by the original H-3 exact-tool router.
+  {name:'hub_provider_read',description:'Call one separately granted upstream TEST read-only tool through the existing Hub router',
+    inputSchema:{type:'object',properties:{name:rtcName,args:{type:'object'}},
+      required:['name'],additionalProperties:false}},
+  {name:'hub_provider_describe',description:'Describe one separately granted upstream TEST read-only tool through the existing Hub router',
+    inputSchema:{type:'object',properties:{name:rtcName},required:['name'],additionalProperties:false}},
   {name:'hub_batch',description:'Execute up to ten authorized Hub-owned read calls',
     inputSchema:{type:'object',properties:{calls:{type:'array',minItems:1,maxItems:10,
       items:{type:'object',properties:{name:rtcName,args:{type:'object'}},required:['name'],

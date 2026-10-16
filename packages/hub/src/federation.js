@@ -108,6 +108,21 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
       server:args.server,status:'unavailable',reason:'response_budget'}}};
   return {ok:true,result:combined};
  }
+ // The private ChatGPT cloud adapter currently constrains the *outer* Hub
+ // call name to hub_*. Preserve that adapter interface while routing the
+ // separately selected RTC name through the ORIGINAL read-only validator.
+ // This is NOT a second transport, shortcut, permission or write route.
+ if(name==='hub_provider_read'||name==='hub_provider_describe') {
+  if(Object.keys(args).some(k=>!['name','args'].includes(k))||
+     !namePattern.test(args.name||'')||args.name.startsWith('hub_')||
+     (name==='hub_provider_describe'&&Object.keys(args).length!==1)||
+     (name==='hub_provider_read'&&
+       (args.args!==undefined&&!plain(args.args))))
+    return fail('invalid_args','Invalid independently granted provider read');
+  return runFederatedBroker(name==='hub_provider_read'?'hub_call':'hub_describe_tool',
+   name==='hub_provider_read'?{name:args.name,args:args.args??{}}:{name:args.name},
+   actor,db,settings,deps);
+ }
  if(name==='hub_health') {
   if(Object.keys(args).length)return fail('invalid_args','Invalid Hub arguments');
   const targets=await tools.list(db,actor,{limit:100});
