@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 // A constant-size public MCP menu. Until H-2's independently scoped grants
 // and H-3's guarded router exist, only these two actual Hub-owned reads can
 // be discovered or executed. Never treat broker names as provider names.
@@ -8,7 +9,7 @@ const catalog=Object.freeze([
   {name:'hub_health',description:'Read Hub foundation readiness and federation status',inputSchema:empty},
   {name:'hub_search_tools',description:'Search eligible Hub and separately granted RTC read tools',
     inputSchema:{type:'object',properties:{query:{type:'string',maxLength:120},limit:{type:'integer',minimum:1,maximum:20},
-      server:{type:'string',pattern:'^[a-z][a-z0-9_]{1,59}$'},
+      server:{type:'string',pattern:serverNamePattern.source},
       cursor:{type:'string',minLength:1,maxLength:1280},
       area:{type:'string',pattern:'^[a-z][a-z0-9_]{0,59}$'}},
       required:['query'],additionalProperties:false}},
@@ -24,7 +25,7 @@ const catalog=Object.freeze([
       required:['calls'],additionalProperties:false}},
   {name:'hub_recent_changes',description:'Read only your durable TEST RTC routed history; optionally query one exact authorized upstream history tool',
     inputSchema:{type:'object',properties:{
-      server:{type:'string',pattern:'^[a-z][a-z0-9_]{1,59}$'},
+      server:{type:'string',pattern:serverNamePattern.source},
       limit:{type:'integer',minimum:1,maximum:20},
       cursor:{type:'string',minLength:1,maxLength:540},
       includeUpstream:{type:'boolean'}

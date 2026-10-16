@@ -1,10 +1,11 @@
+import {serverNamePattern} from './server-name.js';
 // H-5: immutable, caller-scoped, bounded view of H-3's real RTC attempt
 // receipts. An absent outcome is PENDING, never rewritten as success.
 // No provider credentials, arguments, return bodies or ciphertext are stored.
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {listEligibleRtcTargets} from './grants.js';
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
-const server=/^[a-z][a-z0-9_]{1,59}$/;
+const server=serverNamePattern;
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const safeId=/^[1-9][0-9]{0,18}$/;
 const reject=()=>{throw new TypeError('Invalid scoped Hub change history request');};

@@ -1,9 +1,10 @@
+import {serverNamePattern} from './server-name.js';
 // H-4: independently owner-approved, all-or-nothing multi-service reductions.
 // Provider grants and service-owned permissions are never modified.
 import {parseInitialServiceAreas,validServiceAreas,
  narrowHubPassServiceAreas,narrowOAuthFamilyServiceAreas} from './service-area-policy.js';
 import {inspectOwnerServiceScope} from './owner-service-scope.js';
-const service=/^[a-z][a-z0-9_]{1,59}$/;
+const service=serverNamePattern;
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const refuse=()=>{throw new TypeError('Invalid service-area reduction plan');};

@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {runBroker} from './broker.js';
 import {listHubRecentChanges} from './recent-changes.js';
 import {listEligibleRtcTargets,resolveActiveCallerGrant} from './grants.js';
@@ -13,7 +14,7 @@ import {scopedSchemaCache} from './schema-cache.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
-const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
+const serverPattern=serverNamePattern;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
 const ownNames=new Set(['hub_whoami','hub_health']);
 function ownerOfTool(targets,name) {
