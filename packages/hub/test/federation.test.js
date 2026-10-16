@@ -201,7 +201,7 @@ it('routes ChatGPT hub_-only alias into EXACT original provider describe and gua
   name:'hub_provider_describe',args:{name:'stripe_invoice_list'}
  }),actor,{},{},deps);
  expect(describe.error).toBeUndefined();
- expect(describe.result.structuredContent.result).toMatchObject({
+ expect(describe.result.structuredContent).toMatchObject({
   name:'stripe_invoice_list',server:'stripe',writes:false});
  const called=await mcpFederatedReply(req('hub_call',{
   name:'hub_provider_read',args:{name:'stripe_invoice_list',args:{limit:1}}
