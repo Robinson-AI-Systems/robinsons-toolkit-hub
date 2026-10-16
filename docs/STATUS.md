@@ -1,3 +1,25 @@
+## October 16 — owner-requested next-release Workspace preparation (PR #221)
+
+Live production remained on previous b62ee937 while reviewed Hub owner page
+and recovery fixes 4b0a3d4 awaited the next checked daily promotion. Independent
+provider public contract RTC1 validated against Google Workspace READY
+5c23755 (382 advertised tools); native Hub connector identity was authenticated
+and its session refreshed, although the owner connection may expire again.
+The hosted Hub migration 020 and 021 constraints are installed and verified.
+The Workspace issuer's own read-only TEST pass store contains zero active
+`for_hub` passes, so real inbound credential authority is still missing and
+must be granted by the service owner via the protected pass issuer, never
+manufactured in the Hub.
+
+This pre-release integration test uses disposable PostgreSQL 17 with real
+owner-authorized Hub OAuth issuance and token exchange, original Hub 020
+migration, registered pending identity, AES-GCM grant sealing, TEST identity
+activation and decryption, plus denial cases. Its provider transport is
+synthetic and bounded; genuine read/denial/revocation work requires the
+separately authorized provider-issued pass and exact checked deployment.
+No Hosted service staging or grants were inserted; owner passphrase recovery
+also remains pending the owner's private browser confirmation.
+
 ## October 15 — Owner mobile onboarding + protected recovery correction (proposed)
 
 Owner's checked manual early promotion published merged source b62ee937 to

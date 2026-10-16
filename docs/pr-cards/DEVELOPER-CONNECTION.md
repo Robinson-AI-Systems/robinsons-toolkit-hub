@@ -222,3 +222,52 @@ passphrase and retain exact source grant authorization and crypto. Provider
 pass issuance, genuine network readback, multi-service D-4 acceptance and
 checked serving deployment remain separate pending tasks, not simulated
 by the new streamlined UI.
+
+## October 16 — preflight for the next checked production release
+
+The Hub main branch is still ahead of the production/live branch. The actual
+Google Workspace RTC public contract on source revision 5c23755 confirms
+server `google-workspace-mcp`, prefix `workspace`, RTC 1, and 382 advertised
+tools. Its admin API retains separate credential issuance; connected native
+provider tools are not a substitute for an independently issued Hub-scoped
+read-only TEST pass. A read-only count on the provider's own TEST pass store
+shows **no unexpired for_hub read_only credentials**. Never invent or create
+one through direct SQL, expose a token hash, print a token or confuse
+existing non-Hub passes with an authorized Hub grant. The owner must
+independently approve service-owned issuance using the protected Workspace
+owner pass page; the raw pass is shown only once and goes directly to the
+Hub's encrypted, password-verified owner onboarding page, not into chat.
+
+An existing Hub OAuth developer connection is refreshable and one active
+session was observed after genuine authenticated Hub tool access; session
+liveness must be rechecked during protected onboarding, not assumed from
+this preflight. Hosted migration 020 has been applied with both canonical
+CHECK constraints VALIDATED and the prefix constraint unchanged. Migration
+021 is also installed, recovery code has not been consumed, and the owner
+has not yet saved a replacement passphrase. No manual release is approved.
+
+Disposable database integration tests now exercise the real approved
+Hub authorization code, OAuth session, 020 schema, server staging, grant
+sealing, independent upstream pass identity shape and activation/decryption.
+They do **not** claim to perform a live upstream authenticated read. The
+pre-release bridge must keep all acceptance for owner-form authorization,
+Workspace TEST whoami, live tool read, restricted denial and revocation
+OPEN until a real credential is supplied and exact deployed revision is
+verified. Full hub routing can become live only once the owner grants the
+separate service permission. Daily checked promotion remains mandatory.
+
+### Time-safe original Hub caller selection
+The signed-in custom Hub client may be idle when the owner opens Workspace
+onboarding: an OAuth access token lasts one hour even while its refresh grant
+can remain valid for 30 days. Owner approval may bind ONLY the unique
+unrevoked, renewable latest generation of an existing TEST/gateway OAuth
+family, preserving its exact server/profile ceilings. Current access sessions
+take priority. Two possible current connections or two dormant renewable
+families deliberately refuse automatic selection. In the one-family dormant
+case, no tool route becomes callable until that SAME approved OAuth family
+refreshes; a raw expired access token never gains new authority. The original
+owner passphrase is still mandatory and provider TEST pass remains independent.
+A new real PostgreSQL test expires the caller, stages one owner-approved
+credential in that dormant state, proves the old actor cannot resolve it,
+then completes a genuine original refresh and verifies grant routing becomes
+eligible again. No TEST provider call or credential is fabricated.
