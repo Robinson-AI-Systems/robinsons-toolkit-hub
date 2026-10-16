@@ -15,8 +15,11 @@ export async function inspectScopedRtcIdentity(input,transport={}) {
   const who=value?.result;
   if(value?.ok!==true||!who||who.profile!=='read_only'||
     who.mode!=='test'||who.allowWrites===true||who.allow_writes===true||
-    !Array.isArray(who.areas)||areas.some(a=>!who.areas.includes(a)))
+    !(who.areas===null||Array.isArray(who.areas))||
+    (Array.isArray(who.areas)&&areas.some(a=>!who.areas.includes(a))))
     throw new Error('Upstream TEST read_only grant identity refused');
+  // Workspace RTC issues all-areas passes with areas:null; an explicit Hub
+  // grant remains a narrower, selected area list and read_only TEST only.
   // Never leak upstream whoami account identifiers, credentials or profile
   // extras into registry, logs or UI. This is still NOT activation.
   return {server:name,prefix,mode:'test',profile:'read_only',
