@@ -104,5 +104,5 @@ it('verifies the exact current OAuth caller, encrypts pass, activates only TEST 
  const result=await resolveActiveCallerGrant(db,{actor,serverName:'google-workspace-mcp'},settings);
  expect(result).toMatchObject({pass:providerPass,origin,prefix:'workspace',
   server:'google-workspace-mcp',profile:'read_only',mode:'test'});
- expect(JSON.stringify(rows.map(({ciphertext,...rest})=>rest))).not.toContain(providerPass);
+ expect(JSON.stringify(rows.map(({ciphertext: _ciphertext,...rest})=>rest))).not.toContain(providerPass);
 });
