@@ -19,6 +19,8 @@ beforeAll(async()=>{
  await db.query('SET search_path TO "'+schema+'"');
  await db.query(await readFile(new URL('../../migrations/009-hub-rtc-results.sql',
   import.meta.url),'utf8'));
+ await db.query(await readFile(new URL('../../migrations/020-hub-service-identities.sql',
+  import.meta.url),'utf8'));
 });
 afterAll(async()=>{
  if(db){if(schema)await db.query('DROP SCHEMA "'+schema+'" CASCADE');await db.end();}
@@ -93,4 +95,16 @@ it('collects only expired encrypted RTC pages in small bounded batches',async()=
  for(const limit of [0,101,1.5,-1]) {
   await expect(pruneExpiredRtcResults(db,{limit})).rejects.toThrow();
  }
+});
+
+it('roundtrips encrypted pages bound to a canonical hyphenated RTC server',async()=>{
+ const workspace={...grant,server:'google-workspace-mcp'};
+ const payload={name:'workspace_drive_list',items:['synthetic-read-only']};
+ const stored=await storeRtcResult(db,actor,workspace.grantId,workspace.server,
+  payload,settings);
+ const page=await readRtcResult(db,actor,stored.handle,0,settings,
+  {resolve:async()=>workspace});
+ expect(JSON.parse(Buffer.from(page.data,'base64url').toString('utf8'))).toEqual(payload);
+ expect(await readRtcResult(db,actor,stored.handle,0,settings,
+  {resolve:async()=>grant})).toBeNull();
 });

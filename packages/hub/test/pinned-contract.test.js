@@ -96,3 +96,16 @@ it('refuses redirects, unexpected content, identity or scope mismatches',async()
     await expect(probeStagedRtcContract(origin,identity,t)).rejects.toThrow();
   }
 });
+
+it('pins the real canonical Workspace RTC manifest name but not a spoofed alias',async()=>{
+ const canonical={name:'google-workspace-mcp',prefix:'workspace'};
+ const body={...manifest,server:'google-workspace-mcp',prefix:'workspace'};
+ const origin='https://google-workspace-mcp-five.vercel.app';
+ const safe=simulatedTransport({body});
+ const checked=await probeStagedRtcContract(origin,canonical,safe);
+ expect(checked).toMatchObject({server:canonical.name,prefix:'workspace',
+  rtc:1,networkVerified:true,callable:false});
+ expect(safe.observations.options.hostname).toBe('google-workspace-mcp-five.vercel.app');
+ const mismatched=simulatedTransport({body:{...body,server:'google_workspace_mcp'}});
+ await expect(probeStagedRtcContract(origin,canonical,mismatched)).rejects.toThrow();
+});
