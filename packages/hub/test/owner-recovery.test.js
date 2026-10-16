@@ -60,3 +60,15 @@ it('refuses consumed code and rolls back a failed credential update',async()=>{
  await expect(ownerRecovery(fail,good(),{env:env(),budget})).rejects.toThrow('db failure');
  expect(fail.query.mock.calls.at(-1)[0]).toBe('ROLLBACK');
 });
+it('accepts protected-deployment GET access query without treating it as authority',async()=>{
+ const db={query:vi.fn()},cfg=env();
+ for(const query of [{_vercel_share:'opaque-share-token'},
+  {_vercel_protection_bypass:'opaque-bypass-token'},{unexpected:'anything'}]){
+  const r=await ownerRecovery(db,{method:'GET',query},{env:cfg});
+  expect(r.status).toBe(200);
+  expect(r.html).toContain('name="recovery_code"');
+  expect(r.html).not.toContain('opaque-');
+  expect(r.html).not.toContain('anything');
+ }
+ expect(db.query).not.toHaveBeenCalled();
+});

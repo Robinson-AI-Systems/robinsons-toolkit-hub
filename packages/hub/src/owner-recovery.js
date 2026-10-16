@@ -20,7 +20,9 @@ function configured(env,now) {
 export async function ownerRecovery(db,req,{env=process.env,now=()=>Date.now(),budget=takeBudget}={}){
  if(!configured(env,now()))return page(503,'Hub owner recovery is not enabled or has expired.');
  if(req.method==='GET'){
-  if(Object.keys(req.query||{}).length)return page(400,'Invalid request.');
+  // Vercel Deployment Protection may append a short-lived access query
+  // parameter. GET is read-only: ignore all query keys without reading,
+  // reflecting or treating them as recovery authority.
   return {status:200,html:'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reset Hub owner passphrase</title><main><h1>Reset Hub owner passphrase</h1><p>Enter the one-time recovery code you saved privately in your Vercel project. Never send the code or passphrase through chat.</p><form method="POST" action="/api/owner/recover"><label>One-time recovery code <input type="password" name="recovery_code" autocomplete="off" required minlength="43" maxlength="43"></label><label>New passphrase <input type="password" name="password" autocomplete="new-password" required minlength="12" maxlength="256"></label><label>Confirm new passphrase <input type="password" name="confirmation" autocomplete="new-password" required minlength="12" maxlength="256"></label><button type="submit">Save new passphrase</button></form></main></html>'};
  }
  if(req.method!=='POST')return page(405,'Method not allowed.');

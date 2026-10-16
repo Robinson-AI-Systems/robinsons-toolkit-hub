@@ -181,3 +181,14 @@ submit their own protected browser form and verify owner login. Remove
 the temporary env variables after successful setup. No credential is printed,
 no owner database row is deleted, no provider LIVE grants are altered, and no
 manual release is authorized solely by this maintenance request.
+
+## Protected production URL compatibility (October 15)
+
+Vercel Deployment Protection inserts a temporary access query parameter to
+serve the private owner recovery page. The previous ownerRecovery GET rejected
+all query parameters, producing HTTP 400 even with valid owner recovery
+configuration. Recovery GET is deliberately inert: ignore untrusted query
+parameters entirely, never interpret them as approval, and never reflect
+them into the HTML. The POST still requires the exact one-time Vercel
+production secret, owner-global rate limiting and transactional DB rotation.
+Owner-facing setup should never require manual RTC registry or grant IDs.
