@@ -1,3 +1,48 @@
+## October 15 — owner-approved passphrase recovery (pending deployment)
+
+Owner reported that the Hub passphrase was unknown. Independently checked:
+`hub_owner_credentials` had one correctly formatted scrypt verifier, created
+October 13 for the configured owner ID, and the original setup activation
+expired October 14. The actual passphrase is not recoverable from the hash.
+There was one active OAuth session at that check; recovery must **not**
+silently erase grant/session records, secrets or current verifier before owner
+authentication succeeds. Owner explicitly approved a replacement.
+
+A protected one-time recovery flow is added at `/api/owner/recover` and a
+separate additive migration `021-hub-owner-recovery.sql`. This is owner
+authentication maintenance, not a completion/product bundle. The original
+passphrase stays valid until the new one is saved in the browser using the
+independent recovery code configured by the owner in the existing Hub
+Vercel project's **Production / Sensitive** variable
+`HUB_OWNER_RECOVERY_CODE` (exactly 43 base64url characters; generate via a
+password manager, not chat). Configure the plain Production
+`HUB_OWNER_RECOVERY_EXPIRES` as an ISO 8601 UTC date/time no more than
+72 hours ahead, and ensure `HUB_OWNER_SCRYPT` is absent (the pre-existing
+owner's database verifier is authoritative). Do not disclose the recovery
+code, new passphrase, expired activation token or credential verifier.
+
+Once the exact reviewed source is live READY, migration 021 has been
+independently applied and fresh Vercel environment values are in the serving
+deployment, the owner may open
+`https://robinsons-toolkit-relay.vercel.app/api/owner/recover` directly,
+enter their own one-time code and new passphrase, then use the ordinary
+owner setup forms. The form refuses missing/expired/wrong codes, malformed
+inputs, wrong deployment environment and code reuse. It uses the existing
+no-store/CSP/rate-limited HTTPS route, owner-global attempt budget, scrypt
+and a transactionally consumed keyed digest with a unique DB constraint.
+Errors never return the input or verification hash. No OAuth session is
+implicitly revoked. Existing active sessions should be reviewed separately
+if unauthorized access is suspected. After use or expiry, remove the
+temporary environment variables through owner control plane and only after
+serving source/config is reconciled. Never use raw SQL to overwrite owner
+credentials, disable owner protection, or ask for codes in chat.
+
+Hosted acceptance (not satisfied by source CI): confirm exact deployment,
+installed migration and Vercel variables; genuine owner's protected POST;
+owner sign-in using the new passphrase; rejected reused recovery code; then
+safely remove recovery config. Manual live release not authorized solely
+by this approval; standard checked daily deployment policy remains binding.
+
 
 ## October 15 — canonical Workspace RTC server identity repair (source-only)
 
