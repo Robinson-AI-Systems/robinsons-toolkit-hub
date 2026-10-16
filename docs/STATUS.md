@@ -2086,3 +2086,13 @@ It cannot cancel an active verified grant or act for a different owner or
 caller. A disposable PostgreSQL test proves failure, narrow retirement,
 successful retry and retained verified grant. Unauthenticated retries
 do not inspect or cancel pending state.
+
+**Additional post-activation audit repair:** The direct Hub RTC listing door
+still used the obsolete underscore-only server selector even though the
+registered canonical Workspace RTC name includes hyphens. It now reuses the
+same reviewed `serverNamePattern` as the registry and federated dispatcher;
+the matching unit contract proves exact Workspace selection and rejects
+path/domain aliases. The previous owner wizard unit mock also lacked the
+newly audited nonverified-grant lookup: it has been adjusted without
+weakening any authorization assertion. No provider-specific privileges
+or tool writes are granted by this change.

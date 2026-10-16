@@ -1,8 +1,9 @@
 import { brokerCatalog, mcpReply } from './http-door.js';
 import { runFederatedBroker } from './federation.js';
+import {serverNamePattern} from './server-name.js';
 
 const toolName = /^[a-z][a-z0-9_]{2,119}$/;
-const serverName = /^[a-z][a-z0-9_]{1,59}$/;
+const serverName = serverNamePattern;
 const areaName = /^[a-z][a-z0-9_]{0,59}$/;
 const deny = code => ({ ok: false, error: { code } });
 const selectTool = name => brokerCatalog().find(tool => tool.name === name);

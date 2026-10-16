@@ -52,3 +52,20 @@ it('denies missing, live, out-of-area and writing actors before any tool result'
   expect(throttled.code).toBe(429);
   expect(throttled.headers['Retry-After']).toBe('12');
 });
+
+it('supports exact canonical hyphenated Workspace server selection over direct RTC listing',async()=>{
+ const federate=vi.fn(async()=>({ok:true,result:{tools:[],next:null}}));
+ const res=response();
+ await handleHubTools({
+  method:'GET',query:{q:'files',server:'google-workspace-mcp',limit:'2'},
+  headers:{authorization:'synthetic'}
+ },res,{withDb,authorize:async()=>({actor:{...actor,ownerId:'owner'}}),federate},'list');
+ expect(res.code).toBe(200);
+ expect(federate).toHaveBeenCalledWith('hub_search_tools',
+  expect.objectContaining({server:'google-workspace-mcp',query:'files',limit:2}),
+  expect.objectContaining({ownerId:'owner'}),{},{});
+ for(const server of ['google/workspace','-bad','google.example.com']){
+  const bad=await send('list','GET',{q:'files',server,limit:'2'});
+  expect(bad.code).toBe(400);
+ }
+});
