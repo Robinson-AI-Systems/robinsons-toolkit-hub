@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {lookup as systemLookup} from 'node:dns';
 import {request as httpsRequest} from 'node:https';
 import {isIP} from 'node:net';
@@ -138,7 +139,7 @@ export async function pinnedRtcJsonGet(origin,route,
   return manifest;
 }
 export async function probeStagedRtcContract(origin,identity,transport={}) {
-  if (!identity||!/^[a-z][a-z0-9_]{1,59}$/.test(identity.name||'')||
+  if (!identity||!serverNamePattern.test(identity.name||'')||
     !/^[a-z][a-z0-9_]{1,59}$/.test(identity.prefix||''))
     throw new TypeError('Invalid expected RTC service identity');
   return assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);

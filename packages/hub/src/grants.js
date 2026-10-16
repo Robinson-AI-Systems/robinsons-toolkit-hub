@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {completeActiveGrantActivation,replacementScopeAllowed} from './grant-lifecycle.js';
 import {limitedServiceProfile} from './service-profile-policy.js';
 import {effectiveServiceAreas} from './service-area-policy.js';
@@ -8,7 +9,7 @@ import {createCipheriv,createDecipheriv,randomBytes,randomUUID} from 'node:crypt
 
 const idPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const passPattern=/^rtc_pass_[A-Za-z0-9_-]{43}$/;
-const namePattern=/^[a-z][a-z0-9_]{1,59}$/;
+const prefixPattern=/^[a-z][a-z0-9_]{1,59}$/;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
 function key(settings) {
   const raw=settings?.grantsKey;
@@ -86,7 +87,7 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
 export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={}) {
   const {ownerId,serverName,callerKind,callerId,areas,pass,ttlSeconds}=input||{};
   owner(ownerId,ownerVerified);
-  if(!namePattern.test(serverName||'')||!['pass','oauth'].includes(callerKind)||
+  if(!serverNamePattern.test(serverName||'')||!['pass','oauth'].includes(callerKind)||
     !idPattern.test(callerId||'')||!validAreas(areas)||
     !passPattern.test(pass||'')||!Number.isInteger(ttlSeconds)||
     ttlSeconds<60||ttlSeconds>30*86400)
@@ -179,7 +180,7 @@ export async function listCallerGrants(db,ownerId,{ownerVerified=false}={}) {
 // after a separately verified, enabled origin and exact live caller scope.
 export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   if(!actor||actor.mode!=='test'||!['read_only','everyday','full'].includes(actor.profile)||actor.allowWrites===true||
-    !actor.areas?.includes('gateway')||!namePattern.test(serverName||'')||
+    !actor.areas?.includes('gateway')||!serverNamePattern.test(serverName||'')||
     !allowedByHubPass(actor,serverName))
     return null;
   const secret=key(settings);
@@ -241,7 +242,7 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
   if(!limitedAreas.length||!selectedProfile)return null;
   // Never dispatch a credential toward a changed or malformed registry target.
   const origin=validateStagedOrigin(row.target_origin);
-  if(!namePattern.test(row.target_prefix||'')) throw new Error('Invalid active service prefix');
+  if(!prefixPattern.test(row.target_prefix||'')) throw new Error('Invalid active service prefix');
   const decipher=createDecipheriv('aes-256-gcm',secret,row.nonce);
   decipher.setAAD(audience(row));
   decipher.setAuthTag(row.tag);

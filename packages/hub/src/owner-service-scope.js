@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 // H-4 owner-only scope inspector and immutable area-policy audit readback.
 // No upstream credential, bearer, ciphertext, tool parameters or provider
 // result may appear in this UI or the returned record.
@@ -6,7 +7,7 @@ import {effectiveGrantAreas} from './grants.js';
 import {effectiveServiceAreas,sanitizedServicePolicy} from './service-area-policy.js';
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
 const id=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const server=/^[a-z][a-z0-9_]{1,59}$/;
+const server=serverNamePattern;
 function authorized(ownerId,verified) {
   if(verified!==true||!owner.test(ownerId||''))
     throw new Error('Independent owner authentication required');

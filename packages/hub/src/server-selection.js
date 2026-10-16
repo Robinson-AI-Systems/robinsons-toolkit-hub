@@ -1,7 +1,8 @@
+import {serverNamePattern} from './server-name.js';
 // A Hub pass may select a strict subset of existing owner-registered RTC servers.
 // Null is the pre-H-4 legacy policy: exact caller-owned, verified upstream grants
 // continue to be the only route; new owner-form passes must select names explicitly.
-const name = /^[a-z][a-z0-9_]{1,59}$/;
+const name = serverNamePattern;
 const MAX = 20;
 export function serverSelection(value, {required = false} = {}) {
   if (value === undefined || value === null) {

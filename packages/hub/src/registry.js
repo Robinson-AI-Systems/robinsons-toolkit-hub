@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {isIP} from 'node:net';
 
 // A staged origin is NOT a trusted network target. H-2's guarded transport
@@ -35,7 +36,7 @@ function manifestMetadata(manifest,name,prefix) {
 export async function stageHubServer(db,{ownerId,name,prefix,origin,manifest},
   {ownerVerified=false}={}) {
   owner(ownerId,ownerVerified);
-  if (!slug.test(name||'') || !slug.test(prefix||'') ||
+  if (!serverNamePattern.test(name||'') || !slug.test(prefix||'') ||
     name==='hub' || prefix==='hub')
     throw new TypeError('Invalid server identity');
   const safeOrigin=validateStagedOrigin(origin);
@@ -56,7 +57,7 @@ export async function listStagedServers(db,ownerId,{ownerVerified=false}={}) {
 }
 export async function disableStagedServer(db,{ownerId,name},{ownerVerified=false}={}) {
   owner(ownerId,ownerVerified);
-  if (!slug.test(name||'')) throw new TypeError('Invalid server name');
+  if (!serverNamePattern.test(name||'')) throw new TypeError('Invalid server name');
   const result=await db.query(`UPDATE hub_servers
     SET state='disabled',updated_at=now()
     WHERE name=$1 AND owner_id=$2 AND state IN ('pending','active')`,[name,ownerId]);
@@ -72,7 +73,7 @@ export async function disableStagedServer(db,{ownerId,name},{ownerVerified=false
 export async function retireHubServerAndGrants(db,{ownerId,name},
  {ownerVerified=false}={}) {
  owner(ownerId,ownerVerified);
- if(!slug.test(name||'')||name==='hub')
+ if(!serverNamePattern.test(name||'')||name==='hub')
   throw new TypeError('Invalid owner-scoped service retirement');
  await db.query('BEGIN');
  try {

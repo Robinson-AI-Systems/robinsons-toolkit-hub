@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
   verifyOwnerLogin} from './owner-login.js';
 import {stageHubServer,listStagedServers,disableStagedServer,
@@ -48,7 +49,7 @@ function validated(fields) {
     typeof fields.password!=='string'||!fields.password||
     fields.password.length>256) return false;
   if (fields.action==='list') return true;
-  if(!slug.test(fields.name||'')) return false;
+  if(!serverNamePattern.test(fields.name||'')) return false;
   if(fields.action==='disable')return true;
   if(fields.action==='retire')return fields.confirm==='RETIRE';
   return slug.test(fields.prefix||'')&&typeof fields.origin==='string'&&

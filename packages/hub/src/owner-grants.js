@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
   verifyOwnerLogin} from './owner-login.js';
 import {cancelStagedGrant,listGrantLifecycleAudit,
@@ -7,7 +8,7 @@ import {stageCallerGrant,listCallerGrants,
   narrowCallerGrantAreas} from './grants.js';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const slug=/^[a-z][a-z0-9_]{1,59}$/;
+const slug=serverNamePattern;
 const area=/^[a-z][a-z0-9_]{0,59}$/;
 const rtcPass=/^rtc_pass_[A-Za-z0-9_-]{43}$/;
 function page(body) {

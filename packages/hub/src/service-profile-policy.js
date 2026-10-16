@@ -1,8 +1,9 @@
+import {serverNamePattern} from './server-name.js';
 // H-4 caller-owned per-service profile ceilings. No upstream credential,
 // service grant or immutable provider envelope changes. A blocked profile is
 // a permanent no-call choice for the existing pass or whole OAuth family.
 const levels=Object.freeze({disabled:0,read_only:1,everyday:2,full:3});
-const service=/^[a-z][a-z0-9_]{1,59}$/;
+const service=serverNamePattern;
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const own=(input,verified)=>{
