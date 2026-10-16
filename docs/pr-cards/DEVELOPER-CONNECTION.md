@@ -303,3 +303,13 @@ A new real PostgreSQL test expires the caller, stages one owner-approved
 credential in that dormant state, proves the old actor cannot resolve it,
 then completes a genuine original refresh and verifies grant routing becomes
 eligible again. No TEST provider call or credential is fabricated.
+
+**Owner-approved retry safety:** A real network failure after Hub seals a
+new credential can strand one unverified pending slot per caller. The same
+new passphrase-approved onboarding form now checks a refreshed provider
+whoami BEFORE cancelling exactly the old nonverified grant; it uses the
+existing lifecycle audit and immediately stages/verifies the new pass.
+It cannot cancel an active verified grant or act for a different owner or
+caller. A disposable PostgreSQL test proves failure, narrow retirement,
+successful retry and retained verified grant. Unauthenticated retries
+do not inspect or cancel pending state.

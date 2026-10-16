@@ -106,3 +106,23 @@ it('verifies the exact current OAuth caller, encrypts pass, activates only TEST 
   server:'google-workspace-mcp',profile:'read_only',mode:'test'});
  expect(JSON.stringify(rows.map(({ciphertext: _ciphertext,...rest})=>rest))).not.toContain(providerPass);
 });
+
+it('owner-approved retry safely retires a failed NONVERIFIED pending grant',async()=>{
+ const broken=transport();
+ broken.activate=async()=>{throw Error('simulated uncertain upstream transport');};
+ await expect(connectWorkspace(db,settings,owner,providerPass,broken))
+  .rejects.toThrow('simulated uncertain upstream transport');
+ const stale=(await db.query(`SELECT id,verified_at,revoked_at FROM hub_server_grants
+  WHERE caller_id=$1 AND verified_at IS NULL AND revoked_at IS NULL`,[actor.id])).rows;
+ expect(stale).toHaveLength(1);
+ const retry=transport();
+ const result=await connectWorkspace(db,settings,owner,providerPass,retry);
+ expect(result.state).toBe('verified_test');
+ const old=(await db.query('SELECT revoked_at,verified_at FROM hub_server_grants WHERE id=$1',[stale[0].id])).rows[0];
+ expect(old.revoked_at).not.toBeNull();
+ expect(old.verified_at).toBeNull();
+ const next=(await db.query(`SELECT id FROM hub_server_grants WHERE caller_id=$1
+   AND verified_at IS NOT NULL AND revoked_at IS NULL`,[actor.id])).rows;
+ expect(next).toHaveLength(1);
+ expect(retry.calls).toEqual(['public_contract','provider_whoami','verified_activation']);
+});

@@ -2076,3 +2076,13 @@ This is a dependency of the same unfinished Google Workspace P8-4/P8-5/P8-7
 workload, not a new Hub bundle or external D-4 acceptance. No deployment/spend.
 Follow-up review of #213 retained the original initial-success-envelope assertion
 at the new shared recovery boundary; failure cannot be laundered through a handle.
+
+**Owner-approved retry safety:** A real network failure after Hub seals a
+new credential can strand one unverified pending slot per caller. The same
+new passphrase-approved onboarding form now checks a refreshed provider
+whoami BEFORE cancelling exactly the old nonverified grant; it uses the
+existing lifecycle audit and immediately stages/verifies the new pass.
+It cannot cancel an active verified grant or act for a different owner or
+caller. A disposable PostgreSQL test proves failure, narrow retirement,
+successful retry and retained verified grant. Unauthenticated retries
+do not inspect or cancel pending state.

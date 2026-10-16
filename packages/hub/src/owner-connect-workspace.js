@@ -6,6 +6,7 @@ import {htmlHeaders,publicHubOrigin,formFields,verifyOwnerLogin,escapeHtml} from
 import {probeStagedRtcContract,pinnedRtcJsonGet} from './pinned-contract.js';
 import {stageHubServer} from './registry.js';
 import {stageCallerGrant,activateVerifiedCallerGrant} from './grants.js';
+import {cancelStagedGrant} from './grant-lifecycle.js';
 
 const service='google-workspace-mcp',prefix='workspace';
 const origin='https://google-workspace-mcp-chris-projects-de6cd1bf.vercel.app';
@@ -90,6 +91,20 @@ export async function connectWorkspace(db,settings,ownerId,servicePass,{
   ORDER BY access_expires_at DESC LIMIT 2`,[ownerId,service]);
  if(connections.rows.length!==1)
   return {state:'needs_one_hub_connection'};
+ // A real upstream timeout after staging leaves ONE noncallable pending grant
+ // occupying this caller's unique slot. Only a new independently verified owner
+ // approval PLUS successful service pass whoami may replace that unfinished
+ // attempt; never touch a verified working grant or widen an existing scope.
+ const pending=await db.query(`SELECT id FROM hub_server_grants
+   WHERE owner_id=$1 AND server_name=$2 AND caller_kind='oauth' AND caller_id=$3
+     AND verified_at IS NULL AND revoked_at IS NULL
+   ORDER BY created_at DESC LIMIT 2`,[ownerId,service,connections.rows[0].id]);
+ if(pending.rows.length>1)throw Error('Ambiguous unverified Workspace grant');
+ if(pending.rows.length===1){
+  const canceled=await cancelStagedGrant(db,{ownerId,id:pending.rows[0].id},
+    {ownerVerified:true});
+  if(!canceled)throw Error('Pending Workspace grant changed during owner recovery');
+ }
  // Stage only for the ONE unambiguous existing caller; never grant
  // provider authority to arbitrary developer sessions.
  const staged=await grant(db,{ownerId,serverName:service,callerKind:'oauth',
