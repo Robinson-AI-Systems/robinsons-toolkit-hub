@@ -16,6 +16,8 @@ beforeAll(async()=>{
   await db.query('SET search_path TO "'+schema+'"');
   await db.query(await readFile(new URL('../../migrations/004-hub-registry.sql',
     import.meta.url),'utf8'));
+ await db.query(await readFile(new URL('../../migrations/020-hub-service-identities.sql',
+  import.meta.url),'utf8'));
 });
 afterAll(async()=>{if(db){if(schema)await db.query('DROP SCHEMA "'+schema+'" CASCADE');await db.end();}});
 it('persists only pending public claims and isolates owner inspection',async()=>{
@@ -36,4 +38,20 @@ it('persists only pending public claims and isolates owner inspection',async()=>
     {ownerVerified:true})).toBe(true);
   expect((await db.query('SELECT state FROM hub_servers WHERE name=$1',['stripe']))
     .rows[0].state).toBe('disabled');
+});
+
+it('persists canonical hyphenated manifest server names only after migration 020',async()=>{
+ const valid={ownerId:'owner-a',name:'google-workspace-mcp',prefix:'workspace',
+  origin:'https://google-workspace-mcp-five.vercel.app',
+  manifest:{...claimed,server:'google-workspace-mcp',prefix:'workspace'}};
+ const staged=await stageHubServer(db,valid,{ownerVerified:true});
+ expect(staged).toMatchObject({name:valid.name,state:'pending',callable:false});
+ const {rows}=await db.query('SELECT name,prefix FROM hub_servers WHERE name=$1',
+  [valid.name]);
+ expect(rows).toEqual([{name:valid.name,prefix:'workspace'}]);
+ await expect(stageHubServer(db,{...valid,prefix:'bad-prefix'},
+  {ownerVerified:true})).rejects.toThrow();
+ await expect(stageHubServer(db,{...valid,name:'invalid/name',
+  manifest:{...valid.manifest,server:'invalid/name'}},
+  {ownerVerified:true})).rejects.toThrow();
 });

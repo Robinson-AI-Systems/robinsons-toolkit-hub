@@ -113,3 +113,18 @@ it('does not leak grant identities on retirement failure',async()=>{
  const unknown=await invoke('POST',body,{retire:async()=>null});
  expect(unknown.res.code).toBe(404);
 });
+
+it('stages the exact hyphenated Workspace RTC identity without loosening prefixes',async()=>{
+ const body='action=stage&password=synthetic-owner-auth&name=google-workspace-mcp'+
+  '&prefix=workspace&origin=https%3A%2F%2Fgoogle-workspace-mcp-five.vercel.app';
+ const {res,deps}=await invoke('POST',body);
+ expect(res.code).toBe(201);
+ expect(deps.probe).toHaveBeenCalledWith(
+  'https://google-workspace-mcp-five.vercel.app',
+  {name:'google-workspace-mcp',prefix:'workspace'});
+ expect(deps.stage.mock.calls[0][1].manifest).toMatchObject({
+  server:'google-workspace-mcp',prefix:'workspace',rtc:1});
+ const unsafe=await invoke('POST',body.replace('prefix=workspace','prefix=bad-prefix'));
+ expect(unsafe.res.code).toBe(400);
+ expect(unsafe.deps.probe).not.toHaveBeenCalled();
+});

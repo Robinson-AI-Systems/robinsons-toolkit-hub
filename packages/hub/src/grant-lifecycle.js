@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 // H-4 owner-verified onboarding and renewal of independently issued RTC
 // TEST/read_only service grants for ALREADY active registered services.
 // The external identity probe is completed before opening any transaction.
@@ -5,7 +6,7 @@
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const ownerPattern=/^[A-Za-z0-9:_-]{1,120}$/;
 const area=/^[a-z][a-z0-9_]{0,59}$/;
-const service=/^[a-z][a-z0-9_]{1,59}$/;
+const service=serverNamePattern;
 function verified(ownerId,ownerVerified) {
  if(!ownerPattern.test(ownerId||'')||ownerVerified!==true)
    throw new Error('Independently verified owner required');

@@ -1,3 +1,34 @@
+
+## October 15 — canonical Workspace RTC server identity repair (source-only)
+
+The owner reported that no Workspace target was configured in Hub. Verified the
+connected Hub TEST namespace and hosted Neon inventory: **zero registered servers
+and zero encrypted upstream grants**; Hub owner credentials are configured.
+This is real missing owner TEST integration, not missing Workspace standalone
+MCP functionality. Serving Hub production remains READY at live source
+`8169af07afa2df4fe9cacb195b5382f9c04fc7e0`; main at inspection
+`0642e8cfe0b4d28790d41ffb6e250ff2977a1098` with no open PRs.
+
+Root cause established independently from RTC manifest source: Workspace
+advertises `server: google-workspace-mcp`, `prefix: workspace`. Hub H-2
+registry, grant, search, scope and encrypted result name guards used a
+different underscore-only server grammar, so the secure owner setup path
+could not register the canonical service. Repair source uses one shared
+bounded server identity grammar in app, separately preserves underscore-only
+RTC prefixes/tool names/areas, and adds checked migration 020 to update the
+two hosted DB constraints. Regression coverage includes owner staging and
+permission-denial, TLS-pinned RTC 1 manifest probe, grant form, federated
+selection, PostgreSQL registry and encrypted result pages.
+
+This is a needed compatibility/TEST acceptance blocker repair, **not a
+completed product bundle**. A merged source fix alone cannot create or
+approve any live Hub target. Required exact-head CI/review, checked future
+release, hosted migration application, independent owner setup and service-issued
+TEST read_only grant, scoped activation, genuine Hub read/denial/revocation
+and permanent acceptance ledger are separate OPEN steps. No credentials,
+provider mutations, LIVE activation, paid capacity or manual release are
+authorized by this correction.
+
 ### Release-needed owner escalation — October 15
 
 Owner permits manual-release requests only after every independently eligible

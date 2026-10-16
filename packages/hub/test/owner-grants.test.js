@@ -124,3 +124,17 @@ it('returns only permitted area metadata with escaped names and original grant s
  expect(listed.res.body).not.toContain('<script>');
  expect(listed.res.body).not.toContain(secret);
 });
+
+it('stages a Workspace service grant only for an exact authorized hyphenated server name',async()=>{
+ const body=stageBody.replace('server=stripe','server=google-workspace-mcp')
+  .replace('areas=billing%2Ccustomers','areas=drive');
+ const x=await call('POST',body);
+ expect(x.res.code).toBe(201);
+ expect(x.deps.stage).toHaveBeenCalledWith(expect.anything(),
+  expect.objectContaining({serverName:'google-workspace-mcp',areas:['drive']}),
+  expect.objectContaining({ownerVerified:true}));
+ expect(x.res.body).not.toContain(secret);
+ const invalid=await call('POST',body.replace('google-workspace-mcp','google/workspace'));
+ expect(invalid.res.code).toBe(400);
+ expect(invalid.deps.stage).not.toHaveBeenCalled();
+});

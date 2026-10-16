@@ -1,9 +1,10 @@
+import {serverNamePattern} from './server-name.js';
 import {createCipheriv,createDecipheriv,createHmac,randomBytes} from 'node:crypto';
 import {resolveActiveCallerGrant} from './grants.js';
 
 const handlePattern=/^rtc_[A-Za-z0-9_-]{43}$/;
 const grantPattern=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const serverPattern=/^[a-z][a-z0-9_]{1,59}$/;
+const serverPattern=serverNamePattern;
 const digest=(pepper,value)=>createHmac('sha256',pepper).update(value).digest('hex');
 function validated(actor,settings) {
  if(!actor||!actor.ownerId||!actor.id||actor.mode!=='test'||

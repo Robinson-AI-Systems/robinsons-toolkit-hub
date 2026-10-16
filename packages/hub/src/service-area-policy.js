@@ -1,9 +1,10 @@
+import {serverNamePattern} from './server-name.js';
 // H-4: an extra, caller-owned least-privilege filter on a separately
 // issued service grant. The sealed provider TEST pass, its original RTC areas,
 // profile and encryption AAD never change when its caller removes an area.
 // Per-service policy is resolved from CURRENT SQL for every discovery/read.
 const area=/^[a-z][a-z0-9_]{0,59}$/;
-const service=/^[a-z][a-z0-9_]{1,59}$/;
+const service=serverNamePattern;
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const ownerId=/^[A-Za-z0-9:_-]{1,120}$/;
 export function parseServiceAreas(raw) {

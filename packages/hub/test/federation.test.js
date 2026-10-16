@@ -158,3 +158,26 @@ it('refuses schema disclosure after a verified RTC grant is replaced during meta
  expect(result.error.code).toBe('outside_scope');
  expect(deps.describe).toHaveBeenCalledTimes(1);
 });
+
+it('discovers a hyphenated Workspace server through one scoped Hub TEST connection',async()=>{
+ const target={name:'google-workspace-mcp',prefix:'workspace',
+  areas:['drive'],claimedCounts:{tools:380},readOnlyGrant:true};
+ const deps=provider();
+ deps.list=vi.fn(async()=>[target]);
+ deps.resolve=vi.fn(async()=>({
+  server:target.name,prefix:'workspace',origin:'https://google-workspace-mcp-five.vercel.app',
+  pass:'synthetic-injected-pass',profile:'read_only',mode:'test',areas:['drive'],
+  grantId:'00000000-0000-4000-8000-000000000001'}));
+ const found=await runFederatedBroker('hub_search_tools',{
+  query:'read',server:'google-workspace-mcp',area:'drive',limit:5},
+  actor,{},{},deps);
+ expect(found.ok).toBe(true);
+ expect(found.result.tools).toEqual([expect.objectContaining({
+  name:'workspace_read_list',server:'google-workspace-mcp'})]);
+ expect(deps.resolve).toHaveBeenCalledWith(expect.anything(),
+  {actor,serverName:'google-workspace-mcp'},expect.anything());
+ const nav=await runFederatedBroker('hub_namespaces',{},actor,{},{},deps);
+ expect(nav.result.namespaces).toContainEqual(expect.objectContaining({
+  name:'google-workspace-mcp',prefix:'workspace',rtc:1}));
+ expect(JSON.stringify(found)).not.toContain('synthetic-injected-pass');
+});

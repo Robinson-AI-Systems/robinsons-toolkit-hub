@@ -1,3 +1,4 @@
+import {serverNamePattern} from './server-name.js';
 import {parseOwnerServiceAreaPlan,previewOwnerServiceAreaPlan,
  executeOwnerServiceAreaPlan} from './service-area-plan.js';
 import {listOwnerOAuthFamilies,revokeOwnerOAuthFamily,
@@ -165,14 +166,14 @@ export async function handleOwnerOAuth(req,res,{withDb,env=process.env,
     catch{return res.status(400).send('Invalid multi-service area restrictions');}
   }
   if(fields.action==='narrow_profile'&&
-    (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||
+    (!serverNamePattern.test(fields.server||'')||
      !['read_only','disabled'].includes(fields.profile)))
     return res.status(400).send('Invalid permanent service-profile restriction');
   if(fields.action==='inspect_service' &&
-    !/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||''))
+    !serverNamePattern.test(fields.server||''))
     return res.status(400).send('Invalid RTC service');
   if(fields.action==='narrow_areas' &&
-    (!/^[a-z][a-z0-9_]{1,59}$/.test(fields.server||'')||!areas))
+    (!serverNamePattern.test(fields.server||'')||!areas))
     return res.status(400).send('Select one canonical service and 1–32 areas');
   try {
     return await withDb(async db=>{
