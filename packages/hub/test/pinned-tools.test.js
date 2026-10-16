@@ -11,14 +11,16 @@ const stripe={origin:'https://stripe-mcp-psi.vercel.app',
 const tool=(name,area)=>({name,area,description:'Read authorized test records',
   profiles:['read_only','full'],writes:false,money:false,destructive:false,
   annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{limit:{type:'integer'}}}});
-function transportFor(reply,{answers=[{address:'8.8.8.8',family:4}]}={}) {
+function transportFor(reply,{answers=[{address:'8.8.8.8',family:4}],modern=true}={}) {
  const calls=[];
  const lookup=vi.fn((_host,_opt,cb)=>cb(null,answers));
  const request=vi.fn((options,onResponse)=>{
   calls.push(options);
   const req=new EventEmitter();
   req.setTimeout=vi.fn();req.destroy=vi.fn();
-  req.end=()=>options.lookup(options.hostname,{},(err)=>{
+  req.end=()=>options.lookup(options.hostname,{all:modern},(err,resolved,family)=>{
+   if(!err&&modern&&(!Array.isArray(resolved)||resolved.length!==1||resolved[0].family!==4))err=new Error('modern Node DNS list required');
+   if(!err&&!modern&&(typeof resolved!=='string'||family!==4))err=new Error('legacy Node DNS address required');
    if(err){queueMicrotask(()=>req.emit('error',err));return;}
    queueMicrotask(()=>{
     const res=new EventEmitter();res.statusCode=200;
@@ -181,4 +183,14 @@ it('refuses malformed or ambiguous typed RTC selectors before network dispatch',
   {kind:'page',value:'2',offset:'1'}
  ]) await expect(searchPinnedRtcTools(google,{cursor},t)).rejects.toThrow();
  expect(t.calls).toHaveLength(0);
+});
+
+it('realistic Node modern lookup shape works for service discovery and exact schema',async()=>{
+ for(const modern of [true,false]){
+  const listed=transportFor({ok:true,result:{tools:[tool('stripe_invoice_list','billing')],next:null}},{modern});
+  const rows=await searchPinnedRtcTools(stripe,{limit:2},listed);
+  expect(rows.tools.map(t=>t.name)).toEqual(['stripe_invoice_list']);
+  const described=transportFor({ok:true,result:tool('stripe_invoice_list','billing')},{modern});
+  expect((await describePinnedRtcTool(stripe,'stripe_invoice_list',described)).name).toBe('stripe_invoice_list');
+ }
 });

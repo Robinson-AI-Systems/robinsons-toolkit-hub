@@ -53,6 +53,7 @@ function stubs({found=[],whoAreas=['files','calendar'],sessions=[{id:'owned-oaut
  const db={query:vi.fn(async(sql)=>{
   if(sql.includes('FROM hub_servers WHERE name'))return {rows:found};
   if(sql.includes('FROM hub_oauth_sessions'))return {rows:sessions};
+  if(sql.includes('FROM hub_server_grants'))return {rows:[]};
   throw new Error('Unexpected SQL');
  })};
  const deps={probe:vi.fn(async()=>({tools:380,writes:200,money:0})),

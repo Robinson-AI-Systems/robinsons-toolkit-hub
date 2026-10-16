@@ -2,6 +2,9 @@ import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {readFile} from 'node:fs/promises';
 import {randomBytes,createHash} from 'node:crypto';
+import {EventEmitter} from 'node:events';
+import {searchPinnedRtcTools,describePinnedRtcTool} from '../../src/pinned-tools.js';
+import {pinnedRtcReadCall} from '../../src/pinned-read-call.js';
 import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,authenticateOAuth,rotateOAuthRefresh} from '../../src/oauth.js';
 import {connectWorkspace} from '../../src/owner-connect-workspace.js';
 import {activateVerifiedCallerGrant,resolveActiveCallerGrant} from '../../src/grants.js';
@@ -105,4 +108,72 @@ it('verifies the exact current OAuth caller, encrypts pass, activates only TEST 
  expect(result).toMatchObject({pass:providerPass,origin,prefix:'workspace',
   server:'google-workspace-mcp',profile:'read_only',mode:'test'});
  expect(JSON.stringify(rows.map(({ciphertext: _ciphertext,...rest})=>rest))).not.toContain(providerPass);
+});
+
+it('owner-approved retry safely retires a failed NONVERIFIED pending grant',async()=>{
+ const broken=transport();
+ broken.activate=async()=>{throw Error('simulated uncertain upstream transport');};
+ await expect(connectWorkspace(db,settings,owner,providerPass,broken))
+  .rejects.toThrow('simulated uncertain upstream transport');
+ const stale=(await db.query(`SELECT id,verified_at,revoked_at FROM hub_server_grants
+  WHERE caller_id=$1 AND verified_at IS NULL AND revoked_at IS NULL`,[actor.id])).rows;
+ expect(stale).toHaveLength(1);
+ const retry=transport();
+ const result=await connectWorkspace(db,settings,owner,providerPass,retry);
+ expect(result.state).toBe('verified_test');
+ const old=(await db.query('SELECT revoked_at,verified_at FROM hub_server_grants WHERE id=$1',[stale[0].id])).rows[0];
+ expect(old.revoked_at).not.toBeNull();
+ expect(old.verified_at).toBeNull();
+ const next=(await db.query(`SELECT id FROM hub_server_grants WHERE caller_id=$1
+   AND verified_at IS NOT NULL AND revoked_at IS NULL`,[actor.id])).rows;
+ expect(next).toHaveLength(1);
+ expect(retry.calls).toEqual(['public_contract','provider_whoami','verified_activation']);
+});
+
+it('bridges a verified Hub SQL grant through pinned Workspace discovery, schema and read-only POST',async()=>{
+ const resolved=await resolveActiveCallerGrant(db,{actor,serverName:'google-workspace-mcp'},settings);
+ expect(resolved).toMatchObject({prefix:'workspace',mode:'test',profile:'read_only'});
+ expect(resolved.areas).toContain('files');
+ const calls=[];
+ const tool={name:'workspace_drive_list_files',area:'files',description:'List TEST files',
+  profiles:['read_only','everyday','full'],writes:false,money:false,destructive:false,
+  annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{limit:{type:'integer'}}}};
+ const transport={
+  lookup:(_host,_opts,cb)=>cb(null,[{address:'8.8.8.8',family:4}]),
+  request:(options,onResponse)=>{
+   const req=new EventEmitter();
+   req.setTimeout=()=>{};req.destroy=()=>{};
+   req.end=(body)=>{
+    expect(options.rejectUnauthorized).toBe(true);
+    expect(options.agent).toBe(false);
+    expect(options.headers.authorization).toBe('Bearer '+providerPass);
+    options.lookup(options.hostname,{all:true},(error,addresses)=>{
+     if(error||!Array.isArray(addresses)||addresses.length!==1)
+       return queueMicrotask(()=>req.emit('error',error||new Error('Missing pinned address')));
+     calls.push({method:options.method,path:options.path,body});
+     let payload;
+     if(options.method==='POST')payload={ok:true,result:{files:[]}};
+     else if(options.path.startsWith('/api/tools?'))
+       payload={ok:true,result:{tools:[tool],next:null}};
+     else payload={ok:true,result:tool};
+     queueMicrotask(()=>{
+      const res=new EventEmitter();
+      res.statusCode=200;res.headers={'content-type':'application/json; charset=utf-8'};
+      res.resume=()=>{};onResponse(res);
+      res.emit('data',Buffer.from(JSON.stringify(payload)));res.emit('end');
+     });
+    });
+   };
+   return req;
+  }
+ };
+ const found=await searchPinnedRtcTools(resolved,{area:'files',limit:5},transport);
+ expect(found.tools.map(t=>t.name)).toEqual(['workspace_drive_list_files']);
+ const schema=await describePinnedRtcTool(resolved,'workspace_drive_list_files',transport);
+ expect(schema).toMatchObject({area:'files',writes:false});
+ const answer=await pinnedRtcReadCall(resolved,schema.name,{limit:1},transport);
+ expect(answer).toEqual({ok:true,result:{files:[]}});
+ expect(calls.map(x=>x.method)).toEqual(['GET','GET','POST']);
+ expect(calls.every(x=>x.path.startsWith('/api/tools'))).toBe(true);
+ expect(calls[2].body).toBe('{"limit":1}');
 });

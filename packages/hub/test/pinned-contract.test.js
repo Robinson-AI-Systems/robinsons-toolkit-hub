@@ -1,13 +1,13 @@
 import {EventEmitter} from 'node:events';
 import {it,expect,vi} from 'vitest';
-import {publicIpv4,choosePublicIpv4,probeStagedRtcContract} from '../src/pinned-contract.js';
+import {publicIpv4,choosePublicIpv4,pinnedRtcSocketLookup,probeStagedRtcContract} from '../src/pinned-contract.js';
 
 const origin='https://stripe-mcp-psi.vercel.app';
 const identity={name:'stripe',prefix:'stripe'};
 const manifest={rtc:1,server:'stripe',prefix:'stripe',
   modes:['test'],profiles:['read_only'],
   counts:{tools:3,writes:1,money:0}};
-function simulatedTransport({address='8.8.8.8',answers,status=200,mime='application/json',
+function simulatedTransport({address='8.8.8.8',answers,modern=true,status=200,mime='application/json',
   body=manifest}={}) {
   const observations={requestCalls:0,connected:0,lookups:0,options:null};
   const lookup=vi.fn((_hostname,options,callback)=>{
@@ -22,7 +22,9 @@ function simulatedTransport({address='8.8.8.8',answers,status=200,mime='applicat
     req.setTimeout=vi.fn();
     req.destroy=vi.fn();
     req.end=()=>{
-      options.lookup(options.hostname,{},err=>{
+      options.lookup(options.hostname,{all:modern},(err,resolved,family)=>{
+        if(!err&&modern&&(!Array.isArray(resolved)||resolved.length!==1||resolved[0].family!==4||resolved[0].address!==address))err=new Error('modern Node callback expected a vetted address array');
+        if(!err&&!modern&&(resolved!==address||family!==4))err=new Error('legacy Node callback expected a vetted address string');
         if(err) {queueMicrotask(()=>req.emit('error',err));return;}
         observations.connected++;
         queueMicrotask(()=>{
@@ -108,4 +110,30 @@ it('pins the real canonical Workspace RTC manifest name but not a spoofed alias'
  expect(safe.observations.options.hostname).toBe('google-workspace-mcp-five.vercel.app');
  const mismatched=simulatedTransport({body:{...body,server:'google_workspace_mcp'}});
  await expect(probeStagedRtcContract(origin,canonical,mismatched)).rejects.toThrow();
+});
+
+it('adapts both Node connection-time DNS callback shapes without bypassing origin pinning',async()=>{
+  for(const modern of [true,false]){
+    const t=simulatedTransport({modern});
+    await expect(probeStagedRtcContract(origin,identity,t))
+      .resolves.toMatchObject({networkVerified:true});
+    expect(t.observations).toMatchObject({connected:1,lookups:1});
+  }
+});
+it('refuses mixed unsafe DNS answers with both Node lookup modes',async()=>{
+  for(const modern of [true,false]){
+    const t=simulatedTransport({modern,answers:[{address:'8.8.8.8',family:4},{address:'127.0.0.1',family:4}]});
+    await expect(probeStagedRtcContract(origin,identity,t)).rejects.toThrow();
+    expect(t.observations.connected).toBe(0);
+  }
+});
+it('honors the hostname binding and rejects DNS resolver errors',async()=>{
+  const cb=vi.fn(),resolver=vi.fn();
+  const pinned=pinnedRtcSocketLookup('rtc.example.com',resolver);
+  pinned('untrusted.example.com',{all:true},cb);
+  expect(cb).toHaveBeenCalledWith(expect.any(Error));
+  expect(resolver).not.toHaveBeenCalled();
+  const failed=pinnedRtcSocketLookup('rtc.example.com',(_host,_opts,callback)=>callback(new Error('dns failed')));
+  const failure=vi.fn();failed('rtc.example.com',{all:true},failure);
+  expect(failure).toHaveBeenCalledWith(expect.any(Error));
 });

@@ -1,3 +1,35 @@
+## October 16 — unified Hub → Workspace next-release transport readiness
+
+**Observed production:** Hub live/READY `4b0a3d4` contains working owner recovery
+and setup GET forms but 0 registered RTC services and 0 grants after the owner
+submitted Workspace onboarding. Owner recovery was consumed once, provider
+issued one valid `for_hub` read_only TEST nonwriting pass, and one TEST Hub
+OAuth caller was active when tested. Workspace RTC manifest HTTP 200 matches
+its actual service identity, prefix, tool count and deployed revision.
+The incident is **not** proven to be a Workspace API permission failure.
+
+**Root cause in Hub:** both `pinnedRtcJsonGet` (contract, whoami, catalog,
+schema) and `pinnedRtcReadCall` (exact read POST) returned scalar DNS
+addresses even when Node 22+/24 invokes the custom socket lookup with
+`options.all=true`. Node rejects this before TLS. The prior mock transport
+always used an empty options argument, so the tests falsely passed.
+The source-only repair uses one shared socket-lookup adapter, checks ALL
+resolved answers are globally routable IPv4, pins only one vetted address,
+returns an address array to modern sockets, and preserves the legacy scalar
+callback, original TLS hostname verification, deadlines, no redirects,
+no proxy, and no automatic POST replay. Unit tests exercise modern/legacy
+callback shapes on public contract, authenticated tool discovery/schema
+and exact read POST; mixed private/public answers still refuse.
+
+**Remaining real acceptance:** even once checked `main` is deployed, the
+Hub owner must re-submit the same independently issued provider pass (in
+the protected form; never paste it in chat). The pass will expire based
+on its provider-issued timestamp, so an expired pass must be newly
+owner-authorized. A protected POST cannot be synthesized from a pass
+hash or the Hub owner verifier. Confirm a real stage/verify/active
+grant and native Hub-mediated read after release before claiming done.
+This audit remains separate from unexecuted D-4 acceptance.
+
 ## October 16 — owner-requested next-release Workspace preparation (PR #221)
 
 Live production remained on previous b62ee937 while reviewed Hub owner page
@@ -2044,3 +2076,23 @@ This is a dependency of the same unfinished Google Workspace P8-4/P8-5/P8-7
 workload, not a new Hub bundle or external D-4 acceptance. No deployment/spend.
 Follow-up review of #213 retained the original initial-success-envelope assertion
 at the new shared recovery boundary; failure cannot be laundered through a handle.
+
+**Owner-approved retry safety:** A real network failure after Hub seals a
+new credential can strand one unverified pending slot per caller. The same
+new passphrase-approved onboarding form now checks a refreshed provider
+whoami BEFORE cancelling exactly the old nonverified grant; it uses the
+existing lifecycle audit and immediately stages/verifies the new pass.
+It cannot cancel an active verified grant or act for a different owner or
+caller. A disposable PostgreSQL test proves failure, narrow retirement,
+successful retry and retained verified grant. Unauthenticated retries
+do not inspect or cancel pending state.
+
+**Additional post-activation audit repair:** The direct Hub RTC listing door
+still used the obsolete underscore-only server selector even though the
+registered canonical Workspace RTC name includes hyphens. It now reuses the
+same reviewed `serverNamePattern` as the registry and federated dispatcher;
+the matching unit contract proves exact Workspace selection and rejects
+path/domain aliases. The previous owner wizard unit mock also lacked the
+newly audited nonverified-grant lookup: it has been adjusted without
+weakening any authorization assertion. No provider-specific privileges
+or tool writes are granted by this change.
