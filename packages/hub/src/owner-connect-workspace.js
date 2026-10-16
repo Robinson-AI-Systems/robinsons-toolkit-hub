@@ -66,11 +66,28 @@ export async function connectWorkspace(db,settings,ownerId,servicePass,{
  const result=await read(origin,'/api/whoami',{pass:servicePass});
  if(result?.ok!==true)throw Error('Independent Workspace authorization refused');
  const selected=providerAreas(result.result);
- const connections=await db.query(`SELECT id FROM hub_oauth_sessions
-  WHERE owner_id=$1 AND mode='test' AND profile IN ('read_only','everyday','full')
-   AND revoked_at IS NULL AND access_expires_at>now()
-   AND refresh_expires_at>now() AND 'gateway'=ANY(areas)
-  ORDER BY access_expires_at DESC LIMIT 2`,[ownerId]);
+ // Select ONE unrevoked latest OAuth generation per approved family.
+ // A current access session takes priority. If none is current, a single
+ // renewable family may be staged, but it cannot actually route until its
+ // original approved client refreshes. Two families never grant implicitly.
+ const connections=await db.query(`WITH candidates AS (
+    SELECT DISTINCT ON (s.family_id) s.id,s.access_expires_at
+    FROM hub_oauth_sessions s
+    WHERE s.owner_id=$1 AND s.mode='test'
+      AND s.profile IN ('read_only','everyday','full')
+      AND s.revoked_at IS NULL AND s.refresh_expires_at>now()
+      AND s.refresh_used_at IS NULL AND 'gateway'=ANY(s.areas)
+      AND NOT EXISTS (SELECT 1 FROM hub_oauth_sessions gone
+        WHERE gone.family_id=s.family_id AND gone.revoked_at IS NOT NULL)
+      AND (NULLIF(to_jsonb(s)->'allowed_servers','null'::jsonb) IS NULL
+        OR to_jsonb(s)->'allowed_servers' ? $2)
+      AND COALESCE(to_jsonb(s)->'service_profile_policy'->>$2,'read_only')<>'disabled'
+    ORDER BY s.family_id,s.access_expires_at DESC
+  )
+  SELECT id FROM candidates
+  WHERE access_expires_at>now()
+    OR NOT EXISTS (SELECT 1 FROM candidates WHERE access_expires_at>now())
+  ORDER BY access_expires_at DESC LIMIT 2`,[ownerId,service]);
  if(connections.rows.length!==1)
   return {state:'needs_one_hub_connection'};
  // Stage only for the ONE unambiguous existing caller; never grant

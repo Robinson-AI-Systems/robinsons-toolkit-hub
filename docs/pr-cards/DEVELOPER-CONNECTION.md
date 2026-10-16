@@ -255,3 +255,19 @@ Workspace TEST whoami, live tool read, restricted denial and revocation
 OPEN until a real credential is supplied and exact deployed revision is
 verified. Full hub routing can become live only once the owner grants the
 separate service permission. Daily checked promotion remains mandatory.
+
+### Time-safe original Hub caller selection
+The signed-in custom Hub client may be idle when the owner opens Workspace
+onboarding: an OAuth access token lasts one hour even while its refresh grant
+can remain valid for 30 days. Owner approval may bind ONLY the unique
+unrevoked, renewable latest generation of an existing TEST/gateway OAuth
+family, preserving its exact server/profile ceilings. Current access sessions
+take priority. Two possible current connections or two dormant renewable
+families deliberately refuse automatic selection. In the one-family dormant
+case, no tool route becomes callable until that SAME approved OAuth family
+refreshes; a raw expired access token never gains new authority. The original
+owner passphrase is still mandatory and provider TEST pass remains independent.
+A new real PostgreSQL test expires the caller, stages one owner-approved
+credential in that dormant state, proves the old actor cannot resolve it,
+then completes a genuine original refresh and verifies grant routing becomes
+eligible again. No TEST provider call or credential is fabricated.

@@ -2,7 +2,7 @@ import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {readFile} from 'node:fs/promises';
 import {randomBytes,createHash} from 'node:crypto';
-import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,authenticateOAuth} from '../../src/oauth.js';
+import {registerOAuthClient,issueOAuthCode,exchangeOAuthCode,authenticateOAuth,rotateOAuthRefresh} from '../../src/oauth.js';
 import {connectWorkspace} from '../../src/owner-connect-workspace.js';
 import {activateVerifiedCallerGrant,resolveActiveCallerGrant} from '../../src/grants.js';
 
@@ -12,7 +12,7 @@ const settings={pepper:'synthetic-workspace-test-pepper-32-bytes',grantsKey:rand
 const providerPass='rtc_pass_'+randomBytes(32).toString('base64url');
 const clientId='workspace-onboarding-test-client';
 const redirectUri='https://example.net/auth/callback';
-let db,schema,actor;
+let db,schema,actor,refreshToken;
 const account=()=>({ok:true,result:{profile:'read_only',mode:'test',
   allow_writes:false,areas:null}});
 function transport({who=account(),confirmed=true}={}){
@@ -60,6 +60,7 @@ beforeAll(async()=>{
   challenge:createHash('sha256').update(verifier).digest('base64url'),
   profile:'read_only',mode:'test',areas:['gateway']},{pepper:settings.pepper,ownerVerified:true});
  const tokens=await exchangeOAuthCode(db,{clientId,redirectUri,code,verifier},{pepper:settings.pepper});
+ refreshToken=tokens.refresh_token;
  actor=await authenticateOAuth(db,tokens.access_token,{pepper:settings.pepper});
 });
 afterAll(async()=>{if(db){await db.query('DROP SCHEMA "'+schema+'" CASCADE');await db.end();}});
@@ -85,6 +86,7 @@ it('refuses unauthorized or write-enabled upstream identity before any grant',as
  expect((await db.query("SELECT COUNT(*)::int AS n FROM hub_server_grants")).rows[0].n).toBe(before);
 });
 it('verifies the exact current OAuth caller, encrypts pass, activates only TEST and routes a genuine scoped grant',async()=>{
+ await db.query(`UPDATE hub_oauth_sessions SET access_expires_at=now()-interval '1 minute' WHERE id=$1`,[actor.id]);
  const t=transport();
  const connected=await connectWorkspace(db,settings,owner,providerPass,t);
  expect(connected.state).toBe('verified_test');
@@ -96,6 +98,9 @@ it('verifies the exact current OAuth caller, encrypts pass, activates only TEST 
  expect(rows[0].areas).toContain('mail');
  expect(rows[0].verified_at).not.toBeNull();
  expect(rows[0].ciphertext.toString('utf8')).not.toContain(providerPass);
+ expect(await resolveActiveCallerGrant(db,{actor,serverName:'google-workspace-mcp'},settings)).toBeNull();
+ const renewed=await rotateOAuthRefresh(db,{clientId,refreshToken},{pepper:settings.pepper});
+ actor=await authenticateOAuth(db,renewed.access_token,{pepper:settings.pepper});
  const result=await resolveActiveCallerGrant(db,{actor,serverName:'google-workspace-mcp'},settings);
  expect(result).toMatchObject({pass:providerPass,origin,prefix:'workspace',
   server:'google-workspace-mcp',profile:'read_only',mode:'test'});

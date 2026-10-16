@@ -61,7 +61,9 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
         to_jsonb(s)->'service_profile_policy' AS service_profile_policy
        FROM hub_oauth_sessions s WHERE id=$1 AND owner_id=$2
        AND revoked_at IS NULL
-       AND (s.access_expires_at>now() OR EXISTS (
+       AND (s.access_expires_at>now()
+         OR (s.refresh_expires_at>now() AND s.refresh_used_at IS NULL)
+         OR EXISTS (
          SELECT 1 FROM hub_oauth_sessions current
          WHERE current.family_id=s.family_id AND current.owner_id=s.owner_id
            AND current.client_id=s.client_id AND current.profile=s.profile
