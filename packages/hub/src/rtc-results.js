@@ -7,8 +7,7 @@ const grantPattern=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const serverPattern=serverNamePattern;
 const digest=(pepper,value)=>createHmac('sha256',pepper).update(value).digest('hex');
 function validated(actor,settings) {
- if(!actor||!actor.ownerId||!actor.id||actor.mode!=='test'||
-   actor.allowWrites===true||!actor.areas?.includes('gateway'))
+ if(!actor||!actor.ownerId||!actor.id||!['test','live'].includes(actor.mode)||!actor.areas?.includes('gateway'))
    throw Error('RTC result caller out of scope');
  const raw=settings?.resultsKey,pepper=settings?.pepper;
  if(typeof raw!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(raw)||
