@@ -1,10 +1,10 @@
-## Hosted Hub routed history — current owner experience
+# Owner guide — what you can ask for
 
 The Hub's protected owner control center links to `/api/owner/changes`. It provides **audit receipts for Hub-mediated RTC reads**, not a provider's full account history. Each private history page requires entering the **Hub owner passphrase** independently; there is no persistent logged-in owner session. The source-level next-release update supports an optional registered service, exact RTC tool name, and UTC inclusive from/through dates, retaining that selection on older-page continuations. Invalid inputs are refused. The same optional `server`, `tool`, `since` and `until` filters can be supplied to `hub_recent_changes` through the authenticated native Hub MCP or RTC HTTPS door. No provider pass, result content, request arguments, or private credential is shown.
 
 **Release boundary:** As of 2026-10-17, hosted Vercel READY still serves `f6f916b8`. The owner-approved migration 019 restored basic Hub history reads on that revision. New exact-grant isolation, tool/date filtering, and owner UI are source work awaiting checked merge/release and genuinely authenticated follow-up. They are not currently live. A revoked or expired caller grant is never a substitute for provider-origin logs; real two-provider H-3/H-4/H-5 acceptance is still open. A second independent TEST service grant must be issued by that service, never inferred from the existing Workspace standing grant.
 
-# Owner guide — what you can ask for
+## Hosted Hub routed history — current owner experience
 
 ## Current Workspace integration acceptance — October 17, 2026 UTC
 

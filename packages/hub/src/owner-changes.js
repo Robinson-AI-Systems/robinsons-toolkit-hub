@@ -4,7 +4,7 @@ import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
  verifyOwnerLogin} from './owner-login.js';
 import {listHubRecentChanges} from './recent-changes.js';
 const e=value=>escapeHtml(value??'');
-const calendar=value=>!value||(/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&
+const calendar=value=>!value||(/^\d{4}-\d{2}-\d{2}$/.test(value)&&
  Number.isFinite(Date.parse(value+'T00:00:00.000Z'))&&
  new Date(value+'T00:00:00.000Z').toISOString().slice(0,10)===value);
 const layout=body=>'<!doctype html><html lang="en"><meta charset="utf-8">'+

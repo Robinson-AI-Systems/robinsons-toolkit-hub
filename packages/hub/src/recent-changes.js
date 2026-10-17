@@ -11,8 +11,8 @@ const safeId=/^[1-9][0-9]{0,18}$/;
 const reject=()=>{throw new TypeError('Invalid scoped Hub change history request');};
 const urlbytes=value=>Buffer.from(JSON.stringify(value),'utf8').toString('base64url');
 const tool=/^[a-z][a-z0-9_]{2,119}$/;
-const day=/^\\d{4}-\\d{2}-\\d{2}$/;
-const utc=/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/;
+const day=/^\d{4}-\d{2}-\d{2}$/;
+const utc=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 function normalizeUtc(value,end=false) {
  if(value===null||value===undefined)return null;
  if(typeof value!=='string'||value.length>24||(!day.test(value)&&!utc.test(value)))reject();

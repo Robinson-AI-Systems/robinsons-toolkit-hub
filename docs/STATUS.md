@@ -4,9 +4,9 @@ Current accepted hosted H-5 basic read from owner-approved SQL view migration 01
 
 This source candidate keeps historical H-3 audit and H-5 owner reads, adds optional exact tool/UTC interval filters in native MCP/HTTPS/independently password-verified owner view, and binds non-owner audit rows and pagination to current exact active sealed grant IDs rather than only service name. Revocation, renewal and cursor replay denial use the existing H-2/H-4 authorization resolver and disposable PostgreSQL proof. Code is source-only until reviewed, merged and checked live; no hosted mutation or release is authorized. H-5 was already MERGED at #207 and must not be counted twice toward requested bundle totals.
 
-## October 17 — L-4 guided-settings source candidate (pre-merge)
+## October 17 — L-4 guided-settings source merged; real owner use pending
 
-Approved independent L-4 original local workflow planned at bfc6799f (planning SHA 9621d90), with visible headed browser, human-driven per-step approval/acknowledgment and exact advertised read-only RTC §11 verification. The intended implementation is local `rtool guide` only: no hosted Hub, pass/grant changes, provider writes or spending. Required exact-head CI, original CLI/test gates and review are **not yet proven**. L-4 remains IN_PROGRESS until merged and verified; no owner browser/provider guided-setting acceptance has occurred. The main RTC H-1/H-2/H-3/H-4 two-service acceptance queue remains unchanged.
+Approved independent L-4 original local workflow planned at bfc6799f (planning SHA 9621d90), with visible headed browser, human-driven per-step approval/acknowledgment and exact advertised read-only RTC §11 verification. The intended implementation is local `rtool guide` only: no hosted Hub, pass/grant changes, provider writes or spending. PR #230 has completed exact-head CI and manual review and merged at 85da318d. L-4 source is MERGED; no owner browser/provider guided-setting acceptance has occurred. The main RTC H-1/H-2/H-3/H-4 two-service acceptance queue remains unchanged.
 
 ## Owner-requested documentation and Git closeout — October17 UTC
 
