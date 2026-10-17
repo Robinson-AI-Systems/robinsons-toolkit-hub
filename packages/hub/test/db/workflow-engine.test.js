@@ -73,7 +73,7 @@ it('persists only a combined real dryRun preview and needs separate one-time exe
  expect(x.attempted).toHaveLength(0);
  const before=await db.query('SELECT * FROM hub_workflow_runs WHERE id=$1',[plan.runId]);
  expect(before.rows[0].state).toBe('planned');
- const result=await executeWorkflow({db,actor,runId:plan.runId,spec,adapter:x.adapter,settings});
+ const result=await executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,adapter:x.adapter,settings});
  expect(result.state).toBe('complete');
  expect(result.receipts.map(s=>s.logId)).toEqual(['log-1','log-2']);
  expect(x.effects).toEqual(['workspace-mcp','neon-mcp']);
@@ -86,11 +86,11 @@ it('persists only a combined real dryRun preview and needs separate one-time exe
  const dump=JSON.stringify(data.rows);
  expect(dump).not.toContain('alpha');expect(dump).not.toContain('beta');
  expect(dump).not.toContain(settings.workflowKey);
- const undo=await undoWorkflow({db,actor,runId:plan.runId,adapter:x.adapter,settings});
+ const undo=await undoWorkflow({confirm:true,db,actor,runId:plan.runId,adapter:x.adapter,settings});
  expect(undo.state).toBe('undone');
  expect(undo.receipts.map(s=>s.ordinal)).toEqual([2,1]);
  expect(x.inverseCalls.map(s=>s.server)).toEqual(['neon-mcp','workspace-mcp']);
- await expect(undoWorkflow({db,actor,runId:plan.runId,adapter:x.adapter,settings}))
+ await expect(undoWorkflow({confirm:true,db,actor,runId:plan.runId,adapter:x.adapter,settings}))
   .rejects.toMatchObject({code:'outside_scope'});
 });
 it('lost POST answer stays unknown, does not replay, run next step or auto-undo',async()=>{
@@ -98,7 +98,7 @@ it('lost POST answer stays unknown, does not replay, run next step or auto-undo'
  const input={workflow:'three_step_fixture',steps:[...spec.steps,
   {server:'workspace-mcp',tool:'workspace_create_fixture',args:{key:'third'}}]};
  const plan=await planWorkflow({db,actor,spec:input,adapter:a.adapter});
- const result=await executeWorkflow({db,actor,runId:plan.runId,spec:input,
+ const result=await executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec:input,
    adapter:a.adapter,settings});
  expect(result.state).toBe('unknown');
  expect(result.requiresReconciliation).toBe(true);
@@ -108,9 +108,9 @@ it('lost POST answer stays unknown, does not replay, run next step or auto-undo'
  const states=(await db.query('SELECT state FROM hub_workflow_steps WHERE run_id=$1 ORDER BY ordinal',[plan.runId]))
   .rows.map(s=>s.state);
  expect(states).toEqual(['confirmed','unknown','planned']);
- await expect(executeWorkflow({db,actor,runId:plan.runId,spec:input,
+ await expect(executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec:input,
     adapter:a.adapter,settings})).rejects.toMatchObject({code:'outside_scope'});
- await expect(undoWorkflow({db,actor,runId:plan.runId,adapter:a.adapter,settings}))
+ await expect(undoWorkflow({confirm:true,db,actor,runId:plan.runId,adapter:a.adapter,settings}))
   .rejects.toMatchObject({code:'outside_scope'});
  expect(a.attempted).toHaveLength(2);
 });
@@ -118,8 +118,8 @@ it('two independent SQL clients cannot dispatch a confirmed plan twice',async()=
  const a=fixture();
  const plan=await planWorkflow({db,actor,spec,adapter:a.adapter});
  const results=await Promise.allSettled([
-  executeWorkflow({db,actor,runId:plan.runId,spec,adapter:a.adapter,settings}),
-  executeWorkflow({db:db2,actor,runId:plan.runId,spec,adapter:a.adapter,settings})
+  executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,adapter:a.adapter,settings}),
+  executeWorkflow({confirm:true,db:db2,actor,runId:plan.runId,spec,adapter:a.adapter,settings})
  ]);
  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
  expect(results.filter(r=>r.status==='rejected')).toHaveLength(1);
@@ -133,14 +133,14 @@ it('identities, changed rights, expiry and missing independent writes refuse bef
    adapter:a.adapter})).rejects.toMatchObject({code:'outside_scope'});
  expect(a.previews).toHaveLength(0);
  const plan=await planWorkflow({db,actor,spec,adapter:a.adapter});
- await expect(executeWorkflow({db,actor:{...actor,id:'caller-other'},runId:plan.runId,
+ await expect(executeWorkflow({confirm:true,db,actor:{...actor,id:'caller-other'},runId:plan.runId,
    spec,adapter:a.adapter,settings})).rejects.toMatchObject({code:'not_found'});
  a.grants.set('workspace-mcp','grant-workspace-0002');
- await expect(executeWorkflow({db,actor,runId:plan.runId,spec,adapter:a.adapter,
+ await expect(executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,adapter:a.adapter,
    settings})).rejects.toMatchObject({code:'outside_scope'});
  expect(a.attempted).toHaveLength(0);
  a.grants.set('workspace-mcp','grant-workspace-0001');
- await expect(executeWorkflow({db,actor,runId:plan.runId,spec,adapter:a.adapter,
+ await expect(executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,adapter:a.adapter,
    settings,clock:()=>Date.now()+11*60*1000})).rejects.toMatchObject({code:'outside_scope'});
  expect(a.attempted).toHaveLength(0);
  await expect(planWorkflow({db,actor,spec,adapter:fixture({allow:false}).adapter}))
@@ -149,7 +149,7 @@ it('identities, changed rights, expiry and missing independent writes refuse bef
 it('a grant changed between first receipt and second POST stops before next effect',async()=>{
  const a=fixture({rotateAt:1});
  const plan=await planWorkflow({db,actor,spec,adapter:a.adapter});
- const result=await executeWorkflow({db,actor,runId:plan.runId,spec,
+ const result=await executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,
   adapter:a.adapter,settings});
  expect(result.state).toBe('failed');
  expect(result.receipts.map(s=>s.logId)).toEqual(['log-1']);
@@ -161,13 +161,25 @@ it('a grant changed between first receipt and second POST stops before next effe
 it('irreversible steps remain reported rather than fabricating an inverse',async()=>{
  const a=fixture({nonreversibleAt:1});
  const plan=await planWorkflow({db,actor,spec,adapter:a.adapter});
- const result=await executeWorkflow({db,actor,runId:plan.runId,spec,
+ const result=await executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,
   adapter:a.adapter,settings});
  expect(result.state).toBe('complete');
- const undo=await undoWorkflow({db,actor,runId:plan.runId,adapter:a.adapter,settings});
+ const undo=await undoWorkflow({confirm:true,db,actor,runId:plan.runId,adapter:a.adapter,settings});
  expect(undo.state).toBe('undo_partial');
  expect(undo.receipts.map(s=>s.status)).toEqual(['reversed','not_reversible']);
  expect(a.inverseCalls).toHaveLength(1);
+});
+it('separate positive confirmation is mandatory before effect or undo',async()=>{
+ const a=fixture();
+ const plan=await planWorkflow({db,actor,spec,adapter:a.adapter});
+ await expect(executeWorkflow({db,actor,runId:plan.runId,spec,adapter:a.adapter,settings}))
+  .rejects.toMatchObject({code:'needs_confirmation'});
+ expect(a.attempted).toHaveLength(0);
+ const result=await executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,adapter:a.adapter,settings});
+ expect(result.state).toBe('complete');
+ await expect(undoWorkflow({db,actor,runId:plan.runId,adapter:a.adapter,settings}))
+  .rejects.toMatchObject({code:'needs_confirmation'});
+ expect(a.inverseCalls).toHaveLength(0);
 });
 it('malformed input, getters, caller-selected confirmation and wrong key refuse',async()=>{
  const a=fixture();
@@ -179,7 +191,7 @@ it('malformed input, getters, caller-selected confirmation and wrong key refuse'
   steps:[{...spec.steps[0],args:{confirm:true}}]},adapter:a.adapter}))
   .rejects.toMatchObject({code:'invalid_args'});
  const plan=await planWorkflow({db,actor,spec,adapter:a.adapter});
- await expect(executeWorkflow({db,actor,runId:plan.runId,spec,adapter:a.adapter,
+ await expect(executeWorkflow({confirm:true,db,actor,runId:plan.runId,spec,adapter:a.adapter,
   settings:{workflowKey:'short'}})).rejects.toMatchObject({code:'unavailable'});
  expect(a.attempted).toHaveLength(0);
 });
