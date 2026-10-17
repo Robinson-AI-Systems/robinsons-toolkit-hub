@@ -4,6 +4,9 @@ import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
  verifyOwnerLogin} from './owner-login.js';
 import {listHubRecentChanges} from './recent-changes.js';
 const e=value=>escapeHtml(value??'');
+const calendar=value=>!value||(/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+ Number.isFinite(Date.parse(value+'T00:00:00.000Z'))&&
+ new Date(value+'T00:00:00.000Z').toISOString().slice(0,10)===value);
 const layout=body=>'<!doctype html><html lang="en"><meta charset="utf-8">'+
  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
  '<title>Hub recent changes</title><main><h1>RTC routed read history</h1>'+
@@ -11,15 +14,18 @@ const layout=body=>'<!doctype html><html lang="en"><meta charset="utf-8">'+
  'No LIVE operation or provider call is performed by this page.</p>'+
  '<p><a href="/api/owner/dashboard">Back to owner control center</a></p>'+
  body+'</main></html>';
-const form=(cursor='',server='')=>'<form method="POST" action="/api/owner/changes">'+
- '<label>Filter by registered service name (optional) '+
- '<input name="server" maxlength="59" value="'+e(server)+'"></label>'+
+const form=(cursor='',server='',tool='',since='',until='')=>
+ '<form method="POST" action="/api/owner/changes">'+
+ '<label>Service (optional) <input name="server" maxlength="59" value="'+e(server)+'"></label>'+
+ '<label>Exact RTC tool (optional) <input name="tool" maxlength="120" value="'+e(tool)+'"></label>'+
+ '<label>From date (UTC, inclusive) <input type="date" name="since" value="'+e(since)+'"></label>'+
+ '<label>Through date (UTC, inclusive) <input type="date" name="until" value="'+e(until)+'"></label>'+
  (cursor?'<input type="hidden" name="cursor" value="'+e(cursor)+'">':'')+
  '<label>Owner passphrase (independent approval each page) '+
  '<input type="password" name="password" autocomplete="current-password"'+
  ' maxlength="256" required></label>'+
  '<button type="submit">Show private history</button></form>';
-export function renderOwnerChanges(result,server=''){
+export function renderOwnerChanges(result,server='',tool='',since='',until=''){
  const rows=result.changes.map(item=>'<li><details><summary>'+
     e(item.at instanceof Date?item.at.toISOString():String(item.at))+
     ' — '+e(item.server)+' — '+e(item.outcome)+'</summary>'+
@@ -33,7 +39,7 @@ export function renderOwnerChanges(result,server=''){
   'credential, arguments, result body or sensitive source logs are shown.</p>'+
   '<ul>'+rows+'</ul>'+(result.changes.length===0?
     '<p>No records within this owned, bounded view.</p>':'')+
-  (result.next?'<h2>Older history</h2>'+form(result.next,server):
+  (result.next?'<h2>Older history</h2>'+form(result.next,server,tool,since,until):
     '<p>No older page available within the selected scope.</p>')+
   '<p>Filter differently: reopen this page and independently authenticate.</p>';
  const html=layout(body);
@@ -61,11 +67,17 @@ export async function handleOwnerChanges(req,res,
    return res.status(415).send('Unsupported content type');
  const fields=formFields(req);
  if(!fields||Object.keys(fields).some(k=>
-   !['server','cursor','password'].includes(k))||
+   !['server','tool','since','until','cursor','password'].includes(k))||
    typeof fields.password!=='string'||!fields.password||
    fields.password.length>256)return res.status(400).send('Invalid history request');
- const serverName=fields.server||null,cursor=fields.cursor||null;
+ const serverName=fields.server||null,cursor=fields.cursor||null,
+   toolName=fields.tool||null,since=fields.since||null,until=fields.until||null;
  if((serverName!==null&&!/^[a-z][a-z0-9_]{1,59}$/.test(serverName))||
+   (toolName!==null&&!/^[a-z][a-z0-9_]{2,119}$/.test(toolName))||
+   (!calendar(since)||!calendar(until))||
+   (since!==null&&Date.parse(since+'T00:00:00.000Z')>Date.now())||
+   (until!==null&&until>new Date().toISOString().slice(0,10))||
+   (since!==null&&until!==null&&since>until)||
    (cursor!==null&&(typeof cursor!=='string'||cursor.length>540)))
    return res.status(400).send('Invalid history scope');
  try{
@@ -78,12 +90,14 @@ export async function handleOwnerChanges(req,res,
      let result;
      try{
        result=await read(db,{ownerId:env.HUB_OWNER_ID,
-         serverName,cursor,limit:20},settings,{ownerVerified:true});
+         serverName,toolName,since,until,cursor,limit:20},
+         settings,{ownerVerified:true});
      }catch(error){
        if(error instanceof TypeError)return res.status(400).send('Invalid or expired history cursor');
        throw error;
      }
-     return res.status(200).send(renderOwnerChanges(result,serverName??''));
+     return res.status(200).send(renderOwnerChanges(result,serverName??'',
+       toolName??'',since??'',until??''));
    });
  }catch{return res.status(503).send('Hub history unavailable');}
 }

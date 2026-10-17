@@ -34,6 +34,9 @@ const catalog=Object.freeze([
   {name:'hub_recent_changes',description:'Read only your durable TEST RTC routed history; optionally query one exact authorized upstream history tool',
     inputSchema:{type:'object',properties:{
       server:{type:'string',pattern:serverNamePattern.source},
+      tool:{type:'string',pattern:rtcName.pattern,maxLength:120},
+      since:{type:'string',maxLength:24,description:'UTC date or ISO instant, inclusive'},
+      until:{type:'string',maxLength:24,description:'UTC date or ISO instant, inclusive'},
       limit:{type:'integer',minimum:1,maximum:20},
       cursor:{type:'string',minLength:1,maxLength:540},
       includeUpstream:{type:'boolean'}

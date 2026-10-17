@@ -1,5 +1,11 @@
 # Owner guide — what you can ask for
 
+## Hosted Hub routed history — current owner experience
+
+The Hub's protected owner control center links to `/api/owner/changes`. It provides **audit receipts for Hub-mediated RTC reads**, not a provider's full account history. Each private history page requires entering the **Hub owner passphrase** independently; there is no persistent logged-in owner session. The source-level next-release update supports an optional registered service, exact RTC tool name, and UTC inclusive from/through dates, retaining that selection on older-page continuations. Invalid inputs are refused. The same optional `server`, `tool`, `since` and `until` filters can be supplied to `hub_recent_changes` through the authenticated native Hub MCP or RTC HTTPS door. No provider pass, result content, request arguments, or private credential is shown.
+
+**Release boundary:** As of 2026-10-17, hosted Vercel READY still serves `f6f916b8`. The owner-approved migration 019 restored basic Hub history reads on that revision. New exact-grant isolation, tool/date filtering, and owner UI are source work awaiting checked merge/release and genuinely authenticated follow-up. They are not currently live. A revoked or expired caller grant is never a substitute for provider-origin logs; real two-provider H-3/H-4/H-5 acceptance is still open. A second independent TEST service grant must be issued by that service, never inferred from the existing Workspace standing grant.
+
 ## Current Workspace integration acceptance — October 17, 2026 UTC
 
 D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.
