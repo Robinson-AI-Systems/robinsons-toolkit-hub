@@ -2,7 +2,7 @@ import {serverNamePattern} from './server-name.js';
 // H-5: immutable, caller-scoped, bounded view of H-3's real RTC attempt
 // receipts. An absent outcome is PENDING, never rewritten as success.
 // No provider credentials, arguments, return bodies or ciphertext are stored.
-import {createHmac,timingSafeEqual} from 'node:crypto';
+import {createHash,createHmac,timingSafeEqual} from 'node:crypto';
 import {listEligibleRtcTargets} from './grants.js';
 const owner=/^[A-Za-z0-9:_-]{1,120}$/;
 const server=serverNamePattern;
@@ -10,6 +10,23 @@ const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const safeId=/^[1-9][0-9]{0,18}$/;
 const reject=()=>{throw new TypeError('Invalid scoped Hub change history request');};
 const urlbytes=value=>Buffer.from(JSON.stringify(value),'utf8').toString('base64url');
+const tool=/^[a-z][a-z0-9_]{2,119}$/;
+const day=/^\\d{4}-\\d{2}-\\d{2}$/;
+const utc=/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/;
+function normalizeUtc(value,end=false) {
+ if(value===null||value===undefined)return null;
+ if(typeof value!=='string'||value.length>24||(!day.test(value)&&!utc.test(value)))reject();
+ if(day.test(value)) {
+   const date=new Date(value+'T00:00:00.000Z');
+   if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==value)reject();
+   if(end)date.setUTCHours(23,59,59,999);
+   return date.toISOString();
+ }
+ const date=new Date(value);
+ if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,19)!==value.slice(0,19))
+   reject();
+ return date.toISOString();
+}
 function signingKey(settings){
  const pepper=settings?.pepper;
  if(typeof pepper!=='string'||Buffer.byteLength(pepper,'utf8')<32)reject();
@@ -18,25 +35,36 @@ function signingKey(settings){
 function sign(data,settings){
  return createHmac('sha256',signingKey(settings)).update(data).digest('base64url');
 }
-function parseScope(input,{ownerVerified=false}={}){
+function parseScope(input,{ownerVerified=false,now=Date.now}={}){
  if(!input||typeof input!=='object'||Array.isArray(input)||!owner.test(input.ownerId||''))reject();
- const {actor=null,serverName=null,limit=10,cursor=null}=input;
+ const {actor=null,serverName=null,toolName=null,
+   since=null,until=null,limit=10,cursor=null}=input;
  if(!Number.isInteger(limit)||limit<1||limit>20||
    (serverName!==null&&(!server.test(serverName)))||
-   (cursor!==null&&(typeof cursor!=='string'||cursor.length>540)))reject();
+   (cursor!==null&&(typeof cursor!=='string'||cursor.length>540))||
+   (toolName!==null&&(!tool.test(toolName))))reject();
+ const lower=normalizeUtc(since),upper=normalizeUtc(until,true);
+ const nowMs=now();
+ if(!Number.isFinite(nowMs)||(lower!==null&&Date.parse(lower)>nowMs)||
+   (upper!==null&&Date.parse(upper)>nowMs &&
+     !(day.test(until)&&until===new Date(nowMs).toISOString().slice(0,10)))||
+   (lower!==null&&upper!==null&&lower>upper))reject();
+ const filters={serverName,toolName,since:lower,until:upper,limit,cursor};
  if(actor===null) {
    if(ownerVerified!==true)throw new Error('Independently verified owner required');
-   return {ownerId:input.ownerId,kind:null,callerId:null,serverName,limit,cursor};
+   return {ownerId:input.ownerId,kind:null,callerId:null,...filters};
  }
  if(ownerVerified===true||actor.ownerId!==input.ownerId||
    !uuid.test(actor.id||'')||actor.mode!=='test'||actor.allowWrites===true||
    !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
    !['read_only','everyday','full'].includes(actor.profile))reject();
  const kind=actor.clientId?'oauth':'pass';
- return {ownerId:input.ownerId,kind,callerId:actor.id,serverName,limit,cursor};
+ return {ownerId:input.ownerId,kind,callerId:actor.id,...filters};
 }
 function signatureScope(scope){
- return [scope.ownerId,scope.kind??'*',scope.callerId??'*',scope.serverName??'*'];
+ return [scope.ownerId,scope.kind??'*',scope.callerId??'*',
+   scope.serverName??'*',scope.toolName??'*',scope.since??'*',
+   scope.until??'*',scope.grantFingerprint??'*'];
 }
 export function issueHubChangeCursor(scope,lastId,settings,{now=Date.now}={}){
  if(!safeId.test(String(lastId)))reject();
@@ -90,9 +118,15 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
  // server/area/profile/family reductions and revocation, before every page.
  const permitted=scope.kind===null?null:
    (await (opts.eligible??listEligibleRtcTargets)(db,input.actor,{limit:100}))
-     .map(target=>target.name);
-
- const until=scope.cursor===null?null:readHubChangeCursor(scope.cursor,scope,settings,opts);
+     .map(target=>target.grantId)
+     .filter(id=>typeof id==='string'&&uuid.test(id))
+     .sort();
+ // A signed cursor must not survive independent service-grant replacement.
+ // Hash, never embed raw grant identifiers in the caller-visible cursor.
+ if(permitted!==null)
+   scope.grantFingerprint=createHash('sha256').update(JSON.stringify(permitted))
+     .digest('base64url');
+ const untilId=scope.cursor===null?null:readHubChangeCursor(scope.cursor,scope,settings,opts);
  const query=`SELECT a.id::text,a.occurred_at,a.caller_kind,a.caller_id,
     a.server_name,a.tool_name,a.correlation_id,
     a.outcome,a.upstream_log_id
@@ -101,7 +135,17 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
     AND ($2::text IS NULL OR (a.caller_kind=$2 AND a.caller_id=$3))
     AND ($4::text IS NULL OR a.server_name=$4)
     AND ($5::bigint IS NULL OR a.id<$5)
-    AND ($7::text[] IS NULL OR a.server_name=ANY($7::text[]))
+    AND ($7::uuid[] IS NULL OR (a.grant_id=ANY($7::uuid[])
+      AND EXISTS(SELECT 1 FROM hub_server_grants g
+        JOIN hub_servers s ON s.owner_id=g.owner_id AND s.name=g.server_name
+        WHERE g.id=a.grant_id AND g.owner_id=a.owner_id
+          AND g.caller_kind=a.caller_kind AND g.caller_id=a.caller_id
+          AND g.server_name=a.server_name AND g.revoked_at IS NULL
+          AND g.verified_at IS NOT NULL AND g.expires_at>now()
+          AND g.mode='test' AND g.profile='read_only' AND s.state='active')))
+    AND ($8::text IS NULL OR a.tool_name=$8)
+    AND ($9::timestamptz IS NULL OR a.occurred_at>=$9)
+    AND ($10::timestamptz IS NULL OR a.occurred_at<=$10)
     AND ($2::text IS NULL OR
       (a.caller_kind='pass' AND EXISTS(
         SELECT 1 FROM hub_callers c WHERE c.id=$3 AND c.owner_id=$1
@@ -115,15 +159,19 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
           AND s.mode='test' AND 'gateway'=ANY(s.areas))))
    ORDER BY a.id DESC LIMIT $6`;
  const values=[scope.ownerId,scope.kind,scope.callerId,scope.serverName,
-   until,scope.limit+1,permitted];
+   untilId,scope.limit+1,permitted,scope.toolName,scope.since,scope.until];
  const {rows}=await db.query(query,values);
- const chosen=rows.slice(0,scope.limit);
- const next=rows.length>scope.limit&&chosen.length?
-   issueHubChangeCursor(scope,chosen.at(-1).id,settings,opts):null;
- const result={changes:chosen.map(project),next,incomplete:false,
-   count:chosen.length,source:'hub_durable_rtc_audit',
-   externalProviderAcceptance:'unverified'};
- if(Buffer.byteLength(JSON.stringify(result),'utf8')>7600)
-   throw new Error('Hub change history exceeds bounded reply size');
- return result;
+ let length=Math.min(rows.length,scope.limit);
+ // Do not fail an ordinary bounded history page merely because 20 long
+ // metadata records exceed one 8-KiB MCP response. Return a real next cursor.
+ for(;length>=0;length--){
+   const chosen=rows.slice(0,length);
+   const next=rows.length>length&&length>0?
+     issueHubChangeCursor(scope,chosen.at(-1).id,settings,opts):null;
+   const result={changes:chosen.map(project),next,incomplete:false,
+     count:chosen.length,source:'hub_durable_rtc_audit',
+     externalProviderAcceptance:'unverified'};
+   if(Buffer.byteLength(JSON.stringify(result),'utf8')<=7600)return result;
+ }
+ throw new Error('Hub change history exceeds bounded reply size');
 }

@@ -58,7 +58,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   cache:scopedCatalogueCache,schemaCache:scopedSchemaCache,
   history:listHubRecentChanges,...deps};
  if(name==='hub_recent_changes') {
-  if(Object.keys(args).some(k=>!['server','limit','cursor','includeUpstream'].includes(k))||
+  if(Object.keys(args).some(k=>!['server','tool','since','until','limit','cursor','includeUpstream'].includes(k))||
     (args.server!==undefined&&!serverPattern.test(args.server))||
     (args.limit!==undefined&&(!Number.isInteger(args.limit)||args.limit<1||args.limit>20))||
     (args.cursor!==undefined&&(typeof args.cursor!=='string'||args.cursor.length>540))||
@@ -69,6 +69,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   try {
     history=await tools.history(db,{
       ownerId:actor.ownerId,actor,serverName:args.server??null,
+      toolName:args.tool??null,since:args.since??null,until:args.until??null,
       limit:args.limit??10,cursor:args.cursor??null
     },settings);
   }catch{return fail('unavailable','Scoped RTC history cannot be verified');}
