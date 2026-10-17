@@ -17,7 +17,7 @@ function fixture({unknownAt,refuseAt,nonreversibleAt,rotateAt,allow=true}={}){
  const grants=new Map([['workspace-mcp','grant-workspace-0001'],
   ['neon-mcp','grant-neon-0001']]);
  const adapter={
-  async authorize({actor:principal,server,operation}){
+  async authorize({actor:principal,server}){
    if(!allow||principal.ownerId!=='owner-one')return {allowed:false};
    return {allowed:true,canWrite:true,grantId:grants.get(server),
     mode:'test',profile:'full',areasDigest:'approved'};
