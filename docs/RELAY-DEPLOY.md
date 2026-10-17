@@ -1,14 +1,14 @@
 # Relay setup — owner authorized steps only
 
-D-3 implements and tests relay software. **Infrastructure has been provisioned,
-but no authenticated agent request has been delivered through it.** Owner
-IN-02/IN-03 are applied for infrastructure/repository creation; IN-04 is
-partially applied for protected Vercel env entries. Owner IN-06 now approves only scoped D-4 relay configuration and temporary non-production testing; real route acceptance remains open on
-GitHub webhook/agent bindings and genuine custom RTC server compatibility.
-No real server pass is used by CI. Never paste credentials into chat, a PR, git
-or test logs. See docs/pr-cards/D-4.md and docs/OWNER-INPUTS.md.
+## Current Workspace integration acceptance — October 17, 2026 UTC
 
-## Verified owner infrastructure checkpoint — 2026-10-11, PR #86
+D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.
+
+The temporary relay is now disabled: webhook inactive, routing maps empty, issue closed/zero comments, disposable passes/token and ingress bypass revoked, Sandbox stopped. Existing hosted credentials and useful standing Hub grant are preserved. Activation for a new agent/service needs its own approved binding and scoped credentials; never reuse revoked test material. Workspace remains fully standalone and does not discover Hub.
+
+## Historical infrastructure checkpoint — 2026-10-11, PR #86
+
+This initial snapshot is retained for provenance; the current D-4 verdict and disabled post-test relay state above supersede its unconfigured/untested cells.
 
 | Item | Actual verified state |
 |---|---|
@@ -34,7 +34,7 @@ never configured as routed tools. Your **custom** `stripe-mcp` and
 Do not add them to `RELAY_SERVERS` until genuine service-owned RTC adoption
 and read-only tests are verified.
 
-**Next owner/security gates:** verify scoped fine-grained repo token permissions
+**Original setup/security gates (completed for the temporary Workspace test; repeat only for an independently authorized future activation):** verify scoped fine-grained repo token permissions
 without revealing token bytes; create GitHub `issue_comment` JSON webhook
 against the private repo with SSL verification, and synchronize its signing
 secret with Vercel by **rotation** in the same controlled setup (Vercel sensitive

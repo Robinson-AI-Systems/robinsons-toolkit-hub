@@ -1,5 +1,12 @@
 # PLAN — remaining scope and acceptance
 
+## Current Workspace integration acceptance — October 17, 2026 UTC
+
+D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.
+
+The temporary relay is now disabled: webhook inactive, routing maps empty, issue closed/zero comments, disposable passes/token and ingress bypass revoked, Sandbox stopped. Existing hosted credentials and useful standing Hub grant are preserved. Activation for a new agent/service needs its own approved binding and scoped credentials; never reuse revoked test material. Workspace remains fully standalone and does not discover Hub.
+
+
 Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADMAP.md); state: [STATUS](STATUS.md).
 
 ## Rules that apply to every batch
@@ -11,15 +18,15 @@ Written 2026-10-10 for an empty repository. Order: [MASTER-ROADMAP](MASTER-ROADM
 - Database changes additive; Node 24.x; plain English for Chris.
 
 ## Batch K — Contract, conformance, core, scaffold (`designs/BATCH-K.md`)
-- [ ] CONTRACT RTC 1 final and agreed by both existing server plans; kit docs complete.
-- [ ] `packages/conformance` with the reference fake server; each listed violation caught.
+- [x] CONTRACT RTC 1 and kit documentation implemented (K-1 merged); genuine per-service acceptance remains separately tracked.
+- [x] `packages/conformance` with reference fake server and violation tests (K-2/K-2b merged).
 - [ ] Optional `robinson-mcp-core` reusable exports proven and released under existing gates; service adoption separate. This line does not gate H or D-4.
 - [ ] `rtool new-server` scaffolds a conforming empty server.
 
 ## Batch D — Direct doors (`designs/BATCH-D.md`)
-- [ ] `rtool` CLI over several servers, SDK, skill, init; `rtool mcp` local MCP.
-- [ ] GitHub relay: ciphertext only on GitHub, replay-safe, comments deleted.
-- [ ] Real runs: a real server used from a local machine, a GitHub-only cloud workspace and a Vercel Sandbox, without the hub.
+- [x] `rtool` CLI, SDK, skill, init and local MCP implemented and tested (D-1/D-2 merged).
+- [x] GitHub encrypted relay/replay guards implemented; actual Workspace ciphertext roundtrip and zero-comment cleanup verified.
+- [x] Actual independent Workspace service passed original local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners, plus same-pass revocation/cleanup (D-4, PR227).
 
 ## Batch H — Hub server (`designs/BATCH-H.md`)
 - [ ] Hub is itself RTC 1 conformant; registered servers; federated search/describe/call/batch.

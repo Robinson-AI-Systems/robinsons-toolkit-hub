@@ -1,5 +1,12 @@
 # ARCHITECTURE — runtime facts, as built
 
+## Current Workspace integration acceptance — October 17, 2026 UTC
+
+D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.
+
+The temporary relay is now disabled: webhook inactive, routing maps empty, issue closed/zero comments, disposable passes/token and ingress bypass revoked, Sandbox stopped. Existing hosted credentials and useful standing Hub grant are preserved. Activation for a new agent/service needs its own approved binding and scoped credentials; never reuse revoked test material. Workspace remains fully standalone and does not discover Hub.
+
+
 ## Current source and acceptance boundary — 2026-10-14
 
 The hosted Hub (`packages/hub`) includes H-1 identity/OAuth/pass foundations,
@@ -86,7 +93,7 @@ No release, adoption, secret, or production capability exists from this slice.
 |---|---|---|
 | Agent verification | scripts/agent-check.mjs; packages/cli/src/agent-check.js | Env-name pass/args only, default localhost boundary, read_only profile and non-writing metadata required, real read/handle, observed route per probe; neutral output. |
 | Agent recipes | docs/AGENT-SETUP.md | Local/cloud Claude/Codex, Cursor, Copilot, Actions, Vercel Sandbox and Docker; pinned reviewed commit, direct/relay/MCP/SDK doors. |
-| Real-run acceptance | docs/pr-cards/D-4.md | WAITING for owner-authorized three-route evidence and test-pass revocation. |
+| Real-run acceptance | docs/pr-cards/D-4.md | Workspace three-route, same-pass revocation and cleanup PASSED; other fleet services remain separate. |
 
 This is verification infrastructure, not certification of any real hosted route.
 
@@ -118,7 +125,7 @@ Required owner environment: `RELAY_REPOSITORY`, `RELAY_WEBHOOK_SECRET`,
 `RELAY_GITHUB_TOKEN`, `RELAY_PRIVATE_KEY` (base64 PKCS8 DER X25519),
 `RELAY_SERVERS` (alias to HTTPS origin), `RELAY_BINDINGS` (issue to actorId/server),
 `RELAY_DATABASE_URL` (TLS Postgres). All secrets set privately; never put in repo.
-Deployment and replay migration are provisioned under owner approval; GitHub webhook, cleanup activation, agent bindings, RTC-speaking custom service integration and D-4 real acceptance remain owner/service gated.
+Deployment and replay migration are provisioned. Actual Workspace signed webhook, immutable binding, original encrypted relay read and D-4 revocation/cleanup are verified; temporary routing is disabled after cleanup. Persistent scheduling and other agent/service activations remain separately owner-scoped.
 
 ## Built in D-3a (PR #17)
 
@@ -146,7 +153,7 @@ D-3b supplies the server boundary. D-3 retains route fallback, cleanup and deplo
 | Door scripts | package.json | npm run test:doors and test:types, both real runnable suites. |
 | CLI distribution | .github/workflows/tag-cli.yml | Immutable cli-v1 tag on verified main push, single tag only. |
 
-Real device smoke for native credentials remains unverified. Hosted Vercel and Neon infrastructure and the private relay transport GitHub repository are provisioned, but the build is protected and relay runtime routes, webhook, custom RTC service adoption, test passes and cleanup activation remain unverified (D-4 WAITING_ON_OWNER).
+Real device smoke for native credentials remains unverified. Hosted infrastructure and actual Workspace D-4 direct/relay/Sandbox/revocation are accepted; temporary relay infrastructure is disabled after cleanup. Other service fleet and native OS-vault proof remain separate.
 
 ## Built in D-1c (PR #14)
 
@@ -210,11 +217,9 @@ Without both local fixtures the extended suite reports skips and cannot certify 
 | Database tests | `npm run test:db` → `scripts/local-postgres-test.sh`, `vitest.db.config.js` | Localhost Postgres only (refuses any other host). `tests/db/isolated-schema.js`: one throwaway schema per file; `pool()` = an independent pool standing in for a second serverless instance. |
 | CI | `.github/workflows/ci.yml` | Jobs `check`, `unit`, `db` (official Postgres 17 service), aggregate `ci` (merge gate). `permissions: contents: read`, no secrets, no `pull_request_target`; guarded by `tests/unit/ci-workflow.test.js`. |
 
-## Planned (not built)
+## Historical planning baseline (superseded by current STATUS and work index)
 
-Shared `packages/core` extraction (K-3), new-server scaffold (K-4), hosted hub (H),
-workflows (C) and local tools (L). D-4 real environment proof and native OS credential
-smokes remain unverified. Owner relay resources/secrets are not provisioned here.
+This original baseline is retained for chronology. Current source includes private core work, hosted Hub foundations and local tools; their incomplete acceptance remains in STATUS/work-index. Workspace D-4 real routes and cleanup are complete, while native OS credential smoke and other fleet obligations remain separate. Owner relay resources were provisioned; temporary activation is now cleaned.
 
 ## H-1 hosted partial gateway (PR #134 proposed)
 Hosted Node entrypoints `api/mcp.js` (OAuth-only, fixed two functional tools), `api/whoami.js` (Hub pass only), `api/oauth/token.js` (pre-authorized PKCE exchange and refresh), and `api/contract.js` (RTC 0 until full conformance). Runtime requires separately provisioned `HUB_DATABASE_URL` and `HUB_TOKEN_PEPPER`, uses small PostgreSQL pool and shared SQL rate counters. Owner consent, HTTPS API completeness, H-2 upstream grants, H-3 federation and actual deployed tests are incomplete; no client-facing ability to issue an owner's OAuth code is exposed. Scheduled-only live deployment policy unchanged.
