@@ -1,3 +1,26 @@
+## October 16 — D-4 actual Sandbox direct + same-pass revocation acceptance
+
+New genuine evidence against Workspace production `42afbaaf` and original
+Hub source `f6f916b8`: the owner's disposable four-hour TEST/read_only
+pass, limited to the `workspace` area, passed all five
+`agent-check.mjs` gates on a short-lived, outbound-allow-listed Vercel
+Sandbox (exit 0, direct route), then the *same* credential was revoked
+by the Workspace issuer and the original `rtc-revocation-probe.mjs`
+verified service-native HTTP 401 `pass_revoked` (exit 0).
+The earlier duplicate temporary pass was also revoked, the Sandbox
+stopped and the Dev-only test variable replaced with inert content.
+The useful Hub Workspace grant remains verified, unrevoked and active.
+This is independent real acceptance, not provider simulation.
+
+D-4 **remains IN_PROGRESS** only for the original separate protected
+local runner and genuine GitHub-only X25519 encrypted relay route:
+private issue binding/actor, `RELAY_SERVERS`, `RELAY_BINDINGS`,
+signed webhook/ingress and least-privilege repo token are not
+configured/verified; do not claim encrypted relay acceptance.
+The full exact evidence matrix and evidence provenance live at
+`docs/audits/2026-10-16-d4-workspace-route-checkpoint.md`.
+No new features or releases; no persistent test credentials.
+
 ## October 16 — D-4 Workspace remaining independent route acceptance
 
 Source and deployment reconciliation: Hub `main=live=f6f916b8`, Vercel
