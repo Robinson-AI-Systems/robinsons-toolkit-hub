@@ -19,13 +19,13 @@ function scopedSchema(schema,name,grant) {
    schema.writes!==false||schema.money!==false||schema.destructive!==false||
    schema.annotations?.readOnlyHint!==true||
    !Array.isArray(schema.profiles)||
-   schema.profiles.length!==1||schema.profiles[0]!=='read_only'||
+   schema.profiles.length!==1||schema.profiles[0]!==grant.profile||
    !plain(schema.inputSchema))
   throw new Error('RTC read-only describe schema refused');
  // Rebuild a safe read-only view rather than caching arbitrary upstream
  // properties, credentials, output blobs or unconstrained annotations.
  const safe={name,description:schema.description,area:schema.area,
-  profiles:['read_only'],writes:false,money:false,destructive:false,
+  profiles:[grant.profile],writes:false,money:false,destructive:false,
   annotations:{readOnlyHint:true},inputSchema:schema.inputSchema};
  let serialized;
  try {serialized=JSON.stringify(safe);}
