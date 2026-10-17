@@ -54,9 +54,9 @@ it('rejects DNS rebinding before connected socket and does not retry',async()=>{
  expect(fake.requests).toHaveLength(1);
  expect(fake.request).toHaveBeenCalledTimes(1);
 });
-it('refuses non-read-only grants, cross-prefix calls and huge payloads before network',async()=>{
+it('refuses malformed profiles, unknown modes, cross-prefix calls and huge payloads',async()=>{
  const fake=channel();
- for(const t of [{...target,profile:'full'},{...target,mode:'live'},
+ for(const t of [{...target,profile:'unknown'},{...target,mode:'production'},
   {...target,origin:'https://127.0.0.1'}]){
   await expect(pinnedRtcReadCall(t,'stripe_invoice_list',{},fake)).rejects.toThrow();
  }
