@@ -52,18 +52,23 @@ function parseScope(input,{ownerVerified=false,now=Date.now}={}){
  const filters={serverName,toolName,since:lower,until:upper,limit,cursor};
  if(actor===null) {
    if(ownerVerified!==true)throw new Error('Independently verified owner required');
-   return {ownerId:input.ownerId,kind:null,callerId:null,...filters};
+   return {ownerId:input.ownerId,kind:null,callerId:null,
+    callerMode:null,callerProfile:null,callerAllowWrites:null,...filters};
  }
  if(ownerVerified===true||actor.ownerId!==input.ownerId||
-   !uuid.test(actor.id||'')||actor.mode!=='test'||actor.allowWrites===true||
+   !uuid.test(actor.id||'')||!['test','live'].includes(actor.mode)||
+   (actor.allowWrites===true&&actor.profile==='read_only')||
    !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
    !['read_only','everyday','full'].includes(actor.profile))reject();
  const kind=actor.clientId?'oauth':'pass';
- return {ownerId:input.ownerId,kind,callerId:actor.id,...filters};
+ return {ownerId:input.ownerId,kind,callerId:actor.id,
+  callerMode:actor.mode,callerProfile:actor.profile,
+  callerAllowWrites:actor.allowWrites===true,...filters};
 }
 function signatureScope(scope){
  return [scope.ownerId,scope.kind??'*',scope.callerId??'*',
    scope.serverName??'*',scope.toolName??'*',scope.since??'*',
+   scope.callerMode??'*',scope.callerProfile??'*',scope.callerAllowWrites??'*',
    scope.until??'*',scope.grantFingerprint??'*'];
 }
 export function issueHubChangeCursor(scope,lastId,settings,{now=Date.now}={}){
@@ -145,7 +150,8 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
           AND g.caller_kind=a.caller_kind AND g.caller_id=a.caller_id
           AND g.server_name=a.server_name AND g.revoked_at IS NULL
           AND g.verified_at IS NOT NULL AND g.expires_at>now()
-          AND g.mode='test' AND g.profile='read_only' AND s.state='active')))
+          AND g.mode=$11 AND g.profile IN ('read_only','everyday','full')
+          AND s.state='active')))
     AND ($8::text IS NULL OR a.tool_name=$8)
     AND ($9::timestamptz IS NULL OR a.occurred_at>=$9)
     AND ($10::timestamptz IS NULL OR a.occurred_at<=$10)
@@ -153,16 +159,19 @@ export async function listHubRecentChanges(db,input,settings,opts={}){
       (a.caller_kind='pass' AND EXISTS(
         SELECT 1 FROM hub_callers c WHERE c.id=$3 AND c.owner_id=$1
          AND c.revoked_at IS NULL AND c.expires_at>now()
-         AND c.mode='test' AND c.allow_writes=FALSE
+         AND c.mode=$11 AND c.profile=$12 AND c.allow_writes=$13
          AND 'gateway'=ANY(c.allowed_areas)))
       OR (a.caller_kind='oauth' AND EXISTS(
         SELECT 1 FROM hub_oauth_sessions s
         WHERE s.id=$3 AND s.owner_id=$1 AND s.revoked_at IS NULL
           AND s.refresh_expires_at>now() AND s.access_expires_at>now()
-          AND s.mode='test' AND 'gateway'=ANY(s.areas))))
+          AND s.mode=$11 AND s.profile=$12
+          AND COALESCE((to_jsonb(s)->>'allow_writes')::boolean,FALSE)=$13
+          AND 'gateway'=ANY(s.areas))))
    ORDER BY a.id DESC LIMIT $6`;
  const values=[scope.ownerId,scope.kind,scope.callerId,scope.serverName,
-   untilId,scope.limit+1,permitted,scope.toolName,scope.since,scope.until];
+   untilId,scope.limit+1,permitted,scope.toolName,scope.since,scope.until,
+   scope.callerMode,scope.callerProfile,scope.callerAllowWrites];
  const {rows}=await db.query(query,values);
  let length=Math.min(rows.length,scope.limit);
  // Do not fail an ordinary bounded history page merely because 20 long
