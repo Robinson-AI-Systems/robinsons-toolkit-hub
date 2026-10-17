@@ -1,5 +1,18 @@
 # Owner inputs and decisions
 
+## C-1 release prerequisites (not permission to activate them now)
+
+The end-user write delegation decision is **answered and owner-approved**;
+it is not a standing $0 cap on finished-tool users. C-1 source uses the
+independent H-4 setup and existing provider-owned policy. An actual
+owner-authorized checked **TEST** release still needs migrations 022 and
+024, a protected independently generated 32-byte base64url
+`HUB_WORKFLOW_KEY`, and separate independently issued provider credentials
+that genuinely advertise the requested TEST write profiles/areas. Real
+two-service acceptance and any use of production, paid or customer-affecting
+provider operations are separate gates. No credentials or spending have been
+requested or changed by this implementation session.
+
 | ID | Status | Question | Blocks | Recommended / safe default |
 |---|---|---|---|---|
 | IN-00 | **Answered 2026-10-10: approved** | This architecture: one standalone server per toolset, combined later by Robinson's Toolkit; build servers as needed; own servers for Vercel, Neon and others | Nothing | — |

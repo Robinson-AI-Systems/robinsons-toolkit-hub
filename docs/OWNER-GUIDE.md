@@ -1,5 +1,34 @@
 # Owner guide — what you can ask for
 
+## Workflow plan, confirmation, status and undo — C-1 reviewed source only
+
+After a checked release and independent provider credential setup, an
+authenticated Hub agent can call these own-tool names:
+
+- `hub_workflow_plan({spec:{workflow,steps:[{server,tool,args}]}})`: previews
+  every server's own real dryRun. No side effects. Record the returned `runId`.
+- `hub_workflow_execute({runId,spec,confirm:true})`: explicitly confirms the
+  *unchanged* original plan; requires current independently verified provider
+  write permissions and follows provider-owned guards.
+- `hub_workflow_status({runId})`: inspect the run's safe per-service receipts,
+  unknown effect/undo status, provider change-log references and untouched steps;
+  never re-submit an unknown write.
+- `hub_undo_run({runId,confirm:true})`: a *separate* confirmed reverse-order
+  operation, only where a provider returned an actual valid non-money inverse.
+  Money-moving, irreversible and uncertain steps are **not** undone.
+
+To enable this **in a future approved release**: install additive migrations
+022 and 024 after their existing prerequisites (including already reviewed
+023); provision a fresh 32-byte base64url secret as protected
+`HUB_WORKFLOW_KEY` via the host secret manager, not in chat or a PR; create a
+**new**, owner-authorized everyday/full Hub pass or OAuth consent with exact
+selected TEST services and explicit write acknowledgment; then separately
+issue and verify exact TEST service passes on each original standalone
+provider and verify their service-specific guards. Old read-only credentials
+do not gain write rights. Neither source CI nor an old READY deployment
+demonstrates real provider acceptance. Do not use paid/LIVE actions for
+developer acceptance without a separately approved authorization.
+
 ## Hosted Hub routed history — current owner experience
 
 The Hub's protected owner control center links to `/api/owner/changes`. It provides **audit receipts for Hub-mediated RTC reads**, not a provider's full account history. Each private history page requires entering the **Hub owner passphrase** independently; there is no persistent logged-in owner session. The source-level next-release update supports an optional registered service, exact RTC tool name, and UTC inclusive from/through dates, retaining that selection on older-page continuations. Invalid inputs are refused. The same optional `server`, `tool`, `since` and `until` filters can be supplied to `hub_recent_changes` through the authenticated native Hub MCP or RTC HTTPS door. No provider pass, result content, request arguments, or private credential is shown.

@@ -1,5 +1,45 @@
 # ARCHITECTURE — runtime facts, as built
 
+## October 17 — C-1 public workflow engineering assembled in PR #232 (source verification, not live acceptance)
+
+The approved C-1 plan/execute/status/explicit-undo engine is now wired through
+authenticated native `/api/mcp` and direct RTC `/api/tools/{name}`. Unlike the
+original read-only federation, the C-1 write path resolves an expressly
+write-enabled **current** Hub pass or OAuth session and the original separately
+issued verified RTC provider grant. It fetches the exact tool's provider
+metadata by DNS-pinned TLS, verifies the delegated profile, mode, tool/area and
+declared write capability, then makes one independently guarded, pinned-TLS
+provider POST per step. No Hub bearer is sent upstream. The same restrictions
+are rechecked on previews, effects, readback and each inverse. OAuth user-chosen
+write approval survives PKCE/refresh and can be revoked. Existing read-only
+bearers remain read-only and the old H-3 read router never performs a write.
+
+`hub_workflow_plan` calls every provider with dryRun=true and persists the
+combined preview; `hub_workflow_execute` requires the exact matching spec,
+unexpired plan and explicit confirmation, claims its durable SQL run/steps
+before POST and stops after a refusal/unknown response. `hub_workflow_status`
+reports only caller/grant-authorized safe receipts and unknown or interrupted
+steps; no uncertain POST is automatically retried. `hub_undo_run` is a
+separate explicit confirmation, reverses only recorded still-authorized
+non-money inverses and reports irreversible/unknown actions rather than
+inventing a rollback. Two independent simulated RTC issuers plus disposable
+PostgreSQL prove the public path end-to-end. Native MCP/HTTPS and pinned write
+transport have separate unit regressions, alongside the earlier independent
+two-service engine crash/duplicate/undo tests. No real provider write was used.
+
+**Release/acceptance gate:** The tested source is not yet the deployed Hub.
+Additive migrations 022 (ledger), 023 (provider selected permissions, merged
+in PR #233) and 024 (OAuth owner-approved writes), and a separately generated
+32-byte base64url `HUB_WORKFLOW_KEY` are required on the protected host before
+workflow execution can be enabled. Actual non-production READ/WRITE delegated
+credentials must be issued *by each provider* and separately owner-verified.
+Current production's read-only connection is not upgraded. Genuine deployed
+two-service workflow/confirm/refusal/undo, provider guard, change-log readback,
+revocation and checked release receipts remain OPEN. No spending, customer
+data changes, live payment, production activation or off-cycle promotion is
+authorized by this source PR. Do not certify actual provider acceptance
+from simulated Postgres/provider tests.
+
 ## H-4 owner-selected user delegation — source only, October 17
 
 The owner-only `/api/owner/passes` flow now supports explicit selected

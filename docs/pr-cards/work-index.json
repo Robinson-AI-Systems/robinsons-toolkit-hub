@@ -492,10 +492,11 @@
       ],
       "readiness": "READY",
       "externalGates": [
-        "actual end-user delegated provider write scopes, service-owned safe preview/confirm/undo and independent readback",
-        "checked release plus two independently authorized TEST provider operations"
+        "checked host migrations 022/024 plus independently generated HUB_WORKFLOW_KEY; existing 023 still separately deployed",
+        "independently owner-approved two genuine provider-issued TEST write grants, real RTC native/HTTPS guarded preview/execute/revocation/undo and readback",
+        "reviewed release and exact READY revision conformance; no live paid/provider writes in developer acceptance"
       ],
-      "note": "C-1 internal durable multi-service workflow engine and disposable SQL tests are being reviewed. Current hosted Hub federation is TEST/read_only only; native and HTTPS service-write integration, independent delegated pass authority and real provider acceptance remain unfinished. No actual provider write is enabled, no production activation or release approved."
+      "note": "C-1 native MCP and RTC HTTPS plan/execute/status/explicit undo, TLS-pinned one-shot RTC adapter, verified per-caller TEST/LIVE full/everyday issuer grants, OAuth refresh, durable SQL and real two-provider simulated acceptance are now source-implemented on PR #232. Exact-head CI/review/merge still required. Hosted 022/024 migrations, HUB_WORKFLOW_KEY and independent real issuer TEST write passes/deployed two-service acceptance are OPEN. This is not production-activated provider writing."
     },
     {
       "id": "C-2",
