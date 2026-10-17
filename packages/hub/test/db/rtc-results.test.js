@@ -65,7 +65,7 @@ it('refuses different callers, owners, revoked/replaced grants, tampered bytes a
 it('fails closed on invalid callers, missing encryption and results above the 64KiB limit',async()=>{
  await expect(storeRtcResult(db,actor,grant.grantId,grant.server,
    {x:'x'.repeat(65536)},settings)).rejects.toThrow();
- await expect(storeRtcResult(db,{...actor,mode:'live'},grant.grantId,grant.server,
+ await expect(storeRtcResult(db,{...actor,mode:'unknown'},grant.grantId,grant.server,
    {},settings)).rejects.toThrow();
  await expect(storeRtcResult(db,actor,grant.grantId,grant.server,{},
    {...settings,resultsKey:undefined})).rejects.toThrow();
