@@ -88,8 +88,9 @@ export function createWorkflowRtcAdapter(db,settings,{
   const grant=await resolve(db,{actor,serverName:server},settings);
   if(!grant||grant.allowWrites!==true||!ownsRtcToolName(grant.prefix,name))bad();
   const response=await describe(grant.origin,'/api/tools/'+name,{pass:grant.pass});
-  metadata(response,grant,name);
-  return grant;
+  const inspected=metadata(response,grant,name);
+  return {...grant,riskMoney:inspected.money===true,
+    riskDestructive:inspected.destructive===true};
  }
  return {
   async authorize({actor,server,tool:name}){
@@ -115,13 +116,16 @@ export function createWorkflowRtcAdapter(db,settings,{
    const result=response.result;
    if(phase==='preview'){
     if(result.done!==false||typeof result.summary!=='string')bad();
-    return {done:false,summary:result.summary,
+    const flag=grant.riskMoney?'Money-moving operation; cost and provider limits may apply. ':
+      grant.riskDestructive?'Destructive operation; reversibility may be limited. ':'';
+    return {done:false,summary:flag+result.summary,
       needsConfirmation:result.needsConfirmation===true};
    }
    if(result.done!==true||result.confirmed!==true)bad();
    return {done:true,confirmed:true,summary:result.summary,
     logged:result.logged,inverse:result.inverse,
-    irreversible:result.irreversible===true,money:result.money===true};
+    irreversible:result.irreversible===true||grant.riskMoney,
+    money:result.money===true||grant.riskMoney};
   }
  };
 }

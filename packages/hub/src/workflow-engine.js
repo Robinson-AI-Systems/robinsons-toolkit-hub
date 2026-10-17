@@ -193,7 +193,7 @@ export async function planWorkflow({db,actor:principal,spec,adapter,clock=Date.n
   try{observed=await adapter.invoke({actor:principal,server:step.server,
     tool:step.tool,args:{...step.args,dryRun:true,confirm:false},phase:'preview'});}
   catch{deny('unavailable');}
-  if(!plain(observed)||observed.done!==false||observed.needsConfirmation===true)
+  if(!plain(observed)||observed.done!==false)
    deny('unavailable');
   previews.push(safeSummary(observed.summary));
  }
