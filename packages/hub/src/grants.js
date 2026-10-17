@@ -396,3 +396,56 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
   return {id,server:row.server_name,state:'verified_'+row.mode,
     registryActive:true,providerRoutingEnabled:false};
 }
+
+/**
+ * H-4 end-user WRITE resolver, intentionally independent from the existing
+ * TEST/read_only resolver. Returns a provider-issued credential only when
+ * the current Hub caller AND the original encrypted provider grant expressly
+ * allow writes in the same mode/profile. Does not perform provider effects.
+ *
+ * No historic read-only credential can be upgraded by an actor flag.
+ */
+export async function resolveDelegatedWriteGrant(db,{actor,serverName},settings) {
+  if(!actor||actor.clientId||actor.allowWrites!==true||
+    !['everyday','full'].includes(actor.profile)||
+    !['test','live'].includes(actor.mode)||
+    typeof actor.ownerId!=='string'||typeof actor.id!=='string'||
+    !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
+    !serverNamePattern.test(serverName||'')||
+    !allowedByHubPass(actor,serverName))return null;
+  const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,
+    s.prefix AS target_prefix,
+    to_jsonb(c)->'service_area_policy' AS caller_area_policy,
+    to_jsonb(c)->'service_profile_policy' AS caller_profile_policy
+    FROM hub_server_grants g
+    JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
+    JOIN hub_callers c ON c.id=g.caller_id AND c.owner_id=g.owner_id
+    WHERE g.owner_id=$1 AND g.caller_id=$2 AND
+      g.caller_kind='pass' AND g.pass_caller_id=c.id AND
+      g.oauth_session_id IS NULL AND g.server_name=$3 AND
+      g.verified_at IS NOT NULL AND g.revoked_at IS NULL AND
+      g.expires_at>now() AND s.state='active' AND
+      g.profile IN ('everyday','full') AND g.mode=$4 AND
+      c.profile IN ('everyday','full') AND c.mode=$4 AND
+      c.allow_writes=TRUE AND c.revoked_at IS NULL AND
+      c.expires_at>now() AND 'gateway'=ANY(c.allowed_areas) AND
+      (c.allowed_servers IS NULL OR $3=ANY(c.allowed_servers))
+    LIMIT 2`,[actor.ownerId,actor.id,serverName,actor.mode]);
+  if(rows.length!==1)return null;
+  const row=rows[0];
+  const profile=limitedServiceProfile(row.profile,actor.profile,
+    row.caller_profile_policy,serverName);
+  const areas=authorizedGrantAreas(row);
+  if(!['everyday','full'].includes(profile)||areas.length===0)return null;
+  const origin=validateStagedOrigin(row.target_origin);
+  if(!prefixPattern.test(row.target_prefix||''))return null;
+  const decipher=createDecipheriv('aes-256-gcm',key(settings),row.nonce);
+  decipher.setAAD(audience(row));
+  decipher.setAuthTag(row.tag);
+  const pass=Buffer.concat([decipher.update(row.ciphertext),
+    decipher.final()]).toString('utf8');
+  if(!passPattern.test(pass))return null;
+  return {pass,grantId:row.id,origin,prefix:row.target_prefix,
+    server:serverName,areas,profile,mode:row.mode,
+    allowWrites:true};
+}
