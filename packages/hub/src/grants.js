@@ -415,7 +415,7 @@ export async function resolveDelegatedWriteGrant(db,{actor,serverName},settings)
     !serverNamePattern.test(serverName||'')||
     !allowedByHubPass(actor,serverName))return null;
   const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,
-    s.prefix AS target_prefix,
+    s.prefix AS target_prefix,c.profile AS persisted_caller_profile,
     to_jsonb(c)->'service_area_policy' AS caller_area_policy,
     to_jsonb(c)->'service_profile_policy' AS caller_profile_policy
     FROM hub_server_grants g
@@ -434,6 +434,9 @@ export async function resolveDelegatedWriteGrant(db,{actor,serverName},settings)
     LIMIT 2`,[actor.ownerId,actor.id,serverName,actor.mode]);
   if(rows.length!==1)return null;
   const row=rows[0];
+  // A caller already narrowed in SQL cannot replay a stale full-profile
+  // actor even if an old provider grant is still verified.
+  if(row.persisted_caller_profile!==actor.profile)return null;
   const profile=limitedServiceProfile(row.profile,actor.profile,
     row.caller_profile_policy,serverName);
   const areas=authorizedGrantAreas(row);
