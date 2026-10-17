@@ -265,6 +265,12 @@ export async function executeWorkflow({db,actor:principal,runId,spec,adapter,set
    await markStep(db,runId,i+1,'unknown',{outcome_summary:'Provider effect unverified; do not retry'});
    terminal='unknown';break;
   }
+  // Explicit server refusal is different from a lost POST answer: record
+  // failed, stop descendants, and never label it confirmed or retry it.
+  if(plain(outcome)&&outcome.done===false&&outcome.confirmed===false){
+   await markStep(db,runId,i+1,'failed',{outcome_summary:'Provider explicitly refused this step'});
+   terminal='failed';break;
+  }
   if(!plain(outcome)||outcome.done!==true||outcome.confirmed!==true||
      !safeLog(outcome.logged?.id)){
    await markStep(db,runId,i+1,'unknown',{outcome_summary:'Provider effect unverified; do not retry'});
