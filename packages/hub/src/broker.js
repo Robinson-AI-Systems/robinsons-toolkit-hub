@@ -109,6 +109,7 @@ export function brokerCatalog() {return catalog;}
 export function runBroker(name,args,actor) {
   if(!selected(name)||!validArguments(name,args)) return error('invalid_args','Invalid Hub tool or arguments');
   if(!actor || !['test','live'].includes(actor.mode) ||
+  (actor.mode==='live'&&actor.allowWrites!==true) ||
   (actor.allowWrites===true&&!leaf.has(name)) || !Array.isArray(actor.areas) ||
     !actor.areas.includes('gateway'))
     return error('outside_scope','Caller cannot access Hub gateway');
