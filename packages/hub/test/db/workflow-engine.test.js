@@ -2,7 +2,7 @@ import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {randomBytes} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {planWorkflow,executeWorkflow,undoWorkflow} from '../../src/workflow-engine.js';
+import {planWorkflow,executeWorkflow,undoWorkflow,inspectWorkflow} from '../../src/workflow-engine.js';
 
 const actor={ownerId:'owner-one',kind:'pass',id:'caller-one',mode:'test',
  profile:'full',allowWrites:true,areas:['gateway']};
@@ -78,6 +78,11 @@ it('persists only a combined real dryRun preview and needs separate one-time exe
  expect(result.state).toBe('complete');
  expect(result.receipts.map(s=>s.logId)).toEqual(['log-1','log-2']);
  expect(x.effects).toEqual(['workspace-mcp','neon-mcp']);
+ const inspected=await inspectWorkflow({db,actor,runId:plan.runId,adapter:x.adapter});
+ expect(inspected.state).toBe('complete');
+ expect(inspected.requiresReconciliation).toBe(false);
+ expect(inspected.steps.map(row=>row.logId)).toEqual(['log-1','log-2']);
+ expect(JSON.stringify(inspected)).not.toContain('ref-1');
  expect(x.attempted.every(p=>p.args.confirm===true&&p.args.dryRun===false)).toBe(true);
  const data=await db.query('SELECT * FROM hub_workflow_steps WHERE run_id=$1 ORDER BY ordinal',
   [plan.runId]);
@@ -103,6 +108,10 @@ it('lost POST answer stays unknown, does not replay, run next step or auto-undo'
    adapter:a.adapter,settings});
  expect(result.state).toBe('unknown');
  expect(result.requiresReconciliation).toBe(true);
+ const record=await inspectWorkflow({db,actor,runId:plan.runId,adapter:a.adapter});
+ expect(record.requiresReconciliation).toBe(true);
+ expect(record.steps.map(row=>row.status)).toEqual(['confirmed','unknown','planned']);
+ expect(record.steps.map(row=>row.logId)).toEqual(['log-1',null,null]);
  expect(result.receipts.map(s=>s.logId)).toEqual(['log-1']);
  expect(a.attempted).toHaveLength(2);
  expect(a.inverseCalls).toHaveLength(0);
