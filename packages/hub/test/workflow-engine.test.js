@@ -68,10 +68,10 @@ it('refuses caller-chosen pass and effects before provider authorization',async(
 it('refuses execution and undo when the caller does not possess write authority',async()=>{
  const x=adapter();
  for(const who of [{...actor,allowWrites:false},{...actor,profile:'read_only'}]){
-  await expect(executeWorkflow({db,actor:who,runId:'bad',spec,adapter:x,
+  await expect(executeWorkflow({confirm:true,db,actor:who,runId:'bad',spec,adapter:x,
    settings:{workflowKey:randomBytes(32).toString('base64url')}}))
    .rejects.toMatchObject({code:'outside_scope'});
-  await expect(undoWorkflow({db,actor:who,runId:'bad',adapter:x,
+  await expect(undoWorkflow({confirm:true,db,actor:who,runId:'bad',adapter:x,
    settings:{workflowKey:randomBytes(32).toString('base64url')}}))
    .rejects.toMatchObject({code:'outside_scope'});
  }
