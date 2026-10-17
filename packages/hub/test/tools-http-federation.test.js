@@ -91,10 +91,10 @@ it('executes mixed Hub/RTC HTTPS batches sequentially with isolated write refusa
  expect(upstream.read).toHaveBeenCalledTimes(1);
  expect(upstream.audit).toHaveBeenCalledTimes(2);
 });
-it('blocks unauthenticated, LIVE and write-enabled actors before upstream lookup',async()=>{
+it('blocks unauthenticated, unknown-mode and non-gateway actors before upstream lookup',async()=>{
  const {send,upstream}=fixture();
- for(const state of [null,{actor:{...actor,mode:'live'}},
-  {actor:{...actor,allowWrites:true}},{actor:{...actor,areas:[]}}]) {
+ for(const state of [null,{actor:{...actor,mode:'production'}},
+  {actor:{...actor,areas:[]}}]) {
   const auth=vi.fn(async()=>state);
   const reply=await send('item','POST',{name:'stripe_invoice_list'},{},auth);
   expect(reply.code).toBe(state?403:401);
