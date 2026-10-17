@@ -30,7 +30,8 @@ it('HMAC cursor is time-bounded and exact caller and service scoped',()=>{
 });
 it('filters live caller grants, returns only permitted receipts, and uses stable SQL keysets',async()=>{
  const db=makeDb([...rows].reverse());
- const eligible=vi.fn(async()=>[{name:'stripe',areas:['billing']}]);
+ const activeGrant=randomUUID();
+ const eligible=vi.fn(async()=>[{name:'stripe',grantId:activeGrant,areas:['billing']}]);
  const found=await listHubRecentChanges(db,{ownerId:actor.ownerId,actor,
   serverName:'stripe',limit:2},settings,{eligible});
  expect(found.count).toBe(2);
@@ -40,10 +41,13 @@ it('filters live caller grants, returns only permitted receipts, and uses stable
  expect(found.changes[1]).toMatchObject({outcome:'refused',serverLogId:null});
  expect(JSON.stringify(found)).not.toContain('password');
  expect(db.query.mock.calls[0][1]).toEqual([
-  actor.ownerId,'pass',actor.id,'stripe',null,3,['stripe']]);
+  actor.ownerId,'pass',actor.id,'stripe',null,3,[activeGrant],null,null,null]);
  const next=await listHubRecentChanges(db,{ownerId:actor.ownerId,actor,
   serverName:'stripe',limit:2,cursor:found.next},settings,{eligible});
  expect(db.query.mock.calls[1][1][4]).toBe('2');
+ expect(db.query.mock.calls[1][0]).toContain('a.grant_id=ANY($7::uuid[])');
+ expect(db.query.mock.calls[1][0]).toContain('g.revoked_at IS NULL');
+ expect(db.query.mock.calls[1][0]).toContain('a.tool_name=$8');
  expect(next.count).toBe(2); // mocked database; real SQL enforces keyset
  expect(eligible).toHaveBeenCalledTimes(2);
  const noAccess=await listHubRecentChanges(makeDb([]),
@@ -100,6 +104,71 @@ it('optional provider history requires one exact advertised read-only capability
   includeUpstream:true},actor,{},settings,transport);
  expect(refused.error.code).toBe('invalid_args');
 });
+
+it('history filters are exact UTC, checked before SQL, and signed into every cursor',async()=>{
+ const initialGrant=randomUUID();
+ let active=initialGrant;
+ const eligible=async()=>[{name:'stripe',grantId:active,areas:['billing']}];
+ const scoped={ownerId:actor.ownerId,actor,serverName:'stripe',
+   toolName:'stripe_read_report',since:'2026-10-01',until:'2026-10-17',limit:2};
+ const now=()=>Date.parse('2026-10-17T12:00:00.000Z');
+ const db=makeDb([...rows].reverse());
+ const first=await listHubRecentChanges(db,scoped,settings,{eligible,now});
+ expect(first.next).toEqual(expect.any(String));
+ expect(db.query.mock.calls[0][1]).toEqual([
+   actor.ownerId,'pass',actor.id,'stripe',null,3,[initialGrant],
+   'stripe_read_report','2026-10-01T00:00:00.000Z',
+   '2026-10-17T23:59:59.999Z']);
+ const second=await listHubRecentChanges(db,{...scoped,cursor:first.next},
+   settings,{eligible,now});
+ expect(second.changes.length).toBe(2); // Mock SQL handles rows, not filter.
+ for(const modified of [
+   {...scoped,toolName:'stripe_different_tool',cursor:first.next},
+   {...scoped,since:'2026-10-02',cursor:first.next},
+   {...scoped,until:'2026-10-16',cursor:first.next},
+   {...scoped,serverName:null,cursor:first.next}
+ ])await expect(listHubRecentChanges(db,modified,settings,
+   {eligible,now})).rejects.toThrow();
+ active=randomUUID();
+ await expect(listHubRecentChanges(db,{...scoped,cursor:first.next},
+   settings,{eligible,now})).rejects.toThrow();
+ for(const invalid of [
+   {...scoped,since:'2026-02-30'},
+   {...scoped,until:'2026-10-18'},
+   {...scoped,since:'2026-10-18'},
+   {...scoped,since:'2026-10-17',until:'2026-10-01'},
+   {...scoped,since:'2026-10-17T12:00:01Z'},
+   {...scoped,until:'2026-10-17T12:00:01Z'},
+   {...scoped,toolName:'stripe_bad; DROP TABLE'},
+   {...scoped,since:'2026-10-01T99:00:00Z'}
+ ])await expect(listHubRecentChanges(db,invalid,settings,{eligible,now})).rejects.toThrow();
+ const validIso=await listHubRecentChanges(makeDb([]),
+   {...scoped,since:'2026-10-17T11:59:59Z',until:'2026-10-17T12:00:00Z'},
+   settings,{eligible,now});
+ expect(validIso.count).toBe(0);
+});
+it('large history rows yield a real signed continuation instead of total failure',async()=>{
+ const oversized=Array.from({length:20},(_,i)=>({
+   ...rows[0],id:String(100-i),tool_name:'stripe_'+('r'.repeat(110)),
+   upstream_log_id:'log_'+('x'.repeat(110)),
+   caller_id:actor.id,correlation_id:randomUUID()
+ }));
+ const eligible=async()=>[{name:'stripe',grantId:randomUUID(),areas:['billing']}];
+ const first=await listHubRecentChanges(makeDb(oversized),
+   {ownerId:actor.ownerId,actor,limit:20},settings,{eligible});
+ expect(first.count).toBeGreaterThan(0);
+ expect(first.count).toBeLessThan(20);
+ expect(first.next).toEqual(expect.any(String));
+ expect(Buffer.byteLength(JSON.stringify(first),'utf8')).toBeLessThanOrEqual(7600);
+});
+it('owner form carries validated tool/UTC filters and preserves them on older pages',async()=>{
+ const get=await ownerRequest('GET');
+ expect(get.target.body).toContain('name="tool"');
+ expect(get.target.body).toContain('name="since"');
+ expect(get.target.body).toContain('name="until"');
+ const bad=await ownerRequest('POST','password=approved&since=February');
+ expect(bad.target.code).toBe(400);
+});
 function res(){return {headers:{},code:0,body:null,setHeader(k,v){
  this.headers[k]=v;return this;},status(k){this.code=k;return this;},
  send(x){this.body=x;return this;}};}
@@ -131,7 +200,8 @@ it('owner route is password gated, no-store, bounded and safely escaped',async()
  const allowed=await ownerRequest('POST','password=approved&server=stripe');
  expect(allowed.target.code).toBe(200);
  expect(allowed.read).toHaveBeenCalledWith({},{
-  ownerId:actor.ownerId,serverName:'stripe',cursor:null,limit:20},
+  ownerId:actor.ownerId,serverName:'stripe',toolName:null,
+  since:null,until:null,cursor:null,limit:20},
   settings,{ownerVerified:true});
  const html=renderOwnerChanges({changes:[{
   at:'2026-10-01',server:'<script>oops</script>',outcome:'pending',

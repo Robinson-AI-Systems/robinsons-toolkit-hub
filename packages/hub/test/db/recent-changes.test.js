@@ -130,6 +130,46 @@ it('one H-3 RTC call gives exactly one H-5 correlated history entry and no secre
  expect((await history(actor)).changes).toEqual([]);
  expect((await ownerHistory()).changes.some(x=>x.correlationId===successful)).toBe(true);
 });
+it('replacement grant cannot expose receipts from an older grant on the same service',async()=>{
+ const issued=await issueHubPass(db,{ownerId:owner,profile:'read_only',
+  mode:'test',areas:['gateway'],allowWrites:false,ttlSeconds:3600,
+  serverNames:['stripe']},{ownerVerified:true,pepper});
+ const actor=await authenticateHubPass(db,'Bearer '+issued.pass,{pepper});
+ const previous=await stage(actor,'pass','stripe');
+ const oldCorrelation=randomUUID();
+ await record(actor,previous,'stripe','attempt','allowed',oldCorrelation);
+ await record(actor,previous,'stripe','outcome','success',oldCorrelation,'prior_log');
+ expect((await history(actor)).changes.some(x=>x.correlationId===oldCorrelation)).toBe(true);
+ const renewed=await stage(actor,'pass','stripe');
+ expect(renewed).not.toBe(previous);
+ const now=await history(actor);
+ expect(now.changes.some(x=>x.correlationId===oldCorrelation)).toBe(false);
+ expect((await ownerHistory()).changes.some(x=>x.correlationId===oldCorrelation)).toBe(true);
+ const newCorrelation=randomUUID();
+ await record(actor,renewed,'stripe','attempt','allowed',newCorrelation);
+ await record(actor,renewed,'stripe','outcome','success',newCorrelation);
+ expect((await history(actor)).changes.some(x=>x.correlationId===newCorrelation)).toBe(true);
+ const today=new Date().toISOString().slice(0,10);
+ const scoped=await history(actor,{toolName:'stripe_read_billing',
+   since:today,until:today});
+ expect(scoped.changes.some(x=>x.correlationId===newCorrelation)).toBe(true);
+ const noMatch=await history(actor,{toolName:'stripe_missing_tool'});
+ expect(noMatch.changes).toEqual([]);
+ const direct=res();
+ await handleHubTools({method:'POST',query:{name:'hub_recent_changes'},
+   body:{tool:'stripe_read_billing',since:today,until:today},
+   headers:{authorization:'Bearer synthetic'}},
+   direct,{withDb:async fn=>fn(db,settings),authorize:async()=>({actor})},'item');
+ expect(direct.code).toBe(200);
+ expect(direct.body.result.changes.some(x=>x.correlationId===newCorrelation)).toBe(true);
+ const native=await mcpFederatedReply({jsonrpc:'2.0',id:9,method:'tools/call',
+   params:{name:'hub_recent_changes',arguments:{tool:'stripe_read_billing',
+     since:today,until:today}}},actor,db,settings);
+ expect(native.result.structuredContent.changes.map(x=>x.correlationId))
+   .toEqual(direct.body.result.changes.map(x=>x.correlationId));
+ await revokeHubPass(db,actor.id,owner,{ownerVerified:true});
+ expect((await history(actor)).changes).toEqual([]);
+});
 it('OAuth refresh caller boundaries cannot expose other sessions history',async()=>{
  const clientId='h5_history_client',redirectUri='https://agent.example.com/h5/cb';
  const verifier='h5-history-pkce-verifier-abcdefghijklmnopqrstuvwxyz';

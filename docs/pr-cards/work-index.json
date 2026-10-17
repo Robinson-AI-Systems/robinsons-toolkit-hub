@@ -473,7 +473,8 @@
       "externalGates": [],
       "note": "H-5 eligible SOURCE engineering completed in the checked PR #207 tree; final exact-head CI/review and merge control source publication. SQL 019 derived view preserves H-3 attempted/outcome records without dual writes; scoped signed cursor and reauthorization, optional exact advertised upstream read-only history, and password-gated owner UI. Genuine hosted 019 adoption, provider TEST log IDs, two-service native/direct/relay/Sandbox and H-4 predecessor acceptance remain independently OPEN, not satisfied by synthetic tests. No LIVE, money or provider write.",
       "pr": [
-        "#207 — durable H-3 audit projection, scoped native/HTTPS/owner H-5 history, optional independently advertised TEST read, SQL+unit security proof"
+        "#207 — durable H-3 audit projection, scoped native/HTTPS/owner H-5 history, optional independently advertised TEST read, SQL+unit security proof",
+        "H-5 caller grant-scoped tool/time history hardening source candidate (2026-10-17)"
       ]
     },
     {
@@ -596,12 +597,15 @@
         "L-3"
       ],
       "card": "docs/pr-cards/L-4.md",
-      "status": "IN_PROGRESS",
+      "status": "MERGED",
       "units": [
         "L-4"
       ],
       "readiness": "READY",
-      "externalGates": []
+      "externalGates": [],
+      "pr": [
+        "#230 (L-4 guided settings local runner; original desktop owner use pending)"
+      ]
     },
     {
       "id": "S-vercel",
