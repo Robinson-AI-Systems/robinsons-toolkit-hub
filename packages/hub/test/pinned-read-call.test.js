@@ -122,3 +122,14 @@ it('mixed private/public DNS fails closed for both Node DNS modes before POST de
   await expect(pinnedRtcReadCall(target,'stripe_invoice_list',{},fake)).rejects.toThrow('do not automatically retry');
  }
 });
+
+it('uses the same pinned transport for an independently authorized LIVE harmless read',async()=>{
+ const fake=channel();
+ const live={...target,profile:'full',mode:'live'};
+ const result=await pinnedRtcReadCall(live,'stripe_invoice_list',{limit:1},fake);
+ expect(result.ok).toBe(true);
+ expect(fake.requests).toHaveLength(1);
+ expect(fake.requests[0].options).toMatchObject({method:'POST',agent:false,
+  path:'/api/tools/stripe_invoice_list',rejectUnauthorized:true});
+ expect(fake.requests[0].options.headers.authorization).toBe('Bearer '+pass);
+});
