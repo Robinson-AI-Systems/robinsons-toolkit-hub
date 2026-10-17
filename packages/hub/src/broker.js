@@ -5,7 +5,13 @@ import {serverNamePattern} from './server-name.js';
 const empty={type:'object',properties:{},additionalProperties:false};
 const rtcName={type:'string',pattern:'^[a-z][a-z0-9_]{2,119}$',maxLength:120};
 const workflowSpec={type:'object',properties:{
- workflow:{type:'string',pattern:'^[a-z][a-z0-9_]{2,59}
+ workflow:{type:'string',pattern:'^[a-z][a-z0-9_]{2,59}$'},
+ steps:{type:'array',minItems:1,maxItems:10,items:{type:'object',properties:{
+ server:{type:'string',pattern:serverNamePattern.source},
+ tool:rtcName,args:{type:'object'}},required:['server','tool','args'],additionalProperties:false}}
+},required:['workflow','steps'],additionalProperties:false};
+const runIdField={type:'string',pattern:'^[0-9a-f-]{36}$'};
+const catalog=Object.freeze([
   {name:'hub_whoami',description:'Read current TEST Hub connection permissions',inputSchema:empty},
   {name:'hub_health',description:'Read Hub foundation readiness and federation status',inputSchema:empty},
   {name:'hub_search_tools',description:'Search eligible Hub and separately granted RTC read tools',
