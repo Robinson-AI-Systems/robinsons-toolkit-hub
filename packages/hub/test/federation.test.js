@@ -112,7 +112,7 @@ it('selects a matching authorized area beyond the first three services',async()=
 });
 it('does not enable provider execution or grant metadata to other identities',async()=>{
  const deps=provider();
- for(const illegal of [{...actor,mode:'live'},{...actor,allowWrites:true},
+ for(const illegal of [{...actor,mode:'production'},{...actor,profile:'unknown'},
   {...actor,areas:[]},null]){
   const out=await runFederatedBroker('hub_search_tools',
    {query:'read'},illegal,{},{},deps);
@@ -231,7 +231,7 @@ it('rejects hub_-only adapter alias recursion, writes and out-of-grant names bef
    expect(out.ok).toBe(false);
   }
  }
- for(const blocked of [{...actor,mode:'live'},{...actor,allowWrites:true},
+ for(const blocked of [{...actor,mode:'production'},{...actor,profile:'unknown'},
    {...actor,areas:['mail']}]) {
   const result=await runFederatedBroker('hub_provider_read',{
     name:'stripe_invoice_list',args:{}},blocked,{},{},deps);
