@@ -4,6 +4,13 @@ import {serverNamePattern} from './server-name.js';
 // be discovered or executed. Never treat broker names as provider names.
 const empty={type:'object',properties:{},additionalProperties:false};
 const rtcName={type:'string',pattern:'^[a-z][a-z0-9_]{2,119}$',maxLength:120};
+const workflowSpec={type:'object',properties:{
+ workflow:{type:'string',pattern:'^[a-z][a-z0-9_]{2,59}$'},
+ steps:{type:'array',minItems:1,maxItems:10,items:{type:'object',properties:{
+ server:{type:'string',pattern:serverNamePattern.source},
+ tool:rtcName,args:{type:'object'}},required:['server','tool','args'],additionalProperties:false}}
+},required:['workflow','steps'],additionalProperties:false};
+const runIdField={type:'string',pattern:'^[0-9a-f-]{36}$'};
 const catalog=Object.freeze([
   {name:'hub_whoami',description:'Read current TEST Hub connection permissions',inputSchema:empty},
   {name:'hub_health',description:'Read Hub foundation readiness and federation status',inputSchema:empty},
@@ -41,6 +48,17 @@ const catalog=Object.freeze([
       cursor:{type:'string',minLength:1,maxLength:540},
       includeUpstream:{type:'boolean'}
     },additionalProperties:false}},
+  {name:'hub_workflow_plan',description:'Preview each independently authorized provider write without applying changes',
+    inputSchema:{type:'object',properties:{spec:workflowSpec},required:['spec'],additionalProperties:false}},
+  {name:'hub_workflow_execute',description:'Execute one previewed plan exactly once with confirmed provider guards',
+    inputSchema:{type:'object',properties:{runId:runIdField,spec:workflowSpec,confirm:{type:'boolean',const:true}},
+      required:['runId','spec','confirm'],additionalProperties:false}},
+  {name:'hub_workflow_status',description:'Read the scoped durable receipts and ambiguous step status for a previous workflow',
+    inputSchema:{type:'object',properties:{runId:runIdField},
+      required:['runId'],additionalProperties:false}},
+  {name:'hub_undo_run',description:'Explicitly reverse authorized recorded steps; irreversible actions are listed',
+    inputSchema:{type:'object',properties:{runId:runIdField,confirm:{type:'boolean',const:true}},
+      required:['runId','confirm'],additionalProperties:false}},
   {name:'hub_namespaces',description:'List bounded accessible namespaces without fetching upstream tools',
     inputSchema:{type:'object',properties:{
       limit:{type:'integer',minimum:1,maximum:20},
@@ -48,8 +66,12 @@ const catalog=Object.freeze([
     },additionalProperties:false}}
 ].map(tool=>Object.freeze({
   ...tool,area:'gateway',profiles:['read_only','everyday','full'],
-  writes:false,money:false,destructive:false,audience:['builder','owner','operator'],
-  annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}
+  writes:['hub_workflow_execute','hub_undo_run'].includes(tool.name),
+  money:false,destructive:['hub_workflow_execute','hub_undo_run'].includes(tool.name),
+  audience:['builder','owner','operator'],
+  annotations:{readOnlyHint:!['hub_workflow_execute','hub_undo_run'].includes(tool.name),
+    destructiveHint:['hub_workflow_execute','hub_undo_run'].includes(tool.name),
+    idempotentHint:tool.name!=='hub_undo_run',openWorldHint:false}
 })));
 const leaf=new Set(['hub_whoami','hub_health']);
 const own=Object.freeze({hub_whoami:1,hub_health:1});
@@ -65,7 +87,7 @@ function selected(name) {return catalog.find(x=>x.name===name);}
 function error(code,what) {return {ok:false,error:{code,what}};}
 function leafCall(name,actor) {
   if(name==='hub_whoami') return {profile:actor.profile,mode:actor.mode,
-    areas:[...actor.areas],allowWrites:false};
+    areas:[...actor.areas],allowWrites:actor.allowWrites===true};
   return {foundation:'ready',federation:'not_configured',providerCallsEnabled:false,
     contractVersion:0};
 }
@@ -89,7 +111,9 @@ function validArguments(name,args) {
 export function brokerCatalog() {return catalog;}
 export function runBroker(name,args,actor) {
   if(!selected(name)||!validArguments(name,args)) return error('invalid_args','Invalid Hub tool or arguments');
-  if(!actor || actor.mode!=='test' || actor.allowWrites===true || !Array.isArray(actor.areas) ||
+  if(!actor || !['test','live'].includes(actor.mode) ||
+  (actor.mode==='live'&&actor.allowWrites!==true) ||
+  (actor.allowWrites===true&&!leaf.has(name)) || !Array.isArray(actor.areas) ||
     !actor.areas.includes('gateway'))
     return error('outside_scope','Caller cannot access Hub gateway');
   if(leaf.has(name)) return {ok:true,result:leafCall(name,actor)};

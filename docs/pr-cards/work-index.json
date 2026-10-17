@@ -486,12 +486,17 @@
         "H-5"
       ],
       "card": "docs/pr-cards/C-1.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "C-1"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [
+        "checked host migrations 022/024 plus independently generated HUB_WORKFLOW_KEY; existing 023 still separately deployed",
+        "independently owner-approved two genuine provider-issued TEST write grants, real RTC native/HTTPS guarded preview/execute/revocation/undo and readback",
+        "reviewed release and exact READY revision conformance; no live paid/provider writes in developer acceptance"
+      ],
+      "note": "C-1 native MCP and RTC HTTPS plan/execute/status/explicit undo, TLS-pinned one-shot RTC adapter, verified per-caller TEST/LIVE full/everyday issuer grants, OAuth refresh, durable SQL and real two-provider simulated acceptance are now source-implemented on PR #232. Exact-head CI/review/merge still required. Hosted 022/024 migrations, HUB_WORKFLOW_KEY and independent real issuer TEST write passes/deployed two-service acceptance are OPEN. This is not production-activated provider writing."
     },
     {
       "id": "C-2",

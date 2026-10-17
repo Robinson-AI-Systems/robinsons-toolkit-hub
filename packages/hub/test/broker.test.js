@@ -1,11 +1,13 @@
 import {it,expect} from 'vitest';
 import {brokerCatalog,runBroker} from '../src/broker.js';
 const actor={profile:'read_only',mode:'test',areas:['gateway'],allowWrites:false};
-it('maintains ten fixed brokers independent of the number of provider services',()=>{
+it('maintains fourteen fixed brokers independent of the number of provider services',()=>{
   const list=brokerCatalog();
   expect(list.map(x=>x.name)).toEqual(['hub_whoami','hub_health','hub_search_tools',
-    'hub_describe_tool','hub_call','hub_provider_read','hub_provider_describe','hub_batch','hub_recent_changes','hub_namespaces']);
-  expect(list.every(x=>x.writes===false&&x.annotations.readOnlyHint===true)).toBe(true);
+    'hub_describe_tool','hub_call','hub_provider_read','hub_provider_describe','hub_batch','hub_recent_changes',
+    'hub_workflow_plan','hub_workflow_execute','hub_workflow_status','hub_undo_run','hub_namespaces']);
+  expect(list.filter(x=>x.writes).map(x=>x.name)).toEqual(['hub_workflow_execute','hub_undo_run']);
+  expect(list.filter(x=>!x.writes).every(x=>x.annotations.readOnlyHint===true)).toBe(true);
   expect(Buffer.byteLength(JSON.stringify(list))).toBeLessThan(5000*4);
   for(const size of [2,5,12,50,100]) {
     const options=Array.from({length:size},(_,i)=>'synthetic-'+i);
@@ -32,10 +34,13 @@ it('executes harmless calls and bounded batch without recursion or provider fall
   expect(runBroker('hub_batch',{calls:[{name:'hub_health'},{name:'hub_batch'}]},actor).ok).toBe(false);
 });
 it('fails closed for overprivileged scopes and malformed arguments',()=>{
-  for(const state of [{...actor,mode:'live'},{...actor,allowWrites:true},
+  for(const state of [{...actor,mode:'live'},
     {...actor,areas:[]},null]) {
     expect(runBroker('hub_health',{},state).ok).toBe(false);
   }
+  const writer={...actor,allowWrites:true,profile:'full'};
+  expect(runBroker('hub_health',{},writer).ok).toBe(true);
+  expect(runBroker('hub_search_tools',{query:'x'},writer).ok).toBe(false);
   for(const arg of [null,[],{query:'a'.repeat(121)},{query:'x',limit:300}]) {
     expect(runBroker('hub_search_tools',arg,actor).ok).toBe(false);
   }

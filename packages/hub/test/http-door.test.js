@@ -5,9 +5,10 @@ function reply() {
   return {headers:{},statusCode:0,body:null,setHeader(k,v){this.headers[k]=v;return this;},
     status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;},end(){return this;}};
 }
-it('fixed broker menu exposes ten Hub tools and guarded leaf reads',()=>{
-  expect(brokerCatalog().map(x=>x.name)).toEqual(['hub_whoami','hub_health','hub_search_tools','hub_describe_tool','hub_call','hub_provider_read','hub_provider_describe','hub_batch','hub_recent_changes','hub_namespaces']);
-  expect(mcpReply({jsonrpc:'2.0',method:'tools/list',id:1},actor).result.tools).toHaveLength(10);
+it('fixed broker menu exposes fourteen Hub tools and guarded leaf reads',()=>{
+  expect(brokerCatalog().map(x=>x.name)).toEqual(['hub_whoami','hub_health','hub_search_tools','hub_describe_tool','hub_call','hub_provider_read','hub_provider_describe','hub_batch','hub_recent_changes',
+    'hub_workflow_plan','hub_workflow_execute','hub_workflow_status','hub_undo_run','hub_namespaces']);
+  expect(mcpReply({jsonrpc:'2.0',method:'tools/list',id:1},actor).result.tools).toHaveLength(14);
   const who=mcpReply({jsonrpc:'2.0',method:'tools/call',id:2,params:{name:'hub_whoami'}},actor);
   expect(who.result.structuredContent.profile).toBe('read_only');
   expect(who.result.content[0].text).toContain('read_only');
@@ -30,7 +31,7 @@ it('authenticates before menu listing and denies shared-budget overrun',async()=
   expect(res.statusCode).toBe(429);expect(res.headers['Retry-After']).toBe('15');
   authorize.mockResolvedValue({actor});
   res=reply();await handleMcp(req,res,{withDb,authorize});
-  expect(res.body.result.tools).toHaveLength(10);
+  expect(res.body.result.tools).toHaveLength(14);
   authorize.mockResolvedValue({actor:{...actor,areas:['other']}});
   res=reply();await handleMcp(req,res,{withDb,authorize});
   expect(res.statusCode).toBe(403);

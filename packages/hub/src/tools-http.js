@@ -1,6 +1,7 @@
 import { brokerCatalog, mcpReply } from './http-door.js';
 import { runFederatedBroker } from './federation.js';
 import {serverNamePattern} from './server-name.js';
+import {dispatchWorkflow,workflowTools} from './workflow-door.js';
 
 const toolName = /^[a-z][a-z0-9_]{2,119}$/;
 const serverName = serverNamePattern;
@@ -10,7 +11,8 @@ const selectTool = name => brokerCatalog().find(tool => tool.name === name);
 const federatedHubTools = new Set([
   'hub_health', 'hub_search_tools', 'hub_describe_tool',
   'hub_call', 'hub_batch', 'hub_namespaces', 'hub_recent_changes',
-  'hub_provider_read', 'hub_provider_describe'
+  'hub_provider_read', 'hub_provider_describe',
+  'hub_workflow_plan', 'hub_workflow_execute', 'hub_undo_run','hub_workflow_status'
 ]);
 function inScope(actor) {
   return actor?.mode === 'test' && Array.isArray(actor.areas) &&
@@ -118,9 +120,19 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
         res.setHeader('Retry-After', String(state.retryAfter));
         return res.status(429).json(deny('rate_limited'));
       }
-      if (!inScope(state.actor)) return res.status(403).json(deny('outside_scope'));
+      const isWorkflow=route==='item'&&req.method==='POST'&&workflowTools.has(name);
+      if (!inScope(state.actor)&&!((isWorkflow||route==='list'||
+         route==='item'&&req.method==='GET'&&workflowTools.has(name))&&
+        state.actor?.allowWrites===true&&['test','live'].includes(state.actor.mode)&&
+        ['everyday','full'].includes(state.actor.profile)&&
+        state.actor.areas?.includes('gateway')))
+        return res.status(403).json(deny('outside_scope'));
       const actor = state.actor;
+      if(isWorkflow)
+        return respondFederated(res,await dispatchWorkflow(name,req.body,actor,db,settings));
       if (route === 'list') {
+        if(actor.allowWrites===true)
+          return send(res,{ok:true,result:{tools:filtered.tools,next:null}});
         // Empty search is intentionally the compact, bounded Hub catalogue.
         // A nonempty query selects at most three caller-authorized RTC grants.
         if (!Object.hasOwn(req.query, 'q') && !filtered.server && !filtered.cursor)
@@ -141,6 +153,8 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
       }
       if (route === 'item' && req.method === 'GET') {
         const tool = selectTool(name);
+        if(actor.allowWrites===true&&!workflowTools.has(name))
+          return res.status(403).json(deny('outside_scope'));
         if (tool) return send(res, { ok: true, result: tool });
         if (name.startsWith('hub_')) return res.status(404).json(deny('not_found'));
         if (!actor.ownerId) return res.status(403).json(deny('outside_scope'));

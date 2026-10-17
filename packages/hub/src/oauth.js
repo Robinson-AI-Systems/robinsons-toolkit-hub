@@ -21,7 +21,9 @@ function checkScope(input) {
   if (!allowedProfile.has(input.profile) || !['test','live'].includes(input.mode) ||
     !Array.isArray(input.areas) || input.areas.length > 32 ||
     input.areas.some(x=>!(/^[a-z][a-z0-9_]{0,59}$/).test(x))) throw new TypeError('Invalid OAuth scope');
-  if (input.mode === 'live') throw new TypeError('Live OAuth access is not owner-authorized');
+  if(input.allowWrites!==undefined&&typeof input.allowWrites!=='boolean')throw new TypeError('Invalid delegation');
+  if(input.allowWrites===true&&(!['everyday','full'].includes(input.profile)||
+    !input.areas.includes('gateway')))throw new TypeError('Write delegation requires full/ everyday gateway rights');
 }
 export async function registerOAuthClient(db, { ownerId, clientId, redirectUri }, { ownerVerified=false } = {}) {
   verified(ownerVerified);
@@ -40,6 +42,7 @@ export async function issueOAuthCode(db, input, { pepper, ownerVerified=false } 
   [input.clientId,input.ownerId,input.redirectUri]);
   if (!found.rows.length) throw new Error('Client redirect not owner-authorized');
   const selected = serverSelection(input.serverNames);
+  if(input.allowWrites===true&&!selected)throw new TypeError('Write delegation requires explicit servers');
   const policies=checkedInitialServiceProfiles(input.serviceProfiles,selected);
   const areaPolicy=checkedInitialServiceAreas(input.serviceAreas,selected);
   if (selected) {
@@ -84,6 +87,15 @@ export async function issueOAuthCode(db, input, { pepper, ownerVerified=false } 
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()+interval '5 minutes')`,
   [digestPass(code,pepper),input.clientId,input.ownerId,input.redirectUri,input.challenge,
     input.profile,[...new Set(input.areas)],input.mode]);
+  if(input.allowWrites===true){
+    // Owner-approved only. A missing migration refuses issuance, never
+    // falls back to a silently downgraded or unscoped OAuth authorization.
+    const updated=await db.query(`UPDATE hub_oauth_codes SET allow_writes=TRUE
+      WHERE code_digest=$1 AND owner_id=$2 AND profile IN ('everyday','full')
+       AND allowed_servers IS NOT NULL AND consumed_at IS NULL RETURNING code_digest`,
+       [digestPass(code,pepper),input.ownerId]);
+    if(updated.rowCount!==1)throw new Error('Write delegation storage unavailable');
+  }
   return code; // one time, only to the verified owner's exact registered redirect
 }
 function pkce(verifier) {
@@ -106,6 +118,7 @@ async function storeSession(db,row,pepper,familyId=randomUUID()){
   if(row.service_profile_policy!=null){
     columns.push('service_profile_policy');extra.push(row.service_profile_policy);
   }
+  if(row.allow_writes===true){columns.push('allow_writes');extra.push(true);}
   const fieldSuffix=columns.length?','+columns.join(','):'';
   const bindSuffix=extra.length?','+extra.map((_,i)=>'$'+(i+10)).join(','):'';
   await db.query(`INSERT INTO hub_oauth_sessions
@@ -127,7 +140,8 @@ export async function exchangeOAuthCode(db, input, { pepper }={}) {
     RETURNING owner_id,client_id,profile,areas,mode,challenge,
       to_jsonb(hub_oauth_codes)->'allowed_servers' AS allowed_servers,
       to_jsonb(hub_oauth_codes)->'service_area_policy' AS service_area_policy,
-      to_jsonb(hub_oauth_codes)->'service_profile_policy' AS service_profile_policy`,
+      to_jsonb(hub_oauth_codes)->'service_profile_policy' AS service_profile_policy,
+      to_jsonb(hub_oauth_codes)->'allow_writes' AS allow_writes`,
   [digestPass(input.code,pepper),input.clientId,input.redirectUri]);
   if (used.rows.length !== 1 || used.rows[0].challenge !== challenge) return null;
   return storeSession(db,used.rows[0],pepper);
@@ -140,7 +154,8 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
     RETURNING owner_id,client_id,profile,areas,mode,family_id,
       to_jsonb(hub_oauth_sessions)->'allowed_servers' AS allowed_servers,
       to_jsonb(hub_oauth_sessions)->'service_area_policy' AS service_area_policy,
-      to_jsonb(hub_oauth_sessions)->'service_profile_policy' AS service_profile_policy`,
+      to_jsonb(hub_oauth_sessions)->'service_profile_policy' AS service_profile_policy,
+      to_jsonb(hub_oauth_sessions)->'allow_writes' AS allow_writes`,
   [digestPass(input.refreshToken,pepper),input.clientId]);
   if (!used.rows.length) {
     // A second use of an already-rotated bearer is a compromised family,
@@ -159,7 +174,8 @@ export async function rotateOAuthRefresh(db, input, { pepper }={}) {
 export async function authenticateOAuth(db, accessToken, { pepper }={}) {
   if (!codePattern.test(accessToken || '')) return null;
   const result=await db.query(`SELECT s.id,s.owner_id,s.client_id,s.profile,s.areas,s.mode
-    ,to_jsonb(s)->'allowed_servers' AS allowed_servers
+    ,to_jsonb(s)->'allowed_servers' AS allowed_servers,
+      to_jsonb(s)->'allow_writes' AS allow_writes
     FROM hub_oauth_sessions s
     WHERE s.access_digest=$1 AND s.revoked_at IS NULL AND s.access_expires_at>now()
     AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions revoked WHERE
@@ -167,7 +183,7 @@ export async function authenticateOAuth(db, accessToken, { pepper }={}) {
   [digestPass(accessToken,pepper)]);
   const row=result.rows[0];
   return row? Object.freeze({id:row.id,ownerId:row.owner_id,clientId:row.client_id,
-    profile:row.profile,areas:Object.freeze([...row.areas]),mode:row.mode,allowWrites:false,
+    profile:row.profile,areas:Object.freeze([...row.areas]),mode:row.mode,allowWrites:row.allow_writes===true,
     serverNames:Array.isArray(row.allowed_servers) ?
       Object.freeze([...serverSelection(row.allowed_servers)]) : null}):null;
 }

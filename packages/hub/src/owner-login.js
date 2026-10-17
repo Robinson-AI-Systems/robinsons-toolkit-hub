@@ -58,7 +58,7 @@ export function formFields(req) {
   if (!body || typeof body!=='object' || Array.isArray(body) ||
     ![Object.prototype,null].includes(Object.getPrototypeOf(body))) return null;
   const keys=Object.keys(body);
-  if (keys.length>12 || keys.some(k=> k.length>40 || typeof body[k]!=='string' ||
+  if (keys.length>20 || keys.some(k=> k.length>40 || typeof body[k]!=='string' ||
       body[k].length>2048)) return null;
   return body;
 }
@@ -82,7 +82,7 @@ export function htmlForm(action,fields) {
     '<input type="hidden" name="'+escapeHtml(key)+'" value="'+escapeHtml(value)+'">').join('');
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
     '<title>Robinson Toolkit Hub owner approval</title><main>'+
-    '<h1>Authorize a TEST Toolkit Hub connection</h1>'+
+    '<h1>Authorize a scoped Toolkit Hub connection</h1>'+
     '<p>Requested profile: '+escapeHtml(fields.profile||'read_only')+'</p>'+
     '<p>Only this Hub is authorized. Upstream provider access requires separate scoped grants.</p>'+
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
@@ -95,8 +95,21 @@ export function htmlForm(action,fields) {
     '<input name="service_areas" maxlength="2048"></label>'+
     '<p>Disabled services are unavailable from first authorization, and '+
     'all others remain limited by independently issued TEST/read_only grants.</p>'+
-    '<p>Only separately issued TEST read-only grants on these exact servers '+
-    'may be used after owner consent. This cannot authorize LIVE or writes.</p>'+
+    '<label>Connection profile <select name="delegation_profile">'+
+    '<option value="read_only">Read only (default)</option>'+
+    '<option value="everyday">Everyday</option><option value="full">Full</option>'+
+    '</select></label>'+
+    '<label>Environment <select name="delegation_mode">'+
+    '<option value="test">Test (default)</option><option value="live">Live</option></select></label>'+
+    '<label>Authorize provider writes? <select name="delegation_writes">'+
+    '<option value="disabled">No (default)</option>'+
+    '<option value="authorize">Yes, where an independently issued provider pass permits it</option>'+
+    '</select></label>'+
+    '<label>For write delegation type I_AUTHORIZE after reviewing cost, '+
+    'production effects, access changes and irreversible actions '+
+    '<input name="write_ack" maxlength="16" autocomplete="off"></label>'+
+    '<p>Only your selected services and their own scoped service-issued passes may be used. '+
+    'Provider guards continue to enforce costs, confirmation and permissions.</p>'+
     '<label>Owner passphrase <input type="password" name="password" autocomplete="current-password" required></label>'+
     '<button type="submit">Authorize</button></form></main></html>';
 }
@@ -127,12 +140,20 @@ export async function authorizeOwnerConnection(db, req, input, {env=process.env,
     serviceAreas=parseInitialServiceAreas(input.service_areas,selected);
   }
   catch{return {status:400};}
+  const profile=input.delegation_profile??'read_only';
+  const mode=input.delegation_mode??'test';
+  const allowWrites=input.delegation_writes==='authorize';
+  if(!['read_only','everyday','full'].includes(profile)||
+     !['test','live'].includes(mode)||
+     ![undefined,'disabled','authorize'].includes(input.delegation_writes)||
+     (allowWrites&&(!['everyday','full'].includes(profile)||input.write_ack!=='I_AUTHORIZE'))||
+     (!allowWrites&&input.write_ack))return {status:400};
   const verified=await verifyOwnerLogin(db,req,input.password,{env});
   if (!verified.approved) return {status:verified.retryAfter?429:401,
     retryAfter:verified.retryAfter||null};
   const code=await issue(db,{ownerId:env.HUB_OWNER_ID,clientId:request.clientId,
     redirectUri:request.redirectUri,challenge:request.challenge,
-    profile:'read_only',mode:'test',areas:['gateway'],serverNames:selected,
+    profile,mode,allowWrites,areas:['gateway'],serverNames:selected,
     ...(profiles?{serviceProfiles:profiles}:{}),
     ...(serviceAreas?{serviceAreas}:{})},
   {pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
