@@ -8,7 +8,10 @@ export async function appendRtcReadAudit(db,{actor,grantId,service,tool,
   correlationId,phase,outcome,upstreamLogId=null}) {
   const kind=actor?.clientId?'oauth':'pass';
   if(!actor||typeof actor.ownerId!=='string'||!actor.ownerId||
-    !uuid.test(actor.id||'')||actor.mode!=='test'||actor.allowWrites===true||
+    !uuid.test(actor.id||'')||!['test','live'].includes(actor.mode)||
+    !['read_only','everyday','full'].includes(actor.profile)||
+    (actor.allowWrites===true&&actor.profile==='read_only')||
+    !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
     !uuid.test(grantId||'')||!serverName.test(service||'')||
     !toolName.test(tool||'')||!uuid.test(correlationId||'')||
     !['attempt','outcome'].includes(phase)||
