@@ -328,6 +328,11 @@ export async function undoWorkflow({db,actor:principal,runId,adapter,settings,co
    inverse=openInverse(settings,inverseContext(actor,runId,step.ordinal),step.inverse_ciphertext);
    if(!plain(inverse)||inverse.name!==step.inverse_tool||!plain(inverse.args))
     deny('unavailable');
+   // The grant originally authorizing this effect must still be active:
+   // replacing it is not permission to reverse a historical side effect.
+   const originalMark=await authority(adapter,principal,
+    {server:step.server_name,tool:step.tool_name},'undo');
+   if(originalMark!==step.authority_digest)deny('outside_scope');
    await authority(adapter,principal,{server:step.server_name,tool:inverse.name},'undo');
   }catch{
    partial=true;

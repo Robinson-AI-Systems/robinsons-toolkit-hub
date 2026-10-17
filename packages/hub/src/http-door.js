@@ -106,7 +106,10 @@ export async function handleMcp(req,res,{withDb,authorize,
       if (!state.actor || !['test','live'].includes(state.actor.mode) ||
         !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway') ||
         state.actor.allowWrites===true&&
-         !(body?.method==='tools/call'&&workflowTools.has(body.params?.name)))
+         !(['initialize','tools/list','ping','notifications/initialized'].includes(body?.method)||
+           body?.method==='tools/call'&&(
+            workflowTools.has(body.params?.name)||
+            ['hub_whoami','hub_health'].includes(body.params?.name))))
         return res.status(403).json({error:'outside_scope'});
       const reply=await federate(body,state.actor,db,settings);
       if (!reply) return res.status(202).end();

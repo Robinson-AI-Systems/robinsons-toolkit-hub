@@ -84,7 +84,7 @@ function selected(name) {return catalog.find(x=>x.name===name);}
 function error(code,what) {return {ok:false,error:{code,what}};}
 function leafCall(name,actor) {
   if(name==='hub_whoami') return {profile:actor.profile,mode:actor.mode,
-    areas:[...actor.areas],allowWrites:false};
+    areas:[...actor.areas],allowWrites:actor.allowWrites===true};
   return {foundation:'ready',federation:'not_configured',providerCallsEnabled:false,
     contractVersion:0};
 }
@@ -108,7 +108,8 @@ function validArguments(name,args) {
 export function brokerCatalog() {return catalog;}
 export function runBroker(name,args,actor) {
   if(!selected(name)||!validArguments(name,args)) return error('invalid_args','Invalid Hub tool or arguments');
-  if(!actor || actor.mode!=='test' || actor.allowWrites===true || !Array.isArray(actor.areas) ||
+  if(!actor || !['test','live'].includes(actor.mode) ||
+  (actor.allowWrites===true&&!leaf.has(name)) || !Array.isArray(actor.areas) ||
     !actor.areas.includes('gateway'))
     return error('outside_scope','Caller cannot access Hub gateway');
   if(leaf.has(name)) return {ok:true,result:leafCall(name,actor)};
