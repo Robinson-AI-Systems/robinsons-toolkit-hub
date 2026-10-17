@@ -20,7 +20,8 @@ function fixture({unknownAt,refuseAt,nonreversibleAt,rotateAt,allow=true}={}){
   async authorize({actor:principal,server}){
    if(!allow||principal.ownerId!=='owner-one')return {allowed:false};
    return {allowed:true,canWrite:true,grantId:grants.get(server),
-    mode:'test',profile:'full',areasDigest:'approved'};
+    ownerId:principal.ownerId,callerId:principal.id,callerKind:principal.kind,
+    server,mode:'test',profile:'full',areasDigest:'a'.repeat(64)};
   },
   async invoke({phase,server,tool,args,requestId}){
    const request={phase,server,tool,args:snapshot(args),requestId};
