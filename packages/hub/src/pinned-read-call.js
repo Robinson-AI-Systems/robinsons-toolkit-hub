@@ -19,7 +19,8 @@ export async function pinnedRtcReadCall(target,name,args={},
    !/^[a-z][a-z0-9_]{1,59}$/.test(target.prefix)||
    !toolName.test(name||'')||!ownsRtcToolName(target.prefix,name)||
    !passPattern.test(target.pass||'')||
-   target.profile!=='read_only'||target.mode!=='test'||
+   !['read_only','everyday','full'].includes(target.profile)||
+   !['test','live'].includes(target.mode)||
    !object(args))throw new TypeError('Invalid scoped RTC read request');
  const origin=validateStagedOrigin(target.origin);
  let serialized;
