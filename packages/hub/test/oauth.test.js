@@ -16,7 +16,8 @@ it('refuses dangerous redirects, scope and malformed PKCE before database work',
     await expect(registerOAuthClient(db,{ownerId:'owner',clientId:'approvedclient',redirectUri},{ownerVerified:true}))
       .rejects.toThrow();
   }
-  await expect(issueOAuthCode(db,{profile:'read_only',mode:'live',areas:[],challenge:'x'.repeat(43)},
+  await expect(issueOAuthCode(db,{profile:'read_only',mode:'live',allowWrites:true,
+    areas:['gateway'],challenge:'x'.repeat(43)},
     {pepper,ownerVerified:true})).rejects.toThrow();
   expect(db.query).not.toHaveBeenCalled();
 });
