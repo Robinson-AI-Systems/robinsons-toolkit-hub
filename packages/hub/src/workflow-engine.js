@@ -87,7 +87,8 @@ function safeSummary(value){
 function safeLog(value){
  if(value===null||value===undefined)return null;
  if(typeof value!=='string'||value.length<1||value.length>128||
-   /[\x00-\x1f\x7f]/.test(value))return null;
+   /[\x00-\x1f\x7f]/.test(value)||
+   /(?:rtc_pass_|Bearer\\s|sk_live_|rk_live_|github_pat_)/i.test(value))return null;
  return value;
 }
 function keyBytes(settings){
@@ -216,8 +217,9 @@ async function markStep(db,runId,ordinal,state,fields={}){
  await db.query('UPDATE hub_workflow_steps SET '+sets.join(',')+
    ' WHERE run_id=$1 AND ordinal=$2 AND state=\'claimed\'',params);
 }
-export async function executeWorkflow({db,actor:principal,runId,spec,adapter,settings,clock=Date.now}){
+export async function executeWorkflow({db,actor:principal,runId,spec,adapter,settings,confirm=false,clock=Date.now}){
  const actor=caller(principal);ensureAdapter(adapter);
+ if(confirm!==true)deny('needs_confirmation');
  const loaded=await load(db,actor,runId),normalized=hasSameSpec(spec,loaded);
  const now=clock();
  if(loaded.run.state!=='planned'||!(new Date(loaded.run.expires_at).getTime()>now)||
@@ -283,8 +285,9 @@ export async function executeWorkflow({db,actor:principal,runId,spec,adapter,set
 }
 // Deliberately separate user request. No background or automatic rollback;
 // even a confirmed inverse must pass the currently authenticated service guard.
-export async function undoWorkflow({db,actor:principal,runId,adapter,settings}){
+export async function undoWorkflow({db,actor:principal,runId,adapter,settings,confirm=false}){
  const actor=caller(principal);ensureAdapter(adapter);
+ if(confirm!==true)deny('needs_confirmation');
  keyBytes(settings);
  const original=await load(db,actor,runId);
  if(!['complete','failed'].includes(original.run.state))deny('outside_scope');
