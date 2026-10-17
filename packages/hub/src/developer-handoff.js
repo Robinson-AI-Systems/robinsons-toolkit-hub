@@ -84,7 +84,7 @@ export async function developerConsent(db,req,input,{env=process.env}={}){
  const origin=publicHubOrigin(env),callback=origin+'/api/developer/connect';
  if(input.redirect_uri!==callback||input.code_challenge!==row.challenge||input.code_challenge_method!=='S256'||input.response_type!=='code'||input.resource!==origin+'/api/mcp'||input.profile!==row.profile)return {status:400};
  if(req.method==='GET')return {status:200,fields:{client_id:row.client_id,state:row.state,redirect_uri:callback,code_challenge:row.challenge,code_challenge_method:'S256',response_type:'code',resource:origin+'/api/mcp',profile:row.profile}};
- const profile=input.delegation_profile??'read_only',mode=input.delegation_mode??'test';
+ const profile=input.delegation_profile??row.profile,mode=input.delegation_mode??'test';
  const allowWrites=input.delegation_writes==='authorize';
  if(!profiles.has(profile)||!['test','live'].includes(mode)||
    ![undefined,'disabled','authorize'].includes(input.delegation_writes)||
