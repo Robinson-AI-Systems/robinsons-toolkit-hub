@@ -42,6 +42,7 @@ function plain(a) {
 }
 function eligible(actor) {
  return actor&&['test','live'].includes(actor.mode)&&
+   !(actor.allowWrites===true&&actor.profile==='read_only')&&
    ['read_only','everyday','full'].includes(actor.profile)&&
    Array.isArray(actor.areas)&&actor.areas.includes('gateway');
 }
