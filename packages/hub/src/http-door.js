@@ -104,8 +104,7 @@ export async function handleMcp(req,res,{withDb,authorize,
         return res.status(429).json({error:'rate_limited'});
       }
       if (!state.actor || !['test','live'].includes(state.actor.mode) ||
-        !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway') ||
-        false)
+        !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway'))
         return res.status(403).json({error:'outside_scope'});
       const reply=await federate(body,state.actor,db,settings);
       if (!reply) return res.status(202).end();
