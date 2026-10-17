@@ -55,7 +55,7 @@ it('filters live caller grants, returns only permitted receipts, and uses stable
   {ownerId:actor.ownerId,actor,limit:3},settings,{
    eligible:async()=>[]});
  expect(noAccess.count).toBe(0);
- const refused=[{...actor,mode:'live'},{...actor,allowWrites:true},
+ const refused=[{...actor,mode:'unsupported'},{...actor,allowWrites:true},
    {...actor,ownerId:'wrong'}];
  for(const invalid of refused)
   await expect(listHubRecentChanges(db,{ownerId:actor.ownerId,
