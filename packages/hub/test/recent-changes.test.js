@@ -84,6 +84,7 @@ it('optional provider history requires one exact advertised read-only capability
      writes:false,money:false,destructive:false,
      annotations:{readOnlyHint:true}}],incomplete:false})),
    describe:vi.fn(async()=>({name:'stripe_recent_changes',area:'billing',
+     profiles:['read_only'],
      writes:false,money:false,destructive:false,annotations:{readOnlyHint:true}})),
    read:vi.fn(async()=>({ok:true,result:{count:1},logged:{id:'real-synthetic-id'}})),
    audit:vi.fn(async()=>1),correlation:randomUUID
@@ -91,7 +92,7 @@ it('optional provider history requires one exact advertised read-only capability
  const state=await runFederatedBroker('hub_recent_changes',{
   server:'stripe',includeUpstream:true,limit:3},actor,{},settings,transport);
  expect(state.ok).toBe(true);
- expect(state.result.upstream).toMatchObject({server:'stripe',status:'read_only_test'});
+ expect(state.result.upstream).toMatchObject({server:'stripe',status:'read_only'});
  expect(transport.read).toHaveBeenCalledTimes(1);
  expect(transport.audit).toHaveBeenCalledTimes(2);
  transport.read.mockClear();
