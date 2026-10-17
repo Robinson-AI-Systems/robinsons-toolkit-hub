@@ -41,7 +41,8 @@ it('filters live caller grants, returns only permitted receipts, and uses stable
  expect(found.changes[1]).toMatchObject({outcome:'refused',serverLogId:null});
  expect(JSON.stringify(found)).not.toContain('password');
  expect(db.query.mock.calls[0][1]).toEqual([
-  actor.ownerId,'pass',actor.id,'stripe',null,3,[activeGrant],null,null,null]);
+  actor.ownerId,'pass',actor.id,'stripe',null,3,[activeGrant],null,null,null,
+  'test','read_only',false]);
  const next=await listHubRecentChanges(db,{ownerId:actor.ownerId,actor,
   serverName:'stripe',limit:2,cursor:found.next},settings,{eligible});
  expect(db.query.mock.calls[1][1][4]).toBe('2');
@@ -119,7 +120,7 @@ it('history filters are exact UTC, checked before SQL, and signed into every cur
  expect(db.query.mock.calls[0][1]).toEqual([
    actor.ownerId,'pass',actor.id,'stripe',null,3,[initialGrant],
    'stripe_read_report','2026-10-01T00:00:00.000Z',
-   '2026-10-17T23:59:59.999Z']);
+   '2026-10-17T23:59:59.999Z','test','read_only',false]);
  const second=await listHubRecentChanges(db,{...scoped,cursor:first.next},
    settings,{eligible,now});
  expect(second.changes.length).toBe(2); // Mock SQL handles rows, not filter.
