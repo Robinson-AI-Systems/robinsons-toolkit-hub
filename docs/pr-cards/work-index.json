@@ -486,12 +486,16 @@
         "H-5"
       ],
       "card": "docs/pr-cards/C-1.md",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "units": [
         "C-1"
       ],
-      "readiness": "WRITE_CARD_AT_START",
-      "externalGates": []
+      "readiness": "READY",
+      "externalGates": [
+        "actual end-user delegated provider write scopes, service-owned safe preview/confirm/undo and independent readback",
+        "checked release plus two independently authorized TEST provider operations"
+      ],
+      "note": "C-1 internal durable multi-service workflow engine and disposable SQL tests are being reviewed. Current hosted Hub federation is TEST/read_only only; native and HTTPS service-write integration, independent delegated pass authority and real provider acceptance remain unfinished. No actual provider write is enabled, no production activation or release approved."
     },
     {
       "id": "C-2",
