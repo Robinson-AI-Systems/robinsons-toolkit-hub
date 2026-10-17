@@ -1,3 +1,17 @@
+## October 17 — final D-4 acceptance PASSED
+
+All original D-4 route gates are now proven against the independent Workspace RTC service. This supersedes the historical pending verdicts below; their original evidence and criteria are retained. Full machine-readable receipt: [final route acceptance](audits/2026-10-17-d4-final-route-acceptance.json).
+
+- Separate Codex local executor, Node24.19.0: original `scripts/agent-check.mjs`, expected/observed **direct**, all five checks, exit0 at `2026-10-17T00:47:41.439Z`.
+- GitHub-only nonpersistent Vercel Sandbox, actual Node24.21.0: original runner, expected/observed **relay**, all five checks, exit0 at `2026-10-17T01:13:27.083Z`. Network policy permitted only `api.github.com`; an actual direct Workspace fetch was denied. Existing original Sandbox direct and native Hub evidence remains accepted from PRs #224/#226.
+- Same new independent TEST/read_only/nonwriting Workspace pass revoked by the issuer at `2026-10-17T01:14:32.929Z`. Original local revocation probe returned exact HTTP401 `pass_revoked`, exit0 at01:14:43.007Z. Original encrypted `relayRoute` then returned the same `pass_revoked` error envelope, exit0 at01:14:45.484Z. The relay envelope is not an assertion about its outer HTTP status.
+- Original executable source `f6f916b8f2f6a596583328540593f3098dc2ff27`; actual Workspace source `42afbaaf138d293d6042acd874c0fd3c32f7ce0e`. Original CLI/relay module graph is unchanged. No provider writes or product code changes.
+- Independently inspected existing hosted and new temporary fine-grained GitHub token permissions: one private relay repository only, Metadata read and Issues read/write, no organization permissions. Existing hosted token was never extracted, regenerated or revoked. Original permission probe passed read/create/delete; its `leastPrivilegeVerified=false` correctly refers to what the probe alone cannot establish.
+- Controlled signing-key rotation, issue_comment-only JSON/TLS webhook, exact immutable Workspace HTTPS origin and numeric actor227716942/issue4 binding were configured. Original signed ingress probe returned valid202 ignored / invalid401, zero RTC calls. Actual GitHub webhook delivery and encrypted roundtrip succeeded with deployment protection retained.
+- Cleanup: Sandbox stopped; temporary issue4 closed with zero comments; webhook699295489 inactive; exact new automation bypass revoked; temporary GitHub agent PAT deleted and independently rejected with HTTP401; its Development-only Vercel entry now inert. Production `RELAY_SERVERS` and `RELAY_BINDINGS` are empty objects, disabling routing. Checked cleanup deployment `B3J1S9unM1S4LmHe4rbvJqzJ8hvc (deployment ID suffix)` is READY on the same original source. Existing hosted keys and standing Hub grant preserved; genuine native Hub `workspace_whoami` read passed again after cleanup.
+
+**D-4 COMPLETE / HUB-D4 PASSED.** Other service fleet acceptance remains separate and open. No new application source release is required. No completion bundle count is claimed: this is newly executed original real-world acceptance and cleanup under the owner's explicit two-test request.
+
 ## October 16 — D-4 actual Sandbox direct + same-pass revocation acceptance
 
 New genuine evidence against Workspace production `42afbaaf` and original
@@ -1092,8 +1106,8 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "procedure": "docs/pr-cards/D-4.md",
     "gates": "Reviewed deployed service revisions; separately scoped service passes and owner-approved isolated runners",
     "dependsOn": [],
-    "status": "PENDING",
-    "lastEvidence": "2026-10-14: Host Hub main/live/READY at 0b17dd5f, hosted H-2/H-3 tables installed and independently read back, but separate real direct/private-relay/Sandbox/cleanup/same-pass revocation are still unverified. No new consent requested."
+    "status": "PASSED",
+    "lastEvidence": "2026-10-17: D-4 full original criteria passed for Workspace; separate local direct and GitHub-only encrypted relay original runner exit0/all5, same new pass revoked and denied via relay plus direct HTTP401, cleanup verified; original Sandbox/native proofs PR224/226 retained. docs/audits/2026-10-17-d4-final-route-acceptance.json"
   },
   {
     "id": "HUB-FLEET",

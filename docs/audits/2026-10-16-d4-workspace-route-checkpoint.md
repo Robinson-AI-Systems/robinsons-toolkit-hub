@@ -1,3 +1,17 @@
+## October 17 — final D-4 acceptance PASSED
+
+All original D-4 route gates are now proven against the independent Workspace RTC service. This supersedes the historical pending verdicts below; their original evidence and criteria are retained. Full machine-readable receipt: [final route acceptance](2026-10-17-d4-final-route-acceptance.json).
+
+- Separate Codex local executor, Node24.19.0: original `scripts/agent-check.mjs`, expected/observed **direct**, all five checks, exit0 at `2026-10-17T00:47:41.439Z`.
+- GitHub-only nonpersistent Vercel Sandbox, actual Node24.21.0: original runner, expected/observed **relay**, all five checks, exit0 at `2026-10-17T01:13:27.083Z`. Network policy permitted only `api.github.com`; an actual direct Workspace fetch was denied. Existing original Sandbox direct and native Hub evidence remains accepted from PRs #224/#226.
+- Same new independent TEST/read_only/nonwriting Workspace pass revoked by the issuer at `2026-10-17T01:14:32.929Z`. Original local revocation probe returned exact HTTP401 `pass_revoked`, exit0 at01:14:43.007Z. Original encrypted `relayRoute` then returned the same `pass_revoked` error envelope, exit0 at01:14:45.484Z. The relay envelope is not an assertion about its outer HTTP status.
+- Original executable source `f6f916b8f2f6a596583328540593f3098dc2ff27`; actual Workspace source `42afbaaf138d293d6042acd874c0fd3c32f7ce0e`. Original CLI/relay module graph is unchanged. No provider writes or product code changes.
+- Independently inspected existing hosted and new temporary fine-grained GitHub token permissions: one private relay repository only, Metadata read and Issues read/write, no organization permissions. Existing hosted token was never extracted, regenerated or revoked. Original permission probe passed read/create/delete; its `leastPrivilegeVerified=false` correctly refers to what the probe alone cannot establish.
+- Controlled signing-key rotation, issue_comment-only JSON/TLS webhook, exact immutable Workspace HTTPS origin and numeric actor227716942/issue4 binding were configured. Original signed ingress probe returned valid202 ignored / invalid401, zero RTC calls. Actual GitHub webhook delivery and encrypted roundtrip succeeded with deployment protection retained.
+- Cleanup: Sandbox stopped; temporary issue4 closed with zero comments; webhook699295489 inactive; exact new automation bypass revoked; temporary GitHub agent PAT deleted and independently rejected with HTTP401; its Development-only Vercel entry now inert. Production `RELAY_SERVERS` and `RELAY_BINDINGS` are empty objects, disabling routing. Checked cleanup deployment `B3J1S9unM1S4LmHe4rbvJqzJ8hvc (deployment ID suffix)` is READY on the same original source. Existing hosted keys and standing Hub grant preserved; genuine native Hub `workspace_whoami` read passed again after cleanup.
+
+**D-4 COMPLETE / HUB-D4 PASSED.** Other service fleet acceptance remains separate and open. No new application source release is required. No completion bundle count is claimed: this is newly executed original real-world acceptance and cleanup under the owner's explicit two-test request.
+
 # D-4 — verified actual Sandbox and same-pass revocation (2026-10-16)
 
 Owner explicitly authorized one metered, temporary Vercel Sandbox; no
@@ -97,3 +111,10 @@ introduce reverse Workspace → Hub discovery.
 PR #224 hosted receipt:
 https://github.com/Robinson-AI-Systems/robinsons-toolkit-hub/pull/224#issuecomment-6216311463
 
+
+
+## October 16 follow-up — separate local executor direct PASS; relay setup progressing
+
+The owner asked the Workspace agent to take over both remaining Hub-specific tests. At `2026-10-17T00:47:41.439Z`, a separate Codex local executor (Node24.19.0, outside Vercel Sandbox) ran the unmodified original `scripts/agent-check.mjs` with `--server workspace --read-tool workspace_whoami --pass-env RTOOL_D4_TEST_PASS --expect-route direct --authorized-real-run`. All transitive CLI/relay source files were diff-verified unchanged from reviewed Hub `f6f916b8f2f6a596583328540593f3098dc2ff27`; Workspace remains checked source `42afbaaf138d293d6042acd874c0fd3c32f7ce0e`. Exit0, `ok=true`, `route=direct`, `code=verified`, all five original checks passed. Credential was newly owner-approved through the original issuer encrypted24h handoff: TEST/read_only, workspace-only, allow_writes=false, for_hub=false. It is held only by the protected runner and is reserved for remaining relay testing and exact issuer revocation, not a standing Hub grant. Cleanup remains pending until that test finishes.
+
+Signed-in GitHub independently showed the existing hosted `RELAY_GITHUB_TOKEN` restricted to `Robinson-AI-Systems/robinsons-toolkit-relay`, metadata read and Issues read/write, no organization permissions. Its credential bytes were neither read nor rotated. There are no existing repository webhooks. The browser can access those settings despite the earlier connector limitation. A separate temporary agent token form is prepared with the same narrow repository/Issues permissions and October17 fallback expiry; it has NOT been generated. A Development-only encrypted runner slot currently contains an inert placeholder. User must perform the new-credential creation and paste it into this protected entry; no credential belongs in chat. No webhook, ingress bypass, destination/binding or deployment changes have yet been applied in this follow-up. Remaining genuine encrypted relay, same-pass revocation and cleanup are still NOT RUN. Existing Sandbox/native/revocation successes remain accepted.
