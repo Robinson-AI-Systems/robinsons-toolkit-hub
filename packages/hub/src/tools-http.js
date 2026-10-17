@@ -17,6 +17,7 @@ const federatedHubTools = new Set([
 function inScope(actor) {
   return ['test','live'].includes(actor?.mode) &&
     ['read_only','everyday','full'].includes(actor.profile) &&
+    !(actor.allowWrites===true&&actor.profile==='read_only') &&
     Array.isArray(actor.areas) && actor.areas.includes('gateway');
 }
 function listTools(query = {}) {
