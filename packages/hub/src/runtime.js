@@ -8,7 +8,8 @@ export function hubSettings(env=process.env) {
     typeof env.HUB_TOKEN_PEPPER!=='string' || env.HUB_TOKEN_PEPPER.length<32)
     throw new Error('Hub storage/authentication not configured');
   return {url:env.HUB_DATABASE_URL,pepper:env.HUB_TOKEN_PEPPER,
-    resultsKey:env.HUB_RESULTS_KEY,grantsKey:env.HUB_GRANTS_KEY};
+    resultsKey:env.HUB_RESULTS_KEY,grantsKey:env.HUB_GRANTS_KEY,
+    workflowKey:env.HUB_WORKFLOW_KEY};
 }
 export async function withHubDb(fn,env=process.env) {
   const settings=hubSettings(env);
@@ -23,7 +24,10 @@ export async function withHubDb(fn,env=process.env) {
 }
 export async function hubActor(db,settings,authorization,kind) {
   if (typeof authorization!=='string' || !authorization.startsWith('Bearer ')) return null;
-  const actor=kind==='mcp' ? await authenticateOAuth(db,authorization.slice(7),settings) :
+  // Native MCP supports OAuth PKCE and separately owner-issued Hub bearer
+  // passes. An RTC Hub pass is never sent to an upstream service.
+  const actor=kind==='mcp' && !authorization.startsWith('Bearer rtc_pass_') ?
+    await authenticateOAuth(db,authorization.slice(7),settings) :
     await authenticateHubPass(db,authorization,settings);
   if (!actor) return null;
   const budget=await takeBudget(db,{scope:'hub:'+kind+':'+actor.id,

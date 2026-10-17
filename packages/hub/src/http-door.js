@@ -1,5 +1,6 @@
 import {brokerCatalog,runBroker} from './broker.js';
 import {runFederatedBroker} from './federation.js';
+import {dispatchWorkflow,workflowTools} from './workflow-door.js';
 export {brokerCatalog} from './broker.js';
 const supported=new Set(['2025-11-25','2025-06-18','2025-03-26']);
 export function mcpReply(request,actor) {
@@ -40,7 +41,8 @@ export function mcpReply(request,actor) {
     structuredContent:value.result,isError:false}};
 }
 
-const federatedMetadata=new Set(['hub_health','hub_search_tools','hub_describe_tool','hub_namespaces','hub_call','hub_batch','hub_recent_changes','hub_provider_read','hub_provider_describe']);
+const federatedMetadata=new Set(['hub_health','hub_search_tools','hub_describe_tool','hub_namespaces','hub_call','hub_batch','hub_recent_changes','hub_provider_read','hub_provider_describe',
+ 'hub_workflow_plan','hub_workflow_execute','hub_undo_run']);
 // Maintain the synchronous foundation for existing Hub-owned reads and
 // transport validation. Only three explicit metadata operations opt into
 // separately scoped, asynchronous RTC discovery; execution remains disabled.
@@ -56,8 +58,9 @@ export async function mcpFederatedReply(request,actor,db,settings,deps={}) {
    return baseline;
  const base={jsonrpc:'2.0',id:request.id??null};
  try {
-  const state=await runFederatedBroker(request.params.name,
-    request.params.arguments??{},actor,db,settings,deps);
+  const state=workflowTools.has(request.params.name)?
+   await dispatchWorkflow(request.params.name,request.params.arguments??{},actor,db,settings,deps):
+   await runFederatedBroker(request.params.name,request.params.arguments??{},actor,db,settings,deps);
   if(!state.ok)return {...base,error:{code:-32602,
     message:state.error.what||'RTC metadata refused'}};
   const serialized=JSON.stringify(state.result);
@@ -100,9 +103,10 @@ export async function handleMcp(req,res,{withDb,authorize,
         res.setHeader('Retry-After',String(state.retryAfter));
         return res.status(429).json({error:'rate_limited'});
       }
-      if (!state.actor || state.actor.mode!=='test' ||
+      if (!state.actor || !['test','live'].includes(state.actor.mode) ||
         !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway') ||
-        state.actor.allowWrites===true)
+        state.actor.allowWrites===true&&
+         !(body?.method==='tools/call'&&workflowTools.has(body.params?.name)))
         return res.status(403).json({error:'outside_scope'});
       const reply=await federate(body,state.actor,db,settings);
       if (!reply) return res.status(202).end();
