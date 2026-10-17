@@ -1,5 +1,24 @@
 # ARCHITECTURE — runtime facts, as built
 
+## C-1 experimental, non-serving workflow ledger — October 17, 2026
+
+Additive migration `022-hub-workflow-runs.sql` introduces `hub_workflow_runs`
+and `hub_workflow_steps`. An **internal-only** kernel records exact caller and
+independently authorized provider-grant hashes, short-lived combined previews,
+one-time step claims, provider receipts and encrypted inverse metadata. Raw tool
+arguments, provider credentials and provider result bodies are not stored.
+Reverse compensation requires a separate explicit confirmation and individual
+provider authorization; ambiguous POST results remain unknown, never replayed.
+
+**Not an active runtime feature:** no API route references the kernel, migration
+022 is not installed on hosted Neon, and `HUB_WORKFLOW_KEY` is not configured or
+read by the active runtime. An integrating route must source a distinct 32-byte
+AES-GCM key through protected configuration as `workflowKey`, retain caller
+isolation and establish real delegated service WRITE scopes. The currently
+serving Hub TEST/read_only broker remains unchanged, and no owner/provider
+writes, LIVE activation, release, or spending are enabled. Original C-1 source
+engineering and acceptance remain IN_PROGRESS (PR #232).
+
 ## Current Workspace integration acceptance — October 17, 2026 UTC
 
 D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.

@@ -1,4 +1,4 @@
-## October 17 — C-1 durable workflow kernel candidate; original C-1 not complete
+## October 17 — C-1 durable workflow kernel reviewed; original C-1 not complete
 
 An approved C-1 plan was frozen against main `1f2fc4da4691a327b4c2632c709cad98df7c5c45` before code. Proposed additive migration 022 keeps exact caller/owner and immutable per-step grant fingerprints, preview receipts, one-claim dispatch and encrypted inverse metadata in a separate workflow ledger. A new internal engine requires independently verified service WRITE permission on every preview/commit/undo and does not use the existing H-3 read-only dispatcher. Real disposable PostgreSQL tests cover two simulated independent providers, double-submits, grant replacement, unknown no-retry outcomes and manual reverse undo. Source tests and CI are not yet independent authenticated external provider acceptance.
 
