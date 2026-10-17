@@ -13,7 +13,7 @@ import { escapeHtml, formFields, htmlHeaders, publicHubOrigin,
 function page(content) {
   return '<!doctype html><html lang="en"><meta charset="utf-8">' +
     '<title>Toolkit Hub owner passes</title><main><h1>Hub connection passes</h1>' +
-    '<p>These passes access only the Hub in read-only TEST mode. ' +
+    '<p>These passes access only the Hub according to the owner-selected profile, mode and write delegation. ' +
     'Upstream service passes must be issued and scoped independently.</p>' +
     '<p><a href="/api/owner/dashboard">Open private owner control center</a></p>' +
     content + '</main></html>';
@@ -29,12 +29,29 @@ function passForm() {
     '<input name="profiles" maxlength="1300"></label>'+
     '<label>Optional initial RTC areas (stripe:billing|reports,workspace:drive) '+
     '<input name="service_areas" maxlength="2048"></label>' +
+    '<label>Hub profile <select name="delegation_profile">' +
+    '<option value="read_only">Read only (default)</option>' +
+    '<option value="everyday">Everyday</option><option value="full">Full</option>' +
+    '</select></label>' +
+    '<label>Connection mode <select name="delegation_mode">' +
+    '<option value="test">Test (default)</option><option value="live">Live</option>' +
+    '</select></label>' +
+    '<label>Authorize writes on this pass? <select name="delegation_writes">' +
+    '<option value="disabled">No (default)</option>' +
+    '<option value="authorize">Yes, delegated agent may submit permitted provider writes</option>' +
+    '</select></label>' +
+    '<label>For writes, explicitly type I_AUTHORIZE ' +
+    '<input name="write_ack" maxlength="16" autocomplete="off"></label>' +
+    '<p>Writes require an everyday/full profile, independently issued matching ' +
+    'provider credentials and the provider\'s own guards. Review costs, production ' +
+    'effects, irreversible actions and any agent-specific approval policy. ' +
+    'A Hub pass does not create provider permissions.</p>' +
     '<p>Any chosen disabled service is unavailable from first issuance. ' +
-    'All permitted services remain limited by independent read_only RTC passes.</p>' +
+    'Every service is limited by its own independently issued matching RTC pass.</p>' +
     '<p>This pass cannot discover or call other servers, even if additional ' +
     'upstream grants are configured. Every selected service still needs its ' +
-    'separate verified TEST read-only grant.</p>' +
-    '<button type="submit">Create one-day read-only TEST pass</button></form>' +
+    'separate verified provider grant.</p>' +
+    '<button type="submit">Create one-day scoped Hub pass</button></form>' +
     '<form method="POST" action="/api/owner/passes">' +
     '<label>Hub pass ID <input name="id" maxlength="36" required></label>' +
     '<label>Reduced areas for 1-10 selected services (stripe:billing|reports,workspace:drive) '+
@@ -146,6 +163,7 @@ function ownerAreaPlanPreview(value){
 function scopeDisplay(rows) {
   const items=rows.map(row=>'<li><code>'+escapeHtml(row.id)+'</code> '+
     escapeHtml(row.state)+'; '+escapeHtml(row.profile)+' '+escapeHtml(row.mode)+
+    '; writes: '+(row.allowWrites===true?'owner-enabled':'not delegated')+
     '; servers: '+escapeHtml(row.serverNames===null ?
       '(legacy: exact caller grants only)' : row.serverNames.join(', '))+
     '; areas: '+escapeHtml(row.areas.join(', '))+
@@ -188,6 +206,16 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
     parseOwnerServerSelection(fields.servers) : null;
   if (['issue','narrow'].includes(fields.action) && !selected)
     return res.status(400).send('Select 1–20 registered RTC servers');
+  const delegationProfile=fields.delegation_profile??'read_only';
+  const delegationMode=fields.delegation_mode??'test';
+  const delegationWrites=fields.delegation_writes==='authorize';
+  if(!['read_only','everyday','full'].includes(delegationProfile)||
+    !['test','live'].includes(delegationMode)||
+    ![undefined,'disabled','authorize'].includes(fields.delegation_writes)||
+    (delegationWrites&&(!['everyday','full'].includes(delegationProfile)||
+      fields.write_ack!=='I_AUTHORIZE'))||
+    (!delegationWrites&&fields.write_ack))
+    return res.status(400).send('Explicit delegated access selection required');
   let initialProfiles=null,initialAreas=null;
   try {
     if(fields.action==='issue'){
@@ -272,13 +300,13 @@ export async function handleOwnerPasses(req, res, { withDb, env = process.env,
       }
       const issued = await issue(db, {
         ownerId: env.HUB_OWNER_ID,
-        profile: 'read_only',
-        mode: 'test',
+        profile: delegationProfile,
+        mode: delegationMode,
         areas: ['gateway'],
         serverNames: selected,
         ...(initialProfiles?{serviceProfiles:initialProfiles}:{}),
         ...(initialAreas?{serviceAreas:initialAreas}:{}),
-        allowWrites: false,
+        allowWrites: delegationWrites,
         ttlSeconds: 86400
       }, { ownerVerified: true, pepper: settings.pepper });
       return res.status(201).send(passDisplay(issued));
