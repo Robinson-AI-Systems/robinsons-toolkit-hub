@@ -68,7 +68,9 @@ function signatureScope(scope){
 }
 export function issueHubChangeCursor(scope,lastId,settings,{now=Date.now}={}){
  if(!safeId.test(String(lastId)))reject();
- const data={v:1,s:signatureScope(scope),i:String(lastId),
+ const scopeHash=createHash('sha256').update(JSON.stringify(signatureScope(scope)))
+   .digest('base64url');
+ const data={v:2,s:scopeHash,i:String(lastId),
    exp:Math.floor(now()/1000)+300};
  const encoded=urlbytes(data);
  if(encoded.length>460)reject();
@@ -82,10 +84,11 @@ export function readHubChangeCursor(value,scope,settings,{now=Date.now}={}){
  let data;
  try{data=JSON.parse(Buffer.from(encoded,'base64url').toString('utf8'));}
  catch{reject();}
- if(!data||data.v!==1||!safeId.test(data.i||'')||
+ if(!data||data.v!==2||!safeId.test(data.i||'')||
    !Number.isSafeInteger(data.exp)||data.exp<=Math.floor(now()/1000)||
    data.exp>Math.floor(now()/1000)+300||
-   JSON.stringify(data.s)!==JSON.stringify(signatureScope(scope)))reject();
+   data.s!==createHash('sha256').update(JSON.stringify(signatureScope(scope)))
+     .digest('base64url'))reject();
  return data.i;
 }
 function project(row) {

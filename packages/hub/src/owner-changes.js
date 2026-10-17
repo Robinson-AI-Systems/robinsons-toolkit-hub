@@ -4,6 +4,9 @@ import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
  verifyOwnerLogin} from './owner-login.js';
 import {listHubRecentChanges} from './recent-changes.js';
 const e=value=>escapeHtml(value??'');
+const calendar=value=>!value||(/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&
+ Number.isFinite(Date.parse(value+'T00:00:00.000Z'))&&
+ new Date(value+'T00:00:00.000Z').toISOString().slice(0,10)===value);
 const layout=body=>'<!doctype html><html lang="en"><meta charset="utf-8">'+
  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
  '<title>Hub recent changes</title><main><h1>RTC routed read history</h1>'+
@@ -71,8 +74,10 @@ export async function handleOwnerChanges(req,res,
    toolName=fields.tool||null,since=fields.since||null,until=fields.until||null;
  if((serverName!==null&&!/^[a-z][a-z0-9_]{1,59}$/.test(serverName))||
    (toolName!==null&&!/^[a-z][a-z0-9_]{2,119}$/.test(toolName))||
-   (since!==null&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(since))||
-   (until!==null&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(until))||
+   (!calendar(since)||!calendar(until))||
+   (since!==null&&Date.parse(since+'T00:00:00.000Z')>Date.now())||
+   (until!==null&&until>new Date().toISOString().slice(0,10))||
+   (since!==null&&until!==null&&since>until)||
    (cursor!==null&&(typeof cursor!=='string'||cursor.length>540)))
    return res.status(400).send('Invalid history scope');
  try{

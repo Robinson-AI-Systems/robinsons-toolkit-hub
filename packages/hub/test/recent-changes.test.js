@@ -166,8 +166,14 @@ it('owner form carries validated tool/UTC filters and preserves them on older pa
  expect(get.target.body).toContain('name="tool"');
  expect(get.target.body).toContain('name="since"');
  expect(get.target.body).toContain('name="until"');
- const bad=await ownerRequest('POST','password=approved&since=February');
+ const bad=await ownerRequest('POST','password=approved&since=2026-02-31');
  expect(bad.target.code).toBe(400);
+ expect(bad.verify).not.toHaveBeenCalled();
+ expect(bad.read).not.toHaveBeenCalled();
+ const wrongOrder=await ownerRequest('POST',
+   'password=approved&since=2026-10-17&until=2026-10-16');
+ expect(wrongOrder.target.code).toBe(400);
+ expect(wrongOrder.verify).not.toHaveBeenCalled();
 });
 function res(){return {headers:{},code:0,body:null,setHeader(k,v){
  this.headers[k]=v;return this;},status(k){this.code=k;return this;},
