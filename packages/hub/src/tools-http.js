@@ -15,8 +15,9 @@ const federatedHubTools = new Set([
   'hub_workflow_plan', 'hub_workflow_execute', 'hub_undo_run','hub_workflow_status'
 ]);
 function inScope(actor) {
-  return actor?.mode === 'test' && Array.isArray(actor.areas) &&
-    actor.areas.includes('gateway') && actor.allowWrites !== true;
+  return ['test','live'].includes(actor?.mode) &&
+    ['read_only','everyday','full'].includes(actor.profile) &&
+    Array.isArray(actor.areas) && actor.areas.includes('gateway');
 }
 function listTools(query = {}) {
   if (!query || typeof query !== 'object' || Array.isArray(query) ||
@@ -91,8 +92,8 @@ function respondFederated(res, state) {
   return send(res, { ok: true, result: state.result });
 }
 
-// Direct RTC HTTPS is the same actor- and grant-scoped TEST read plane as
-// native /api/mcp, not a separate unguarded provider proxy. Existing Hub-owned
+// Direct RTC HTTPS and native MCP share one persisted actor/grant-scoped
+// TEST or LIVE read plane; writes use the separate C-1 workflow dispatcher. Existing Hub-owned
 // routes retain their backward-compatible shapes.
 export async function handleHubTools(req, res, { withDb, authorize, federate = runFederatedBroker }, route) {
   res.setHeader('Cache-Control', 'no-store');
@@ -121,18 +122,12 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
         return res.status(429).json(deny('rate_limited'));
       }
       const isWorkflow=route==='item'&&req.method==='POST'&&workflowTools.has(name);
-      if (!inScope(state.actor)&&!((isWorkflow||route==='list'||
-         route==='item'&&req.method==='GET'&&workflowTools.has(name))&&
-        state.actor?.allowWrites===true&&['test','live'].includes(state.actor.mode)&&
-        ['everyday','full'].includes(state.actor.profile)&&
-        state.actor.areas?.includes('gateway')))
+      if (!inScope(state.actor))
         return res.status(403).json(deny('outside_scope'));
       const actor = state.actor;
       if(isWorkflow)
         return respondFederated(res,await dispatchWorkflow(name,req.body,actor,db,settings));
       if (route === 'list') {
-        if(actor.allowWrites===true)
-          return send(res,{ok:true,result:{tools:filtered.tools,next:null}});
         // Empty search is intentionally the compact, bounded Hub catalogue.
         // A nonempty query selects at most three caller-authorized RTC grants.
         if (!Object.hasOwn(req.query, 'q') && !filtered.server && !filtered.cursor)
@@ -153,8 +148,6 @@ export async function handleHubTools(req, res, { withDb, authorize, federate = r
       }
       if (route === 'item' && req.method === 'GET') {
         const tool = selectTool(name);
-        if(actor.allowWrites===true&&!workflowTools.has(name))
-          return res.status(403).json(deny('outside_scope'));
         if (tool) return send(res, { ok: true, result: tool });
         if (name.startsWith('hub_')) return res.status(404).json(deny('not_found'));
         if (!actor.ownerId) return res.status(403).json(deny('outside_scope'));
