@@ -31,7 +31,7 @@ it('authenticates before menu listing and denies shared-budget overrun',async()=
   expect(res.statusCode).toBe(429);expect(res.headers['Retry-After']).toBe('15');
   authorize.mockResolvedValue({actor});
   res=reply();await handleMcp(req,res,{withDb,authorize});
-  expect(res.body.result.tools).toHaveLength(13);
+  expect(res.body.result.tools).toHaveLength(14);
   authorize.mockResolvedValue({actor:{...actor,areas:['other']}});
   res=reply();await handleMcp(req,res,{withDb,authorize});
   expect(res.statusCode).toBe(403);
