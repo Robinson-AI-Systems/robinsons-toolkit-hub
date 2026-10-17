@@ -56,7 +56,8 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName,profile='r
        ,to_jsonb(hub_callers)->'service_profile_policy' AS service_profile_policy
        FROM hub_callers WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL
        AND expires_at>now()` :
-    `SELECT id,owner_id,profile,areas,mode,FALSE AS allow_writes,
+    `SELECT id,owner_id,profile,areas,mode,
+        COALESCE((to_jsonb(s)->>'allow_writes')::boolean,FALSE) AS allow_writes,
         to_jsonb(s)->'allowed_servers' AS allowed_servers,
         to_jsonb(s)->'service_profile_policy' AS service_profile_policy
        FROM hub_oauth_sessions s WHERE id=$1 AND owner_id=$2
@@ -68,6 +69,8 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName,profile='r
          WHERE current.family_id=s.family_id AND current.owner_id=s.owner_id
            AND current.client_id=s.client_id AND current.profile=s.profile
            AND current.mode=s.mode AND current.areas=s.areas
+           AND (to_jsonb(current)->'allow_writes') IS NOT DISTINCT FROM
+               (to_jsonb(s)->'allow_writes')
            AND (to_jsonb(current)->'allowed_servers') IS NOT DISTINCT FROM
                (to_jsonb(s)->'allowed_servers')
            AND (to_jsonb(current)->'service_area_policy') IS NOT DISTINCT FROM
@@ -407,14 +410,47 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
  * No historic read-only credential can be upgraded by an actor flag.
  */
 export async function resolveDelegatedWriteGrant(db,{actor,serverName},settings) {
-  if(!actor||actor.clientId||actor.allowWrites!==true||
+  if(!actor||actor.allowWrites!==true||
     !['everyday','full'].includes(actor.profile)||
     !['test','live'].includes(actor.mode)||
     typeof actor.ownerId!=='string'||typeof actor.id!=='string'||
     !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
     !serverNamePattern.test(serverName||'')||
     !allowedByHubPass(actor,serverName))return null;
-  const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,
+  const isOAuth=Boolean(actor.clientId);
+  const sql=isOAuth?`SELECT g.*,s.origin AS target_origin,
+    s.prefix AS target_prefix,c.profile AS persisted_caller_profile,
+    to_jsonb(c)->'service_area_policy' AS caller_area_policy,
+    to_jsonb(c)->'service_profile_policy' AS caller_profile_policy
+    FROM hub_server_grants g
+    JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
+    JOIN hub_oauth_sessions c ON c.id=$2 AND c.owner_id=g.owner_id
+    JOIN hub_oauth_sessions original ON original.id=g.caller_id
+      AND original.owner_id=c.owner_id AND original.family_id=c.family_id
+    WHERE g.owner_id=$1 AND g.caller_kind='oauth' AND
+      g.oauth_session_id=original.id AND g.pass_caller_id IS NULL AND
+      g.server_name=$3 AND g.verified_at IS NOT NULL AND g.revoked_at IS NULL
+      AND g.expires_at>now() AND s.state='active' AND
+      g.profile IN ('everyday','full') AND g.mode=$4 AND
+      c.profile IN ('everyday','full') AND c.mode=$4 AND
+      c.revoked_at IS NULL AND c.access_expires_at>now() AND
+      original.revoked_at IS NULL AND
+      c.client_id=original.client_id AND c.profile=original.profile AND
+      c.areas=original.areas AND c.mode=original.mode AND
+      c.allow_writes=TRUE AND original.allow_writes=TRUE AND
+      'gateway'=ANY(c.areas) AND
+      (to_jsonb(c)->'allowed_servers') IS NOT DISTINCT FROM
+        (to_jsonb(original)->'allowed_servers') AND
+      (to_jsonb(c)->'service_area_policy') IS NOT DISTINCT FROM
+        (to_jsonb(original)->'service_area_policy') AND
+      (to_jsonb(c)->'service_profile_policy') IS NOT DISTINCT FROM
+        (to_jsonb(original)->'service_profile_policy') AND
+      (c.allowed_servers IS NULL OR $3=ANY(c.allowed_servers)) AND
+      NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
+        WHERE compromised.family_id=c.family_id AND
+          compromised.revoked_at IS NOT NULL)
+    LIMIT 2`:
+    `SELECT g.*,s.origin AS target_origin,
     s.prefix AS target_prefix,c.profile AS persisted_caller_profile,
     to_jsonb(c)->'service_area_policy' AS caller_area_policy,
     to_jsonb(c)->'service_profile_policy' AS caller_profile_policy
@@ -431,7 +467,8 @@ export async function resolveDelegatedWriteGrant(db,{actor,serverName},settings)
       c.allow_writes=TRUE AND c.revoked_at IS NULL AND
       c.expires_at>now() AND 'gateway'=ANY(c.allowed_areas) AND
       (c.allowed_servers IS NULL OR $3=ANY(c.allowed_servers))
-    LIMIT 2`,[actor.ownerId,actor.id,serverName,actor.mode]);
+    LIMIT 2`;
+  const {rows}=await db.query(sql,[actor.ownerId,actor.id,serverName,actor.mode]);
   if(rows.length!==1)return null;
   const row=rows[0];
   // A caller already narrowed in SQL cannot replay a stale full-profile
