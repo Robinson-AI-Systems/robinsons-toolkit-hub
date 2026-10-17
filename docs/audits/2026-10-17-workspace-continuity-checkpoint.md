@@ -1,0 +1,20 @@
+# October 17, 2026 — Hub → Workspace continuity: historical evidence and present blocker
+
+This is sanitized evidence for Workspace [issue #205](https://github.com/Robinson-AI-Systems/google-workspace-mcp/issues/205#issuecomment-6242231814), not a new production acceptance. The owner specifically prioritizes this Workspace continuity outcome ahead of broad universal gateway completion.
+
+## Evidence already passed
+
+Hub PR #224 and its final hosted acceptance comment prove two independently authenticated native ChatGPT Hub Cloud read calls through the deployed Hub and audited sealed Workspace RTC grant. Hub checked serving revision `f6f916b8f2f6a596583328540593f3098dc2ff27`; original Workspace revision `42afbaaf138d293d6042acd874c0fd3c32f7ce0e`; TEST/nonwriting caller; `workspace_whoami` read success; durable attempt/outcome. PR #226 separately accepted real Sandbox direct and issuer same-pass revocation. PR #227 accepted the original local direct and GitHub-only encrypted relay; original five route checks, provider `pass_revoked` HTTP 401 (local), encrypted relay `pass_revoked` envelope, and temporary credential/relay/Sandbox cleanup. Immutable receipt: `docs/audits/2026-10-17-d4-final-route-acceptance.json`. These historically successful gates are not retested or invalidated by a newer Workspace release.
+
+## Current independent readbacks
+
+* Hub `main` at source investigation: `f4bfc9768dee17f3e906163cc2c1e62a877e0a8e`; `live`, independent READY production deployment and checked aliases: `85da318d3cde0ed3e8344d30c4a0cd2894b8f489`. New source-only universal RTC LIVE read changes are on a separate PR branch; this is not a new production release.
+* Hub ChatGPT Cloud adapter `hub_namespaces` returned `upstreamEnabled=false`, `authorizedTargets=0` and only two Hub-owned reads. `hub_health` reported no configured reachable federation. Hub-issued actor was TEST/full/gateway/nonwriting in original owner continuity observations. Those facts do not prove a Hub route defect or successful current upstream read.
+* Independently scoped Hub Neon read-only SQL: original `google-workspace-mcp` registry remains active; exactly one verified upstream grant exists, is not marked revoked, but expired `2026-10-17T12:45:03.846Z`. Currently unexpired verified upstream grants: **zero**. There are 12 recorded allowed read attempts and 12 successful read outcomes, most recent `2026-10-17T04:44:31Z`; these events preceded grant expiry.
+* Workspace pilot accepted serving source is `730891624fa2bc47f3d6224fc11f57f3e6ecf192`, later than the original historical source. The Workspace direct original owner connection remains independently viable per Workspace issue #205; do not infer Hub continuity from that separate connection.
+
+## Still needed for the exact post-release gate
+
+Obtain an independently provider-issued, correctly scoped replacement for the **same approved Hub owner/caller** via the protected owner enrollment flow; use independent RTC manifest and `/api/whoami` verification, never a developer pass resurrected from a revoked test. If provider supports renewable delegated OAuth RTC access, build and independently test that contract without provider-specific Hub handlers, per a separately bounded roadmap/contract change; an expired standalone RTC HTTPS pass is not automatically refreshable. Run an authenticated harmless Hub-mediated `workspace_whoami` read against the current deployed Workspace revision; verify caller TEST/area/mode/scope, unauthorized identity/tool denials, native audit attempt and outcome, no provider writes, owner connection preservation, and original refresh/bearer continuity if specifically required. Record exact serving Hub/Workspace revisions, actor class, dates, results and cleanup before changing Workspace `P10-OWNER-CONTINUITY` from PENDING. Stage 1 approval is retained but does not waive this gate or authorize extra releases/credential changes.
+
+No Hub LIVE feature deployment, pass reissuance, provider write, revocation, environment-variable change, spending, or unscheduled release occurred during this checkpoint.

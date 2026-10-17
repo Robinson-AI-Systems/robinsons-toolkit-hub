@@ -24,7 +24,7 @@ function fixture() {
    area: 'billing', writes: false, money: false, destructive: false }],
    incomplete: false })),
   describe: vi.fn(async (_grant, name) => ({
-   name, area: 'billing', writes: name.endsWith('_write'),
+   name, area: 'billing', profiles: ['read_only','full'], writes: name.endsWith('_write'),
    money: false, destructive: false,
    annotations: { readOnlyHint: !name.endsWith('_write') },
    inputSchema: { type: 'object' } })),
@@ -91,10 +91,10 @@ it('executes mixed Hub/RTC HTTPS batches sequentially with isolated write refusa
  expect(upstream.read).toHaveBeenCalledTimes(1);
  expect(upstream.audit).toHaveBeenCalledTimes(2);
 });
-it('blocks unauthenticated, LIVE and write-enabled actors before upstream lookup',async()=>{
+it('blocks unauthenticated, unknown-mode and non-gateway actors before upstream lookup',async()=>{
  const {send,upstream}=fixture();
- for(const state of [null,{actor:{...actor,mode:'live'}},
-  {actor:{...actor,allowWrites:true}},{actor:{...actor,areas:[]}}]) {
+ for(const state of [null,{actor:{...actor,mode:'production'}},
+  {actor:{...actor,areas:[]}}]) {
   const auth=vi.fn(async()=>state);
   const reply=await send('item','POST',{name:'stripe_invoice_list'},{},auth);
   expect(reply.code).toBe(state?403:401);
@@ -317,4 +317,28 @@ it('continues a selected RTC catalogue through the authenticated HTTPS Hub door'
  expect(upstream.read).not.toHaveBeenCalled();
  expect(upstream.audit).not.toHaveBeenCalled();
  expect(JSON.stringify([first.body,second.body,altered.body])).not.toContain(grant.pass);
+});
+
+it('uses the same exact guarded HTTPS read path for LIVE write-authorized callers',async()=>{
+ const {send,upstream}=fixture();
+ const live={...actor,mode:'live',allowWrites:true};
+ const liveGrant={...grant,mode:'live',profile:'full'};
+ upstream.resolve.mockResolvedValue(liveGrant);
+ upstream.list.mockResolvedValue([{...target,mode:'live',readOnlyGrant:false}]);
+ const authorize=vi.fn(async()=>({actor:live}));
+ const found=await send('list','GET',{q:'invoice',server:'stripe',limit:'2'},undefined,authorize);
+ expect(found.code).toBe(200);
+ expect(found.body.result.tools.map(x=>x.name)).toContain('stripe_invoice_list');
+ const described=await send('item','GET',{name:'stripe_invoice_list'},undefined,authorize);
+ expect(described.code).toBe(200);
+ const read=await send('item','POST',{name:'stripe_invoice_list'},{limit:1},authorize);
+ expect(read.code).toBe(200);
+ expect(read.body.result).toMatchObject({name:'stripe_invoice_list',
+  server:'stripe',result:{invoices:['TEST-1']}});
+ expect(upstream.audit).toHaveBeenCalledTimes(2);
+ const denied=await send('item','POST',{name:'stripe_invoice_write'},
+  {amount:10,confirm:true},authorize);
+ expect(denied.code).toBe(403);
+ expect(upstream.read).toHaveBeenCalledTimes(1);
+ expect(JSON.stringify(read.body)).not.toContain(liveGrant.pass);
 });

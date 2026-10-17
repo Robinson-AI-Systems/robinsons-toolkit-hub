@@ -3,8 +3,10 @@ import pg from 'pg';
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {issueHubPass,authenticateHubPass,revokeHubPass} from '../../src/identity.js';
+import {appendRtcReadAudit,newRtcCorrelation} from '../../src/rtc-read-audit.js';
+import {listHubRecentChanges} from '../../src/recent-changes.js';
 import {stageCallerGrant,activateVerifiedCallerGrant,
- resolveActiveCallerGrant,resolveDelegatedWriteGrant,revokeCallerGrant} from '../../src/grants.js';
+ resolveActiveCallerGrant,listEligibleRtcTargets,resolveDelegatedWriteGrant,revokeCallerGrant} from '../../src/grants.js';
 const pepper='fixture-only-owner-write-delegation-pepper-2026';
 const settings={grantsKey:randomBytes(32).toString('base64url')};
 const upstream='rtc_pass_'+randomBytes(32).toString('base64url');
@@ -18,6 +20,7 @@ beforeAll(async()=>{
  await db.query('SET search_path TO "'+schema+'"');
  for(const file of ['001-hub-foundation.sql','002-hub-oauth.sql',
   '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql',
+  '008-hub-rtc-audit.sql','019-hub-change-history.sql',
   '010-hub-pass-servers.sql','020-hub-service-identities.sql',
   '023-hub-user-delegated-grants.sql'])
    await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
@@ -70,10 +73,40 @@ it('stages encrypted exact-mode provider pass, checks issuer whoami and activate
  const readOnly={...actor,allowWrites:false};
  expect(await resolveDelegatedWriteGrant(db,{actor:readOnly,serverName:'neon-mcp'},settings))
   .toBeNull();
- expect(await resolveActiveCallerGrant(db,{actor,serverName:'neon-mcp'},settings))
-  .toBeNull();
+ const readTarget=await resolveActiveCallerGrant(db,{actor,serverName:'neon-mcp'},settings);
+ expect(readTarget).toMatchObject({pass:upstream,server:'neon-mcp',
+  mode:'live',profile:'full',grantId:stagedId,areas:['projects']});
+ const discovered=await listEligibleRtcTargets(db,actor);
+ expect(discovered).toEqual([expect.objectContaining({
+  name:'neon-mcp',prefix:'neon',mode:'live',readOnlyGrant:false,
+  effectiveProfile:'full',areas:['projects']})]);
+ expect(await resolveActiveCallerGrant(db,{actor:{...actor,mode:'test'},
+  serverName:'neon-mcp'},settings)).toBeNull();
+ expect(await listEligibleRtcTargets(db,{...actor,mode:'test'})).toEqual([]);
+ expect(await resolveActiveCallerGrant(db,{actor:{...actor,id:'wrong'},
+  serverName:'neon-mcp'},settings)).toBeNull();
+ expect(await listEligibleRtcTargets(db,{...actor,ownerId:'other'})).toEqual([]);
  const rows=await db.query('SELECT * FROM hub_server_grants WHERE id=$1',[stagedId]);
  expect(JSON.stringify(rows.rows)).not.toContain(upstream);
+});
+it('persists authorized LIVE read audits and returns only currently delegated history',async()=>{
+ const correlationId=newRtcCorrelation();
+ const audit={actor,grantId:stagedId,service:'neon-mcp',
+  tool:'neon_project_list',correlationId};
+ const attempt=await appendRtcReadAudit(db,{...audit,phase:'attempt',outcome:'allowed'});
+ const outcome=await appendRtcReadAudit(db,{...audit,phase:'outcome',
+  outcome:'success',upstreamLogId:'synthetic-neon-read-1'});
+ expect(BigInt(outcome)).toBeGreaterThan(BigInt(attempt));
+ const history=await listHubRecentChanges(db,{ownerId:owner,actor},settings);
+ expect(history.changes).toContainEqual(expect.objectContaining({
+  server:'neon-mcp',outcome:'success',correlationId,
+  serverLogId:'synthetic-neon-read-1'}));
+ const spoof={...actor,mode:'test'};
+ const denied=await listHubRecentChanges(db,{ownerId:owner,actor:spoof},settings);
+ expect(denied.changes).toEqual([]);
+ await expect(listHubRecentChanges(db,{ownerId:'other',actor},settings))
+  .rejects.toThrow();
+ expect(JSON.stringify(history)).not.toContain(upstream);
 });
 it('follows owner narrowing, wrong caller, and exact grant revocation with no stale upgrade',async()=>{
  expect(await resolveDelegatedWriteGrant(db,{actor:{...actor,id:'wrong'},
@@ -97,6 +130,8 @@ it('follows owner narrowing, wrong caller, and exact grant revocation with no st
  await db.query("UPDATE hub_callers SET profile='full' WHERE id=$1",[actor.id]);
  expect(await revokeCallerGrant(db,{ownerId:owner,id:stagedId},
   {ownerVerified:true})).toBe(true);
+ expect(await resolveActiveCallerGrant(db,{actor,serverName:'neon-mcp'},settings)).toBeNull();
+ expect(await listEligibleRtcTargets(db,actor)).toEqual([]);
  expect(await resolveDelegatedWriteGrant(db,{actor,serverName:'neon-mcp'},settings))
   .toBeNull();
  await revokeHubPass(db,actor.id,owner,{ownerVerified:true});

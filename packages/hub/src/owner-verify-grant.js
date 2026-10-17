@@ -4,8 +4,8 @@ import {activateVerifiedCallerGrant} from './grants.js';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function form() {
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
-    '<title>RTC TEST connection verification</title><main>'+
-    '<h1>Verify one scoped RTC TEST grant</h1>'+
+    '<title>RTC connection verification</title><main>'+
+    '<h1>Verify one scoped RTC grant</h1>'+
     '<p>This also verifies independently issued replacement grants on '+
     'already active services. A successful replacement atomically retires '+
     'the previous grant and invalidates its encrypted result pages; a '+
@@ -15,7 +15,7 @@ function form() {
     '<form method="POST" action="/api/owner/verify-grant">'+
     '<label>Exact staged grant ID <input name="id" maxlength="36" required></label>'+
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
-    '<button type="submit">Verify TEST grant</button></form></main>';
+    '<button type="submit">Verify delegated grant</button></form></main>';
 }
 export async function handleVerifyGrant(req,res,{withDb,env=process.env,
   verify=verifyOwnerLogin,activate=activateVerifiedCallerGrant}={}) {
@@ -38,10 +38,10 @@ export async function handleVerifyGrant(req,res,{withDb,env=process.env,
       }
       const checked=await activate(db,{ownerId:env.HUB_OWNER_ID,id:body.id},
         settings,{ownerVerified:true});
-      return res.status(200).send('Verified TEST grant for '+
+      return res.status(200).send('Verified scoped grant for '+
         escapeHtml(checked.server)+
         '. Registry activation does not enable provider routing or live authorization.');
     });
   } catch {return res.status(503).send(
-    'Scoped TEST grant verification refused or unavailable.');}
+    'Scoped grant verification refused or unavailable.');}
 }

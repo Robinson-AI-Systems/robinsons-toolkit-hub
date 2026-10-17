@@ -194,3 +194,14 @@ it('realistic Node modern lookup shape works for service discovery and exact sch
   expect((await describePinnedRtcTool(stripe,'stripe_invoice_list',described)).name).toBe('stripe_invoice_list');
  }
 });
+
+it('discovers authorized nonwriting metadata for a LIVE full-profile service without extra provider handlers',async()=>{
+ const full={...google,profile:'full',mode:'live'};
+ const t=transportFor({ok:true,result:{tools:[tool('google_gmail_list','gmail')],next:null}});
+ const output=await searchPinnedRtcTools(full,{query:'gmail'},t);
+ expect(output.tools).toEqual([expect.objectContaining({
+  name:'google_gmail_list',profiles:['full'],writes:false})]);
+ const dangerous=transportFor({ok:true,result:{tools:[
+  {...tool('google_gmail_list','gmail'),writes:true}],next:null}});
+ expect((await searchPinnedRtcTools(full,{query:'gmail'},dangerous)).tools).toEqual([]);
+});

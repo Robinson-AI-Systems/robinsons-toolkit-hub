@@ -14,6 +14,7 @@ function deps() {
  list:vi.fn(async()=>[service]),
  resolve:vi.fn(async()=>grant),
  describe:vi.fn(async()=>({name:'stripe_invoice_list',area:'billing',
+  profiles:['read_only'],
   writes:false,money:false,destructive:false,
   annotations:{readOnlyHint:true},inputSchema:{type:'object'}})),
  audit:vi.fn(async()=>77),
@@ -117,6 +118,7 @@ it('selects longest canonical service prefix for nested registered services',asy
  const selectedGrant={...grant,server:deeper.name,prefix:'foo_bar'};
  d.resolve.mockResolvedValue(selectedGrant);
  d.describe.mockResolvedValueOnce({name:'foo_bar_item_list',area:'billing',
+   profiles:['read_only'],
    writes:false,money:false,destructive:false,
    annotations:{readOnlyHint:true}});
  const result=await runFederatedBroker('hub_call',
@@ -149,6 +151,7 @@ it('routes describe and audited RTC calls to the last authorized service in a 10
  const selected={...grant,server:'workspace',prefix:'workspace_'};
  d.resolve.mockResolvedValue(selected);
  d.describe.mockResolvedValue({name:'workspace_drive_list',area:'billing',
+  profiles:['read_only'],
   writes:false,money:false,destructive:false,
   annotations:{readOnlyHint:true},inputSchema:{type:'object'}});
  const described=await runFederatedBroker('hub_describe_tool',

@@ -16,7 +16,7 @@ it('requires independent owner confirmation and a separate valid key',async()=>{
   await expect(stageCallerGrant(db,input,{settings:{},ownerVerified:true})).rejects.toThrow();
   expect(db.query).not.toHaveBeenCalled();
 });
-it('encrypts only for independently confirmed non-writing TEST caller and pending service',async()=>{
+it('encrypts an independent TEST read-only service credential without elevating a writer',async()=>{
   const query=vi.fn().mockResolvedValueOnce({rows:[{profile:'read_only',mode:'test',
     allow_writes:false,areas:['gateway']}]})
     .mockResolvedValueOnce({rows:[{state:'pending'}]})
@@ -28,7 +28,7 @@ it('encrypts only for independently confirmed non-writing TEST caller and pendin
   const bad={query:vi.fn().mockResolvedValue({rows:[{profile:'full',mode:'test',
     allow_writes:true,areas:['gateway']}]})};
   await expect(stageCallerGrant(bad,input,{settings,ownerVerified:true})).rejects.toThrow();
-  expect(bad.query).toHaveBeenCalledTimes(1);
+  expect(bad.query).toHaveBeenCalledTimes(2);
 });
 it('owner grant inspection does not disclose credentials',async()=>{
   const query=vi.fn().mockResolvedValueOnce({rows:[{id:input.callerId,

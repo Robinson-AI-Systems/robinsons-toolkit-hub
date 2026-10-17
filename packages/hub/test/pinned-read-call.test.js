@@ -54,9 +54,9 @@ it('rejects DNS rebinding before connected socket and does not retry',async()=>{
  expect(fake.requests).toHaveLength(1);
  expect(fake.request).toHaveBeenCalledTimes(1);
 });
-it('refuses non-read-only grants, cross-prefix calls and huge payloads before network',async()=>{
+it('refuses malformed profiles, unknown modes, cross-prefix calls and huge payloads',async()=>{
  const fake=channel();
- for(const t of [{...target,profile:'full'},{...target,mode:'live'},
+ for(const t of [{...target,profile:'unknown'},{...target,mode:'production'},
   {...target,origin:'https://127.0.0.1'}]){
   await expect(pinnedRtcReadCall(t,'stripe_invoice_list',{},fake)).rejects.toThrow();
  }
@@ -121,4 +121,15 @@ it('mixed private/public DNS fails closed for both Node DNS modes before POST de
   const fake=channel({modern,answers:[{address:'8.8.8.8',family:4},{address:'10.0.0.9',family:4}]});
   await expect(pinnedRtcReadCall(target,'stripe_invoice_list',{},fake)).rejects.toThrow('do not automatically retry');
  }
+});
+
+it('uses the same pinned transport for an independently authorized LIVE harmless read',async()=>{
+ const fake=channel();
+ const live={...target,profile:'full',mode:'live'};
+ const result=await pinnedRtcReadCall(live,'stripe_invoice_list',{limit:1},fake);
+ expect(result.ok).toBe(true);
+ expect(fake.requests).toHaveLength(1);
+ expect(fake.requests[0].options).toMatchObject({method:'POST',agent:false,
+  path:'/api/tools/stripe_invoice_list',rejectUnauthorized:true});
+ expect(fake.requests[0].options.headers.authorization).toBe('Bearer '+pass);
 });

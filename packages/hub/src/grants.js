@@ -83,9 +83,8 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName,profile='r
   const {rows}=await db.query(sql,[callerId,ownerId]);
   const a=rows[0];
   if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!==mode||
-    (profile==='read_only' && a.allow_writes===true)||
     (profile!=='read_only' && a.allow_writes!==true)||
-    (profile!=='read_only' && limitedServiceProfile(profile,a.profile,
+    (limitedServiceProfile(profile,a.profile,
       a.service_profile_policy,serverName)!==profile)||
     !Array.isArray(a.areas)||!a.areas.includes('gateway')||
     (Array.isArray(a.allowed_servers) &&
@@ -191,7 +190,7 @@ export async function listCallerGrants(db,ownerId,{ownerVerified=false}={}) {
 // Never expose this from owner HTML, tools or logs. H-3 may invoke it only
 // after a separately verified, enabled origin and exact live caller scope.
 export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
-  if(!actor||actor.mode!=='test'||!['read_only','everyday','full'].includes(actor.profile)||actor.allowWrites===true||
+  if(!actor||!['test','live'].includes(actor.mode)||!['read_only','everyday','full'].includes(actor.profile)||
     !actor.areas?.includes('gateway')||!serverNamePattern.test(serverName||'')||
     !allowedByHubPass(actor,serverName))
     return null;
@@ -221,31 +220,37 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
             (to_jsonb(initial)->'service_area_policy')
         AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
             (to_jsonb(initial)->'service_profile_policy')
-        AND fresh.mode='test' AND fresh.revoked_at IS NULL
+        AND fresh.mode=$5 AND
+        COALESCE((to_jsonb(fresh)->>'allow_writes')::boolean,FALSE)=$6
+        AND COALESCE((to_jsonb(initial)->>'allow_writes')::boolean,FALSE)=$6
+        AND fresh.revoked_at IS NULL
         AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
         AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
           WHERE compromised.family_id=fresh.family_id AND compromised.revoked_at IS NOT NULL)))) AND g.server_name=$4
       AND g.revoked_at IS NULL AND g.expires_at>now() AND s.state='active'
-      AND g.verified_at IS NOT NULL AND g.profile='read_only' AND g.mode='test'
+      AND g.verified_at IS NOT NULL AND
+      g.profile IN ('read_only','everyday','full') AND g.mode=$5
       AND (
         (g.caller_kind='pass' AND EXISTS(
           SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
-          AND c.profile IN ('read_only','everyday','full') AND c.mode='test' AND c.allow_writes=FALSE
+          AND c.profile=$7 AND c.mode=$5 AND c.allow_writes=$6
           AND (NULLIF(to_jsonb(c)->'allowed_servers','null'::jsonb) IS NULL OR
             to_jsonb(c)->'allowed_servers' ? s.name)
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
           SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL
-          AND o.access_expires_at>now() AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
+          AND o.access_expires_at>now() AND o.profile=$7 AND o.mode=$5
+          AND COALESCE((to_jsonb(o)->>'allow_writes')::boolean,FALSE)=$6
           AND 'gateway'=ANY(o.areas)
           AND (NULLIF(to_jsonb(o)->'allowed_servers','null'::jsonb) IS NULL
             OR to_jsonb(o)->'allowed_servers' ? s.name)
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
             WHERE compromised.family_id=o.family_id AND compromised.revoked_at IS NOT NULL)))
       )`,
-  [actor.ownerId,actor.id,actor.clientId?'oauth':'pass',serverName]);
+  [actor.ownerId,actor.id,actor.clientId?'oauth':'pass',serverName,
+   actor.mode,actor.allowWrites===true,actor.profile]);
   const row=rows[0];
   if(!row) return null;
   const limitedAreas=authorizedGrantAreas(row);
@@ -266,13 +271,13 @@ export async function resolveActiveCallerGrant(db,{actor,serverName},settings) {
 
 
 /**
- * Grant-filtered, metadata-only target selection. A full TEST developer
- * principal may select a separately issued read_only service grant, never
- * broaden it. The active grant resolver must still run before any request,
+ * Grant-filtered, metadata-only target selection. TEST and LIVE callers
+ * may discover READ tools from their own independently issued RTC grant,
+ * never broaden it. The active grant resolver must still run before any request,
  * independently rechecking expiry and revocation.
  */
 export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
-  if(!actor||actor.mode!=='test'||actor.allowWrites===true||
+  if(!actor||!['test','live'].includes(actor.mode)||
     !['read_only','everyday','full'].includes(actor.profile)||
     !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
     typeof actor.ownerId!=='string'||!actor.ownerId||
@@ -290,7 +295,7 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
              (SELECT to_jsonb(c)->'service_profile_policy' FROM hub_callers c WHERE c.id=$2)
            ELSE (SELECT to_jsonb(o)->'service_profile_policy'
              FROM hub_oauth_sessions o WHERE o.id=$2) END AS caller_profile_policy,
-           g.profile AS grant_profile,g.server_name
+           g.profile AS grant_profile,g.mode AS grant_mode,g.server_name
     FROM hub_servers s JOIN hub_server_grants g
       ON g.server_name=s.name AND g.owner_id=s.owner_id
     WHERE s.owner_id=$1 AND g.caller_kind=$3
@@ -307,26 +312,29 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
               (to_jsonb(initial)->'service_area_policy')
           AND (to_jsonb(fresh)->'service_profile_policy') IS NOT DISTINCT FROM
               (to_jsonb(initial)->'service_profile_policy')
-          AND fresh.mode='test' AND fresh.revoked_at IS NULL
+          AND fresh.mode=$6 AND
+          COALESCE((to_jsonb(fresh)->>'allow_writes')::boolean,FALSE)=$7
+          AND COALESCE((to_jsonb(initial)->>'allow_writes')::boolean,FALSE)=$7
+          AND fresh.revoked_at IS NULL
           AND initial.revoked_at IS NULL AND fresh.access_expires_at>now()
           AND NOT EXISTS(SELECT 1 FROM hub_oauth_sessions compromised
             WHERE compromised.family_id=fresh.family_id AND compromised.revoked_at IS NOT NULL))))
       AND s.state='active' AND g.verified_at IS NOT NULL
       AND g.revoked_at IS NULL AND g.expires_at>now()
-      AND g.profile='read_only' AND g.mode='test'
+      AND g.profile IN ('read_only','everyday','full') AND g.mode=$6
       AND (
         (g.caller_kind='pass' AND EXISTS(
           SELECT 1 FROM hub_callers c WHERE c.id=g.caller_id
           AND c.owner_id=g.owner_id AND c.revoked_at IS NULL AND c.expires_at>now()
-          AND c.profile IN ('read_only','everyday','full')
-          AND c.mode='test' AND c.allow_writes=FALSE
+          AND c.profile=$8 AND c.mode=$6 AND c.allow_writes=$7
           AND (NULLIF(to_jsonb(c)->'allowed_servers','null'::jsonb) IS NULL OR
             to_jsonb(c)->'allowed_servers' ? s.name)
           AND 'gateway'=ANY(c.allowed_areas)))
         OR (g.caller_kind='oauth' AND EXISTS(
           SELECT 1 FROM hub_oauth_sessions o WHERE o.id=$2
           AND o.owner_id=g.owner_id AND o.revoked_at IS NULL AND o.access_expires_at>now()
-          AND o.profile IN ('read_only','everyday','full') AND o.mode='test'
+          AND o.profile=$8 AND o.mode=$6
+          AND COALESCE((to_jsonb(o)->>'allow_writes')::boolean,FALSE)=$7
           AND 'gateway'=ANY(o.areas)
           AND (NULLIF(to_jsonb(o)->'allowed_servers','null'::jsonb) IS NULL
             OR to_jsonb(o)->'allowed_servers' ? s.name)
@@ -335,7 +343,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
       )
       AND ($5::text[] IS NULL OR s.name=ANY($5))
     ORDER BY s.name LIMIT $4`,[actor.ownerId,actor.id,callerKind,limit,
-      Array.isArray(actor.serverNames) ? actor.serverNames : null]);
+      Array.isArray(actor.serverNames) ? actor.serverNames : null,
+      actor.mode,actor.allowWrites===true,actor.profile]);
   return rows.map(row=>({name:row.name,prefix:row.prefix,
     claimedCounts:row.claimed_counts,areas:authorizedGrantAreas(row),
     effectiveProfile:limitedServiceProfile(row.grant_profile,actor.profile,
@@ -344,7 +353,8 @@ export async function listEligibleRtcTargets(db,actor,{limit=20}={}) {
     // Hub namespace/search result or sent to an upstream provider.
     grantId:row.grant_id,origin:row.origin,
     verifiedAt:row.verified_at?.toISOString?.()??String(row.verified_at??''),
-    state:'active',readOnlyGrant:true})).filter(row=>row.areas.length>0 && row.effectiveProfile!==null);
+    state:'active',mode:row.grant_mode,
+    readOnlyGrant:row.grant_profile==='read_only'})).filter(row=>row.areas.length>0 && row.effectiveProfile!==null);
 }
 
 export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,

@@ -222,3 +222,24 @@ it('cleans rejected in-flight GET without leaving a poisoned cache promise',asyn
  expect(retried.name).toBe(name);
  expect(fetch).toHaveBeenCalledTimes(2);
 });
+
+it('isolates user-delegated LIVE full-profile READ schemas and refuses privilege confusion',async()=>{
+ const cache=createSchemaCache();
+ const liveActor={...actor,mode:'live',profile:'full',allowWrites:true};
+ const liveGrant={...grant,mode:'live',profile:'full',grantId:'independent-live-rtc-grant'};
+ const liveSchema={...schema,profiles:['full']};
+ const fetched=vi.fn(async()=>liveSchema);
+ const first=await cache.describe(params(liveActor,liveGrant),fetched);
+ expect(first).toMatchObject({name,profiles:['full'],writes:false,
+  annotations:{readOnlyHint:true}});
+ expect((await cache.describe(params(liveActor,liveGrant),fetched)).profiles).toEqual(['full']);
+ expect(fetched).toHaveBeenCalledTimes(1);
+ await expect(cache.describe(params(liveActor,{...liveGrant,profile:'read_only'}),
+  fetched)).rejects.toThrow();
+ await expect(cache.describe(params(liveActor,liveGrant),async()=>({
+  ...liveSchema,writes:true}))).resolves.toMatchObject({writes:false});
+ // A cached harmless read remains READ metadata only, never a POST permit.
+ cache.clear();
+ await expect(cache.describe(params(liveActor,liveGrant),async()=>({
+  ...liveSchema,writes:true}))).rejects.toThrow();
+});

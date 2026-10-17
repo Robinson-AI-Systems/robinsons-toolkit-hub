@@ -12,7 +12,7 @@ const workflowSpec={type:'object',properties:{
 },required:['workflow','steps'],additionalProperties:false};
 const runIdField={type:'string',pattern:'^[0-9a-f-]{36}$'};
 const catalog=Object.freeze([
-  {name:'hub_whoami',description:'Read current TEST Hub connection permissions',inputSchema:empty},
+  {name:'hub_whoami',description:'Read current Hub connection permissions',inputSchema:empty},
   {name:'hub_health',description:'Read Hub foundation readiness and federation status',inputSchema:empty},
   {name:'hub_search_tools',description:'Search eligible Hub and separately granted RTC read tools',
     inputSchema:{type:'object',properties:{query:{type:'string',maxLength:120},limit:{type:'integer',minimum:1,maximum:20},
@@ -28,17 +28,17 @@ const catalog=Object.freeze([
   // Cloud-hosted ChatGPT adapters that accept only the stable hub_* outer
   // name can still invoke a provider read through this owned alias. The
   // inner provider name is validated by the original H-3 exact-tool router.
-  {name:'hub_provider_read',description:'Call one separately granted upstream TEST read-only tool through the existing Hub router',
+  {name:'hub_provider_read',description:'Call one independently authorized upstream read-only tool through the Hub router',
     inputSchema:{type:'object',properties:{name:rtcName,args:{type:'object'}},
       required:['name'],additionalProperties:false}},
-  {name:'hub_provider_describe',description:'Describe one separately granted upstream TEST read-only tool through the existing Hub router',
+  {name:'hub_provider_describe',description:'Describe one independently authorized upstream read-only tool through the Hub router',
     inputSchema:{type:'object',properties:{name:rtcName},required:['name'],additionalProperties:false}},
   {name:'hub_batch',description:'Execute up to ten authorized Hub-owned read calls',
     inputSchema:{type:'object',properties:{calls:{type:'array',minItems:1,maxItems:10,
       items:{type:'object',properties:{name:rtcName,args:{type:'object'}},required:['name'],
         additionalProperties:false}}},
       required:['calls'],additionalProperties:false}},
-  {name:'hub_recent_changes',description:'Read only your durable TEST RTC routed history; optionally query one exact authorized upstream history tool',
+  {name:'hub_recent_changes',description:'Read your scoped RTC history; optionally query an authorized upstream history tool',
     inputSchema:{type:'object',properties:{
       server:{type:'string',pattern:serverNamePattern.source},
       tool:{type:'string',pattern:rtcName.pattern,maxLength:120},
@@ -112,13 +112,14 @@ export function brokerCatalog() {return catalog;}
 export function runBroker(name,args,actor) {
   if(!selected(name)||!validArguments(name,args)) return error('invalid_args','Invalid Hub tool or arguments');
   if(!actor || !['test','live'].includes(actor.mode) ||
-  (actor.mode==='live'&&actor.allowWrites!==true) ||
-  (actor.allowWrites===true&&!leaf.has(name)) || !Array.isArray(actor.areas) ||
+  !['read_only','everyday','full'].includes(actor.profile) ||
+  (actor.allowWrites===true&&actor.profile==='read_only') ||
+  !Array.isArray(actor.areas) ||
     !actor.areas.includes('gateway'))
     return error('outside_scope','Caller cannot access Hub gateway');
   if(leaf.has(name)) return {ok:true,result:leafCall(name,actor)};
   if(name==='hub_namespaces') return {ok:true,result:{
-    namespaces:[{name:'hub',rtc:0,tools:leaf.size,mode:'test'}],
+    namespaces:[{name:'hub',rtc:0,tools:leaf.size,mode:actor.mode}],
     upstreamEnabled:false,next:null}};
   if(name==='hub_search_tools') {
     const q=args.query.toLowerCase();

@@ -40,8 +40,8 @@ it('runs only harmless scoped Hub tools and bounded read-only batches', async ()
   expect((await send('batch', 'POST', {}, { calls: Array(11).fill({ name: 'hub_health' }) })).code).toBe(400);
   expect((await send('item', 'POST', { name: 'hub_health' }, { x: 'x'.repeat(9000) })).code).toBe(400);
 });
-it('denies missing, live, out-of-area and writing actors before any tool result', async () => {
-  for (const state of [null, { actor: { ...actor, mode: 'live' } },
+it('denies missing, unknown-mode, out-of-area and contradictory read-only/write actors', async () => {
+  for (const state of [null, { actor: { ...actor, mode: 'unknown' } },
     { actor: { ...actor, areas: ['other'] } }, { actor: { ...actor, allowWrites: true } }]) {
     const auth = vi.fn(async () => state);
     expect((await send('list', 'GET', {}, undefined, auth)).code).toBe(state ? 403 : 401);

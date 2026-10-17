@@ -41,7 +41,8 @@ it('filters live caller grants, returns only permitted receipts, and uses stable
  expect(found.changes[1]).toMatchObject({outcome:'refused',serverLogId:null});
  expect(JSON.stringify(found)).not.toContain('password');
  expect(db.query.mock.calls[0][1]).toEqual([
-  actor.ownerId,'pass',actor.id,'stripe',null,3,[activeGrant],null,null,null]);
+  actor.ownerId,'pass',actor.id,'stripe',null,3,[activeGrant],null,null,null,
+  'test','read_only',false]);
  const next=await listHubRecentChanges(db,{ownerId:actor.ownerId,actor,
   serverName:'stripe',limit:2,cursor:found.next},settings,{eligible});
  expect(db.query.mock.calls[1][1][4]).toBe('2');
@@ -54,7 +55,7 @@ it('filters live caller grants, returns only permitted receipts, and uses stable
   {ownerId:actor.ownerId,actor,limit:3},settings,{
    eligible:async()=>[]});
  expect(noAccess.count).toBe(0);
- const refused=[{...actor,mode:'live'},{...actor,allowWrites:true},
+ const refused=[{...actor,mode:'unsupported'},{...actor,allowWrites:true},
    {...actor,ownerId:'wrong'}];
  for(const invalid of refused)
   await expect(listHubRecentChanges(db,{ownerId:actor.ownerId,
@@ -84,6 +85,7 @@ it('optional provider history requires one exact advertised read-only capability
      writes:false,money:false,destructive:false,
      annotations:{readOnlyHint:true}}],incomplete:false})),
    describe:vi.fn(async()=>({name:'stripe_recent_changes',area:'billing',
+     profiles:['read_only'],
      writes:false,money:false,destructive:false,annotations:{readOnlyHint:true}})),
    read:vi.fn(async()=>({ok:true,result:{count:1},logged:{id:'real-synthetic-id'}})),
    audit:vi.fn(async()=>1),correlation:randomUUID
@@ -91,7 +93,7 @@ it('optional provider history requires one exact advertised read-only capability
  const state=await runFederatedBroker('hub_recent_changes',{
   server:'stripe',includeUpstream:true,limit:3},actor,{},settings,transport);
  expect(state.ok).toBe(true);
- expect(state.result.upstream).toMatchObject({server:'stripe',status:'read_only_test'});
+ expect(state.result.upstream).toMatchObject({server:'stripe',status:'read_only'});
  expect(transport.read).toHaveBeenCalledTimes(1);
  expect(transport.audit).toHaveBeenCalledTimes(2);
  transport.read.mockClear();
@@ -118,7 +120,7 @@ it('history filters are exact UTC, checked before SQL, and signed into every cur
  expect(db.query.mock.calls[0][1]).toEqual([
    actor.ownerId,'pass',actor.id,'stripe',null,3,[initialGrant],
    'stripe_read_report','2026-10-01T00:00:00.000Z',
-   '2026-10-17T23:59:59.999Z']);
+   '2026-10-17T23:59:59.999Z','test','read_only',false]);
  const second=await listHubRecentChanges(db,{...scoped,cursor:first.next},
    settings,{eligible,now});
  expect(second.changes.length).toBe(2); // Mock SQL handles rows, not filter.

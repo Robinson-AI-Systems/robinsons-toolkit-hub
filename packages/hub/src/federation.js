@@ -29,6 +29,7 @@ function sameGrant(before,after) {
  // Re-resolve after provider metadata GET: a revoked/replaced grant must not
  // publish stale tool names, descriptions, areas or schema to its old caller.
  return Boolean(after && before.grantId===after.grantId &&
+  before.profile===after.profile && before.mode===after.mode &&
   before.server===after.server && before.origin===after.origin &&
   before.prefix===after.prefix &&
   Array.isArray(before.areas) && Array.isArray(after.areas) &&
@@ -40,7 +41,8 @@ function plain(a) {
    Object.getPrototypeOf(a)===Object.prototype;
 }
 function eligible(actor) {
- return actor&&actor.mode==='test'&&actor.allowWrites!==true&&
+ return actor&&['test','live'].includes(actor.mode)&&
+   !(actor.allowWrites===true&&actor.profile==='read_only')&&
    ['read_only','everyday','full'].includes(actor.profile)&&
    Array.isArray(actor.areas)&&actor.areas.includes('gateway');
 }
@@ -99,7 +101,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   const result=await runFederatedBroker('hub_call',{
     name:candidate,args:{limit:Math.min(args.limit??10,10)}
   },actor,db,settings,deps);
-  const upstream=result.ok?{server:args.server,status:'read_only_test',
+  const upstream=result.ok?{server:args.server,status:'read_only',
     result:result.result}:{
     server:args.server,status:'unavailable',
     reason:result.error?.code??'unavailable'};
@@ -148,9 +150,9 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   }
   const limit=args.limit??10,chosen=targets.slice(offset,offset+limit);
   const namespaces=[
-   ...(offset===0?[{name:'hub',rtc:0,tools:2,mode:'test'}]:[]),
-   ...chosen.map(t=>({name:t.name,prefix:t.prefix,rtc:1,mode:'test',
-    claimedCounts:t.claimedCounts,readOnlyGrant:true}))];
+   ...(offset===0?[{name:'hub',rtc:0,tools:2,mode:actor.mode}]:[]),
+   ...chosen.map(t=>({name:t.name,prefix:t.prefix,rtc:1,mode:t.mode,
+    claimedCounts:t.claimedCounts,readOnlyGrant:t.readOnlyGrant}))];
   let next=null;
   if(offset+chosen.length<targets.length) {
     try{next=issueSearchCursor(scope,offset+chosen.length,settings);}
@@ -354,6 +356,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
    if(metadata?.name!==args.name||metadata.writes!==false||
       metadata.money!==false||metadata.destructive!==false||
       metadata.annotations?.readOnlyHint!==true||
+      !Array.isArray(metadata.profiles)||!metadata.profiles.includes(grant.profile)||
       !grant.areas.includes(metadata.area))
      return fail('outside_scope','RTC tool not an authorized read');
   } catch{return fail('unavailable','RTC read metadata unavailable');}
@@ -361,6 +364,7 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   const rechecked=await tools.resolve(db,{actor,serverName:target.name},settings);
   if(!rechecked||rechecked.grantId!==grant.grantId||
     rechecked.prefix!==grant.prefix||rechecked.origin!==grant.origin||
+    rechecked.mode!==grant.mode||rechecked.profile!==grant.profile||
     !rechecked.areas.includes(metadata.area))
     return fail('outside_scope','RTC grant changed during read validation');
   // A metadata GET or grant recheck may consume the last seconds of a

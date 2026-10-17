@@ -1,3 +1,9 @@
+## October 17 — owner-selected universal RTC LIVE reads (source PR; not deployed)
+
+This bundle addresses the shared H-3/H-4 connection boundary using the existing RTC 1 manifest/registered-service dispatch, NOT custom per-provider Hub code. New owner-approved LIVE read callers (including separately write-authorized callers) may discover and invoke only metadata-validated nonwriting RTC tools under a genuinely independently issued, exact-mode/profile/area scoped provider pass; the workflow WRITE path stays separate. Identical test/live checks apply to native MCP, HTTPS, result handles and read audit. Source tests include two synthetic independent providers and disposable database scope/revocation; no real LIVE provider mutation, deployment or grant upgrade is claimed. Original H-3/H-4 two-provider acceptance, continued real Workspace grant and upstream renewable OAuth architecture remain separately OPEN.
+
+The early Workspace continuity checkpoint was posted to [Workspace issue #205](https://github.com/Robinson-AI-Systems/google-workspace-mcp/issues/205#issuecomment-6242231814) and pinned in [Hub audit](audits/2026-10-17-workspace-continuity-checkpoint.md). Historical D-4 remains PASSED. Current production Hub is READY at 85da318d; original verified but unrevoked Workspace grant expired at 2026-10-17T12:45:03.846Z, so current post-release Workspace continuity remains PENDING rather than assumed from history. Original owner connections and production grants untouched. No off-cycle release authorized.
+
 ## October 17 — C-1 public workflow engineering assembled in PR #232 (source verification, not live acceptance)
 
 The approved C-1 plan/execute/status/explicit-undo engine is now wired through

@@ -112,7 +112,7 @@ it('selects a matching authorized area beyond the first three services',async()=
 });
 it('does not enable provider execution or grant metadata to other identities',async()=>{
  const deps=provider();
- for(const illegal of [{...actor,mode:'live'},{...actor,allowWrites:true},
+ for(const illegal of [{...actor,mode:'production'},{...actor,profile:'unknown'},
   {...actor,areas:[]},null]){
   const out=await runFederatedBroker('hub_search_tools',
    {query:'read'},illegal,{},{},deps);
@@ -231,11 +231,63 @@ it('rejects hub_-only adapter alias recursion, writes and out-of-grant names bef
    expect(out.ok).toBe(false);
   }
  }
- for(const blocked of [{...actor,mode:'live'},{...actor,allowWrites:true},
+ for(const blocked of [{...actor,mode:'production'},{...actor,profile:'unknown'},
    {...actor,areas:['mail']}]) {
   const result=await runFederatedBroker('hub_provider_read',{
     name:'stripe_invoice_list',args:{}},blocked,{},{},deps);
   expect(result.ok).toBe(false);
  }
  expect(deps.read).not.toHaveBeenCalled();
+});
+
+it('routes two registered LIVE RTC services through the same metadata and audited READ path',async()=>{
+ const liveActor={...actor,mode:'live',allowWrites:true,clientId:undefined};
+ const regs=[{name:'google-workspace-mcp',prefix:'workspace_',areas:['mail'],
+  claimedCounts:{tools:300},readOnlyGrant:false,mode:'live'},
+  {name:'stripe-mcp',prefix:'stripe',areas:['billing'],
+  claimedCounts:{tools:300},readOnlyGrant:false,mode:'live'}];
+ const deps=provider();
+ deps.list=vi.fn(async()=>regs);
+ deps.resolve=vi.fn(async(_db,{serverName})=>{
+  const reg=regs.find(r=>r.name===serverName);
+  if(!reg)return null;
+  return {server:serverName,prefix:reg.prefix,origin:'https://rtc.example.com',
+   pass:'synthetic-injected-pass',profile:'full',mode:'live',
+   grantId:serverName+'-scoped',areas:reg.areas};
+ });
+ deps.search=vi.fn(async grant=>({tools:[{name:grant.prefix+'list',
+  description:'Read permitted objects',area:grant.areas[0],profiles:['full'],
+  writes:false,money:false,destructive:false,
+  annotations:{readOnlyHint:true}}],next:null,incomplete:false}));
+ deps.describe=vi.fn(async (grant,name)=>({name,area:grant.areas[0],
+  profiles:['full'],writes:name.endsWith('delete'),money:false,
+  destructive:name.endsWith('delete'),
+  annotations:{readOnlyHint:!name.endsWith('delete')},
+  inputSchema:{type:'object'}}));
+ deps.read=vi.fn(async()=>({ok:true,result:{count:1}}));
+ deps.audit=vi.fn(async()=>({}));
+ deps.correlation=vi.fn(()=>'fixture-correlation');
+ const found=await runFederatedBroker('hub_search_tools',
+  {query:'list',limit:5},liveActor,{},{},deps);
+ expect(found.ok).toBe(true);
+ expect(found.result.tools.map(t=>t.server)).toEqual(['google-workspace-mcp','stripe-mcp']);
+ const ns=await runFederatedBroker('hub_namespaces',{},liveActor,{},{},deps);
+ expect(ns.result.namespaces).toEqual(expect.arrayContaining([
+  expect.objectContaining({name:'google-workspace-mcp',mode:'live'}),
+  expect.objectContaining({name:'stripe-mcp',mode:'live'})]));
+ for(const name of ['workspace_list','stripe_list']){
+  const out=await runFederatedBroker('hub_call',
+   {name,args:{limit:1}},liveActor,{},{},deps);
+  expect(out.ok).toBe(true);
+ }
+ expect(deps.read).toHaveBeenCalledTimes(2);
+ expect(deps.audit).toHaveBeenCalledTimes(4);
+ const refused=await runFederatedBroker('hub_call',
+  {name:'workspace_delete',args:{confirm:true}},liveActor,{},{},deps);
+ expect(refused.ok).toBe(false);
+ expect(deps.read).toHaveBeenCalledTimes(2);
+ const wrongArea=await runFederatedBroker('hub_search_tools',
+  {query:'list',server:'stripe-mcp',area:'mail'},liveActor,{},{},deps);
+ expect(wrongArea.ok).toBe(false);
+ expect(JSON.stringify(found)).not.toContain('synthetic-injected-pass');
 });
