@@ -14,7 +14,9 @@ function adapter({deny=false,throwPreview=false}={}){
  });
  return {
   authorize:vi.fn(async()=>({allowed:!deny,canWrite:true,grantId:'grant-00000001',
-    mode:'test',profile:'full',areasDigest:'readonly-not-accepted'})),invoke
+    ownerId:actor.ownerId,callerId:actor.id,callerKind:actor.kind,
+    server:'google-workspace-mcp',mode:'test',profile:'full',
+    areasDigest:'a'.repeat(64)})),invoke
  };
 }
 const db={query:vi.fn(async()=>({rows:[],rowCount:0}))};
@@ -23,6 +25,21 @@ it('requires explicit full delegated WRITE grant before provider preview',async(
  await expect(planWorkflow({db,actor,spec,adapter:x})).rejects.toMatchObject({
   code:'outside_scope'});
  expect(x.invoke).not.toHaveBeenCalled();
+});
+it('refuses cross-tenant, wrong service and unproven provider-write authorization',async()=>{
+ for(const bad of [
+  {ownerId:'another-owner'}, {callerId:'another-caller'}, {callerKind:'pass'},
+  {server:'neon-mcp'}, {mode:'live'}, {profile:'read_only'},
+  {canWrite:false}, {areasDigest:'not-independently-verified'}
+ ]){
+  const x=adapter();
+  const original=x.authorize;
+  const result=await original({actor,server:'google-workspace-mcp'});
+  x.authorize=vi.fn(async()=>({...result,...bad}));
+  await expect(planWorkflow({db,actor,spec,adapter:x}))
+   .rejects.toMatchObject({code:'outside_scope'});
+  expect(x.invoke).not.toHaveBeenCalled();
+ }
 });
 it('denies read-only Hub actors before DB or provider calls',async()=>{
  const x=adapter();
