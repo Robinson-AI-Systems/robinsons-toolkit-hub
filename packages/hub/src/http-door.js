@@ -42,7 +42,7 @@ export function mcpReply(request,actor) {
 }
 
 const federatedMetadata=new Set(['hub_health','hub_search_tools','hub_describe_tool','hub_namespaces','hub_call','hub_batch','hub_recent_changes','hub_provider_read','hub_provider_describe',
- 'hub_workflow_plan','hub_workflow_execute','hub_undo_run']);
+ 'hub_workflow_plan','hub_workflow_execute','hub_undo_run','hub_workflow_status']);
 // Maintain the synchronous foundation for existing Hub-owned reads and
 // transport validation. Only three explicit metadata operations opt into
 // separately scoped, asynchronous RTC discovery; execution remains disabled.
