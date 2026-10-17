@@ -88,7 +88,7 @@ function listing(rows) {
       escapeHtml((r.areas||[]).join(','))+' of original '+ 
       escapeHtml((r.originalAreas||r.areas||[]).join(','))+' — '+
       (r.revoked?'revoked':r.verified?'verified':'staged')+
-      ', scoped TEST credential: yes</li>').join('')+'</ul>');
+      ', independently verified provider credential: '+(r.verified?'yes':'not yet')+'</li>').join('')+'</ul>');
 }
 function readinessDisplay(rows) {
  return page('<h2>Grant lifecycle readiness (local metadata only)</h2>'+
