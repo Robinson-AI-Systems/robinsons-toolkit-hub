@@ -369,3 +369,28 @@ export async function undoWorkflow({db,actor:principal,runId,adapter,settings,co
   [runId,partial?'undo_partial':'undone']);
  return {runId,state:partial?'undo_partial':'undone',receipts};
 }
+
+// Durable, credential-free readback for an ambiguous or interrupted run.
+// Claimed effects are NEVER reported as confirmed: an ambiguous server POST
+// needs service-side reconciliation, not another Hub POST.
+export async function inspectWorkflow({db,actor:principal,runId,adapter}){
+ const actor=caller(principal);ensureAdapter(adapter);
+ const loaded=await load(db,actor,runId);
+ for(const step of loaded.steps){
+  const mark=await authority(adapter,principal,
+   {server:step.server_name,tool:step.tool_name},'inspect');
+  if(mark!==step.authority_digest)deny('outside_scope');
+ }
+ return {runId,state:loaded.run.state,workflow:loaded.run.workflow,
+  expiresAt:new Date(loaded.run.expires_at).toISOString(),
+  requiresReconciliation:loaded.run.state==='unknown'||
+   loaded.run.state==='running'||loaded.run.state==='undoing'||
+   loaded.steps.some(s=>s.state==='claimed'||s.undo_state==='claimed'||
+     s.state==='unknown'||s.undo_state==='unknown'),
+  steps:loaded.steps.map(s=>({ordinal:s.ordinal,server:s.server_name,
+   tool:s.tool_name,status:s.state==='claimed'?'unknown':s.state,
+   preview:s.preview_summary,logId:s.provider_log_id||null,
+   summary:s.outcome_summary||null,reversible:Boolean(s.inverse_tool),
+   undoStatus:s.undo_state==='claimed'?'unknown':s.undo_state,
+   undoLogId:s.undo_log_id||null}))};
+}
