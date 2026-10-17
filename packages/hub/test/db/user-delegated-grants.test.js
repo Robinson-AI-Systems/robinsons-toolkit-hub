@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {issueHubPass,authenticateHubPass,revokeHubPass} from '../../src/identity.js';
 import {stageCallerGrant,activateVerifiedCallerGrant,
- resolveActiveCallerGrant,resolveDelegatedWriteGrant,revokeCallerGrant} from '../../src/grants.js';
+ resolveActiveCallerGrant,listEligibleRtcTargets,resolveDelegatedWriteGrant,revokeCallerGrant} from '../../src/grants.js';
 const pepper='fixture-only-owner-write-delegation-pepper-2026';
 const settings={grantsKey:randomBytes(32).toString('base64url')};
 const upstream='rtc_pass_'+randomBytes(32).toString('base64url');
@@ -70,8 +70,19 @@ it('stages encrypted exact-mode provider pass, checks issuer whoami and activate
  const readOnly={...actor,allowWrites:false};
  expect(await resolveDelegatedWriteGrant(db,{actor:readOnly,serverName:'neon-mcp'},settings))
   .toBeNull();
- expect(await resolveActiveCallerGrant(db,{actor,serverName:'neon-mcp'},settings))
-  .toBeNull();
+ const readTarget=await resolveActiveCallerGrant(db,{actor,serverName:'neon-mcp'},settings);
+ expect(readTarget).toMatchObject({pass:upstream,server:'neon-mcp',
+  mode:'live',profile:'full',grantId:stagedId,areas:['projects']});
+ const discovered=await listEligibleRtcTargets(db,actor);
+ expect(discovered).toEqual([expect.objectContaining({
+  name:'neon-mcp',prefix:'neon',mode:'live',readOnlyGrant:false,
+  effectiveProfile:'full',areas:['projects']})]);
+ expect(await resolveActiveCallerGrant(db,{actor:{...actor,mode:'test'},
+  serverName:'neon-mcp'},settings)).toBeNull();
+ expect(await listEligibleRtcTargets(db,{...actor,mode:'test'})).toEqual([]);
+ expect(await resolveActiveCallerGrant(db,{actor:{...actor,id:'wrong'},
+  serverName:'neon-mcp'},settings)).toBeNull();
+ expect(await listEligibleRtcTargets(db,{...actor,ownerId:'other'})).toEqual([]);
  const rows=await db.query('SELECT * FROM hub_server_grants WHERE id=$1',[stagedId]);
  expect(JSON.stringify(rows.rows)).not.toContain(upstream);
 });
@@ -97,6 +108,8 @@ it('follows owner narrowing, wrong caller, and exact grant revocation with no st
  await db.query("UPDATE hub_callers SET profile='full' WHERE id=$1",[actor.id]);
  expect(await revokeCallerGrant(db,{ownerId:owner,id:stagedId},
   {ownerVerified:true})).toBe(true);
+ expect(await resolveActiveCallerGrant(db,{actor,serverName:'neon-mcp'},settings)).toBeNull();
+ expect(await listEligibleRtcTargets(db,actor)).toEqual([]);
  expect(await resolveDelegatedWriteGrant(db,{actor,serverName:'neon-mcp'},settings))
   .toBeNull();
  await revokeHubPass(db,actor.id,owner,{ownerVerified:true});
