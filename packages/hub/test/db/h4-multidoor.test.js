@@ -64,7 +64,8 @@ function fakeTransports(){
   area:grant.areas[0],writes:false,money:false,destructive:false,
   description:'Harmless scoped TEST metadata'}],incomplete:false}));
  const describe=vi.fn(async(_grant,name)=>({
-  name,area:name.split('_').at(-1),writes:false,money:false,destructive:false,
+  name,area:name.split('_').at(-1),profiles:['read_only'],
+  writes:false,money:false,destructive:false,
   inputSchema:{type:'object'},annotations:{readOnlyHint:true}}));
  return {read,search,describe,correlation:randomUUID};
 }
