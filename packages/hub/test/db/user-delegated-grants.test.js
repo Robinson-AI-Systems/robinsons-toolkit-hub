@@ -18,7 +18,8 @@ beforeAll(async()=>{
  await db.query('SET search_path TO "'+schema+'"');
  for(const file of ['001-hub-foundation.sql','002-hub-oauth.sql',
   '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql',
-  '010-hub-pass-servers.sql','023-hub-user-delegated-grants.sql'])
+  '010-hub-pass-servers.sql','020-hub-service-identities.sql',
+  '023-hub-user-delegated-grants.sql'])
    await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
  await db.query(`INSERT INTO hub_servers
   (name,owner_id,prefix,origin,claimed_rtc,claimed_counts,state)

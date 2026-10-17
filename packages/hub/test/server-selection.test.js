@@ -41,7 +41,7 @@ it('owner issuance verifies every selected name is owned before inserting any cr
  expect(issued.pass).toMatch(/^rtc_pass_[A-Za-z0-9_-]{43}$/);
  expect(own).toHaveBeenCalledTimes(2);
  expect(own.mock.calls[1][0]).toContain('allowed_servers');
- expect(own.mock.calls[1][1][7]).toEqual(['stripe']);
+ expect(own.mock.calls[1][1][8]).toEqual(['stripe']);
  expect(JSON.stringify(own.mock.calls)).not.toContain(issued.pass);
  await expect(issueHubPass({query:vi.fn()},valid,{pepper})).rejects.toThrow();
 });

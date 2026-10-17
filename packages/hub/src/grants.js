@@ -80,6 +80,7 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName,profile='r
   const {rows}=await db.query(sql,[callerId,ownerId]);
   const a=rows[0];
   if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!==mode||
+    (profile==='read_only' && a.allow_writes===true)||
     (profile!=='read_only' && a.allow_writes!==true)||
     (profile!=='read_only' && limitedServiceProfile(profile,a.profile,
       a.service_profile_policy,serverName)!==profile)||
