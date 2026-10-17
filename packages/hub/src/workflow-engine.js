@@ -15,7 +15,7 @@ const deny=(code='outside_scope')=>{
 };
 function plain(value){
  return value!==null&&typeof value==='object'&&!Array.isArray(value)&&
-  Object.getPrototypeOf(value)===Object.prototype;
+  [Object.prototype,null].includes(Object.getPrototypeOf(value));
 }
 // Do not invoke getters, toJSON, inherited methods or proxy traps to
 // serialize a tool request. A caller's arguments are never persisted.
@@ -67,7 +67,6 @@ function stepsOf(spec){
  const steps=spec.steps.map(step=>{
   if(!plain(step)||Object.keys(step).some(k=>!['server','tool','args'].includes(k))||
     !serverName.test(step.server||'')||!toolName.test(step.tool||'')||
-    !step.tool.startsWith(step.server.replaceAll('-','_')+'_')||
     !plain(step.args||{}))deny('invalid_args');
   const args=inert(step.args||{});
   if(Object.hasOwn(args,'dryRun')||Object.hasOwn(args,'confirm')||
@@ -134,7 +133,7 @@ async function authority(adapter,actor,step,operation){
 async function authorizations(adapter,actor,steps,operation){
  const marks=[];
  for(const step of steps)marks.push(await authority(adapter,actor,step,operation));
- return digest(marks.join(':'));
+ return {digest:digest(marks.join(':')),marks};
 }
 function ensureAdapter(adapter){
  if(!adapter||typeof adapter.invoke!=='function'||typeof adapter.authorize!=='function')
@@ -158,7 +157,7 @@ function storedScope(actor){
  return [actor.ownerId,actor.kind,actor.id];
 }
 async function load(db,actor,runId){
- if(typeof runId!=='string'||!/^[0-9a-f-]{36}$/.test(runId))deny('invalid_args');
+ if(typeof runId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(runId))deny('invalid_args');
  const r=await db.query('SELECT * FROM hub_workflow_runs WHERE id=$1 AND owner_id=$2 AND caller_kind=$3 AND caller_id=$4',
   [runId,...storedScope(actor)]);
  if(r.rows.length!==1)deny('not_found');
@@ -193,11 +192,11 @@ export async function planWorkflow({db,actor:principal,spec,adapter,clock=Date.n
  const expires=new Date(now+10*60*1000);
  await transaction(db,async()=>{
   await db.query('INSERT INTO hub_workflow_runs (id,owner_id,caller_kind,caller_id,authority_digest,spec_digest,workflow,expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-   [id,...storedScope(actor),bound,digest(bounded(normalized,12000)),normalized.workflow,expires]);
+   [id,...storedScope(actor),bound.digest,digest(bounded(normalized,12000)),normalized.workflow,expires]);
   for(let i=0;i<normalized.steps.length;i++){
    const step=normalized.steps[i];
-   await db.query('INSERT INTO hub_workflow_steps (run_id,ordinal,server_name,tool_name,args_digest,preview_summary) VALUES ($1,$2,$3,$4,$5,$6)',
-    [id,i+1,step.server,step.tool,digest(bounded(step.args,12000)),previews[i]]);
+   await db.query('INSERT INTO hub_workflow_steps (run_id,ordinal,server_name,tool_name,args_digest,authority_digest,preview_summary) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+    [id,i+1,step.server,step.tool,digest(bounded(step.args,12000)),bound.marks[i],previews[i]]);
   }
  });
  return {runId:id,workflow:normalized.workflow,state:'planned',
@@ -224,11 +223,11 @@ export async function executeWorkflow({db,actor:principal,runId,spec,adapter,set
  if(loaded.run.state!=='planned'||!(new Date(loaded.run.expires_at).getTime()>now)||
   loaded.steps.length!==normalized.steps.length)deny('outside_scope');
  const bound=await authorizations(adapter,principal,normalized.steps,'execute');
- if(bound!==loaded.run.authority_digest)deny('outside_scope');
+ if(bound.digest!==loaded.run.authority_digest)deny('outside_scope');
  // Require the independent encryption key before any provider effect.
  keyBytes(settings);
  const claimed=await db.query('UPDATE hub_workflow_runs SET state=\'running\',updated_at=now() WHERE id=$1 AND owner_id=$2 AND caller_kind=$3 AND caller_id=$4 AND state=\'planned\' AND expires_at>now() AND authority_digest=$5 RETURNING id',
-  [runId,...storedScope(actor),bound]);
+  [runId,...storedScope(actor),bound.digest]);
  if(claimed.rowCount!==1)deny('already_claimed');
  const receipts=[];
  let terminal='complete';
@@ -241,8 +240,7 @@ export async function executeWorkflow({db,actor:principal,runId,spec,adapter,set
   // ambiguous, a durable claimed row prevents automatic replay.
   try{
    const current=await authority(adapter,principal,step,'execute');
-   const original=await authority(adapter,principal,step,'preview');
-   if(current!==original)deny('outside_scope');
+   if(current!==loaded.steps[i].authority_digest)deny('outside_scope');
   }catch{
    await markStep(db,runId,i+1,'failed',{outcome_summary:'Authorization no longer valid'});
    terminal='failed';break;
@@ -264,8 +262,7 @@ export async function executeWorkflow({db,actor:principal,runId,spec,adapter,set
   let inverseTool=null,inverseCiphertext=null;
   if(outcome.inverse&&outcome.irreversible!==true&&outcome.money!==true){
    const inverse=inert(outcome.inverse);
-   if(plain(inverse)&&toolName.test(inverse.name||'')&&plain(inverse.args)&&
-      inverse.name.startsWith(step.server.replaceAll('-','_')+'_')){
+   if(plain(inverse)&&toolName.test(inverse.name||'')&&plain(inverse.args)){
     inverseTool=inverse.name;
     inverseCiphertext=sealInverse(settings,inverseContext(actor,runId,i+1),
       {name:inverse.name,args:inverse.args});
