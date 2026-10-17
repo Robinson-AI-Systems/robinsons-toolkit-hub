@@ -1,3 +1,28 @@
+## October 17 — H-4 owner-selected permission source merged in PR #233 (runtime release pending)
+
+The owner explicitly approved correcting the Hub's developer-only TEST/read_only
+restriction as a **product defect**, not permitting this coding agent to mutate
+live accounts. A separate independently authenticated owner can now choose
+read_only/everyday/full and TEST/LIVE when issuing a **new** Hub pass, with
+an additional explicit acknowledgement required to delegate writes. Existing
+Hub passes are unchanged and retain their database grants and revocations.
+The owner setup can separately stage and verify exact original provider-issued
+profile/mode/area-scoped RTC passes (the provider itself must have granted
+writes), stored encrypted for the exact caller. Additive migration 023 permits
+those scoped records without changing historic read-only rows. A separate
+`resolveDelegatedWriteGrant` checks actual current Hub caller SQL, independent
+verified provider grant, correct owner/service, issuer mode/profile, area
+intersection and revocation before returning an in-memory provider pass.
+
+**Boundary:** These are permission enrollment and resolution capabilities,
+not live workflow execution. The serving Hub routes are still TEST/read_only;
+OAuth/ChatGPT connection grant upgrade, native/HTTPS write routing and the C-1
+workflow adapter remain IN_PROGRESS. H-4 original acceptance and external
+two-service proof are OPEN. No existing bearer is silently elevated; no
+provider write, production data change, expense or deployment occurred.
+The separate C-1 draft PR #232 must be reconciled with this owner-permission
+change before its final implementation and merge.
+
 ## October 17 — C-1 durable workflow kernel reviewed; original C-1 not complete
 
 An approved C-1 plan was frozen against main `1f2fc4da4691a327b4c2632c709cad98df7c5c45` before code. Proposed additive migration 022 keeps exact caller/owner and immutable per-step grant fingerprints, preview receipts, one-claim dispatch and encrypted inverse metadata in a separate workflow ledger. A new internal engine requires independently verified service WRITE permission on every preview/commit/undo and does not use the existing H-3 read-only dispatcher. Real disposable PostgreSQL tests cover two simulated independent providers, double-submits, grant replacement, unknown no-retry outcomes and manual reverse undo. Source tests and CI are not yet independent authenticated external provider acceptance.

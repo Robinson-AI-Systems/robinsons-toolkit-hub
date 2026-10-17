@@ -1,5 +1,32 @@
 # ARCHITECTURE — runtime facts, as built
 
+## H-4 owner-selected user delegation — source only, October 17
+
+The owner-only `/api/owner/passes` flow now supports explicit selected
+read_only/everyday/full Hub profile, TEST or LIVE mode and a separate
+I_AUTHORIZE confirmation to enable writes on a **new** Hub pass. Read-only
+TEST remains the default. Each pass is still issued once and independently
+scoped to selected registered services. Existing passes are unchanged.
+
+Owner-only `/api/owner/grants` separately stages an independently issued RTC
+provider pass with owner-selected exact profile, mode and areas; the original
+credential is AES-GCM sealed with caller/service/profile/mode AAD.
+`/api/owner/verify-grant` makes the existing TLS/DNS-pinned public-contract
+and credential-specific whoami reads; activation requires matching issuer
+identity and actual write permission. Migration `023-hub-user-delegated-grants.sql`
+replaces only the old fixed TEST/read_only CHECK constraints with the RTC
+profile/mode enums. It does not modify past grant rows or authorize a provider
+operation. New `resolveDelegatedWriteGrant` exists for a future separate
+write-adapter; it reauthorizes the exact active Hub pass/provider grant from
+current SQL and ignores any stale in-memory actor escalation.
+
+**Non-serving boundary:** no write-capable provider call is exposed by the
+existing MCP/HTTPS read broker yet; the existing Hub OAuth actor still has no
+delegated-write support. C-1 remains draft pending a service-owned guarded
+write adapter and native/HTTPS integration. A hosted migration/release is
+independently gated; development-only spending/production restrictions
+remain applicable to agents building this system.
+
 ## C-1 experimental, non-serving workflow ledger — October 17, 2026
 
 Additive migration `022-hub-workflow-runs.sql` introduces `hub_workflow_runs`

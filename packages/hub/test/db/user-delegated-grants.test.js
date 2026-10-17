@@ -88,6 +88,13 @@ it('follows owner narrowing, wrong caller, and exact grant revocation with no st
  await db.query('UPDATE hub_callers SET allow_writes=TRUE WHERE id=$1',[actor.id]);
  expect((await resolveDelegatedWriteGrant(db,{actor,serverName:'neon-mcp'},settings))?.pass)
   .toBe(upstream);
+ await db.query("UPDATE hub_callers SET profile='everyday' WHERE id=$1",[actor.id]);
+ expect(await resolveDelegatedWriteGrant(db,{actor,serverName:'neon-mcp'},settings))
+  .toBeNull();
+ const current={...actor,profile:'everyday'};
+ expect((await resolveDelegatedWriteGrant(db,{actor:current,serverName:'neon-mcp'},settings))?.profile)
+  .toBe('everyday');
+ await db.query("UPDATE hub_callers SET profile='full' WHERE id=$1",[actor.id]);
  expect(await revokeCallerGrant(db,{ownerId:owner,id:stagedId},
   {ownerVerified:true})).toBe(true);
  expect(await resolveDelegatedWriteGrant(db,{actor,serverName:'neon-mcp'},settings))

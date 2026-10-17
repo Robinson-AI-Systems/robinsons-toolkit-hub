@@ -23,6 +23,8 @@ export async function inspectScopedRtcIdentity(input,transport={}) {
   const who=value?.result;
   const writable=profile!=='read_only';
   if(value?.ok!==true||!who||who.profile!==profile||who.mode!==mode||
+    (Object.hasOwn(who,'allowWrites')&&Object.hasOwn(who,'allow_writes')&&
+     who.allowWrites!==who.allow_writes)||
     (writable && who.allowWrites!==true && who.allow_writes!==true)||
     (!writable && (who.allowWrites===true||who.allow_writes===true))||
     !(Array.isArray(who.areas)||
