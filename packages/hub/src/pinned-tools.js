@@ -18,7 +18,8 @@ function withinScope(tool,target,withSchema) {
     !ownsRtcToolName(target.prefix,tool.name)||
     typeof tool.description!=='string'||tool.description.length>160||
     !areaPattern.test(tool.area||'')||
-    !Array.isArray(tool.profiles)||!tool.profiles.includes('read_only')||
+    !Array.isArray(tool.profiles)||
+    !tool.profiles.includes(target.profile??'read_only')||
     tool.profiles.some(p=>!['read_only','everyday','full'].includes(p)))
     throw new Error('RTC tool metadata or canonical prefix refused');
   // An upstream grant may expose several areas; every advertised entry must
@@ -27,7 +28,7 @@ function withinScope(tool,target,withSchema) {
   if(Object.keys(readOnly).some(k=>tool[k]!==false)||
     tool.annotations?.readOnlyHint!==true)return null;
   const selected={name:tool.name,description:tool.description,area:tool.area,
-    profiles:['read_only'],writes:false,money:false,destructive:false,
+    profiles:[target.profile??'read_only'],writes:false,money:false,destructive:false,
     annotations:{readOnlyHint:true}};
   if(withSchema) {
     if(!tool.inputSchema||typeof tool.inputSchema!=='object'||
