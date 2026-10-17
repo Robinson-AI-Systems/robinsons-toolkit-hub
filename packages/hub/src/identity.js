@@ -163,7 +163,7 @@ export async function narrowHubPassServers(db,{ownerId,id,serverNames},
 /** Owner-private, metadata-only overview; no digest, ciphertext or bearer. */
 export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
   verifiedOwnerScope(ownerId,ownerVerified);
-  const {rows}=await db.query(`SELECT id,profile,mode,allowed_areas,
+  const {rows}=await db.query(`SELECT id,profile,mode,allow_writes,allowed_areas,
     to_jsonb(hub_callers)->'allowed_servers' AS server_names,
     to_jsonb(hub_callers)->'service_area_policy' AS service_area_policy,
     to_jsonb(hub_callers)->'service_profile_policy' AS service_profile_policy,expires_at,
@@ -172,7 +172,7 @@ export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
     FROM hub_callers WHERE owner_id=$1
     ORDER BY issued_at DESC,id LIMIT 50`,[ownerId]);
   return rows.map(row=>({
-    id:row.id,profile:row.profile,mode:row.mode,
+    id:row.id,profile:row.profile,mode:row.mode,allowWrites:row.allow_writes===true,
     areas:[...row.allowed_areas],
     serverNames:Array.isArray(row.server_names)?
       [...serverSelection(row.server_names)]:null,
