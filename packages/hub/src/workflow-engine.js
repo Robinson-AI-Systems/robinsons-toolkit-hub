@@ -56,6 +56,7 @@ function caller(actor){
    !/^[A-Za-z0-9:_-]{1,120}$/.test(actor.ownerId)||
    typeof actor.id!=='string'||!/^[A-Za-z0-9:_-]{1,120}$/.test(actor.id)||
    !['pass','oauth'].includes(actor.kind)||
+   !['test','live'].includes(actor.mode)||
    actor.allowWrites!==true||!['everyday','full'].includes(actor.profile))
   deny();
  return {ownerId:actor.ownerId,kind:actor.kind,id:actor.id};
@@ -126,10 +127,18 @@ async function authority(adapter,actor,step,operation){
  const grant=await adapter.authorize({actor,server:step.server,tool:step.tool,operation});
  if(!plain(grant)||grant.allowed!==true||typeof grant.grantId!=='string'||
     !/^[A-Za-z0-9:_-]{8,128}$/.test(grant.grantId)||
+    grant.ownerId!==actor.ownerId||grant.callerId!==actor.id||
+    grant.callerKind!==actor.kind||grant.server!==step.server||
+    grant.mode!==actor.mode||!['everyday','full'].includes(grant.profile)||
+    typeof grant.areasDigest!=='string'||
+    !/^[a-f0-9]{64}$/.test(grant.areasDigest)||
     grant.canWrite!==true||grant.expired===true||grant.revoked===true)
   deny('outside_scope');
- return digest([step.server,step.tool,grant.grantId,grant.mode,grant.profile,
-   grant.areasDigest].join(':'));
+ // Field boundaries and identity selectors are encoded, never ambiguous
+ // delimiter-joined strings supplied by an untrusted provider.
+ return digest(JSON.stringify([actor.ownerId,actor.kind,actor.id,
+   step.server,step.tool,grant.grantId,grant.mode,grant.profile,
+   grant.areasDigest]));
 }
 async function authorizations(adapter,actor,steps,operation){
  const marks=[];
