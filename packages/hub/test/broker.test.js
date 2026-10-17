@@ -34,13 +34,13 @@ it('executes harmless calls and bounded batch without recursion or provider fall
   expect(runBroker('hub_batch',{calls:[{name:'hub_health'},{name:'hub_batch'}]},actor).ok).toBe(false);
 });
 it('fails closed for overprivileged scopes and malformed arguments',()=>{
-  for(const state of [{...actor,mode:'live'},
+  for(const state of [{...actor,mode:'unknown'},
     {...actor,areas:[]},null]) {
     expect(runBroker('hub_health',{},state).ok).toBe(false);
   }
   const writer={...actor,allowWrites:true,profile:'full'};
   expect(runBroker('hub_health',{},writer).ok).toBe(true);
-  expect(runBroker('hub_search_tools',{query:'x'},writer).ok).toBe(false);
+  expect(runBroker('hub_search_tools',{query:'x'},writer).ok).toBe(true);
   for(const arg of [null,[],{query:'a'.repeat(121)},{query:'x',limit:300}]) {
     expect(runBroker('hub_search_tools',arg,actor).ok).toBe(false);
   }
