@@ -14,7 +14,7 @@ describe('Hub fail-closed credential boundary', () => {
       areas:['testing'], ttlSeconds:600 };
     await expect(issueHubPass(db,input,{pepper})).rejects.toThrow('Verified owner');
     await expect(issueHubPass(db,{...input,allowWrites:true},{pepper,ownerVerified:true}))
-      .rejects.toThrow('default');
+      .rejects.toThrow('Write delegation');
     expect(db.query).not.toHaveBeenCalled();
     const value = await issueHubPass(db,input,{pepper,ownerVerified:true});
     expect(value.pass).toMatch(/^rtc_pass_[A-Za-z0-9_-]{43}$/);

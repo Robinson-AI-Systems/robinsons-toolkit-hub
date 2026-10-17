@@ -43,7 +43,7 @@ it('re-pins both contract and whoami, only sends the upstream pass to whoami',as
   const t=transport();
   const result=await inspectScopedRtcIdentity(input,t);
   expect(result).toEqual({server:'stripe',prefix:'stripe',mode:'test',
-    profile:'read_only',areas:['billing'],identityVerified:true,callable:false});
+    profile:'read_only',allowWrites:false,areas:['billing'],identityVerified:true,callable:false});
   expect(t.calls.map(x=>x.path)).toEqual(['/api/contract','/api/whoami']);
   expect(t.calls[0].headers).not.toHaveProperty('authorization');
   expect(t.calls[1].headers.authorization).toBe('Bearer '+input.pass);
