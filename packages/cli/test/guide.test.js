@@ -110,7 +110,7 @@ describe('L-4 visible owner-driven setting guide',()=>{
      .rejects.toThrow('Visible owner browser unavailable');
  });
  it('CLI routes guide to a named standalone server; cancelled and unverified get distinct exit codes',async()=>{
-   const reader=async()=>JSON.stringify({one:server.url});
+   const reader=async()=>JSON.stringify({servers:{one:server.url}});
    const output={text:'',write(s){this.text+=s;}};
    const err={write:vi.fn()};
    const keychain={get:async()=>null};
