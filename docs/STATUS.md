@@ -1,8 +1,8 @@
-## October 17 — H-5 exact active-grant history filtering source in review
+## October 17 — H-5 source completion reviewed in PR #231; checked release outstanding
 
 Current accepted hosted H-5 basic read from owner-approved SQL view migration 019 remains valid on live READY f6f916b8. Independent one-provider Workspace RTC TEST read is accepted, while two-service H-3/H-4 federation, direct/relay/Sandbox and full H-5 external acceptance remain OPEN.
 
-This source candidate keeps historical H-3 audit and H-5 owner reads, adds optional exact tool/UTC interval filters in native MCP/HTTPS/independently password-verified owner view, and binds non-owner audit rows and pagination to current exact active sealed grant IDs rather than only service name. Revocation, renewal and cursor replay denial use the existing H-2/H-4 authorization resolver and disposable PostgreSQL proof. Code is source-only until reviewed, merged and checked live; no hosted mutation or release is authorized. H-5 was already MERGED at #207 and must not be counted twice toward requested bundle totals.
+PR #231 keeps historical H-3 audit and H-5 owner reads, adds optional exact tool/UTC interval filters in native MCP/HTTPS/independently password-verified owner view, and binds non-owner audit rows and pagination to current exact active sealed grant IDs rather than only service name. Revocation, renewal and cursor replay denial use the existing H-2/H-4 authorization resolver and disposable PostgreSQL proof. The current production deployment does not include PR #231; exact-head CI and merge/review gates remain independent from the later checked release. No hosted mutation or release is authorized. H-5 was already MERGED at #207 and must not be counted twice toward requested bundle totals.
 
 ## October 17 — L-4 guided-settings source merged; real owner use pending
 
