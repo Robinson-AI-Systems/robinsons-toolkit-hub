@@ -1,3 +1,28 @@
+## October 17 — H-4 end-user-selected permission source, review pending
+
+The owner explicitly approved correcting the Hub's developer-only TEST/read_only
+restriction as a **product defect**, not permitting this coding agent to mutate
+live accounts. A separate independently authenticated owner can now choose
+read_only/everyday/full and TEST/LIVE when issuing a **new** Hub pass, with
+an additional explicit acknowledgement required to delegate writes. Existing
+Hub passes are unchanged and retain their database grants and revocations.
+The owner setup can separately stage and verify exact original provider-issued
+profile/mode/area-scoped RTC passes (the provider itself must have granted
+writes), stored encrypted for the exact caller. Additive migration 023 permits
+those scoped records without changing historic read-only rows. A separate
+`resolveDelegatedWriteGrant` checks actual current Hub caller SQL, independent
+verified provider grant, correct owner/service, issuer mode/profile, area
+intersection and revocation before returning an in-memory provider pass.
+
+**Boundary:** These are permission enrollment and resolution capabilities,
+not live workflow execution. The serving Hub routes are still TEST/read_only;
+OAuth/ChatGPT connection grant upgrade, native/HTTPS write routing and the C-1
+workflow adapter remain IN_PROGRESS. H-4 original acceptance and external
+two-service proof are OPEN. No existing bearer is silently elevated; no
+provider write, production data change, expense or deployment occurred.
+The separate C-1 draft PR #232 must be reconciled with this owner-permission
+change before its final implementation and merge.
+
 ## October 17 — H-5 source completion reviewed in PR #231; checked release outstanding
 
 Current accepted hosted H-5 basic read from owner-approved SQL view migration 019 remains valid on live READY f6f916b8. Independent one-provider Workspace RTC TEST read is accepted, while two-service H-3/H-4 federation, direct/relay/Sandbox and full H-5 external acceptance remain OPEN.
