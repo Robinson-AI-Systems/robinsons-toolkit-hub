@@ -88,7 +88,7 @@ it('records authenticated OAuth session with its own foreign key',async()=>{
 });
 it('rejects impersonated actor and invalid unverified metadata before SQL insertion',async()=>{
  const before=await db.query('SELECT count(*)::integer AS n FROM hub_rtc_read_audit');
- await expect(appendRtcReadAudit(db,{actor:{...actor,mode:'live'},
+ await expect(appendRtcReadAudit(db,{actor:{...actor,mode:'unknown'},
    grantId,service:'stripe',tool:'stripe_invoice_list',
    correlationId:newRtcCorrelation(),phase:'attempt',outcome:'allowed'}))
   .rejects.toThrow();
