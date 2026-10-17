@@ -11,7 +11,7 @@ function fixture(){
  return {
   list:vi.fn(async()=>[{name:'stripe',prefix:'stripe',areas:['billing']}]),
   resolve:vi.fn(async()=>grant),
-  describe:vi.fn(async()=>({name:'stripe_invoice_list',area:'billing',
+  describe:vi.fn(async()=>({name:'stripe_invoice_list',area:'billing',profiles:['read_only'],
     writes:false,money:false,destructive:false,annotations:{readOnlyHint:true}})),
   read:vi.fn(async()=>({ok:true,result:{items:'🧾'.repeat(2400)}})),
   audit:vi.fn(async()=>1),
