@@ -49,7 +49,7 @@ export function authorizedGrantAreas(row) {
   return effectiveServiceAreas(effectiveGrantAreas(row),
     row.caller_area_policy??null,row.server_name);
 }
-async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
+async function checkCaller(db,{ownerId,callerKind,callerId,serverName,profile='read_only',mode='test'}) {
   const sql=callerKind==='pass' ?
     `SELECT id,owner_id,profile,allowed_areas AS areas,mode,allow_writes
        ,to_jsonb(hub_callers)->'allowed_servers' AS allowed_servers
@@ -79,7 +79,11 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
          WHERE compromised.family_id=s.family_id AND compromised.revoked_at IS NOT NULL)`;
   const {rows}=await db.query(sql,[callerId,ownerId]);
   const a=rows[0];
-  if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!=='test'||a.allow_writes===true||
+  if(!a||!['read_only','everyday','full'].includes(a.profile)||a.mode!==mode||
+    (profile==='read_only' && a.allow_writes===true)||
+    (profile!=='read_only' && a.allow_writes!==true)||
+    (profile!=='read_only' && limitedServiceProfile(profile,a.profile,
+      a.service_profile_policy,serverName)!==profile)||
     !Array.isArray(a.areas)||!a.areas.includes('gateway')||
     (Array.isArray(a.allowed_servers) &&
       !a.allowed_servers.includes(serverName))||
@@ -88,14 +92,16 @@ async function checkCaller(db,{ownerId,callerKind,callerId,serverName}) {
 }
 export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={}) {
   const {ownerId,serverName,callerKind,callerId,areas,pass,ttlSeconds}=input||{};
+  const profile=input?.profile??'read_only',mode=input?.mode??'test';
   owner(ownerId,ownerVerified);
   if(!serverNamePattern.test(serverName||'')||!['pass','oauth'].includes(callerKind)||
     !idPattern.test(callerId||'')||!validAreas(areas)||
     !passPattern.test(pass||'')||!Number.isInteger(ttlSeconds)||
-    ttlSeconds<60||ttlSeconds>30*86400)
+    ttlSeconds<60||ttlSeconds>30*86400||
+    !['read_only','everyday','full'].includes(profile)||!['test','live'].includes(mode))
     throw new TypeError('Invalid separately scoped TEST grant');
   const secret=key(settings);
-  await checkCaller(db,{ownerId,callerKind,callerId,serverName});
+  await checkCaller(db,{ownerId,callerKind,callerId,serverName,profile,mode});
   const host=await db.query(`SELECT state FROM hub_servers
     WHERE name=$1 AND owner_id=$2`,[serverName,ownerId]);
   if(host.rows.length!==1||!['pending','active'].includes(host.rows[0].state))
@@ -104,19 +110,20 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
     // An existing caller may renew only to the same or narrower effective
     // provider areas. Another caller can independently receive its own
     // separately issued TEST/read_only pass on an already active service.
-    const {rows}=await db.query(`SELECT areas,
+    const {rows}=await db.query(`SELECT areas,profile,mode,
       to_jsonb(hub_server_grants)->'area_ceiling' AS area_ceiling
       FROM hub_server_grants WHERE owner_id=$1 AND server_name=$2
        AND caller_kind=$3 AND caller_id=$4
        AND revoked_at IS NULL AND verified_at IS NOT NULL
        AND expires_at>now() LIMIT 2`,
       [ownerId,serverName,callerKind,callerId]);
-    if(rows.length>1||rows.length===1&&!replacementScopeAllowed(areas,
-       rows[0].area_ceiling??rows[0].areas))
+    if(rows.length>1||rows.length===1&&(
+       rows[0].profile!==profile||rows[0].mode!==mode||
+       !replacementScopeAllowed(areas,rows[0].area_ceiling??rows[0].areas)))
       throw new Error('Renewal cannot expand independently verified RTC areas');
   }
   const row={id:randomUUID(),owner_id:ownerId,server_name:serverName,caller_kind:callerKind,
-    caller_id:callerId,profile:'read_only',mode:'test',areas:[...areas]};
+    caller_id:callerId,profile,mode,areas:[...areas]};
   const nonce=randomBytes(12);
   const cipher=createCipheriv('aes-256-gcm',secret,nonce);
   cipher.setAAD(audience(row));
@@ -124,13 +131,13 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
   await db.query(`INSERT INTO hub_server_grants
     (id,owner_id,server_name,caller_kind,caller_id,pass_caller_id,oauth_session_id,
      profile,mode,areas,ciphertext,nonce,tag,expires_at)
-    VALUES($1,$2,$3,$4,$5,$6,$7,'read_only','test',$8,$9,$10,$11,
-      now()+$12::integer*interval '1 second')`,[
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
+      now()+$14::integer*interval '1 second')`,[
     row.id,ownerId,serverName,callerKind,callerId,callerKind==='pass'?callerId:null,
-    callerKind==='oauth'?callerId:null,row.areas,ciphertext,nonce,cipher.getAuthTag(),ttlSeconds
+    callerKind==='oauth'?callerId:null,profile,mode,row.areas,ciphertext,nonce,cipher.getAuthTag(),ttlSeconds
   ]);
-  return {id:row.id,server:serverName,callerKind,callerId,profile:'read_only',
-    areas:[...areas],mode:'test',state:'staged',callable:false,
+  return {id:row.id,server:serverName,callerKind,callerId,profile,
+    areas:[...areas],mode,state:'staged',callable:false,
     activationRequired:true,serverAlreadyActive:host.rows[0].state==='active'};
 }
 /**
@@ -349,7 +356,7 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
   const row=result.rows[0];
   if(!row) throw new Error('Owned pending TEST grant unavailable');
   await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
-    serverName:row.server_name});
+    serverName:row.server_name,profile:row.profile,mode:row.mode});
   const decipher=createDecipheriv('aes-256-gcm',key(settings),row.nonce);
   decipher.setAAD(audience(row));
   decipher.setAuthTag(row.tag);
@@ -359,18 +366,20 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
   // No persist/activation unless a true pinned contract + pass-specific
   // whoami response proves the exact scope. Tests inject only local fakes.
   const verified=await inspect({origin:row.origin,name:row.server_name,
-    prefix:row.prefix,areas:[...row.areas],pass});
+    prefix:row.prefix,areas:[...row.areas],pass,
+    profile:row.profile,mode:row.mode});
   if(!verified?.identityVerified||verified.callable!==false||
     verified.server!==row.server_name||verified.prefix!==row.prefix||
-    verified.mode!=='test'||verified.profile!=='read_only'||
+    verified.mode!==row.mode||verified.profile!==row.profile||
+    (row.profile!=='read_only'&&verified.allowWrites!==true)||
     !Array.isArray(verified.areas)||row.areas.some(a=>!verified.areas.includes(a)))
     throw new Error('Scoped RTC identity not verified');
   await checkCaller(db,{ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
-    serverName:row.server_name});
+    serverName:row.server_name,profile:row.profile,mode:row.mode});
   if(row.state==='active')return completeActiveGrantActivation(db,
     {ownerId,id,staged:row,recheckCaller:()=>checkCaller(db,{
       ownerId,callerKind:row.caller_kind,callerId:row.caller_id,
-      serverName:row.server_name})},{ownerVerified:true});
+      serverName:row.server_name,profile:row.profile,mode:row.mode})},{ownerVerified:true});
   const accepted=await db.query(`UPDATE hub_server_grants g
     SET verified_at=now() FROM hub_servers s
     WHERE g.id=$1 AND g.owner_id=$2 AND g.server_name=s.name
@@ -385,6 +394,59 @@ export async function activateVerifiedCallerGrant(db,{ownerId,id},settings,
     WHERE name=$1 AND owner_id=$2`,[row.server_name,ownerId]);
   if(final.rows[0]?.state!=='active')
     throw new Error('Server disabled during grant inspection');
-  return {id,server:row.server_name,state:'verified_test',
+  return {id,server:row.server_name,state:'verified_'+row.mode,
     registryActive:true,providerRoutingEnabled:false};
+}
+
+/**
+ * H-4 end-user WRITE resolver, intentionally independent from the existing
+ * TEST/read_only resolver. Returns a provider-issued credential only when
+ * the current Hub caller AND the original encrypted provider grant expressly
+ * allow writes in the same mode/profile. Does not perform provider effects.
+ *
+ * No historic read-only credential can be upgraded by an actor flag.
+ */
+export async function resolveDelegatedWriteGrant(db,{actor,serverName},settings) {
+  if(!actor||actor.clientId||actor.allowWrites!==true||
+    !['everyday','full'].includes(actor.profile)||
+    !['test','live'].includes(actor.mode)||
+    typeof actor.ownerId!=='string'||typeof actor.id!=='string'||
+    !Array.isArray(actor.areas)||!actor.areas.includes('gateway')||
+    !serverNamePattern.test(serverName||'')||
+    !allowedByHubPass(actor,serverName))return null;
+  const {rows}=await db.query(`SELECT g.*,s.origin AS target_origin,
+    s.prefix AS target_prefix,
+    to_jsonb(c)->'service_area_policy' AS caller_area_policy,
+    to_jsonb(c)->'service_profile_policy' AS caller_profile_policy
+    FROM hub_server_grants g
+    JOIN hub_servers s ON s.name=g.server_name AND s.owner_id=g.owner_id
+    JOIN hub_callers c ON c.id=g.caller_id AND c.owner_id=g.owner_id
+    WHERE g.owner_id=$1 AND g.caller_id=$2 AND
+      g.caller_kind='pass' AND g.pass_caller_id=c.id AND
+      g.oauth_session_id IS NULL AND g.server_name=$3 AND
+      g.verified_at IS NOT NULL AND g.revoked_at IS NULL AND
+      g.expires_at>now() AND s.state='active' AND
+      g.profile IN ('everyday','full') AND g.mode=$4 AND
+      c.profile IN ('everyday','full') AND c.mode=$4 AND
+      c.allow_writes=TRUE AND c.revoked_at IS NULL AND
+      c.expires_at>now() AND 'gateway'=ANY(c.allowed_areas) AND
+      (c.allowed_servers IS NULL OR $3=ANY(c.allowed_servers))
+    LIMIT 2`,[actor.ownerId,actor.id,serverName,actor.mode]);
+  if(rows.length!==1)return null;
+  const row=rows[0];
+  const profile=limitedServiceProfile(row.profile,actor.profile,
+    row.caller_profile_policy,serverName);
+  const areas=authorizedGrantAreas(row);
+  if(!['everyday','full'].includes(profile)||areas.length===0)return null;
+  const origin=validateStagedOrigin(row.target_origin);
+  if(!prefixPattern.test(row.target_prefix||''))return null;
+  const decipher=createDecipheriv('aes-256-gcm',key(settings),row.nonce);
+  decipher.setAAD(audience(row));
+  decipher.setAuthTag(row.tag);
+  const pass=Buffer.concat([decipher.update(row.ciphertext),
+    decipher.final()]).toString('utf8');
+  if(!passPattern.test(pass))return null;
+  return {pass,grantId:row.id,origin,prefix:row.target_prefix,
+    server:serverName,areas,profile,mode:row.mode,
+    allowWrites:true};
 }

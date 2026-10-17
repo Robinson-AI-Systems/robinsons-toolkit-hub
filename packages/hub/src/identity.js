@@ -27,9 +27,11 @@ function validateIssue(input) {
   if (!input || typeof input.ownerId !== 'string' || !/^[a-zA-Z0-9:_-]{1,120}$/.test(input.ownerId))
     throw new TypeError('Invalid owner identity');
   if (!['read_only','everyday','full'].includes(input.profile)) throw new TypeError('Invalid profile');
-  if (!['test','live'].includes(input.mode) || (input.mode === 'live' && input.allowWrites))
+  if (!['test','live'].includes(input.mode))
     throw new TypeError('Unsafe or unsupported mode');
-  if (input.allowWrites !== false) throw new TypeError('Hub-issued passes must default to no writes');
+  if (typeof input.allowWrites !== 'boolean' ||
+    (input.allowWrites && !['everyday','full'].includes(input.profile)))
+    throw new TypeError('Write delegation requires a separately owner-approved everyday/full pass');
   if (!Array.isArray(input.areas) || input.areas.length > 32 ||
     input.areas.some(a => typeof a !== 'string' || !/^[a-z][a-z0-9_]{0,59}$/.test(a)))
     throw new TypeError('Invalid areas');
@@ -44,6 +46,8 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
   // An explicit selection is additional least privilege. Legacy trusted
   // programmatic issuance retains the previous exact-caller grant gate.
   const selected = serverSelection(input.serverNames);
+  if (input.allowWrites && (!selected || !input.areas.includes('gateway')))
+    throw new TypeError('Writable Hub pass requires explicit selected servers and gateway area');
   const policies=checkedInitialServiceProfiles(input.serviceProfiles,selected);
   const areaPolicy=checkedInitialServiceAreas(input.serviceAreas,selected);
   if (selected) {
@@ -61,36 +65,36 @@ export async function issueHubPass(db, input, { pepper, ownerVerified = false } 
     await db.query(`INSERT INTO hub_callers
       (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,
        expires_at,allowed_servers,service_area_policy${extra})
-      VALUES($1,$2,$3,$4,$5,$6,FALSE,
-       now()+$7::INTEGER*interval '1 second',$8,$9${policies?',$10':''})`,
+      VALUES($1,$2,$3,$4,$5,$6,$7,
+       now()+$8::INTEGER*interval '1 second',$9,$10${policies?',$11':''})`,
       [id,input.ownerId,digestPass(pass,pepper),input.profile,
-       [...new Set(input.areas)],input.mode,input.ttlSeconds,selected,
+       [...new Set(input.areas)],input.mode,input.allowWrites,input.ttlSeconds,selected,
        areaPolicy,...(policies?[policies]:[])]);
   }else if(selected&&policies){
     // Missing profile SQL 017 refuses the entire selected issuance.
     await db.query(`INSERT INTO hub_callers
       (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,
        expires_at,allowed_servers,service_profile_policy)
-      VALUES($1,$2,$3,$4,$5,$6,FALSE,
-       now()+$7::INTEGER*interval '1 second',$8,$9)`,
+      VALUES($1,$2,$3,$4,$5,$6,$7,
+       now()+$8::INTEGER*interval '1 second',$9,$10)`,
       [id,input.ownerId,digestPass(pass,pepper),input.profile,
-       [...new Set(input.areas)],input.mode,input.ttlSeconds,selected,policies]);
+       [...new Set(input.areas)],input.mode,input.allowWrites,input.ttlSeconds,selected,policies]);
   } else if (selected) {
     // Fail closed if the additive migration is not installed: the selected
     // credential must never silently fall back to unrestricted legacy mode.
     await db.query(`INSERT INTO hub_callers
       (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,
        expires_at,allowed_servers)
-      VALUES($1,$2,$3,$4,$5,$6,FALSE,
-        now() + $7::INTEGER * interval '1 second',$8)`,
+      VALUES($1,$2,$3,$4,$5,$6,$7,
+        now() + $8::INTEGER * interval '1 second',$9)`,
     [id, input.ownerId, digestPass(pass, pepper), input.profile,
-      [...new Set(input.areas)], input.mode, input.ttlSeconds, selected]);
+      [...new Set(input.areas)], input.mode, input.allowWrites,input.ttlSeconds, selected]);
   } else {
     await db.query(`INSERT INTO hub_callers
       (id,owner_id,pass_digest,profile,allowed_areas,mode,allow_writes,expires_at)
-      VALUES($1,$2,$3,$4,$5,$6,FALSE,now() + $7::INTEGER * interval '1 second')`,
+      VALUES($1,$2,$3,$4,$5,$6,$7,now() + $8::INTEGER * interval '1 second')`,
     [id, input.ownerId, digestPass(pass, pepper), input.profile, [...new Set(input.areas)],
-      input.mode, input.ttlSeconds]);
+      input.mode, input.allowWrites, input.ttlSeconds]);
   }
   return { id, pass }; // one-time in-memory return; NEVER put in logs or a chat tool result
 }
@@ -159,7 +163,7 @@ export async function narrowHubPassServers(db,{ownerId,id,serverNames},
 /** Owner-private, metadata-only overview; no digest, ciphertext or bearer. */
 export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
   verifiedOwnerScope(ownerId,ownerVerified);
-  const {rows}=await db.query(`SELECT id,profile,mode,allowed_areas,
+  const {rows}=await db.query(`SELECT id,profile,mode,allow_writes,allowed_areas,
     to_jsonb(hub_callers)->'allowed_servers' AS server_names,
     to_jsonb(hub_callers)->'service_area_policy' AS service_area_policy,
     to_jsonb(hub_callers)->'service_profile_policy' AS service_profile_policy,expires_at,
@@ -168,7 +172,7 @@ export async function listHubPassScopes(db,ownerId,{ownerVerified=false}={}) {
     FROM hub_callers WHERE owner_id=$1
     ORDER BY issued_at DESC,id LIMIT 50`,[ownerId]);
   return rows.map(row=>({
-    id:row.id,profile:row.profile,mode:row.mode,
+    id:row.id,profile:row.profile,mode:row.mode,allowWrites:row.allow_writes===true,
     areas:[...row.allowed_areas],
     serverNames:Array.isArray(row.server_names)?
       [...serverSelection(row.server_names)]:null,

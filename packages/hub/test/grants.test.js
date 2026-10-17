@@ -23,8 +23,8 @@ it('encrypts only for independently confirmed non-writing TEST caller and pendin
     .mockResolvedValueOnce({rowCount:1});
   const result=await stageCallerGrant({query},input,{settings,ownerVerified:true});
   expect(result).toMatchObject({state:'staged',callable:false});
-  expect(query.mock.calls[2][1][8].toString('utf8')).not.toContain(input.pass);
-  expect(query.mock.calls[2][1][11]).toBe(300);
+  expect(query.mock.calls[2][1][10].toString('utf8')).not.toContain(input.pass);
+  expect(query.mock.calls[2][1][13]).toBe(300);
   const bad={query:vi.fn().mockResolvedValue({rows:[{profile:'full',mode:'test',
     allow_writes:true,areas:['gateway']}]})};
   await expect(stageCallerGrant(bad,input,{settings,ownerVerified:true})).rejects.toThrow();

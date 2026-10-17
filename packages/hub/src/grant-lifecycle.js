@@ -46,7 +46,7 @@ export async function completeActiveGrantActivation(db,{ownerId,id,staged,
      current.server_name!==staged.server_name||
      current.caller_kind!==staged.caller_kind||
      current.caller_id!==staged.caller_id||
-     current.profile!=='read_only'||current.mode!=='test'||
+     current.profile!==staged.profile||current.mode!==staged.mode||
      current.state!=='active'||current.origin!==staged.origin||
      current.prefix!==staged.prefix||
      current.revoked_at!==null||current.verified_at!==null||
@@ -56,7 +56,7 @@ export async function completeActiveGrantActivation(db,{ownerId,id,staged,
   await recheckCaller();
   // Old verified row is locked AFTER the service row, ensuring no two
   // competing owner renewals can both claim an old grant as active.
-  const old=await db.query(`SELECT id,areas,
+  const old=await db.query(`SELECT id,areas,profile,mode,
     to_jsonb(hub_server_grants)->'area_ceiling' AS area_ceiling,
     expires_at
     FROM hub_server_grants WHERE owner_id=$1 AND server_name=$2
@@ -69,7 +69,8 @@ export async function completeActiveGrantActivation(db,{ownerId,id,staged,
   const prior=old.rows[0];
   const priorAreas=prior?prior.area_ceiling??prior.areas:null;
   if(prior&&new Date(prior.expires_at).getTime()>Date.now()&&
-     !replacementScopeAllowed(current.areas,priorAreas))
+     (prior.profile!==current.profile||prior.mode!==current.mode||
+      !replacementScopeAllowed(current.areas,priorAreas)))
    throw new Error('Service credential renewal cannot restore removed areas');
   let purged=0,retired=null;
   if(prior){
@@ -98,7 +99,7 @@ export async function completeActiveGrantActivation(db,{ownerId,id,staged,
      retired,retired?'renewal':'additional_caller',purged,current.areas]);
   if(record.rows.length!==1)throw new Error('Missing credential lifecycle audit');
   await db.query('COMMIT');begun=false;
-  return {id,server:current.server_name,state:'verified_test',
+  return {id,server:current.server_name,state:'verified_'+current.mode,
    registryActive:true,providerRoutingEnabled:false,
    replaced:retired,purgedHandles:purged,action:retired?'renewal':'additional_caller'};
  }catch(err){
