@@ -1,8 +1,7 @@
 # Use one Robinson Tool Contract server from any agent
 
 The server stays standalone; no hub is needed. CLI, SDK, local MCP and encrypted
-relay code are built and tested against throwaway services. Real D-4 direct/relay/
-sandbox runs are **WAITING**, not certified. See D-4 card and OWNER-INPUTS IN-02/03/04.
+relay code are built and tested against throwaway services. Actual Workspace D-4 direct/relay/Sandbox runs, same-pass revocation and cleanup are **PASSED**; see the [exact receipt](audits/2026-10-17-d4-final-route-acceptance.json). This certifies those original runners/service, not every listed agent product, other fleet server or native OS vault.
 
 ## Install and configure once
 
@@ -97,4 +96,4 @@ Record failures as failures, not certified or silently skipped checks.
 Local fake tests prove CLI/SDK/stdio MCP guard behavior and encrypted signed relay
 round trips. D-4a adds actual local read-only runner tests. They do not prove access
 from any real agent product, a hosted relay, a real OS vault or a real service.
-Those runs remain owner-gated in [pr-cards/D-4.md](pr-cards/D-4.md).
+Actual Workspace route evidence is separately accepted in [pr-cards/D-4.md](pr-cards/D-4.md). Future agent/service activations remain owner-scoped; the temporary test relay is disabled and its disposable credentials are revoked.

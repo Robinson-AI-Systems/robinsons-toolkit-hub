@@ -7,5 +7,5 @@ Vercel, Neon, GitHub and more) is its own solid, standalone server following the
 command-line tool and GitHub relay that let any AI agent use any server from anywhere, the shared `robinson-mcp-core`
 package, the hub server that combines them, and the playbook for building each new server.
 
-**Status:** plan plus the repository foundation (checks, test harnesses, CI); no product code yet. Start at [`docs/START-HERE.md`](docs/START-HERE.md). AI agents: read
+**Status:** implemented contract/conformance, CLI/SDK/local MCP, encrypted relay and hosted Hub foundations. Actual Workspace D-4 integration and cleanup are accepted in [PR227](https://github.com/Robinson-AI-Systems/robinsons-toolkit-hub/pull/227). Other Hub roadmap and fleet acceptance remain open in [STATUS](docs/STATUS.md); this is not a whole-Hub completion claim. Start at [`docs/START-HERE.md`](docs/START-HERE.md). AI agents: read
 [`AGENTS.md`](AGENTS.md) first. The previous toolkits are reference material only; nothing keeps compatibility with them.

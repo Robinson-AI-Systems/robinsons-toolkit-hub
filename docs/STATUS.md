@@ -1,3 +1,7 @@
+## Owner-requested documentation and Git closeout — October17 UTC
+
+Updated current setup, architecture, owner inputs, roadmap and acceptance guides to match the verified Workspace D-4 receipt; preserved dated earlier observations as history. The refreshed exact housekeeping manifest archives reviewed development tips before SHA-leased deletion, protects main/live, existing archives and release markers, and rechecks open/concurrently advanced branches. Actual maintenance Action/remote readback belongs in this PR's permanent closeout comment. No new Hub release is requested; other Hub product and fleet obligations remain open.
+
 ## October 17 — final D-4 acceptance PASSED
 
 All original D-4 route gates are now proven against the independent Workspace RTC service. This supersedes the historical pending verdicts below; their original evidence and criteria are retained. Full machine-readable receipt: [final route acceptance](audits/2026-10-17-d4-final-route-acceptance.json).
