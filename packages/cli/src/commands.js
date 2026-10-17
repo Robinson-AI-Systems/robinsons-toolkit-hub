@@ -13,6 +13,7 @@ import { createLocalFiles } from './local-files.js';
 import {developerConnect,nativeMcp} from './developer-client.js';
 import {makeDeveloperVault} from './developer-vault.js';
 import {developerFetch} from './developer-protection.js';
+import {runGuidedSetting} from './guide.js';
 
 const usage = [
   'rtool developer-connect <server> [--profile read_only|everyday|full]',
@@ -22,6 +23,7 @@ const usage = [
   'rtool developer-call <server> <native_tool> [--args JSON] [--dry-run] [--confirm]',
   'rtool developer-logout <server> (remove local OAuth credentials)',
   'rtool servers',
+  'rtool guide <server> "<setting>" (visible owner steps and independent readback)',
   'rtool whoami <server>',
   'rtool tools [server] [search words]',
   'rtool describe <server.tool|prefixed_tool>',
@@ -117,7 +119,8 @@ async function directTools(servers, env, names, options, write) {
   if (!attempted) throw new RouteError('No configured server with a pass can list tools');
 }
 export async function runCLI(argv = [], { env = process.env, out = process.stdout, err = process.stderr,
-  reader, keychain, input = process.stdin, passReader = readHiddenPass } = {}) {
+  reader, keychain, input = process.stdin, passReader = readHiddenPass,
+  guideRunner = runGuidedSetting, guideDeps = {} } = {}) {
   const write = (value) => out.write(value);
   const warning = (value) => err.write(value);
   try {
@@ -200,6 +203,13 @@ export async function runCLI(argv = [], { env = process.env, out = process.stdou
       const localFiles = words.length ? await createLocalFiles(words[1].split(','),{env}) : null;
       await serveLocalStdio({ servers, env, input, output: out, localFiles });
       return 0;
+    }
+    if (command === 'guide') {
+      ensureCount(words, 2, 'rtool guide <server> "<setting>"');
+      const server = byName(servers, env, words[0]);
+      const result = await guideRunner({server,setting:words[1],write,...guideDeps});
+      await output(result, {}, write);
+      return result.status === 'verified' ? 0 : result.status === 'cancelled' ? 2 : 3;
     }
     if (command === 'servers') {
       ensureCount(words, 0, 'rtool servers');

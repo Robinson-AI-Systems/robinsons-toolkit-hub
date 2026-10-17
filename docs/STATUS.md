@@ -1,3 +1,7 @@
+## October 17 — L-4 guided-settings source candidate (pre-merge)
+
+Approved independent L-4 original local workflow planned at bfc6799f (planning SHA 9621d90), with visible headed browser, human-driven per-step approval/acknowledgment and exact advertised read-only RTC §11 verification. The intended implementation is local `rtool guide` only: no hosted Hub, pass/grant changes, provider writes or spending. Required exact-head CI, original CLI/test gates and review are **not yet proven**. L-4 remains IN_PROGRESS until merged and verified; no owner browser/provider guided-setting acceptance has occurred. The main RTC H-1/H-2/H-3/H-4 two-service acceptance queue remains unchanged.
+
 ## Owner-requested documentation and Git closeout — October17 UTC
 
 Updated current setup, architecture, owner inputs, roadmap and acceptance guides to match the verified Workspace D-4 receipt; preserved dated earlier observations as history. The refreshed exact housekeeping manifest archives reviewed development tips before SHA-leased deletion, protects main/live, existing archives and release markers, and rechecks open/concurrently advanced branches. Actual maintenance Action/remote readback belongs in this PR's permanent closeout comment. No new Hub release is requested; other Hub product and fleet obligations remain open.

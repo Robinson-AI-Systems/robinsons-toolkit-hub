@@ -18,6 +18,12 @@ The temporary relay is now disabled: webhook inactive, routing maps empty, issue
 | "Spin up a dev environment for this feature." | One preview: a branch, a database branch, a preview deploy with its settings wired, Stripe test data and event forwarding; one confirmation; one command tears it all down | C |
 | "Provision a new tenant." | One preview across the servers involved; one confirmation; a record you can undo where possible | C |
 
+## Local guided settings (L-4 — source under review)
+
+On a desktop with Node 24 and locally installed Playwright Chromium, `rtool guide <server> "<setting>"` asks the configured standalone RTC1 service for its structured owner instructions. It opens a new **visible** browser (not the background automation browser). The owner logs in personally and acknowledges each step in the terminal; the tool never fills password, 2FA or other form fields. It verifies only an advertised, authorized **read-only** `verifyWith` and clearly reports `unverified` when no safe readback is available or it disagrees. A missing owner confirmation cancels remaining steps. Nothing in this path grants provider mutations or changes the server's original permissions.
+
+While PR #230 remains under review, this is source behavior only, not proof of actual owner-browser or provider acceptance. The feature needs a local desktop and browser; a phone-only ChatGPT connection cannot run this local UI for you.
+
 ## Coding-agent development access (2026-10-13)
 
 The implementing agent uses a renewable native OAuth connection, not a new copied RTC
