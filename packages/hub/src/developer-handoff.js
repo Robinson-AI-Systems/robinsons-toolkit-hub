@@ -3,6 +3,9 @@ import {digestPass} from './identity.js';
 import {takeBudget} from './limits.js';
 import {publicHubOrigin,verifyOwnerLogin,escapeHtml} from './owner-login.js';
 import {issueOAuthCode} from './oauth.js';
+import {parseOwnerServerSelection} from './server-selection.js';
+import {parseInitialServiceProfiles} from './service-profile-policy.js';
+import {parseInitialServiceAreas} from './service-area-policy.js';
 const token=()=>randomBytes(32).toString('base64url');
 const pattern=/^[A-Za-z0-9_-]{43}$/;
 const profiles=new Set(['read_only','everyday','full']);
@@ -81,10 +84,26 @@ export async function developerConsent(db,req,input,{env=process.env}={}){
  const origin=publicHubOrigin(env),callback=origin+'/api/developer/connect';
  if(input.redirect_uri!==callback||input.code_challenge!==row.challenge||input.code_challenge_method!=='S256'||input.response_type!=='code'||input.resource!==origin+'/api/mcp'||input.profile!==row.profile)return {status:400};
  if(req.method==='GET')return {status:200,fields:{client_id:row.client_id,state:row.state,redirect_uri:callback,code_challenge:row.challenge,code_challenge_method:'S256',response_type:'code',resource:origin+'/api/mcp',profile:row.profile}};
+ const profile=input.delegation_profile??'read_only',mode=input.delegation_mode??'test';
+ const allowWrites=input.delegation_writes==='authorize';
+ if(!profiles.has(profile)||!['test','live'].includes(mode)||
+   ![undefined,'disabled','authorize'].includes(input.delegation_writes)||
+   (allowWrites&&(!['everyday','full'].includes(profile)||input.write_ack!=='I_AUTHORIZE'))||
+   (!allowWrites&&input.write_ack))return {status:400};
+ const selected=input.servers?parseOwnerServerSelection(input.servers):null;
+ if(allowWrites&&!selected)return {status:400};
+ let policies=null,areas=null;
+ try{
+  policies=parseInitialServiceProfiles(input.profiles,selected);
+  areas=parseInitialServiceAreas(input.service_areas,selected);
+ }catch{return {status:400};}
  const verified=await verifyOwnerLogin(db,req,input.password,{env});
  if(!verified.approved)return {status:verified.retryAfter?429:401,retryAfter:verified.retryAfter};
  await db.query("UPDATE hub_developer_clients SET expires_at='infinity'::timestamptz WHERE client_id=$1",[row.client_id]);
- const code=await issueOAuthCode(db,{ownerId:env.HUB_OWNER_ID,clientId:row.client_id,redirectUri:callback,challenge:row.challenge,profile:row.profile,mode:'test',areas:['gateway']},{pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
+ const code=await issueOAuthCode(db,{ownerId:env.HUB_OWNER_ID,clientId:row.client_id,redirectUri:callback,challenge:row.challenge,profile,mode,allowWrites,areas:['gateway'],
+  ...(selected?{serverNames:selected}:{}),
+  ...(policies?{serviceProfiles:policies}:{}),
+  ...(areas?{serviceAreas:areas}:{})},{pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
  const url=new URL(callback);url.searchParams.set('code',code);url.searchParams.set('state',row.state);
  return {status:303,redirect:url.href};
 }
