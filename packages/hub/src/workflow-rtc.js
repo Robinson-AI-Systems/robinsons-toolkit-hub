@@ -50,7 +50,7 @@ export async function pinnedRtcWriteCall(target,name,args,{
    res=>{
     const mime=String(res.headers?.['content-type']||'');
     if(![200,400,401,403,404,409,422,429].includes(res.statusCode)||
-       !/^application\\/json(?:\\s*;|$)/i.test(mime)){
+       !/^application\/json(?:\s*;|$)/i.test(mime)){
       res.resume();return rejectUnknown();
     }
     const pieces=[];let length=0;
