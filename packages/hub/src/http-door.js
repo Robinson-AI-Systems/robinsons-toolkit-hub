@@ -2,6 +2,7 @@ import {brokerCatalog,runBroker} from './broker.js';
 import {runFederatedBroker} from './federation.js';
 import {dispatchWorkflow,workflowTools} from './workflow-door.js';
 import {publicHubOrigin} from './owner-login.js';
+import {checkModernMcp,modernMcpReply} from './mcp-modern.js';
 export {brokerCatalog} from './broker.js';
 const supported=new Set(['2025-11-25','2025-06-18','2025-03-26']);
 export function mcpReply(request,actor) {
@@ -100,6 +101,8 @@ export async function handleMcp(req,res,{withDb,authorize,
   try { size=Buffer.byteLength(JSON.stringify(body),'utf8'); }
   catch { return res.status(400).json({error:'invalid_request'}); }
   if (size>16384) return res.status(413).json({error:'too_large'});
+  const modern=checkModernMcp(body,req.headers??{});
+  if(modern.status)return res.status(modern.status).json(modern.body);
   try {
     return await withDb(async(db,settings)=>{
       const state=await authorize(db,settings,req.headers.authorization,'mcp');
@@ -120,6 +123,10 @@ export async function handleMcp(req,res,{withDb,authorize,
          state.actor.allowWrites===true&&state.actor.profile==='read_only') ||
         !Array.isArray(state.actor.areas) || !state.actor.areas.includes('gateway'))
         return res.status(403).json({error:'outside_scope'});
+      if(modern.modern){
+        const output=await modernMcpReply(body,state.actor,db,settings,federate);
+        return res.status(output.status).json(output.body);
+      }
       const reply=await federate(body,state.actor,db,settings);
       if (!reply) return res.status(202).end();
       return res.status(200).json(reply);
