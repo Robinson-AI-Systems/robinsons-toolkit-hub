@@ -11,7 +11,7 @@ const link=(href,label)=>'<a href="'+href+'">'+e(label)+'</a>';
 function frame(title,body){
  return '<!doctype html><html lang="en"><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-  '<title>'+e(title)+'</title><main><h1>'+e(title)+'</h1>'+
+  '<title>'+e(title)+' — Robinson&#39;s Toolkit Hub by Robinson AI Systems</title><main><h1>'+e(title)+'</h1>'+
   '<p>Owner-managed TEST/LIVE connections follow the original provider and caller '+
   'authorization. A local status page does not prove an authenticated '+
   'provider read or authorize spending.</p>'+
@@ -55,7 +55,7 @@ function passRows(part){
  if(part.state!=='readable')return state(part);
  return empty(part.rows)+detail(part.rows.map(item=>
   '<details><summary>Pass '+e(item.id)+' — '+e(item.state)+'</summary>'+
-  '<p>TEST mode: '+e(item.mode)+'; profile: '+e(item.profile)+
+  '<p>Environment: '+e(item.mode)+'; profile: '+e(item.profile)+
   '; expires: '+e(String(item.expiresAt))+'</p>'+
   '<p>Selected services: '+showList(item.serverNames)+'</p>'+
   '<p>Service area limits: '+e(JSON.stringify(item.serviceAreas??{}))+'</p>'+
@@ -117,8 +117,8 @@ function scopeRows(data){
    ' — '+e(item.callerId)+'</summary>';
   if(item.inspection==='unavailable'||!item.available)
     return head+'<p>Current verified scoped grant unavailable. No action implied.</p></details>';
-  const base='<p>Local grant '+e(item.grantId)+'; actual TEST provider '+
-    'authentication remains UNVERIFIED.</p>'+
+  const base='<p>Local grant '+e(item.grantId)+'; current external provider '+
+    'authentication and issuer delegation require separate verification.</p>'+
     '<p>Current profile: '+e(item.profile)+
     '; effective authorized areas: '+showList(item.authorizedAreas)+
     '; grant area ceiling: '+showList(item.grantAreas)+
