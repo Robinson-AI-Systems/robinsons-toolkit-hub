@@ -11,7 +11,7 @@ export default async function handler(req,res) {
         return res.status(429).json({ok:false,error:{code:'rate_limited'}});
       }
       const {profile,mode,areas}=state.actor;
-      return res.status(200).json({ok:true,result:{profile,mode,areas,allowWrites:false}});
+      return res.status(200).json({ok:true,result:{profile,mode,areas,allowWrites:state.actor.allowWrites===true}});
     });
   } catch { return res.status(503).json({ok:false,error:{code:'unavailable'}}); }
 }

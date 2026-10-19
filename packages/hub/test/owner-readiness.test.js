@@ -8,13 +8,25 @@ function response() {
   status(n){this.code=n;return this;},
   send(v){this.body=v;return this;}};
 }
+const tables=['hub_servers','hub_server_grants','hub_rtc_read_audit','hub_rtc_result_handles'];
+const columns=[...['name','owner_id','state'].map(column_name=>({table_name:'hub_servers',column_name})),
+ ...['owner_id','server_name','mode','revoked_at','expires_at','verified_at'].map(column_name=>({table_name:'hub_server_grants',column_name}))];
+const constraints=[
+ ['hub_server_grants','hub_grant_selected_profile',"CHECK ((profile = ANY (ARRAY['read_only'::text, 'everyday'::text, 'full'::text])))"],
+ ['hub_server_grants','hub_grant_selected_mode',"CHECK ((mode = ANY (ARRAY['test'::text, 'live'::text])))"]]
+ .map(([table_name,conname,definition])=>({table_name,conname,definition,convalidated:true}));
+function fixtureDb({tableRows=tables.map(table_name=>({table_name})),columnRows=columns,
+ constraintRows=constraints,grantRows=[{mode:'test',grants:2,verified:2,registered_services:2}]}={}) {
+ return {query:vi.fn(async sql=>{
+  if(sql.includes('information_schema.tables'))return {rows:tableRows};
+  if(sql.includes('information_schema.columns'))return {rows:columnRows};
+  if(sql.includes('pg_constraint'))return {rows:constraintRows};
+  if(sql.includes('GROUP BY'))return {rows:grantRows};
+  return {rows:[{servers:2,active:2}]};
+ })};
+}
 async function invoke(method,body,extra={}) {
- const res=response(),query=vi.fn(async sql=>{
-  if(sql.includes('information_schema'))return {rows:[
-   {table_name:'hub_servers'},{table_name:'hub_server_grants'},
-   {table_name:'hub_rtc_read_audit'},{table_name:'hub_rtc_result_handles'}]};
-  return {rows:[{servers:2,grants:2,active:2,verified:2,ready_services:2}]};
- });
+ const res=response(),{query}=fixtureDb();
  const deps={env,withDb:async fn=>fn({query},
   {grantsKey:goodKey,resultsKey:goodKey}),
   verify:vi.fn(async(_db,_req,password)=>({approved:password==='fixture-owner'})),
@@ -27,7 +39,7 @@ async function invoke(method,body,extra={}) {
 it('GET reveals no environment, database or owner setup metadata',async()=>{
  const {res,query,deps}=await invoke('GET');
  expect(res.code).toBe(200);
- expect(res.body).toContain('Check private TEST readiness');
+ expect(res.body).toContain('Check private readiness');
  expect(res.body).not.toContain(goodKey);
  expect(res.headers['Cache-Control']).toBe('no-store');
  expect(res.headers['Content-Security-Policy']).toContain("default-src 'none'");
@@ -39,10 +51,10 @@ it('owner-authenticated POST describes scoped TEST prerequisites without secrets
  expect(res.code).toBe(200);
  expect(res.body).toContain('Two-service TEST routing preflight: ready');
  expect(res.body).toContain('Required H-2/H-3 database tables');
- expect(res.body).toContain('Unexpired scoped TEST grants');
+ expect(res.body).toContain('Unexpired TEST grants');
  expect(res.body).not.toContain(goodKey);
  expect(res.body).not.toContain('owner-a');
- expect(query).toHaveBeenCalledTimes(2);
+ expect(query).toHaveBeenCalledTimes(5);
 });
 it('rejects unverified owner without reading registry state',async()=>{
  const {res,query}=await invoke('POST','password=incorrect');
@@ -60,7 +72,7 @@ it('labels missing grants key and incomplete migrations as not ready',async()=>{
   {grantsKey:undefined,resultsKey:goodKey});
  expect(state).toMatchObject({schemaReady:false,installedTables:1,
   grantsKeyReady:false,activeServers:0,verifiedGrants:0});
- expect(db.query).toHaveBeenCalledTimes(1);
+ expect(db.query).toHaveBeenCalledTimes(3);
  const {res}=await invoke('POST','password=fixture-owner',{
   summarize:async()=>state});
  expect(res.code).toBe(200);
@@ -88,6 +100,45 @@ it('never mistakes two grants on the same service for two-service readiness',asy
  const {res}=await invoke('POST','password=fixture-owner',{
   summarize:async()=>state});
  expect(res.code).toBe(200);
- expect(res.body).toContain('Distinct active TEST services with verified grants');
+ expect(res.body).toContain('Distinct active registered TEST services with verified grants');
  expect(res.body).toContain('Two-service TEST routing preflight: not ready');
+});
+
+it('never lets LIVE grants satisfy TEST counts or TEST grants satisfy LIVE configuration',async()=>{
+ const db=fixtureDb({grantRows:[{mode:'live',grants:3,verified:3,registered_services:2}]});
+ const state=await summarizeHubReadiness(db,'owner-a',{grantsKey:goodKey,resultsKey:goodKey});
+ expect(state.modes.test.registeredServices).toBe(0);
+ expect(state.modes.live.registeredServices).toBe(2);
+ expect(state.readyServices).toBe(0);
+ const {res}=await invoke('POST','password=fixture-owner',{summarize:async()=>state});
+ expect(res.body).toContain('LIVE read configuration preflight: ready');
+ expect(res.body).toContain('TEST read configuration preflight: not ready');
+ expect(res.body).toContain('Two-service TEST routing preflight: not ready');
+ expect(res.body).toContain('Current caller authorization');
+ expect(res.body).toContain('Optional OAuth write-delegation schema (024): <strong>not ready');
+});
+it('four table names without verified_at do not trigger unsafe count queries',async()=>{
+ const db=fixtureDb({columnRows:columns.filter(r=>r.column_name!=='verified_at')});
+ const state=await summarizeHubReadiness(db,'owner-a',{});
+ expect(state).toMatchObject({installedTables:4,schemaReady:false,liveGrantSchemaReady:false});
+ expect(db.query).toHaveBeenCalledTimes(3);
+ const {res}=await invoke('POST','password=fixture-owner',{summarize:async()=>state});
+ expect(res.body).toContain('Verified LIVE grants: <strong>unavailable');
+});
+it.each(['missing','unvalidated','wrong definition','foreign table'])(
+ 'selected-mode schema refuses %s constraints',async kind=>{
+ const rows=constraints.map(x=>({...x}));
+ if(kind==='missing')rows.pop();
+ if(kind==='unvalidated')rows[1].convalidated=false;
+ if(kind==='wrong definition')rows[1].definition="CHECK (mode = 'test'::text)";
+ if(kind==='foreign table')rows[1].table_name='unrelated';
+ const state=await summarizeHubReadiness(fixtureDb({constraintRows:rows}),'owner-a',{});
+ expect(state.liveGrantSchemaReady).toBe(false);
+});
+it('only queries owner-scoped counts and catalog metadata, never credential columns',async()=>{
+ const db=fixtureDb();await summarizeHubReadiness(db,'owner-a',{});
+ for(const [sql,args] of db.query.mock.calls){
+  expect(sql).not.toMatch(/ciphertext|pass_digest|refresh_digest|INSERT|UPDATE|DELETE|ALTER/i);
+  if(sql.includes('count(')){expect(sql).toContain('owner_id=$1');expect(args).toEqual(['owner-a']);}
+ }
 });

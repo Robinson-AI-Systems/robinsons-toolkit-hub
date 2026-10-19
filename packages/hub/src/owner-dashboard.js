@@ -2,6 +2,7 @@
 // A dashboard view is NOT proof that a hosted provider has accepted a pass.
 import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
  verifyOwnerLogin} from './owner-login.js';
+import {renderReadinessSummary} from './owner-readiness.js';
 import {readOwnerDashboard,checkedDashboardSelection} from './owner-dashboard-data.js';
 
 const e=value=>escapeHtml(value??'');
@@ -19,7 +20,7 @@ function frame(title,body){
   link('/api/owner/oauth','Manage OAuth families')+' | '+
   link('/api/owner/grants','Manage service grants')+' | '+
   link('/api/owner/servers','Manage server registry')+' | '+
-  link('/api/owner/readiness','Original readiness view')+' | '+
+  link('/api/owner/readiness','Connection readiness')+' | '+
   link('/api/owner/changes','Recent routed read history')+
   '</nav>'+body+'</main></html>';
 }
@@ -29,7 +30,7 @@ function requestForm(){
   '<option value="overview">Passes, OAuth and grants</option>'+
   '<option value="scopes">Effective caller/service permissions</option>'+
   '<option value="audit">Permanent restriction audit</option>'+
-  '<option value="readiness">Hub TEST readiness</option>'+
+  '<option value="readiness">Service connection readiness</option>'+
   '</select></label>'+
   '<label>Scope page (0–99) <input name="page" value="0" inputmode="numeric" '+
   'maxlength="2"></label>'+
@@ -162,23 +163,7 @@ function audits(data){
 function readiness(data){
  if(data.state!=='readable'||!data.readiness)
   return '<h2>Readiness unavailable</h2><p>No acceptance inferred.</p>';
- const r=data.readiness;
- const values=[
-  ['Required tables found',String(r.installedTables)+'/4'],
-  ['Core H-2/H-3 schema detected',String(r.schemaReady)],
-  ['Encrypted upstream grant key configured',String(r.grantsKeyReady)],
-  ['Encrypted result key configured',String(r.resultsKeyReady)],
-  ['Staged service registrations',r.servers],
-  ['Locally staged grants',r.stagedGrants],
-  ['Active server registry entries',r.activeServers],
-  ['Locally verified grants',r.verifiedGrants],
-  ['Active services with verified grants',r.readyServices]
- ];
- return '<h2>Hub readiness (metadata only)</h2>'+
-  detail(values.map(([k,v])=>e(k)+': '+e(v)))+
-  '<p>Actual deployed provider identity, authenticated harmless TEST reads, '+
-  'native/direct/relay/Sandbox acceptance, and same-pass denial/revocation '+
-  'are UNVERIFIED regardless of counts above.</p>';
+ return '<h2>Hub readiness (metadata only)</h2>'+renderReadinessSummary(data.readiness);
 }
 export function renderOwnerDashboard(data) {
  const view=data.tab==='overview'?overview(data):
