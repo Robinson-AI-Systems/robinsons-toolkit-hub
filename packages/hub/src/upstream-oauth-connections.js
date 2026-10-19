@@ -129,13 +129,32 @@ export async function issuerMcpWhoami(resource,access,prefix,expected,post=pinne
   if(typeof raw==='string'&&raw.length<=12000)
    try{who=JSON.parse(raw);}catch{}
  }
- // Do not mistake a successful OAuth code exchange for chosen delegation.
- if(!who||who.mode!==expected.mode||who.profile!==expected.profile||
+ // RTC-issued passes may expose full mode/profile/area attestation.
+ // Standard bearer OAuth credentials are also usable for nonwriting calls
+ // when whoami independently confirms a stable signed-in account identity:
+ // this never authorizes writes or more areas than the Hub owner selected.
+ if(!who||typeof who!=='object'||Array.isArray(who))
+  throw Error('MCP provider identity unavailable');
+ const scoped=who.mode!==undefined||who.profile!==undefined||who.areas!==undefined;
+ const principal=typeof who.actingAs==='string'&&who.actingAs.length<=254?
+  who.actingAs.trim().toLowerCase():null;
+ const verifiedEmail=typeof who.gmailReports==='string'&&
+  who.gmailReports.length<=254?who.gmailReports.trim().toLowerCase():null;
+ if(scoped) {
+  if(who.mode!==expected.mode||who.profile!==expected.profile||
     !Array.isArray(who.areas)||expected.areas.some(x=>!who.areas.includes(x))||
-    (expected.profile==='read_only'&&
-      (who.allowWrites===true||who.allow_writes===true)))
-  throw Error('MCP provider did not attest the chosen authorization');
- return true;
+    expected.profile==='read_only'&&
+      (who.allowWrites===true||who.allow_writes===true))
+   throw Error('MCP provider did not attest the chosen authorization');
+ }else if(expected.profile!=='read_only'||who.matches!==true||
+    !principal||!verifiedEmail||principal!==verifiedEmail||
+    who.allowWrites===true||who.allow_writes===true){
+  // Without explicit policy attestation, OAuth bearer permissions are
+  // provider-enforced; Hub only permits separately selected nonwriting
+  // tools and refuses full/write delegation rather than inventing scopes.
+  throw Error('MCP provider identity or writable delegation not verified');
+ }
+ return {principal,policyAttested:scoped};
 }
 export async function beginUpstreamOauth(db,settings,{ownerId,origin,
  family=null,mode='live',profile='read_only',areas,scopes='',
@@ -224,7 +243,8 @@ export async function finishUpstreamOauth(db,settings,{ownerId,state,browser,cod
     manifest.issuer!==pending.issuer||manifest.tokenEndpoint!==pending.token_endpoint)
    throw Error('MCP OAuth issuer/RTC identity changed before connection activation');
  const catalog=await list(pending.resource,issued.accessToken,manifest.prefix,post);
- await issuerMcpWhoami(pending.resource,issued.accessToken,manifest.prefix,
+ const verifiedIdentity=await issuerMcpWhoami(
+  pending.resource,issued.accessToken,manifest.prefix,
   {mode:pending.requested_mode,profile:pending.requested_profile,
    areas:pending.allowed_areas},post);
  const freshFamily=await currentFamily(db,pending.owner_id,pending.caller_family,
@@ -234,7 +254,9 @@ export async function finishUpstreamOauth(db,settings,{ownerId,state,browser,cod
  const connection={id,owner_id:pending.owner_id,caller_family:pending.caller_family,
   service_name:pending.service_name,resource:pending.resource};
  const sealed=seal({clientSecret:saved.clientSecret,authMethod:saved.authMethod,
-  accessToken:issued.accessToken,refreshToken:issued.refreshToken},
+  accessToken:issued.accessToken,refreshToken:issued.refreshToken,
+  principal:verifiedIdentity.principal,
+  policyAttested:verifiedIdentity.policyAttested},
   connectionAAD(connection),settings);
  await db.query('BEGIN');
  try{
@@ -307,8 +329,12 @@ async function checkedConnectionAccess(db,settings,{ownerId,id},
     const registry=await db.query('SELECT prefix FROM hub_servers WHERE name=$1 AND owner_id=$2',
      [row.service_name,ownerId]);
     if(registry.rows.length!==1)throw Error('Service identity changed during OAuth refresh');
-    await issuerMcpWhoami(row.resource,renewed.accessToken,registry.rows[0].prefix,
+    const verified=await issuerMcpWhoami(
+     row.resource,renewed.accessToken,registry.rows[0].prefix,
      {mode:row.mode,profile:row.profile,areas:row.allowed_areas},post);
+    if((credentials.principal??null)!==(verified.principal??null)||
+       credentials.policyAttested!==verified.policyAttested)
+     throw Error('MCP OAuth identity or attestation changed during refresh');
     credentials={...credentials,accessToken:renewed.accessToken,
       refreshToken:renewed.refreshToken??credentials.refreshToken};
     const sealed=seal(credentials,connectionAAD(row),settings);
