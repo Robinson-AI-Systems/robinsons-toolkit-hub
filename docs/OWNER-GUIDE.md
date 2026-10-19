@@ -1,3 +1,5 @@
+Service manifests may call their environments test/live or preview/production. The connection view shows the original labels and the equivalent Hub choices. A production credential is always a LIVE credential. A full/everyday Hub profile without explicit write delegation cannot enroll a writable service credential; no provider credential is forwarded for that refusal.
+
 ## Normal service discovery and connection (source repair; not released)
 
 Use **Connect a service** in the protected Hub control center. Enter the independent service's canonical HTTPS origin and authenticate with the Hub owner passphrase. The Hub reads that service's RTC manifest, prepares a pending public registry entry and displays the discovered identity and advertised choices. This does not grant access or prove the service's deployed source revision.

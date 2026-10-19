@@ -1,3 +1,4 @@
+import {rtcMode} from './rtc-mode.js';
 import {pinnedRtcJsonGet,probeStagedRtcContract} from './pinned-contract.js';
 
 const validArea=/^[a-z][a-z0-9_]{0,59}$/;
@@ -18,11 +19,12 @@ export async function inspectScopedRtcIdentity(input,transport={}) {
     throw new TypeError('Invalid scoped RTC credential inspection inputs');
   // Public contract is uncredentialed; the provider whoami is from the exact
   // independently issued credential. No mutation or provider tool call.
-  await probeStagedRtcContract(origin,{name,prefix},transport);
+  const contract=await probeStagedRtcContract(origin,{name,prefix},transport);
+  if(!contract.modes.includes(mode))throw Error('RTC environment is not advertised');
   const value=await pinnedRtcJsonGet(origin,'/api/whoami',{...transport,pass});
   const who=value?.result;
   const writable=profile!=='read_only';
-  if(value?.ok!==true||!who||who.profile!==profile||who.mode!==mode||
+  if(value?.ok!==true||!who||who.profile!==profile||rtcMode(who.mode)!==mode||
     (Object.hasOwn(who,'allowWrites')&&Object.hasOwn(who,'allow_writes')&&
      who.allowWrites!==who.allow_writes)||
     (writable && who.allowWrites!==true && who.allow_writes!==true)||

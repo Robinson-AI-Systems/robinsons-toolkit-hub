@@ -30,6 +30,7 @@ function connectionForm(service,callers){
  return page('<h2>'+esc(service.server)+'</h2><p>Origin: '+esc(service.origin)+
   '. Tool prefix: '+esc(service.prefix)+'. Advertised tools: '+service.tools+
   '. Public metadata is not authorization or a verified deployment revision.</p>'+
+  '<p>Advertised environment names: '+esc((service.providerModes??service.modes).join(', '))+'. Hub selections use test/live for the equivalent environments.</p>'+
   '<p>The service registry is prepared. A provider grant is required before tools are available.</p><p>Available areas: '+esc(service.areas.join(', '))+'.</p>'+
   (!callers.length?'<p>No current Hub connection is available. Connect an agent to the Hub with your chosen mode and service permissions, then discover this service again. No provider grant was created.</p>':
   '<form method="POST" action="'+route+'">'+hidden('action','connect')+
@@ -85,7 +86,7 @@ export async function connectRtcService(db,settings,ownerId,input,{
  const {origin,server,prefix,mode,profile,areas,callerKind,callerId,pass}=input;
  // Resolve the CURRENT exact caller before forwarding even a provider whoami.
  const current=(await callers(db,ownerId,{ownerVerified:true})).find(c=>c.kind===callerKind&&c.id===callerId);
- if(!current||current.mode!==mode||
+ if(!current||current.mode!==mode||(profile!=='read_only'&&current.allowWrites!==true)||
    (current.serverNames!==null&&!current.serverNames.includes(server))||
    limitedServiceProfile(profile,current.profile,current.serviceProfiles,server)!==profile||
    (current.serviceAreas?.[server]&&areas.some(a=>!current.serviceAreas[server].includes(a))))
