@@ -92,8 +92,12 @@ it('issues separately consented LIVE native PKCE public-client credentials with 
  const rotated=await rotateOAuthRefresh(db,{
   clientId:cid,refreshToken:exchange.refresh_token},{pepper:env.HUB_TOKEN_PEPPER});
  expect(rotated.refresh_token).not.toBe(exchange.refresh_token);
- await expect(rotateOAuthRefresh(db,{clientId:cid,
-  refreshToken:exchange.refresh_token},{pepper:env.HUB_TOKEN_PEPPER})).rejects.toThrow();
+ expect(await rotateOAuthRefresh(db,{clientId:cid,
+  refreshToken:exchange.refresh_token},{pepper:env.HUB_TOKEN_PEPPER})).toBeNull();
+ // Old-refresh replay must invalidate the whole family, including the
+ // token from the successful earlier rotation.
+ expect(await authenticateOAuth(db,rotated.access_token,{pepper:env.HUB_TOKEN_PEPPER}))
+  .toBeNull();
  expect(await developerClientValid(db,cid,'w'.repeat(43),{env})).toBe(false);
  const other=await registerDeveloperClient(db,{
   redirect_uris:['https://other-agent.example.org/cb'],
