@@ -42,10 +42,12 @@ function safeAreas(input,offered){
    new Set(input).size!==input.length)throw Error('Unapproved MCP service areas');
  return [...input];
 }
-async function currentFamily(db,ownerId,family,serviceName,mode,profile){
- if(!isOwner(ownerId)||typeof family!=='string'||family.length>80||
-   !['test','live'].includes(mode)||!['read_only','everyday','full'].includes(profile))
-   throw Error('Invalid Hub OAuth connection selection');
+const familyPattern=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+const profileOptions=['read_only','everyday','full'];
+async function eligibleHubOauthFamilies(db,ownerId,serviceName){
+ if(!isOwner(ownerId)||typeof serviceName!=='string'||
+   !/^[a-z][a-z0-9-]{2,90}$/.test(serviceName))
+  throw Error('Invalid Hub service identity');
  const {rows}=await db.query(`SELECT DISTINCT ON (family_id)
   id,family_id,profile,mode,areas,client_id,
   to_jsonb(s)->'allowed_servers' AS allowed_servers,
@@ -57,12 +59,31 @@ async function currentFamily(db,ownerId,family,serviceName,mode,profile){
     AND NOT EXISTS (SELECT 1 FROM hub_oauth_sessions gone
       WHERE gone.family_id=s.family_id AND gone.revoked_at IS NOT NULL)
   ORDER BY family_id,access_expires_at DESC LIMIT 25`,[ownerId]);
- const eligible=rows.filter(x=>(!family||x.family_id===family)&&
-   x.mode===mode&&limitedServiceProfile(profile,x.profile,x.profile_policy,serviceName)===profile&&
-   (profile==='read_only'||x.allow_writes===true)&&
+ return rows.filter(x=>
    (!Array.isArray(x.allowed_servers)||x.allowed_servers.includes(serviceName))&&
-   x.profile_policy?.[serviceName]!=='disabled');
- if(eligible.length!==1)throw Error('Choose exactly one active Hub OAuth connection with matching mode/profile');
+   x.profile_policy?.[serviceName]!=='disabled')
+  .map(x=>({...x,eligibleProfiles:profileOptions.filter(profile=>
+    limitedServiceProfile(profile,x.profile,x.profile_policy,serviceName)===profile&&
+    (profile==='read_only'||x.allow_writes===true))}))
+  .filter(x=>x.eligibleProfiles.length>0);
+}
+// The owner chooses a real existing Hub OAuth family, not a provider token
+// or a newly minted connection. Safe metadata only, returned after owner auth.
+export async function listSelectableUpstreamCallers(db,ownerId,serviceName){
+ const rows=await eligibleHubOauthFamilies(db,ownerId,serviceName);
+ return rows.map(x=>({family:x.family_id,mode:x.mode,
+  profile:x.profile,eligibleProfiles:[...x.eligibleProfiles]}));
+}
+async function currentFamily(db,ownerId,family,serviceName,mode,profile){
+ if(!isOwner(ownerId)||(family!==null&&
+   (typeof family!=='string'||!familyPattern.test(family)))||
+   !['test','live'].includes(mode)||!profileOptions.includes(profile))
+  throw Error('Invalid Hub OAuth connection selection');
+ const rows=await eligibleHubOauthFamilies(db,ownerId,serviceName);
+ const eligible=rows.filter(x=>(family===null||x.family_id===family)&&
+   x.mode===mode&&x.eligibleProfiles.includes(profile));
+ if(eligible.length!==1)throw Error(
+   'Select exactly one current Hub OAuth caller with matching mode, scope and profile');
  return eligible[0].family_id;
 }
 function tokenResult(body){
