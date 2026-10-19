@@ -1448,6 +1448,21 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "Source H-4 profile policy, owner UI, initial PKCE/HUB-pass selection and disposable PostgreSQL tests proposed; migration 017, independent provider TEST, actual owner readback, direct/relay/Sandbox acceptance PENDING."
+  },
+  {
+    "id": "HUB-H3-LIVE-RESULT-HTTP",
+    "priority": 2,
+    "requiredRevision": "e249af5cd3dc0576b786cf3e5dc7cc06c434139d",
+    "introducedFile": "packages/hub/src/results-http.js",
+    "task": "Normal owner-scoped LIVE RTC large-read result can be paged through actual HTTP with the same current caller and original independently issued provider grant; wrong caller, revoked/replaced grant and expiry deny without replay.",
+    "procedure": "docs/pr-cards/H-3.md October19 LIVE HTTP result acceptance; docs/OWNER-GUIDE.md Retrieve large RTC read results",
+    "gates": "Exact checked source on independently READY Hub; approved hosted schema/keys; normal generic discovery and owner authorization, new separately scoped LIVE read-only Hub/provider grants and exact harmless owned read. Do not reuse direct-only Workspace pass or original rotating owner credentials; no provider write or spend.",
+    "dependsOn": [],
+    "status": "PENDING",
+    "subsections": [
+      "H-3"
+    ],
+    "lastEvidence": "Source implements shared actual HTTP RTC TEST/LIVE retrieval with original grant revalidation, retaining legacy H-1 TEST restrictions. Local check,938 unit tests and20 focused route tests passed. Disposable SQL and complete exact-head CI required before merge; no real normal hosted connection, large provider read, same-pass denial/revocation or release performed."
   }
 ]
 ```
