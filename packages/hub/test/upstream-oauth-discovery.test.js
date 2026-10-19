@@ -77,3 +77,45 @@ it('pins Node TLS, refuses off-host responses and never sends an inbound Hub bea
  expect(result).toEqual({ok:true});
  expect(request).toHaveBeenCalledTimes(1);
 });
+
+it('verifies actual OAuth account identity for read-only MCP without inventing permission scopes',async()=>{
+ const {issuerMcpWhoami}=await import('../src/upstream-oauth-connections.js');
+ const scope={mode:'live',profile:'read_only',areas:['mail']};
+ const who={actingAs:'Staff@Example.org',gmailReports:'staff@example.org',
+  matches:true,messagesTotal:100};
+ const post=vi.fn(async(url,options)=>{
+  expect(url).toBe(origin+'/api/mcp');
+  expect(options.bearer).toBe('synthetic-oauth-access');
+  expect(options.body.params.name).toBe('independent_whoami');
+  return {jsonrpc:'2.0',id:2,result:{
+   content:[{type:'text',text:JSON.stringify(who)}]}};
+ });
+ const verified=await issuerMcpWhoami(origin+'/api/mcp',
+  'synthetic-oauth-access','independent',scope,post);
+ expect(verified).toEqual({principal:'staff@example.org',policyAttested:false});
+ expect(post).toHaveBeenCalledTimes(1);
+ await expect(issuerMcpWhoami(origin+'/api/mcp',
+  'synthetic-oauth-access','independent',
+  {...scope,profile:'full'},post)).rejects.toThrow(/delegation/);
+ for(const denied of [
+  {...who,matches:false},
+  {...who,gmailReports:'someone-else@example.org'},
+  {...who,actingAs:''},
+  {...who,allowWrites:true},
+  {...who,profile:'read_only',areas:['mail'],mode:'test'}
+ ]) {
+  const faulty=async()=>({jsonrpc:'2.0',id:2,result:{
+   content:[{type:'text',text:JSON.stringify(denied)}]}});
+  await expect(issuerMcpWhoami(origin+'/api/mcp',
+   'synthetic-oauth-access','independent',scope,faulty)).rejects.toThrow();
+ }
+});
+it('requires exact mode, profile, and areas from an RTC policy-bearing whoami',async()=>{
+ const {issuerMcpWhoami}=await import('../src/upstream-oauth-connections.js');
+ const scope={mode:'live',profile:'read_only',areas:['files']};
+ const post=async()=>({jsonrpc:'2.0',id:2,
+  result:{structuredContent:{mode:'live',profile:'read_only',
+   areas:['files','mail'],allowWrites:false}}});
+ expect(await issuerMcpWhoami(origin+'/api/mcp','synthetic','independent',scope,post))
+  .toEqual({principal:null,policyAttested:true});
+});
