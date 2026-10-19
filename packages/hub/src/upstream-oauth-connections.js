@@ -98,6 +98,27 @@ export async function issuerMcpTools(resource,access,prefix,post=pinnedMcpReques
   maxBytes:65536,timeoutMs:10000});
  return validToolList(response,prefix);
 }
+export async function issuerMcpWhoami(resource,access,prefix,expected,post=pinnedMcpRequest){
+ const body=await post(resource,{method:'POST',
+  body:{jsonrpc:'2.0',id:2,method:'tools/call',
+   params:{name:prefix+'_whoami',arguments:{}}},bearer:access,
+  headers:{'mcp-protocol-version':'2025-11-25'},timeoutMs:10000,maxBytes:16384});
+ if(body?.error||body?.result?.isError===true)
+  throw Error('MCP provider identity verification refused');
+ let who=body?.result?.structuredContent;
+ if(!who&&Array.isArray(body?.result?.content)) {
+  const raw=body.result.content.find(x=>x.type==='text')?.text;
+  if(typeof raw==='string'&&raw.length<=12000)
+   try{who=JSON.parse(raw);}catch{}
+ }
+ // Do not mistake a successful OAuth code exchange for chosen delegation.
+ if(!who||who.mode!==expected.mode||who.profile!==expected.profile||
+    !Array.isArray(who.areas)||expected.areas.some(x=>!who.areas.includes(x))||
+    (expected.profile==='read_only'&&
+      (who.allowWrites===true||who.allow_writes===true)))
+  throw Error('MCP provider did not attest the chosen authorization');
+ return true;
+}
 export async function beginUpstreamOauth(db,settings,{ownerId,origin,
  family=null,mode='live',profile='read_only',areas,scopes='',
  hubOrigin,ack=false},{
@@ -153,7 +174,7 @@ export async function beginUpstreamOauth(db,settings,{ownerId,origin,
   response_type:'code',client_id:registeredClient.clientId,
   redirect_uri:redirectUri,state,code_challenge_method:'S256',
   code_challenge:createHash('sha256').update(verifier).digest('base64url'),
-  resource:remote.resource,
+  resource:remote.resource,mode,
   profile,areas:allowed.join(','),...(scopes?{scope:scopes}:{})}))
   authorization.searchParams.set(k,v);
  return {authorizeUrl:authorization.href,browserNonce:browser,
@@ -184,6 +205,9 @@ export async function finishUpstreamOauth(db,settings,{ownerId,state,browser,cod
     manifest.issuer!==pending.issuer||manifest.tokenEndpoint!==pending.token_endpoint)
    throw Error('MCP OAuth issuer/RTC identity changed before connection activation');
  const catalog=await list(pending.resource,issued.accessToken,manifest.prefix,post);
+ await issuerMcpWhoami(pending.resource,issued.accessToken,manifest.prefix,
+  {mode:pending.requested_mode,profile:pending.requested_profile,
+   areas:pending.allowed_areas},post);
  const freshFamily=await currentFamily(db,pending.owner_id,pending.caller_family,
   pending.service_name,pending.requested_mode,pending.requested_profile);
  if(freshFamily!==pending.caller_family)throw Error('Hub OAuth family no longer permitted');
