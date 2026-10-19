@@ -3,13 +3,16 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import pg from 'pg';
 import {genericFederationDependencies} from '../../src/oauth-federation.js';
+import {storeOauthResult,readOauthResult,pruneExpiredOauthResults} from '../../src/oauth-results.js';
 import {beginUpstreamOauth,finishUpstreamOauth,remoteConnectionRead,
  listUpstreamOauthConnections,withActorUpstreamOauth,disconnectUpstreamOauth}
  from '../../src/upstream-oauth-connections.js';
 
 const owner='oauth_owner',origin='https://mcp.example.org',
  hubOrigin='https://hub.example.org',issuer=origin;
-const settings={grantsKey:randomBytes(32).toString('base64url')};
+const settings={grantsKey:randomBytes(32).toString('base64url'),
+ resultsKey:randomBytes(32).toString('base64url'),
+ pepper:'synthetic-OAuth-result-scope-test-pepper-v1-2026'};
 const family=randomUUID(),session=randomUUID();
 const remote={origin,resource:origin+'/api/mcp',issuer,
  authorizationEndpoint:issuer+'/api/oauth/authorize',
@@ -74,7 +77,8 @@ beforeAll(async()=>{
    '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql',
    '020-hub-service-identities.sql',
    '025-hub-upstream-oauth-connections.sql',
-   '026-hub-oauth-mcp-read-audit.sql'])
+   '026-hub-oauth-mcp-read-audit.sql',
+   '027-hub-oauth-result-handles.sql'])
   await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
  await db.query(`INSERT INTO hub_oauth_clients(client_id,owner_id,redirect_uri)
  VALUES('synthetic-client',$1,'https://agent.example.org/callback')`,[owner]);
@@ -188,6 +192,59 @@ it('isolates actual LIVE Hub OAuth caller to this connection and records durable
   grantId:connectionId,service:'independent-mcp',
   tool:'independent_files_list',phase:'outcome',outcome:'success',
   correlationId})).rejects.toThrow();
+});
+it('seals 64KiB-bounded OAuth READ results under current caller and pages without rerunning provider POST',async()=>{
+ const actor={id:session,ownerId:owner,clientId:'synthetic-client',
+  mode:'live',profile:'full',areas:['gateway'],allowWrites:false};
+ const payload={name:'independent_files_list',items:'🌍'.repeat(4500)};
+ const large=await storeOauthResult(db,actor,connectionId,'independent-mcp',
+  payload,settings);
+ expect(large.readTool).toBe('hub_result_read');
+ expect(large.pages).toBeGreaterThan(4);
+ const rows=(await db.query('SELECT * FROM hub_upstream_oauth_result_handles')).rows;
+ expect(rows).toHaveLength(1);
+ expect(rows[0].handle_digest).not.toBe(large.handle);
+ expect(JSON.stringify(rows)).not.toContain('independent_files_list');
+ expect(JSON.stringify(rows)).not.toContain('rotated-access-secret');
+ const chunks=[];
+ for(let n=0;n<large.pages;n++){
+  const page=await readOauthResult(db,actor,large.handle,n,settings);
+  expect(Buffer.byteLength(JSON.stringify(page))).toBeLessThan(8192);
+  chunks.push(Buffer.from(page.data,'base64url'));
+ }
+ expect(JSON.parse(Buffer.concat(chunks).toString('utf8'))).toEqual(payload);
+ expect(await readOauthResult(db,actor,large.handle,large.pages,settings)).toBeNull();
+ for(const other of [
+  {...actor,id:randomUUID()},
+  {...actor,ownerId:'other-owner'},
+  {...actor,mode:'test'},
+  {...actor,profile:'read_only'}
+ ])expect(await readOauthResult(db,other,large.handle,0,settings)).toBeNull();
+ expect(await readOauthResult(db,actor,'wrong',0,settings)).toBeNull();
+ expect(await readOauthResult(db,actor,large.handle,0,{
+  ...settings,resultsKey:undefined})).rejects.toThrow();
+ await db.query(`UPDATE hub_upstream_oauth_connections SET
+   allowed_areas=ARRAY['calendar'] WHERE id=$1`,[connectionId]);
+ expect(await readOauthResult(db,actor,large.handle,0,settings)).toBeNull();
+ await db.query(`UPDATE hub_upstream_oauth_connections SET
+   allowed_areas=ARRAY['files'] WHERE id=$1`,[connectionId]);
+ expect((await readOauthResult(db,actor,large.handle,0,settings)).page).toBe(0);
+ await db.query(`UPDATE hub_upstream_oauth_connections SET
+   access_expires_at=now()-interval '2 minutes' WHERE id=$1`,[connectionId]);
+ expect(await readOauthResult(db,actor,large.handle,0,settings)).toBeNull();
+ await db.query(`UPDATE hub_upstream_oauth_connections SET
+   access_expires_at=now()+interval '1 hour' WHERE id=$1`,[connectionId]);
+ await db.query('UPDATE hub_upstream_oauth_result_handles SET tag=$1 WHERE handle_digest=$2',
+  [Buffer.alloc(16,0),rows[0].handle_digest]);
+ await expect(readOauthResult(db,actor,large.handle,0,settings)).rejects.toThrow();
+ await db.query(`UPDATE hub_upstream_oauth_result_handles SET
+   created_at=now()-interval '2 hours',expires_at=now()-interval '1 hour'
+   WHERE handle_digest=$1`,[rows[0].handle_digest]);
+ expect(await readOauthResult(db,actor,large.handle,0,settings)).toBeNull();
+ expect(await pruneExpiredOauthResults(db,{limit:1})).toBe(1);
+ expect(await pruneExpiredOauthResults(db,{limit:1})).toBe(0);
+ for(const limit of [0,-1,101])await expect(
+  pruneExpiredOauthResults(db,{limit})).rejects.toThrow();
 });
 it('rejects changed caller authority and disconnects without changing provider accounts',async()=>{
  await db.query(`UPDATE hub_oauth_sessions SET revoked_at=now() WHERE id=$1`,[session]);
