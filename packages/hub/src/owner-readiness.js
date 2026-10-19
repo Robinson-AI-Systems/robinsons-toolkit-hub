@@ -2,6 +2,8 @@ import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,verifyOwnerLogin} from
 
 const requiredTables=['hub_servers','hub_server_grants','hub_rtc_read_audit',
  'hub_rtc_result_handles'];
+const optionalOauthTables=['hub_upstream_oauth_connections',
+ 'hub_upstream_oauth_result_handles'];
 function configuredKey(value) {
  if(typeof value!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(value))return false;
  const decoded=Buffer.from(value,'base64url');
@@ -38,7 +40,7 @@ const compact=value=>String(value).replace(/\s/g,'');
 export async function summarizeHubReadiness(db,ownerId,settings) {
  const result=await db.query(`SELECT table_name FROM information_schema.tables
    WHERE table_schema=current_schema() AND table_name=ANY($1::text[])`,
-  [requiredTables]);
+  [[...requiredTables,...optionalOauthTables]]);
  const found=new Set(result.rows.map(r=>r.table_name));
  const columns=await db.query(`SELECT table_name,column_name,data_type,is_nullable,
    column_default FROM information_schema.columns WHERE table_schema=current_schema()
@@ -86,7 +88,31 @@ export async function summarizeHubReadiness(db,ownerId,settings) {
    modes[row.mode]={unexpiredGrants:Number(row.grants)||0,
     verifiedGrants:Number(row.verified)||0,registeredServices:Number(row.registered_services)||0};
  }
- return {schemaReady,installedTables:found.size,liveGrantSchemaReady,oauthWriteSchemaReady,
+ const oauthSchemaReady=optionalOauthTables.every(table=>found.has(table));
+ const oauth={installed:oauthSchemaReady,live:0,test:0,renewable:0,
+  expiresSoon:0,reconnectRequired:0};
+ if(oauthSchemaReady) {
+  // Only counts from the owner's ACTIVE metadata rows. Do not decrypt a
+  // bearer, query the upstream provider or mislabel stored rows as live proof.
+  const {rows}=await db.query(`SELECT mode,
+   count(*)::integer total,
+   count(*) FILTER (WHERE refresh_available=true)::integer renewable,
+   count(*) FILTER (WHERE access_expires_at<=now()+interval '10 minutes'
+     AND refresh_available=true)::integer expires_soon,
+   count(*) FILTER (WHERE access_expires_at<=now()
+     AND refresh_available=false)::integer reconnect_required
+   FROM hub_upstream_oauth_connections WHERE owner_id=$1
+    AND revoked_at IS NULL GROUP BY mode`,[ownerId]);
+  for(const row of rows) {
+   if(!['test','live'].includes(row.mode))continue;
+   oauth[row.mode]=Number(row.total)||0;
+   oauth.renewable+=Number(row.renewable)||0;
+   oauth.expiresSoon+=Number(row.expires_soon)||0;
+   oauth.reconnectRequired+=Number(row.reconnect_required)||0;
+  }
+ }
+ return {schemaReady,installedTables:requiredTables.filter(x=>found.has(x)).length,
+  oauthSchemaReady,oauth,liveGrantSchemaReady,oauthWriteSchemaReady,
   grantsKeyReady:configuredKey(settings.grantsKey),
   resultsKeyReady:configuredKey(settings.resultsKey),servers,activeServers,modes,
   // Original summary consumers now receive TEST-only values as their labels promised.
@@ -107,7 +133,16 @@ export function renderReadinessSummary(state) {
   line('Separate encrypted upstream grant key',yes(state.grantsKeyReady))+
   line('Sealed forwarded-result key',yes(state.resultsKeyReady))+
   line('Owner-staged RTC services',state.servers)+
-  line('Activated RTC registry services',state.activeServers)+'</ul>';
+  line('Activated RTC registry services',state.activeServers)+'</ul>'+
+  '<h2>Optional MCP OAuth transport</h2><ul>'+
+  line('OAuth tables (025/027)',yes(state.oauthSchemaReady))+
+  line('Stored LIVE OAuth connections',state.oauthSchemaReady?state.oauth?.live??0:'unavailable')+
+  line('Stored TEST OAuth connections',state.oauthSchemaReady?state.oauth?.test??0:'unavailable')+
+  line('Issuer-renewable connections',state.oauthSchemaReady?state.oauth?.renewable??0:'unavailable')+
+  line('Refresh needed soon',state.oauthSchemaReady?state.oauth?.expiresSoon??0:'unavailable')+
+  line('Explicit provider reconnect required',state.oauthSchemaReady?state.oauth?.reconnectRequired??0:'unavailable')+
+  '</ul><p>OAuth counts are stored metadata, NOT tested provider authorization. '+
+  '<a href="/api/owner/connect-mcp">Inspect or reconnect MCP OAuth</a>.</p>';
  for(const mode of ['test','live']){
   const counts=state.schemaReady?state.modes?.[mode]:null;
   const name=mode.toUpperCase();

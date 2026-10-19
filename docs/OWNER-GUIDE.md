@@ -1,3 +1,9 @@
+## Large OAuth MCP read results and connection readiness — source gated
+
+The agent still sees the same small fixed Hub menu. Authorized remote MCP reads that exceed the safe inline response size (8 KiB) are stored encrypted (up to 64 KiB) under the exact owning Hub connection and service. Follow the returned `hub_result_read` handle and its zero-based `page` counter; no original provider request is repeated just to fetch a page. Each page requires the same active original caller, service, environment/profile/areas and unexpired provider connection. Switching accounts, narrowing permissions, expiry or revocation makes the old pages unavailable. Original RTC1 HTTPS pass-backed results remain supported.
+
+Owner-only `/api/owner/readiness` and its dashboard readiness tab show optional OAuth connection metadata such as TEST vs LIVE counts, issuer-refresh availability, imminent expiration and required reconnection, without decrypting provider tokens. The `/api/owner/connect-mcp` page lets the owner inspect or reauthorize a provider through the provider's own sign-in. The readiness page **cannot** prove that Workspace is actually authenticated or that its deployed OAuth issuer is current; perform real harmless Workspace end-to-end acceptance after authorized release.
+
 ## Hub-initiated OAuth service connections — source implementation, deployment gated
 
 The Hub is **one compact MCP connection for the coding agent**. The owner and agent plan the work; the Hub does not replace planning. It discovers RTC-compliant servers, selects an authorized provider and tool, fetches only needed metadata and routes calls through the provider's own guards.
