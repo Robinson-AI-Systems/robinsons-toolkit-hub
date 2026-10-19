@@ -2,6 +2,7 @@ import {beforeAll,afterAll,it,expect,vi} from 'vitest';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import pg from 'pg';
+import {genericFederationDependencies} from '../../src/oauth-federation.js';
 import {beginUpstreamOauth,finishUpstreamOauth,remoteConnectionRead,
  listUpstreamOauthConnections,disconnectUpstreamOauth}
  from '../../src/upstream-oauth-connections.js';
@@ -70,7 +71,8 @@ beforeAll(async()=>{
  await db.query('SET search_path TO "'+schema+'"');
  for(const file of ['001-hub-foundation.sql','002-hub-oauth.sql',
    '004-hub-registry.sql','020-hub-service-identities.sql',
-   '025-hub-upstream-oauth-connections.sql'])
+   '025-hub-upstream-oauth-connections.sql',
+   '026-hub-oauth-mcp-read-audit.sql'])
   await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
  await db.query(`INSERT INTO hub_oauth_clients(client_id,owner_id,redirect_uri)
  VALUES('synthetic-client',$1,'https://agent.example.org/callback')`,[owner]);
@@ -136,6 +138,34 @@ it('refreshes a real encrypted issuer credential under a row lock, no grants cop
  expect(JSON.stringify(current)).not.toContain('rotated-access-secret');
  expect((await listUpstreamOauthConnections(db,owner)).find(
   x=>x.id===connectionId).state).toBe('connected');
+});
+it('isolates actual LIVE Hub OAuth caller to this connection and records durable read audit',async()=>{
+ const actor={id:session,ownerId:owner,clientId:'synthetic-client',
+  mode:'live',profile:'read_only',areas:['gateway'],allowWrites:false};
+ const {listActorUpstreamOauth}=await import('../../src/upstream-oauth-connections.js');
+ const authorized=await listActorUpstreamOauth(db,actor);
+ expect(authorized).toEqual([expect.objectContaining({name:'independent-mcp',
+  mode:'live',profile:'read_only',areas:['files'],id:connectionId})]);
+ expect(await listActorUpstreamOauth(db,{...actor,id:randomUUID()})).toEqual([]);
+ expect(await listActorUpstreamOauth(db,{...actor,mode:'test'})).toEqual([]);
+ const adapters=genericFederationDependencies({actor,db,settings},{
+  legacyList:async()=>[],legacyResolve:async()=>null,
+  oauthWith:async()=>{throw Error('Not needed for identity audit');}});
+ const targets=await adapters.list(db,actor,{limit:100});
+ expect(targets).toHaveLength(1);
+ expect(targets[0]).toMatchObject({name:'independent-mcp',
+  prefix:'independent',mode:'live',grantId:connectionId});
+ const correlationId=randomUUID();
+ await adapters.audit(db,{actor,grantId:connectionId,service:'independent-mcp',
+  tool:'independent_files_list',phase:'attempt',outcome:'allowed',
+  correlationId});
+ const row=await db.query('SELECT owner_id,connection_id,phase,outcome FROM hub_upstream_oauth_read_audit');
+ expect(row.rows).toEqual([{owner_id:owner,connection_id:connectionId,
+  phase:'attempt',outcome:'allowed'}]);
+ await expect(adapters.audit(db,{actor:{...actor,ownerId:'wrong'},
+  grantId:connectionId,service:'independent-mcp',
+  tool:'independent_files_list',phase:'outcome',outcome:'success',
+  correlationId})).rejects.toThrow();
 });
 it('rejects changed caller authority and disconnects without changing provider accounts',async()=>{
  await db.query(`UPDATE hub_oauth_sessions SET revoked_at=now() WHERE id=$1`,[session]);
