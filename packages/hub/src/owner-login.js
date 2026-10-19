@@ -84,6 +84,7 @@ export function htmlForm(action,fields) {
     '<title>Robinson&#39;s Toolkit Hub by Robinson AI Systems — owner approval</title><main>'+
     '<h1>Authorize Robinson&#39;s Toolkit Hub by Robinson AI Systems</h1>'+
     '<p>Requested profile: '+escapeHtml(fields.profile||'read_only')+'</p>'+
+    '<p>Unverified external OAuth client callback (verify the destination before approval): <code>'+escapeHtml(fields.redirect_uri||'unavailable')+'</code>.</p>'+
     '<p>Only this Hub is authorized. Upstream provider access requires separate scoped grants.</p>'+
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
     '<label>Authorized RTC servers (registered names, comma separated) '+
