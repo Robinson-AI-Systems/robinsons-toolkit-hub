@@ -12,7 +12,7 @@ const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
 function mcpMeta(prefix,kind) {
  return prefix+(prefix.endsWith('_')?'':'_')+kind;
 }
-function unwrap(reply){
+function unwrap(reply,{preserveRefusal=false}={}){
  if(reply?.jsonrpc!=='2.0'||reply.error||reply.result?.isError===true)
   throw Error('Authorized MCP request refused by original service');
  let content=reply.result?.structuredContent;
@@ -23,17 +23,20 @@ function unwrap(reply){
  }
  if(!content||typeof content!=='object'||Array.isArray(content))
   throw Error('Invalid MCP result envelope');
- if(content.ok===false)throw Error('Original MCP refused request');
+ if(content.ok===false) {
+  if(preserveRefusal)return content;
+  throw Error('Original MCP refused request');
+ }
  return content.ok===true&&content.result&&typeof content.result==='object'
   ?content.result:content;
 }
-async function callMcp(service,post,leaf,args,limit=16384){
+async function callMcp(service,post,leaf,args,limit=16384,preserveRefusal=false){
  const value=await post(service.resource,{method:'POST',bearer:service.accessToken,
   body:{jsonrpc:'2.0',id:1,method:'tools/call',
    params:{name:mcpMeta(service.prefix,leaf),arguments:args}},
   headers:{'mcp-protocol-version':'2025-11-25'},
   maxBytes:limit,timeoutMs:5000});
- return unwrap(value);
+ return unwrap(value,{preserveRefusal});
 }
 function validRead(t,grant){
  return t&&namePattern.test(t.name||'')&&
@@ -121,7 +124,14 @@ export function genericFederationDependencies({actor,db,settings},{
     Buffer.byteLength(JSON.stringify(args),'utf8')>8192)
    throw Error('Invalid MCP READ operation');
   return via(grant,async(service,post)=>{
-   const result=await callMcp(service,post,'call',{name,args},65536);
+   const result=await callMcp(service,post,'call',{name,args},65536,true);
+   if(result.ok===false){
+    const safe=new Set(['needs_confirmation','refused_by_guard','not_found',
+     'permission','service_error','rate_limited','pass_expired',
+     'pass_revoked','invalid_args','outside_scope']);
+    const code=safe.has(result.error?.code)?result.error.code:'refused_by_guard';
+    return {ok:false,error:{code}};
+   }
    return {ok:true,result};
   });
  };
