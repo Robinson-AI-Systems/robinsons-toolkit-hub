@@ -1,3 +1,7 @@
+## October 19 — LIVE RTC HTTP result retrieval (source only)
+
+Tracing actual H-1/H-3 doors found a missed integration: large LIVE reads can store encrypted grant-bound RTC handles, but `/api/results/{handle}` imposed the older H-1 TEST/no-write rule before selecting the RTC store. The shared HTTP handler now applies the existing TEST/LIVE gateway/profile policy only to RTC handles and still calls the original SQL grant-revalidating reader. Legacy H-1 handles retain their prior TEST/read-only restriction and separate storage. No write, provider retry, encryption/TTL/schema or permission changes. Existing API wrapper is thin; OpenAPI describes existing TEST/LIVE read support and the real result route. Handler and disposable SQL flow/regression evidence must pass final gates; actual hosted normal connection and large-result acceptance stay OPEN. Zero whole subsections/bundles; no RTC1 declaration or release.
+
 PR238 follow-up review found the dashboard's explicit data projection dropped the new readiness fields, so the standalone page worked but dashboard counts were unavailable. PR239 carries the H-2 correction with the H-1 identity metadata fix: project only the two new schema booleans and six bounded TEST/LIVE counters. Unit and actual PostgreSQL→dashboard-data→HTML regressions now test the complete consumer path; no broad object spread or private-state pass-through. Source/CI proof and hosted acceptance remain separate.
 
 ## October 19 — HTTP identity parity (source only)
@@ -1444,6 +1448,21 @@ open obligations, original fixture ownership, approvals and deployment provenanc
     "dependsOn": [],
     "status": "PENDING",
     "lastEvidence": "Source H-4 profile policy, owner UI, initial PKCE/HUB-pass selection and disposable PostgreSQL tests proposed; migration 017, independent provider TEST, actual owner readback, direct/relay/Sandbox acceptance PENDING."
+  },
+  {
+    "id": "HUB-H3-LIVE-RESULT-HTTP",
+    "priority": 2,
+    "requiredRevision": "e249af5cd3dc0576b786cf3e5dc7cc06c434139d",
+    "introducedFile": "packages/hub/src/results-http.js",
+    "task": "Normal owner-scoped LIVE RTC large-read result can be paged through actual HTTP with the same current caller and original independently issued provider grant; wrong caller, revoked/replaced grant and expiry deny without replay.",
+    "procedure": "docs/pr-cards/H-3.md October19 LIVE HTTP result acceptance; docs/OWNER-GUIDE.md Retrieve large RTC read results",
+    "gates": "Exact checked source on independently READY Hub; approved hosted schema/keys; normal generic discovery and owner authorization, new separately scoped LIVE read-only Hub/provider grants and exact harmless owned read. Do not reuse direct-only Workspace pass or original rotating owner credentials; no provider write or spend.",
+    "dependsOn": [],
+    "status": "PENDING",
+    "subsections": [
+      "H-3"
+    ],
+    "lastEvidence": "Source implements shared actual HTTP RTC TEST/LIVE retrieval with original grant revalidation, retaining legacy H-1 TEST restrictions. Local check,938 unit tests and20 focused route tests passed. Disposable SQL and complete exact-head CI required before merge; no real normal hosted connection, large provider read, same-pass denial/revocation or release performed."
   }
 ]
 ```
