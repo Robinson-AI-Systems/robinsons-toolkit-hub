@@ -158,6 +158,12 @@ export async function authorizeOwnerConnection(db, req, input, {env=process.env,
     ...(profiles?{serviceProfiles:profiles}:{}),
     ...(serviceAreas?{serviceAreas}:{})},
   {pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
+  // A dynamic client initially has a short registration lifetime. Keep it
+  // only after independently verified owner consent, so refresh is durable.
+  // Legacy pre-registered clients have no row here and are unchanged.
+  await db.query(`UPDATE hub_developer_clients
+    SET expires_at='infinity'::timestamptz
+    WHERE client_id=$1 AND expires_at>now()`,[request.clientId]);
   const destination=new URL(request.redirectUri);
   destination.searchParams.set('code',code);
   destination.searchParams.set('state',request.state);
