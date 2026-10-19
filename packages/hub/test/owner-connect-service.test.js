@@ -8,7 +8,7 @@ const service={origin:'https://provider.example.org',server:'independent-service
  tools:7,writes:2,money:0,modes:['test','live'],profiles:['read_only','everyday','full'],areas:['reports','workspace']};
 const selection=(extra={})=>({origin:service.origin,server:service.server,prefix:service.prefix,
  callerKind:'oauth',callerId:id,mode:'live',profile:'read_only',areas:['reports'],pass,...extra});
-const caller=(extra={})=>({id,kind:'oauth',mode:'live',profile:'full',areas:['gateway'],
+const caller=(extra={})=>({id,kind:'oauth',mode:'live',profile:'full',allowWrites:true,areas:['gateway'],
  serverNames:null,serviceProfiles:{},serviceAreas:{},...extra});
 function setup({existing=[],slots=[],current=caller(),discovered=service}={}){
  const db={query:vi.fn(async sql=>({rows:sql.includes('FROM hub_servers WHERE')?existing:slots}))};
@@ -127,4 +127,12 @@ it('discovery stages public metadata once, reuses matching registration and refu
  const c=setup({existing:[{origin:'https://foreign.example.org',prefix:service.prefix,state:'active'}]});
  await expect(registerDiscoveredService(c.db,owner,service,{ownerVerified:true,stage:c.deps.stage})).rejects.toThrow();
  expect(c.deps.stage).not.toHaveBeenCalled();
+});
+
+it('rejects a nonwriting full/everyday caller before public discovery or credential forwarding',async()=>{
+ for(const allowWrites of [false,undefined])for(const profile of ['full','everyday']){
+  const {db,deps}=setup({current:caller({profile,allowWrites})});
+  await expect(connectRtcService(db,{},owner,selection({profile,writeAck:'I_AUTHORIZE'}),deps)).rejects.toThrow();
+  expect(deps.discover).not.toHaveBeenCalled();expect(deps.inspect).not.toHaveBeenCalled();expect(deps.grant).not.toHaveBeenCalled();
+ }
 });

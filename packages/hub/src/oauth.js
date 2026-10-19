@@ -228,10 +228,11 @@ export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}
   verified(ownerVerified);
   if(!/^[A-Za-z0-9:_-]{1,120}$/.test(ownerId||''))
     throw new TypeError('Invalid owner');
-  const {rows}=await db.query(`SELECT id,family_id,client_id,profile,areas,mode,
+  const {rows}=await db.query(`SELECT id,family_id,client_id,profile,areas,mode,allow_writes,
     allowed_servers,service_area_policy,service_profile_policy,
     access_expires_at,refresh_expires_at FROM (
       SELECT s.id,s.family_id,s.client_id,s.profile,s.areas,s.mode,
+        COALESCE((to_jsonb(s)->>'allow_writes')::boolean,FALSE) AS allow_writes,
         to_jsonb(s)->'allowed_servers' AS allowed_servers,
         to_jsonb(s)->'service_area_policy' AS service_area_policy,
         to_jsonb(s)->'service_profile_policy' AS service_profile_policy,
@@ -244,7 +245,7 @@ export async function listOwnerOAuthFamilies(db,ownerId,{ownerVerified=false}={}
           WHERE r.family_id=s.family_id AND r.revoked_at IS NOT NULL)
     ) current WHERE rank=1 ORDER BY access_expires_at DESC,id LIMIT 30`,[ownerId]);
   return rows.map(r=>({
-    id:r.id,clientId:r.client_id,profile:r.profile,mode:r.mode,
+    id:r.id,clientId:r.client_id,profile:r.profile,mode:r.mode,allowWrites:r.allow_writes===true,
     areas:[...r.areas],serverNames:Array.isArray(r.allowed_servers) ?
       [...serverSelection(r.allowed_servers)] : null,
     serviceAreas:sanitizedServicePolicy(r.service_area_policy),

@@ -82,3 +82,17 @@ it('accepts Workspace all-areas TEST grants while rejecting null for unrelated p
  expect(t.calls.map(c=>c.path)).toEqual(['/api/contract','/api/whoami']);
  await expect(inspectScopedRtcIdentity(input,transport({who}))).rejects.toThrow();
 });
+
+it('verifies original preview/production whoami only against its equivalent Hub environment',async()=>{
+ for(const [providerMode,mode] of [['preview','test'],['production','live']]){
+  const who={ok:true,result:{profile:'read_only',mode:providerMode,areas:['billing'],allowWrites:false}};
+  const rtc={...manifest,modes:['preview','production']};
+  const good=transport({who,rtc});
+  expect(await inspectScopedRtcIdentity({...input,mode},good)).toMatchObject({mode,identityVerified:true});
+  expect(good.calls).toHaveLength(2);
+  await expect(inspectScopedRtcIdentity({...input,mode:mode==='test'?'live':'test'},transport({who,rtc}))).rejects.toThrow();
+ }
+ const denied=transport({rtc:{...manifest,modes:['production']}});
+ await expect(inspectScopedRtcIdentity(input,denied)).rejects.toThrow();
+ expect(denied.calls.map(c=>c.path)).toEqual(['/api/contract']);
+});

@@ -111,3 +111,18 @@ it('exact grant revocation removes its discovery and dispatch while the other se
  expect(await resolveActiveCallerGrant(db,{actor:actors[0],serverName:services[0].server},settings)).toBeNull();
  expect((await listEligibleRtcTargets(db,actors[1])).map(x=>x.name)).toEqual([services[1].server]);
 });
+it('OAuth owner metadata carries actual write delegation and refuses a nonwriting full family before any provider request',async()=>{
+ const clientId='no-write-client',redirectUri='https://no-write.example.org/callback';
+ await registerOAuthClient(db,{ownerId:owner,clientId,redirectUri},{ownerVerified:true});
+ const verifier=randomBytes(32).toString('base64url');
+ const code=await issueOAuthCode(db,{ownerId:owner,clientId,redirectUri,
+  challenge:createHash('sha256').update(verifier).digest('base64url'),profile:'full',mode:'live',areas:['gateway'],
+  allowWrites:false,serverNames:[services[0].server]},{pepper:settings.pepper,ownerVerified:true});
+ const tokens=await exchangeOAuthCode(db,{clientId,redirectUri,code,verifier},{pepper:settings.pepper});
+ const actor=await authenticateOAuth(db,tokens.access_token,{pepper:settings.pepper});
+ const metadata=await availableServiceCallers(db,owner,{ownerVerified:true});
+ expect(metadata.find(c=>c.id===actor.id)).toMatchObject({profile:'full',allowWrites:false});
+ let probes=0;const deps=dependencies(0);deps.discover=async()=>{probes++;return services[0];};
+ await expect(connectRtcService(db,settings,owner,{...selection(0,actor),profile:'full',writeAck:'I_AUTHORIZE'},deps)).rejects.toThrow();
+ expect(probes).toBe(0);
+});
