@@ -142,3 +142,36 @@ it('only queries owner-scoped counts and catalog metadata, never credential colu
   if(sql.includes('count(')){expect(sql).toContain('owner_id=$1');expect(args).toEqual(['owner-a']);}
  }
 });
+
+it('reports optional OAuth connection readiness without touching credential or plaintext columns',async()=>{
+ const oauthTables=['hub_upstream_oauth_connections','hub_upstream_oauth_result_handles'];
+ const query=vi.fn(async(sql,args)=>{
+  if(sql.includes('information_schema.tables'))return {
+   rows:[...tables,...oauthTables].map(table_name=>({table_name}))};
+  if(sql.includes('information_schema.columns'))return {rows:columns};
+  if(sql.includes('pg_constraint'))return {rows:constraints};
+  if(sql.includes('FROM hub_upstream_oauth_connections'))return {rows:[
+   {mode:'live',total:3,renewable:2,expires_soon:1,reconnect_required:1},
+   {mode:'test',total:1,renewable:1,expires_soon:0,reconnect_required:0}
+  ]};
+  if(sql.includes('GROUP BY'))return {rows:[]};
+  return {rows:[{servers:1,active:1}]};
+ });
+ const db={query};
+ const state=await summarizeHubReadiness(db,'owner-a',{
+  grantsKey:goodKey,resultsKey:goodKey});
+ expect(state).toMatchObject({schemaReady:true,installedTables:4,
+  oauthSchemaReady:true,oauth:{installed:true,live:3,test:1,renewable:3,
+   expiresSoon:1,reconnectRequired:1}});
+ const {res}=await invoke('POST','password=fixture-owner',{
+  summarize:async()=>state});
+ expect(res.body).toContain('Stored LIVE OAuth connections');
+ expect(res.body).toContain('Issuer-renewable connections');
+ expect(res.body).toContain('NOT tested provider authorization');
+ expect(res.body).not.toContain(goodKey);
+ for(const [sql,args] of query.mock.calls){
+  expect(sql).not.toMatch(/secret_enc|access_token|refresh_token|pass_digest|DELETE|UPDATE/i);
+  if(sql.includes('FROM hub_upstream_oauth_connections'))
+   expect(args).toEqual(['owner-a']);
+ }
+});
