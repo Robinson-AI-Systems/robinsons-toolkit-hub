@@ -1,3 +1,7 @@
+## Retrieve large RTC read results
+
+When an authorized RTC read returns a stored handle, `GET /api/results/{handle}?page=0` uses the same Hub pass. Follow the returned `next` page number and decode/reassemble the base64url byte pages. RTC handles work with the caller's existing TEST or LIVE scope; every page rechecks the original provider grant. A revoked caller is denied and a revoked/replaced grant, expired handle or removed service is unavailable. Retrieval never repeats the provider call. Legacy Hub-only handles retain their original TEST/read-only policy. Hosted normal-flow proof for the repaired HTTP route remains pending until its checked source is released.
+
 ## Connection readiness before a release
 
 Open the private control-center readiness tab or `/api/owner/readiness` and authenticate with the existing owner passphrase. TEST and LIVE configuration counts are separate. Review missing schema through the existing checked deployment/migration procedure; this view never installs migrations or changes a connection. OAuth write delegation is optional for read-only use. A ready configuration still needs the actual normal Connect a service flow, the selected caller's authorization, harmless routed read, denied boundaries and exact revocation before it counts as a working connection. Expired callers may leave unexpired stored grants, so counts alone never authorize routing.
