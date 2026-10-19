@@ -1,3 +1,11 @@
+## Early Workspace discovery after checked Hub release
+
+On the deployed Hub owner control center, use `/api/owner/connect-mcp` → **Discover service and OAuth support**. Enter the existing Workspace MCP public origin `https://google-workspace-mcp-chris-projects-de6cd1bf.vercel.app` and the Hub owner passphrase. The Hub itself fetches RTC1 manifest and standard issuer metadata. That public inspection **does not** register a remote OAuth client, contact Google, or authorize tools.
+
+When a current Hub OAuth agent session is eligible, the page selects it automatically if unique, or displays an explicit selector if several. Choose the correct existing Hub agent, LIVE mode, `read_only` profile and genuinely needed area(s), then follow the original Workspace issuer sign-in/consent; keep the old owner and pilot identities intact. If no Hub session is eligible, the form stops with a truthful prerequisite instead of quietly using a historic TEST grant. This UI is source-only until the Hub's checked production release and additive OAuth SQL migrations are installed.
+
+First hosted acceptance: capture exact Hub+Workspace serving SHAs, normal Hub→Workspace discovery, consented account whoami, one harmless authorized Google READ through fixed Hub tools, denied out-of-scope request, original issuer refresh/revocation and standalone Workspace read. Never treat public discovery success alone as completed federation; do not authorize a billable or modifying operation.
+
 ## Large OAuth MCP read results and connection readiness — source gated
 
 The agent still sees the same small fixed Hub menu. Authorized remote MCP reads that exceed the safe inline response size (8 KiB) are stored encrypted (up to 64 KiB) under the exact owning Hub connection and service. Follow the returned `hub_result_read` handle and its zero-based `page` counter; no original provider request is repeated just to fetch a page. Each page requires the same active original caller, service, environment/profile/areas and unexpired provider connection. Switching accounts, narrowing permissions, expiry or revocation makes the old pages unavailable. Original RTC1 HTTPS pass-backed results remain supported.
