@@ -45,8 +45,8 @@ export async function pruneExpiredOauthResults(db,{limit=100}={}){
  const x=await db.query(`WITH expired AS (
  SELECT handle_digest FROM hub_upstream_oauth_result_handles
  WHERE expires_at<=now() ORDER BY expires_at,handle_digest LIMIT $1
- ) DELETE FROM hub_upstream_oauth_result_handles current USING expired
- WHERE current.handle_digest=expired.handle_digest`,[limit]);
+ ) DELETE FROM hub_upstream_oauth_result_handles existing USING expired
+ WHERE existing.handle_digest=expired.handle_digest`,[limit]);
  return x.rowCount;
 }
 export async function storeOauthResult(db,actor,connectionId,service,value,settings){
