@@ -1,5 +1,6 @@
 // Standard MCP OAuth resource -> issuer discovery. No provider switch statements.
 import {serverNamePattern} from './server-name.js';
+import {rtcModes} from './rtc-mode.js';
 import {checkedRemoteUrl,pinnedMcpRequest} from './upstream-mcp-http.js';
 const slug=/^[a-z][a-z0-9_]{1,59}$/;
 const area=/^[a-z][a-z0-9_]{0,59}$/;
@@ -23,13 +24,13 @@ export function checkedRtcManifest(manifest) {
    !Array.isArray(manifest.areas)||manifest.areas.length>maxAreas||
    manifest.areas.some(x=>!area.test(x))||new Set(manifest.areas).size!==manifest.areas.length||
    !Array.isArray(manifest.profiles)||!manifest.profiles.includes('read_only')||
-   !Array.isArray(manifest.modes)||!manifest.modes.includes('live')||
+   !Array.isArray(manifest.modes)||!rtcModes(manifest.modes).includes('live')||
    !manifest.counts||!['tools','writes','money'].every(k=>
      Number.isSafeInteger(manifest.counts[k])&&manifest.counts[k]>=0&&manifest.counts[k]<=1000000))
    throw new Error('Incompatible independent RTC 1 service');
  return {name:manifest.server,prefix:manifest.prefix,
   areas:[...manifest.areas],profiles:[...manifest.profiles],
-  modes:[...manifest.modes],
+  modes:rtcModes(manifest.modes),
   counts:{tools:manifest.counts.tools,writes:manifest.counts.writes,money:manifest.counts.money}};
 }
 export async function discoverMcpOAuth(origin,{get=pinnedMcpRequest}={}) {
