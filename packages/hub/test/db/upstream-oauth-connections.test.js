@@ -94,7 +94,7 @@ let connectionId,firstState,firstBrowser;
 it('Hub initiates generic service registration and RFC8707 PKCE consent',async()=>{
  const result=await beginUpstreamOauth(db,settings,{
   ownerId:owner,origin,hubOrigin,mode:'live',profile:'read_only',
-  family,areas:['files'],ack:true},{discover:async()=>remote,post});
+  areas:['files'],ack:true},{discover:async()=>remote,post});
  const url=new URL(result.authorizeUrl);
  expect(url.origin).toBe(origin);
  expect(url.searchParams.get('resource')).toBe(origin+'/api/mcp');
@@ -110,6 +110,28 @@ it('Hub initiates generic service registration and RFC8707 PKCE consent',async()
  expect(JSON.stringify(pending)).not.toContain('synthetic-registration-secret');
  const saved=(await db.query('SELECT state FROM hub_servers')).rows[0];
  expect(saved.state).toBe('pending');
+});
+it('refuses ambiguous/malformed Hub family before any provider DCR or registry mutation',async()=>{
+ const extra=randomUUID(),extraFamily=randomUUID();
+ await db.query(`INSERT INTO hub_oauth_sessions(id,family_id,owner_id,
+ client_id,access_digest,refresh_digest,profile,areas,mode,access_expires_at,
+ refresh_expires_at) VALUES($1,$2,$3,'synthetic-client',$4,$5,
+ 'full',ARRAY['gateway'],'live',now()+interval '2 hours',
+ now()+interval '30 days')`,
+ [extra,extraFamily,owner,randomUUID(),randomUUID()]);
+ const before=post.mock.calls.length;
+ const recorded=(await db.query('SELECT count(*)::int AS count FROM hub_upstream_oauth_flows')).rows[0].count;
+ const params={ownerId:owner,origin,hubOrigin,mode:'live',
+  profile:'read_only',areas:['files'],ack:true};
+ await expect(beginUpstreamOauth(db,settings,params,{discover:async()=>remote,post}))
+  .rejects.toThrow(/Select exactly one/);
+ expect(post.mock.calls.length).toBe(before);
+ await expect(beginUpstreamOauth(db,settings,{...params,family:'not-a-uuid'},
+  {discover:async()=>remote,post})).rejects.toThrow(/Invalid Hub OAuth/);
+ expect(post.mock.calls.length).toBe(before);
+ expect((await db.query('SELECT count(*)::int AS count FROM hub_upstream_oauth_flows')).rows[0].count)
+  .toBe(recorded);
+ await db.query('DELETE FROM hub_oauth_sessions WHERE id=$1',[extra]);
 });
 it('requires exact owner-selected issuer identity and one-use browser state',async()=>{
  const args={ownerId:owner,state:firstState,browser:firstBrowser,

@@ -5,7 +5,8 @@ import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,verifyOwnerLogin}
  from './owner-login.js';
 import {discoverMcpOAuth} from './upstream-oauth-discovery.js';
 import {beginUpstreamOauth,finishUpstreamOauth,
- listUpstreamOauthConnections,remoteConnectionRead,disconnectUpstreamOauth}
+ listUpstreamOauthConnections,listSelectableUpstreamCallers,
+ remoteConnectionRead,disconnectUpstreamOauth}
  from './upstream-oauth-connections.js';
 
 const esc=x=>escapeHtml(x??'');
@@ -33,7 +34,7 @@ const form=()=>shell('<form method="POST" action="/api/owner/connect-mcp">'+
  '<input type="hidden" name="action" value="list">'+
  '<label>Hub owner passphrase <input name="password" type="password" required></label>'+
  '<button>View connected MCP servers</button></form>');
-function consent(remote){
+function consent(remote,callers){
  const fields=['<input type="hidden" name="action" value="start">',
   '<input type="hidden" name="origin" value="'+esc(remote.origin)+'">'];
  const supported=remote.areas.map(x=>'<label><input type="checkbox" disabled> '+
@@ -46,13 +47,24 @@ function consent(remote){
   '<p>This will register Hub as an OAuth client with the remote service and '+
   'open the service-owned sign-in page. Hub cannot grant permissions that '+
   'the service does not authorize.</p>'+
-  '<form method="POST" action="/api/owner/connect-mcp">'+fields.join('')+
+  (!callers.length?
+    '<p><strong>Discovery succeeded, but no current Hub OAuth agent connection is eligible.</strong> '+
+    'Connect your coding agent to Hub with an authorized gateway session first, '+
+    'then discover this server again. No provider registration or consent was started.</p>':
+   '<form method="POST" action="/api/owner/connect-mcp">'+fields.join('')+
   '<label>Approved RTC areas (comma-separated; required) '+
   '<input name="areas" maxlength="2048" required></label>'+
   '<label>Provider OAuth scopes (optional; space-separated) '+
   '<input name="scopes" maxlength="500"></label>'+
-  '<label>Hub OAuth connection family ID (optional if only one eligible) '+
-  '<input name="family" maxlength="80"></label>'+
+  (callers.length===1?
+   '<p>Existing Hub agent connection: '+esc(callers[0].mode+' / '+callers[0].profile)+
+     ' (eligible profiles: '+esc(callers[0].eligibleProfiles.join(', '))+').</p>'+
+   '<input type="hidden" name="family" value="'+esc(callers[0].family)+'">':
+   '<label>Existing Hub agent connection <select name="family" required>'+
+     '<option value="">Select one authorized connection</option>'+
+     callers.map(c=>'<option value="'+esc(c.family)+'">'+
+       esc(c.mode+' / '+c.profile+' (may select '+c.eligibleProfiles.join(', ')+')')+
+       '</option>').join('')+'</select></label>')+
   '<label>Environment <select name="mode">'+
    remote.modes.map(x=>'<option value="'+esc(x)+'"'+(x==='live'?' selected':'')+'>'+
     esc(x)+'</option>').join('')+'</select></label>'+
@@ -64,7 +76,8 @@ function consent(remote){
   '<input name="risk_ack" maxlength="16"></label>'+
   '<label>Owner passphrase (independent approval) '+
   '<input name="password" type="password" required></label>'+
-  '<button>Continue to provider OAuth consent</button></form>');
+  '<button>Continue to provider OAuth consent</button></form>'));
+
 }
 function inventory(records){
  return shell('<h2>Owner-scoped OAuth connections</h2>'+
@@ -120,7 +133,8 @@ function validateAction(fields){
 export async function handleOwnerConnectMcp(req,res,{withDb,env=process.env,
  verify=verifyOwnerLogin,discover=discoverMcpOAuth,
  begin=beginUpstreamOauth,
- list=listUpstreamOauthConnections,tools=remoteConnectionRead,
+ list=listUpstreamOauthConnections,eligible=listSelectableUpstreamCallers,
+ tools=remoteConnectionRead,
  disconnect=disconnectUpstreamOauth}={}){
  htmlHeaders(res);res.setHeader('Pragma','no-cache');
  if(!['GET','POST'].includes(req.method))return res.status(405).send('Method not allowed');
@@ -141,8 +155,13 @@ export async function handleOwnerConnectMcp(req,res,{withDb,env=process.env,
    }
    if(fields.action==='list')return res.status(200).send(
       inventory(await list(db,env.HUB_OWNER_ID)));
-   if(fields.action==='inspect')return res.status(200).send(
-      consent(await discover(fields.origin)));
+   if(fields.action==='inspect'){
+    const remote=await discover(fields.origin);
+    const candidates=await eligible(db,env.HUB_OWNER_ID,remote.name);
+    const callers=candidates.filter(c=>remote.modes.includes(c.mode)&&
+      c.eligibleProfiles.some(p=>remote.profiles.includes(p)));
+    return res.status(200).send(consent(remote,callers));
+   }
    if(fields.action==='tools')return res.status(200).send(
       listed(await tools(db,settings,{ownerId:env.HUB_OWNER_ID,id:fields.id})));
    if(fields.action==='disconnect'){
