@@ -195,7 +195,7 @@ export async function beginUpstreamOauth(db,settings,{ownerId,origin,
  return {authorizeUrl:authorization.href,browserNonce:browser,
   server:remote.name,mode,profile};
 }
-export async function finishUpstreamOauth(db,settings,{ownerId,state,browser,code,hubOrigin},
+export async function finishUpstreamOauth(db,settings,{ownerId,state,browser,code,hubOrigin,issuer=null},
  {post=pinnedMcpRequest,list=issuerMcpTools}={}){
  if(!isOwner(ownerId)||!basePass.test(state||'')||!basePass.test(browser||'')||
    typeof code!=='string'||!code||code.length>4096||
@@ -208,6 +208,7 @@ export async function finishUpstreamOauth(db,settings,{ownerId,state,browser,cod
  [digest,ownerId,hex(browser)]);
  const pending=result.rows[0];
  if(!pending)throw Error('MCP OAuth callback expired or replayed');
+ if(issuer!==null&&issuer!==pending.issuer)throw Error('OAuth issuer state mismatch');
  const saved=open(pending,flowAAD(pending),settings);
  const client={clientId:pending.client_id,...saved};
  const issued=await issuerToken({tokenEndpoint:pending.token_endpoint},client,{
@@ -299,6 +300,12 @@ export async function remoteConnectionRead(db,settings,{ownerId,id},
       authMethod:credentials.authMethod},
      {grant_type:'refresh_token',refresh_token:credentials.refreshToken,
       resource:row.resource},post);
+    // A refresh may not silently switch principal, profile, environment or area.
+    const registry=await db.query('SELECT prefix FROM hub_servers WHERE name=$1 AND owner_id=$2',
+     [row.service_name,ownerId]);
+    if(registry.rows.length!==1)throw Error('Service identity changed during OAuth refresh');
+    await issuerMcpWhoami(row.resource,renewed.accessToken,registry.rows[0].prefix,
+     {mode:row.mode,profile:row.profile,areas:row.allowed_areas},post);
     credentials={...credentials,accessToken:renewed.accessToken,
       refreshToken:renewed.refreshToken??credentials.refreshToken};
     const sealed=seal(credentials,connectionAAD(row),settings);
