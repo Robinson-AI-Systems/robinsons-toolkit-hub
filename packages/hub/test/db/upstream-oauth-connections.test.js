@@ -70,7 +70,8 @@ beforeAll(async()=>{
  await db.query('CREATE SCHEMA "'+schema+'"');
  await db.query('SET search_path TO "'+schema+'"');
  for(const file of ['001-hub-foundation.sql','002-hub-oauth.sql',
-   '004-hub-registry.sql','020-hub-service-identities.sql',
+   '004-hub-registry.sql','005-hub-grants.sql','006-hub-activation.sql',
+   '020-hub-service-identities.sql',
    '025-hub-upstream-oauth-connections.sql',
    '026-hub-oauth-mcp-read-audit.sql'])
   await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
