@@ -121,3 +121,33 @@ it('passes through a provider refusal as the original guarded denial without ret
  expect(denied).toEqual({ok:false,error:{code:'needs_confirmation'}});
  expect(f.post).toHaveBeenCalledTimes(1);
 });
+
+it('searches a 10,000-tool/100-server OAuth fleet with just three provider calls in one page',async()=>{
+ const hundred=Array.from({length:100},(_,i)=>{
+  const prefix='svc'+String(i).padStart(3,'0');
+  return {id:randomUUID(),name:prefix+'-mcp',prefix,mode:'live',
+   profile:'read_only',origin:'https://'+prefix+'.example.org',
+   claimedCounts:{tools:100,writes:0,money:0},
+   areas:['billing'],expiresAt:'2026-12-01T00:00:00Z',family:randomUUID()};
+ });
+ const {deps,post,oauthList}=fixture(hundred);
+ const {runFederatedBroker}=await import('../src/federation.js');
+ const state=await runFederatedBroker('hub_search_tools',
+  {query:'records',area:'billing',limit:5},actor,{},{
+   pepper:'synthetic-search-cursor-pepper-32-byte-key'},deps);
+ expect(state.ok).toBe(true);
+ expect(state.result.authorizedTargets).toBe(100);
+ expect(state.result.scanned).toBe(3);
+ expect(state.result.incomplete).toBe(true);
+ expect(state.result.tools.filter(t=>t.server)).toHaveLength(3);
+ expect(post).toHaveBeenCalledTimes(3);
+ expect(post.mock.calls.every(([,options])=>
+  options.body?.params?.arguments?.limit===1)).toBe(true);
+ expect(hundred.reduce((sum,x)=>sum+x.claimedCounts.tools,0)).toBe(10000);
+ const menu=mcpReply({jsonrpc:'2.0',id:1,method:'tools/list',params:{}},actor);
+ expect(menu.result.tools).toHaveLength(
+  mcpReply({jsonrpc:'2.0',id:2,method:'tools/list',params:{}},actor).result.tools.length);
+ expect(JSON.stringify(menu)).not.toContain('svc000_read_records');
+ expect(Buffer.byteLength(JSON.stringify(state.result))).toBeLessThan(8192);
+ expect(oauthList).toHaveBeenCalled();
+});
