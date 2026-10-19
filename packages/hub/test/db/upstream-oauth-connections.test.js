@@ -100,8 +100,7 @@ it('requires exact owner-selected issuer identity and one-use browser state',asy
  const worked=await finishUpstreamOauth(db,settings,args,{post});
  expect(worked).toMatchObject({server:'independent-mcp',state:'connected',
    refreshAvailable:true,tools:1});
- const current=(await db.query('SELECT * FROM hub_upstream_oauth_connections
-    WHERE revoked_at IS NULL')).rows[0];
+ const current=(await db.query('SELECT * FROM hub_upstream_oauth_connections WHERE revoked_at IS NULL')).rows[0];
  connectionId=current.id;
  expect(current.mode).toBe('live');
  expect(current.profile).toBe('read_only');
@@ -121,8 +120,7 @@ it('refreshes a real encrypted issuer credential under a row lock, no grants cop
   }});
  expect(read).toMatchObject({server:'independent-mcp',mode:'live',
   tools:[{name:tool.name,readOnly:true}]});
- const current=(await db.query('SELECT * FROM hub_upstream_oauth_connections
-   WHERE id=$1',[connectionId])).rows[0];
+ const current=(await db.query('SELECT * FROM hub_upstream_oauth_connections WHERE id=$1',[connectionId])).rows[0];
  expect(new Date(current.access_expires_at).getTime()).toBeGreaterThan(Date.now());
  expect(JSON.stringify(current)).not.toContain('rotated-access-secret');
  expect((await listUpstreamOauthConnections(db,owner)).find(
