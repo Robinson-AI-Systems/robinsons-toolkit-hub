@@ -230,3 +230,75 @@ export async function listUpstreamOauthConnections(db,ownerId){
   state:x.revoked_at?'disconnected':new Date(x.access_expires_at)<new Date()?
    x.refresh_available?'renewal_available':'reconnect_required':'connected'}));
 }
+
+export async function remoteConnectionRead(db,settings,{ownerId,id},
+ {post=pinnedMcpRequest,list=issuerMcpTools}={}){
+ if(!isOwner(ownerId)||!/^[-0-9a-f]{36}$/i.test(id||''))
+   throw Error('Invalid owner connection selection');
+ const opened=await db.query(`SELECT * FROM hub_upstream_oauth_connections
+  WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL`,[id,ownerId]);
+ const current=opened.rows[0];
+ if(!current)throw Error('Upstream MCP connection unavailable');
+ await currentFamily(db,ownerId,current.caller_family,current.service_name,
+  current.mode,current.profile);
+ let credentials=open(current,connectionAAD(current),settings);
+ if(new Date(current.access_expires_at).getTime()<=Date.now()+60000){
+  if(!credentials.refreshToken)throw Error('Upstream consent expired; reconnect through Hub');
+  // Serialize rotating refresh grants so two reads cannot reuse the same token.
+  await db.query('BEGIN');
+  try{
+   const checked=await db.query(`SELECT * FROM hub_upstream_oauth_connections
+    WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL FOR UPDATE`,[id,ownerId]);
+   if(checked.rows.length!==1)throw Error('Connection was disconnected');
+   const row=checked.rows[0];
+   await currentFamily(db,ownerId,row.caller_family,row.service_name,row.mode,row.profile);
+   credentials=open(row,connectionAAD(row),settings);
+   if(new Date(row.access_expires_at).getTime()<=Date.now()+60000){
+    if(!credentials.refreshToken)throw Error('Refresh no longer authorized');
+    const renewed=await issuerToken({tokenEndpoint:row.token_endpoint},
+     {clientId:row.client_id,clientSecret:credentials.clientSecret,
+      authMethod:credentials.authMethod},
+     {grant_type:'refresh_token',refresh_token:credentials.refreshToken,
+      resource:row.resource},post);
+    credentials={...credentials,accessToken:renewed.accessToken,
+      refreshToken:renewed.refreshToken??credentials.refreshToken};
+    const sealed=seal(credentials,connectionAAD(row),settings);
+    const update=await db.query(`UPDATE hub_upstream_oauth_connections
+       SET secret_enc=$3,secret_nonce=$4,secret_tag=$5,
+        access_expires_at=now()+$6::integer*interval '1 second',
+        updated_at=now(),refresh_available=$7
+       WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL RETURNING id`,
+       [id,ownerId,sealed.enc,sealed.nonce,sealed.tag,
+        renewed.expiresIn,Boolean(credentials.refreshToken)]);
+    if(update.rowCount!==1)throw Error('OAuth renewal changed during refresh');
+   }
+   await db.query('COMMIT');
+  }catch(err){try{await db.query('ROLLBACK');}catch{}
+   throw Error('Upstream MCP OAuth refresh unavailable');
+  }
+ }
+ const resourceOrigin=new URL(current.resource).origin;
+ if(resourceOrigin!==current.origin)throw Error('MCP connection resource changed');
+ const active=await db.query(`SELECT 1 FROM hub_upstream_oauth_connections
+  WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL`,[id,ownerId]);
+ if(active.rows.length!==1)throw Error('Connection revoked before use');
+ const service=await db.query('SELECT prefix,state,origin FROM hub_servers WHERE owner_id=$1 AND name=$2',
+  [ownerId,current.service_name]);
+ if(service.rows.length!==1||service.rows[0].state!=='active'||
+   service.rows[0].origin!==current.origin)throw Error('MCP service disabled or changed');
+ const tools=await list(current.resource,credentials.accessToken,service.rows[0].prefix,post);
+ // Only independently authenticated metadata, bounded at the receiving API.
+ return {server:current.service_name,mode:current.mode,profile:current.profile,
+  tools:tools.slice(0,30).map(t=>({name:t.name,
+   description:String(t.description??'').slice(0,160),
+   readOnly:t.annotations?.readOnlyHint===true})),
+  incomplete:tools.length>30};
+}
+export async function disconnectUpstreamOauth(db,{ownerId,id}){
+ if(!isOwner(ownerId)||!/^[-0-9a-f]{36}$/i.test(id||''))
+   throw Error('Invalid MCP disconnect selection');
+ const result=await db.query(`UPDATE hub_upstream_oauth_connections
+  SET revoked_at=now(),updated_at=now()
+  WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL RETURNING id`,[id,ownerId]);
+ return result.rowCount===1;
+}
