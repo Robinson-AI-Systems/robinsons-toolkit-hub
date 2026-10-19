@@ -19,6 +19,7 @@ const remote={origin,resource:origin+'/api/mcp',issuer,
  modes:['test','live'],profiles:['read_only','everyday','full'],
  counts:{tools:17,writes:3,money:0}};
 let db,schema;
+let actualPrincipal='staff@example.org';
 const tool={name:'independent_files_list',description:'Read documents',
  inputSchema:{type:'object'},area:'files',profiles:['read_only'],
  writes:false,money:false,destructive:false,annotations:{readOnlyHint:true}};
@@ -43,8 +44,8 @@ const post=vi.fn(async(url,options)=>{
   // time. It performs one bounded RTC1 meta search, then exact whoami.
   expect(options.body?.method).toBe('tools/call');
   if(options.body.params.name==='independent_whoami')return {jsonrpc:'2.0',id:2,
-   result:{structuredContent:{mode:'live',profile:'read_only',
-    areas:['files','calendar'],allowWrites:false}}};
+   result:{content:[{type:'text',text:JSON.stringify({actingAs:actualPrincipal,
+    gmailReports:actualPrincipal,matches:true})}]}};
   expect(options.body.params.name).toBe('independent_search_tools');
   expect(options.body.params.arguments).toMatchObject({query:'',limit:1});
   return {jsonrpc:'2.0',id:1,result:{structuredContent:{tools:[tool]}}};
@@ -122,12 +123,20 @@ it('requires exact owner-selected issuer identity and one-use browser state',asy
  expect(current.refresh_available).toBe(true);
  expect(JSON.stringify(current)).not.toContain('initial-provider-access');
  expect(JSON.stringify(current)).not.toContain('synthetic-registration-secret');
+ expect(JSON.stringify(current)).not.toContain('staff@example.org');
  expect((await db.query('SELECT state FROM hub_servers')).rows[0].state).toBe('active');
  await expect(finishUpstreamOauth(db,settings,args,{post})).rejects.toThrow();
 });
 it('refreshes a real encrypted issuer credential under a row lock, no grants copied',async()=>{
  await db.query(`UPDATE hub_upstream_oauth_connections SET
    access_expires_at=now()-interval '1 minute' WHERE id=$1`,[connectionId]);
+ actualPrincipal='someone-else@example.org';
+ await expect(remoteConnectionRead(db,settings,{ownerId:owner,id:connectionId},
+  {post,list:async()=>[tool]})).rejects.toThrow(/refresh unavailable/);
+ const failed=(await db.query('SELECT access_expires_at FROM hub_upstream_oauth_connections WHERE id=$1',
+  [connectionId])).rows[0];
+ expect(new Date(failed.access_expires_at).getTime()).toBeLessThan(Date.now());
+ actualPrincipal='staff@example.org';
  const read=await remoteConnectionRead(db,settings,{ownerId:owner,id:connectionId},{
   post,list:async(_resource,access)=>{
    expect(access).toBe('rotated-access-secret');return [tool];
