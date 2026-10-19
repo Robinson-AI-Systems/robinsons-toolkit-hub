@@ -64,7 +64,8 @@ beforeAll(async()=>{
  await db.query('CREATE SCHEMA "'+schema+'"');
  await db.query('SET search_path TO "'+schema+'"');
  for(const file of ['001-hub-foundation.sql','002-hub-oauth.sql',
-   '004-hub-registry.sql','025-hub-upstream-oauth-connections.sql'])
+   '004-hub-registry.sql','020-hub-service-identities.sql',
+   '025-hub-upstream-oauth-connections.sql'])
   await db.query(await readFile(new URL('../../migrations/'+file,import.meta.url),'utf8'));
  await db.query(`INSERT INTO hub_oauth_clients(client_id,owner_id,redirect_uri)
  VALUES('synthetic-client',$1,'https://agent.example.org/callback')`,[owner]);
