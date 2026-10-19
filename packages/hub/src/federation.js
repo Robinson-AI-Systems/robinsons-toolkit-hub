@@ -12,6 +12,7 @@ import {issueFleetCursor,openFleetCursor,maxFleetDepth} from './fleet-cursor.js'
 import {scopedCatalogueCache} from './catalogue-cache.js';
 import {scopedSchemaCache} from './schema-cache.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
+import {genericFederationDependencies} from './oauth-federation.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const serverPattern=serverNamePattern;
@@ -58,7 +59,14 @@ export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
   read:pinnedRtcReadCall,audit:appendRtcReadAudit,correlation:newRtcCorrelation,
   storeResult:storeRtcResult,readResult:readRtcResult,
   cache:scopedCatalogueCache,schemaCache:scopedSchemaCache,
-  history:listHubRecentChanges,...deps};
+  history:listHubRecentChanges,
+  // Production-compatible issuer OAuth transports use the same bounded H-3
+  // search/describe/call/batch broker, never a second agent tool menu.
+  // Explicit unit transport injection remains independent for deterministic
+  // two-provider, failure and cursor regressions.
+  ...(!['list','resolve','search','describe','read'].some(k=>Object.hasOwn(deps,k))
+     ?genericFederationDependencies({actor,db,settings}):{}),
+  ...deps};
  if(name==='hub_recent_changes') {
   if(Object.keys(args).some(k=>!['server','tool','since','until','limit','cursor','includeUpstream'].includes(k))||
     (args.server!==undefined&&!serverPattern.test(args.server))||

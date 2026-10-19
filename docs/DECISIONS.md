@@ -1,5 +1,8 @@
 # Decisions (dated)
 
+**2026-10-18 — Hub is a fixed-context multiplexing gateway, not an AI planner (owner reaffirmation).** A coding agent connects once to Hub and gains selective access to hundreds or thousands of tools on independently operating MCP servers without maintaining each connection or loading provider schemas into the agent context. Hub initiates public RTC1 discovery, performs original user-consented authorization, searches bounded provider metadata and routes guarded selected calls. The human and their coding agent plan. Hub C-1 preview/execute orchestration is optional and does not autonomously plan. Frozen RTC1 and independent direct doors remain mandatory; a provider OAuth client transport is optional and cannot silently replace legacy RTC1 credentials, widen provider rights or create new Hub tool names per provider. Product authorization can ultimately be LIVE and end-user controlled, while our developer-agent tests and deployment gates remain separate. See the October 18 H-2 plan and PR #237; source test acceptance is not hosted continuity.
+
+
 **2026-10-10 — One standalone server per toolset; Robinson's Toolkit becomes the front door.** After a reality check
 showed the old toolkit's 3,049 tools are cheap on context (search-then-call already) but unverifiable (its test script
 only checks that keys exist; `TEST_RESULTS.md` claims all functional), Chris chose to build each toolset as its own

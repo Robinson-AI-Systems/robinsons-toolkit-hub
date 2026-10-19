@@ -12,10 +12,12 @@ function frame(title,body){
  return '<!doctype html><html lang="en"><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width, initial-scale=1">'+
   '<title>'+e(title)+'</title><main><h1>'+e(title)+'</h1>'+
-  '<p>Verified-owner TEST management only. Source metadata is not a real '+
-  'RTC provider read, hosted deployment check or financial authorization.</p>'+
+  '<p>Owner-managed TEST/LIVE connections follow the original provider and caller '+
+  'authorization. A local status page does not prove an authenticated '+
+  'provider read or authorize spending.</p>'+
   '<nav aria-label="Owner actions">'+
-  link('/api/owner/connect-service','Connect a service')+' | '+
+  link('/api/owner/connect-service','Connect an RTC service')+' | '+
+  link('/api/owner/connect-mcp','Connect with MCP OAuth')+' | '+
   link('/api/owner/passes','Manage Hub passes')+' | '+
   link('/api/owner/oauth','Manage OAuth families')+' | '+
   link('/api/owner/grants','Manage service grants')+' | '+
