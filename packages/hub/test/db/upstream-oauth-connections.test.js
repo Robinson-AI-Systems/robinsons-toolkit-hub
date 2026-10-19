@@ -221,7 +221,7 @@ it('seals 64KiB-bounded OAuth READ results under current caller and pages withou
   {...actor,profile:'read_only'}
  ])expect(await readOauthResult(db,other,large.handle,0,settings)).toBeNull();
  expect(await readOauthResult(db,actor,'wrong',0,settings)).toBeNull();
- expect(await readOauthResult(db,actor,large.handle,0,{
+ await expect(readOauthResult(db,actor,large.handle,0,{
   ...settings,resultsKey:undefined})).rejects.toThrow();
  await db.query(`UPDATE hub_upstream_oauth_connections SET
    allowed_areas=ARRAY['calendar'] WHERE id=$1`,[connectionId]);
