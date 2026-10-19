@@ -37,11 +37,16 @@ const post=vi.fn(async(url,options)=>{
   return {access_token:'initial-provider-access',refresh_token:'initial-provider-refresh',
    token_type:'Bearer',expires_in:3600};
  }
- if(url===remote.resource) {
-  if(options.body?.method==='tools/call')return {jsonrpc:'2.0',id:2,
+ if(url===remote.resource){
+  // The Hub never fetches the full provider schema catalog at connection
+  // time. It performs one bounded RTC1 meta search, then exact whoami.
+  expect(options.body?.method).toBe('tools/call');
+  if(options.body.params.name==='independent_whoami')return {jsonrpc:'2.0',id:2,
    result:{structuredContent:{mode:'live',profile:'read_only',
     areas:['files','calendar'],allowWrites:false}}};
-  return {jsonrpc:'2.0',id:1,result:{tools:[tool]}};
+  expect(options.body.params.name).toBe('independent_search_tools');
+  expect(options.body.params.arguments).toMatchObject({query:'',limit:1});
+  return {jsonrpc:'2.0',id:1,result:{structuredContent:{tools:[tool]}}};
  }
  if(url===origin+'/api/contract')return {
   rtc:1,server:remote.name,prefix:remote.prefix,
