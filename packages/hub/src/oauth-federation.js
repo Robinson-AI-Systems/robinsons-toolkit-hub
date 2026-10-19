@@ -46,7 +46,7 @@ function validRead(t,grant){
 function grantTarget(c){
  return {name:c.name,prefix:c.prefix,areas:c.areas,
   grantId:c.id,origin:c.origin,verifiedAt:String(c.expiresAt),
-  claimedCounts:{tools:0,writes:0,money:0},mode:c.mode,
+  claimedCounts:c.claimedCounts??{tools:0,writes:0,money:0},mode:c.mode,
   effectiveProfile:c.profile,readOnlyGrant:c.profile==='read_only',kind:'oauth'};
 }
 function serviceGrant(c){
@@ -58,8 +58,16 @@ export function genericFederationDependencies({actor,db,settings},{
  legacySearch=searchPinnedRtcTools,legacyDescribe=describePinnedRtcTool,
  legacyRead=pinnedRtcReadCall,legacyAudit=appendRtcReadAudit,
  oauthList=listActorUpstreamOauth,oauthWith=withActorUpstreamOauth}={}){
- const active=async()=>actor?.clientId?
-   (await oauthList(db,actor)).slice(0,100):[];
+ const active=async()=>{
+  if(!actor?.clientId)return [];
+  try{return (await oauthList(db,actor)).slice(0,100);}
+  catch(error){
+   // The old RTC pass route must remain usable on deployments where the
+   // separate optional OAuth-transport migration has not yet been applied.
+   if(error?.code==='42P01')return [];
+   throw error;
+  }
+ };
  const targets=async(_db,_actor,options={})=>{
   const [oauth,legacy]=await Promise.all([
    active(),legacyList(db,actor,{limit:100})]);
