@@ -134,7 +134,7 @@ function scopeRows(data){
     'preview_area_plan',[{label:'Preview multi-service plan (e.g. stripe:billing|reports)',
       name:'area_plan'}],'Preview all-service reduction');
   return head+base+'<p>Every operation rechecks live owner and grant permissions. '+
-    'No action can widen TEST/read_only or restore removed areas.</p>'+
+    'No action can widen the original user/issuer delegation or restore removed areas.</p>'+
     areas+profile+bulk+'</details>';
  });
  return '<h2>Current effective RTC permissions (page '+e(data.page)+')</h2>'+
