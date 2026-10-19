@@ -79,7 +79,7 @@ beforeAll(async()=>{
  await db.query(`INSERT INTO hub_oauth_sessions(id,family_id,owner_id,
  client_id,access_digest,refresh_digest,profile,areas,mode,access_expires_at,
  refresh_expires_at) VALUES($1,$2,$3,'synthetic-client',$4,$5,
- 'read_only',ARRAY['gateway'],'live',now()+interval '2 hours',
+ 'full',ARRAY['gateway'],'live',now()+interval '2 hours',
  now()+interval '30 days')`,
  [session,family,owner,randomUUID(),randomUUID()]);
 });
@@ -141,7 +141,7 @@ it('refreshes a real encrypted issuer credential under a row lock, no grants cop
 });
 it('isolates actual LIVE Hub OAuth caller to this connection and records durable read audit',async()=>{
  const actor={id:session,ownerId:owner,clientId:'synthetic-client',
-  mode:'live',profile:'read_only',areas:['gateway'],allowWrites:false};
+  mode:'live',profile:'full',areas:['gateway'],allowWrites:false};
  const {listActorUpstreamOauth}=await import('../../src/upstream-oauth-connections.js');
  const authorized=await listActorUpstreamOauth(db,actor);
  expect(authorized).toEqual([expect.objectContaining({name:'independent-mcp',
