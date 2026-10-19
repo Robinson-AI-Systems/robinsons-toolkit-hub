@@ -81,8 +81,8 @@ export function htmlForm(action,fields) {
   const hidden=Object.entries(fields).map(([key,value])=>
     '<input type="hidden" name="'+escapeHtml(key)+'" value="'+escapeHtml(value)+'">').join('');
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
-    '<title>Robinson's Toolkit Hub by Robinson AI Systems — owner approval</title><main>'+
-    '<h1>Authorize Robinson's Toolkit Hub by Robinson AI Systems</h1>'+
+    '<title>Robinson&#39;s Toolkit Hub by Robinson AI Systems — owner approval</title><main>'+
+    '<h1>Authorize Robinson&#39;s Toolkit Hub by Robinson AI Systems</h1>'+
     '<p>Requested profile: '+escapeHtml(fields.profile||'read_only')+'</p>'+
     '<p>Only this Hub is authorized. Upstream provider access requires separate scoped grants.</p>'+
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
