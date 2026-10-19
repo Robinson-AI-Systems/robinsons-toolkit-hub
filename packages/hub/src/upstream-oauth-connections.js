@@ -368,7 +368,7 @@ export async function listActorUpstreamOauth(db,actor){
   to_jsonb(s)->'allowed_servers' AS selected_servers,
   to_jsonb(s)->'service_profile_policy' AS profile_policy,
   to_jsonb(s)->'service_area_policy' AS area_policy,
-  h.prefix,h.state AS registry_state
+  h.prefix,h.claimed_counts,h.state AS registry_state
   FROM hub_oauth_sessions s
   JOIN hub_upstream_oauth_connections c ON c.owner_id=s.owner_id
     AND c.caller_family=s.family_id
@@ -393,7 +393,7 @@ export async function listActorUpstreamOauth(db,actor){
     x.allowed_areas.filter(a=>narrowed.includes(a)):x.allowed_areas;
    return {id:x.id,name:x.service_name,prefix:x.prefix,
     mode:x.mode,profile:x.profile,areas,origin:x.origin,
-    expiresAt:x.access_expires_at,
+    expiresAt:x.access_expires_at,claimedCounts:x.claimed_counts,
     family:x.family_id};
   }).filter(x=>x.areas.length>0);
 }
