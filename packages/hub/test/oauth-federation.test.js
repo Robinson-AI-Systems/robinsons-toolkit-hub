@@ -151,3 +151,57 @@ it('searches a 10,000-tool/100-server OAuth fleet with just three provider calls
  expect(Buffer.byteLength(JSON.stringify(state.result))).toBeLessThan(8192);
  expect(oauthList).toHaveBeenCalled();
 });
+
+it('continues actual Workspace RTC1 offset pagination without losing later tools',async()=>{
+ const f=fixture(roster.slice(0,1));
+ const grant=await f.deps.resolve(null,{actor,serverName:'workspace-mcp'},{});
+ const content=value=>({jsonrpc:'2.0',id:1,result:{
+  content:[{type:'text',text:JSON.stringify(value)}]}});
+ f.post.mockResolvedValueOnce(content({tools:[metadata('workspace')],count:1,
+  totalMatched:55,offset:0,nextOffset:1}));
+ const first=await f.deps.search(grant,{query:'',limit:1});
+ expect(first.next).toEqual({kind:'offset',value:'1'});
+ expect(first.incomplete).toBe(true);
+ f.post.mockResolvedValueOnce(content({tools:[metadata('workspace')],count:1,
+  totalMatched:55,offset:1,nextOffset:2}));
+ const second=await f.deps.search(grant,{query:'',limit:1,cursor:first.next});
+ expect(second.tools).toHaveLength(1);
+ expect(second.next).toEqual({kind:'offset',value:'2'});
+ expect(f.sent.map(x=>x.args)).toMatchObject([{query:'',limit:1},
+  {query:'',limit:1,offset:1}]);
+ expect(f.sent[1].args).not.toHaveProperty('cursor');
+});
+it('supports original RTC1 page and opaque continuation without guessing provider identity',async()=>{
+ const f=fixture(roster.slice(0,1));
+ const grant=await f.deps.resolve(null,{actor,serverName:'workspace-mcp'},{});
+ for(const [key,raw,expected] of [
+  ['next','2',{kind:'page',value:'2'}],
+  ['nextCursor','opaque_ABC',{kind:'cursor',value:'opaque_ABC'}]
+ ]) {
+  f.post.mockResolvedValueOnce({jsonrpc:'2.0',id:1,
+   result:{structuredContent:{tools:[metadata('workspace')],[key]:raw}}});
+  const page=await f.deps.search(grant,{query:'',limit:1});
+  expect(page.next).toEqual(expected);
+  f.post.mockResolvedValueOnce({jsonrpc:'2.0',id:1,
+   result:{structuredContent:{tools:[metadata('workspace')],next:null}}});
+  const resumed=await f.deps.search(grant,{query:'',limit:1,cursor:page.next});
+  expect(resumed.next).toBe(null);
+  const sent=f.sent.at(-1).args;
+  expect(sent[expected.kind]).toBe(expected.kind==='page'?
+   expected.value:expected.value);
+ }
+});
+it('refuses ambiguous or malicious provider pages instead of unsafe replay',async()=>{
+ const f=fixture(roster.slice(0,1));
+ const grant=await f.deps.resolve(null,{actor,serverName:'workspace-mcp'},{});
+ for(const unsafe of [
+  {nextOffset:-1},{nextOffset:100001},{nextOffset:1,next:'2'},
+  {nextCursor:'../private'},{nextPage:'0'}
+ ]) {
+  f.post.mockResolvedValueOnce({jsonrpc:'2.0',id:1,
+   result:{structuredContent:{tools:[metadata('workspace')],...unsafe}}});
+  await expect(f.deps.search(grant,{query:'',limit:1})).rejects.toThrow();
+ }
+ await expect(f.deps.search(grant,{query:'',limit:1,cursor:{
+  kind:'offset',value:'-3'}})).rejects.toThrow();
+});
