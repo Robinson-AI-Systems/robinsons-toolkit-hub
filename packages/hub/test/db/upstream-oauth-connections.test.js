@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import pg from 'pg';
 import {genericFederationDependencies} from '../../src/oauth-federation.js';
 import {beginUpstreamOauth,finishUpstreamOauth,remoteConnectionRead,
- listUpstreamOauthConnections,disconnectUpstreamOauth}
+ listUpstreamOauthConnections,withActorUpstreamOauth,disconnectUpstreamOauth}
  from '../../src/upstream-oauth-connections.js';
 
 const owner='oauth_owner',origin='https://mcp.example.org',
@@ -156,6 +156,18 @@ it('isolates actual LIVE Hub OAuth caller to this connection and records durable
  expect(targets).toHaveLength(1);
  expect(targets[0]).toMatchObject({name:'independent-mcp',
   prefix:'independent',mode:'live',grantId:connectionId});
+ // There is no extra provider catalog fetch before an explicitly selected
+ // request. Each remote invocation is one on-demand operation plus any issuer
+ // refresh needed only when the token actually expires.
+ const probe=vi.fn(async()=>{throw Error('Unexpected provider network request')});
+ const selected=await withActorUpstreamOauth(db,settings,{actor,id:connectionId},
+  async granted=>{
+   expect(granted.name).toBe('independent-mcp');
+   expect(granted.accessToken).toBe('rotated-access-secret');
+   return {ok:true};
+  },{post:probe});
+ expect(selected).toEqual({ok:true});
+ expect(probe).not.toHaveBeenCalled();
  const correlationId=randomUUID();
  await adapters.audit(db,{actor,grantId:connectionId,service:'independent-mcp',
   tool:'independent_files_list',phase:'attempt',outcome:'allowed',
