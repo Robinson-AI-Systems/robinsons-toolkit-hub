@@ -111,3 +111,13 @@ it('durably audits a genuinely eligible OAuth caller without leaking access cred
   'allowed',null,actor.id]);
  expect(JSON.stringify(f.db.query.mock.calls)).not.toContain('synthetic-access');
 });
+
+it('passes through a provider refusal as the original guarded denial without retry',async()=>{
+ const f=fixture(roster.slice(0,1));
+ const grant=await f.deps.resolve(null,{actor,serverName:'workspace-mcp'},{});
+ f.post.mockResolvedValueOnce({jsonrpc:'2.0',id:1,result:{
+  structuredContent:{ok:false,error:{code:'needs_confirmation'}}}});
+ const denied=await f.deps.read(grant,'workspace_read_records',{confirm:false});
+ expect(denied).toEqual({ok:false,error:{code:'needs_confirmation'}});
+ expect(f.post).toHaveBeenCalledTimes(1);
+});
