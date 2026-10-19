@@ -145,7 +145,7 @@ it('only queries owner-scoped counts and catalog metadata, never credential colu
 
 it('reports optional OAuth connection readiness without touching credential or plaintext columns',async()=>{
  const oauthTables=['hub_upstream_oauth_connections','hub_upstream_oauth_result_handles'];
- const query=vi.fn(async(sql,args)=>{
+ const query=vi.fn(async(sql,_args)=>{
   if(sql.includes('information_schema.tables'))return {
    rows:[...tables,...oauthTables].map(table_name=>({table_name}))};
   if(sql.includes('information_schema.columns'))return {rows:columns};
