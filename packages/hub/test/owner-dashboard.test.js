@@ -134,6 +134,7 @@ it('grants visibility and local readiness never certify provider TEST acceptance
  expect(state.externalAcceptance).toBe('unverified');
  const html=renderOwnerDashboard(state);
  expect(html).toContain('UNVERIFIED');
- expect(html).toContain('Active services with verified grants');
+ expect(html).toContain('Distinct active registered LIVE services with verified grants');
+ expect(html).toContain('LIVE read configuration preflight: not ready');
  expect(html).not.toContain('provider accepted');
 });

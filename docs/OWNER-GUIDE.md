@@ -1,3 +1,7 @@
+## Connection readiness before a release
+
+Open the private control-center readiness tab or `/api/owner/readiness` and authenticate with the existing owner passphrase. TEST and LIVE configuration counts are separate. Review missing schema through the existing checked deployment/migration procedure; this view never installs migrations or changes a connection. OAuth write delegation is optional for read-only use. A ready configuration still needs the actual normal Connect a service flow, the selected caller's authorization, harmless routed read, denied boundaries and exact revocation before it counts as a working connection. Expired callers may leave unexpired stored grants, so counts alone never authorize routing.
+
 Service manifests may call their environments test/live or preview/production. The connection view shows the original labels and the equivalent Hub choices. A production credential is always a LIVE credential. A full/everyday Hub profile without explicit write delegation cannot enroll a writable service credential; no provider credential is forwarded for that refusal.
 
 ## Normal service discovery and connection (source repair; not released)
