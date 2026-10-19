@@ -4,6 +4,7 @@ import {createHash,createCipheriv,createDecipheriv,randomBytes,randomUUID} from 
 import {discoverMcpOAuth,validateRegistration} from './upstream-oauth-discovery.js';
 import {pinnedMcpRequest} from './upstream-mcp-http.js';
 import {stageHubServer} from './registry.js';
+import {limitedServiceProfile} from './service-profile-policy.js';
 
 const hex=s=>createHash('sha256').update(s).digest('hex');
 const token=()=>randomBytes(32).toString('base64url');
@@ -48,7 +49,8 @@ async function currentFamily(db,ownerId,family,serviceName,mode,profile){
  const {rows}=await db.query(`SELECT DISTINCT ON (family_id)
   id,family_id,profile,mode,areas,client_id,
   to_jsonb(s)->'allowed_servers' AS allowed_servers,
-  to_jsonb(s)->'service_profile_policy' AS profile_policy
+  to_jsonb(s)->'service_profile_policy' AS profile_policy,
+  COALESCE((to_jsonb(s)->>'allow_writes')::boolean,FALSE) AS allow_writes
   FROM hub_oauth_sessions s WHERE owner_id=$1
     AND revoked_at IS NULL AND refresh_expires_at>now()
     AND access_expires_at>now() AND 'gateway'=ANY(areas)
@@ -56,7 +58,8 @@ async function currentFamily(db,ownerId,family,serviceName,mode,profile){
       WHERE gone.family_id=s.family_id AND gone.revoked_at IS NOT NULL)
   ORDER BY family_id,access_expires_at DESC LIMIT 25`,[ownerId]);
  const eligible=rows.filter(x=>(!family||x.family_id===family)&&
-   x.mode===mode&&x.profile===profile&&
+   x.mode===mode&&limitedServiceProfile(profile,x.profile,x.profile_policy,serviceName)===profile&&
+   (profile==='read_only'||x.allow_writes===true)&&
    (!Array.isArray(x.allowed_servers)||x.allowed_servers.includes(serviceName))&&
    x.profile_policy?.[serviceName]!=='disabled');
  if(eligible.length!==1)throw Error('Choose exactly one active Hub OAuth connection with matching mode/profile');
@@ -377,7 +380,7 @@ export async function listActorUpstreamOauth(db,actor){
   WHERE s.id=$1 AND s.owner_id=$2 AND s.revoked_at IS NULL
     AND s.access_expires_at>now() AND s.refresh_expires_at>now()
     AND s.mode=$3 AND s.profile=$4 AND 'gateway'=ANY(s.areas)
-    AND c.revoked_at IS NULL AND c.mode=s.mode AND c.profile=s.profile
+    AND c.revoked_at IS NULL AND c.mode=s.mode
     AND h.state='active'
     AND NOT EXISTS (SELECT 1 FROM hub_oauth_sessions broken
      WHERE broken.family_id=s.family_id AND broken.revoked_at IS NOT NULL)
@@ -386,7 +389,7 @@ export async function listActorUpstreamOauth(db,actor){
  return rows.filter(x=>
     (!Array.isArray(actor.serverNames)||actor.serverNames.includes(x.service_name))&&
     (!Array.isArray(x.selected_servers)||x.selected_servers.includes(x.service_name))&&
-    x.profile_policy?.[x.service_name]!=='disabled')
+    limitedServiceProfile(x.profile,actor.profile,x.profile_policy,x.service_name)===x.profile)
   .map(x=>{
    const narrowed=x.area_policy?.[x.service_name];
    const areas=Array.isArray(narrowed)?
