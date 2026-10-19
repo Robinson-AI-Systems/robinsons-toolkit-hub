@@ -326,3 +326,79 @@ export async function disconnectUpstreamOauth(db,{ownerId,id}){
   WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL RETURNING id`,[id,ownerId]);
  return result.rowCount===1;
 }
+
+function eligibleHubActor(actor){
+ return actor?.clientId&&typeof actor.ownerId==='string'&&
+  /^[0-9a-f-]{36}$/i.test(actor.id??'')&&
+  ['test','live'].includes(actor.mode)&&
+  ['read_only','everyday','full'].includes(actor.profile)&&
+  !(actor.profile==='read_only'&&actor.allowWrites===true)&&
+  Array.isArray(actor.areas)&&actor.areas.includes('gateway');
+}
+export async function listActorUpstreamOauth(db,actor){
+ if(!eligibleHubActor(actor))return [];
+ // Token access never broadens a Hub caller's own persisted service selection,
+ // profile restrictions, tenant, OAuth family or source permission.
+ const {rows}=await db.query(`SELECT c.id,c.service_name,c.origin,c.resource,
+  c.mode,c.profile,c.allowed_areas,c.access_expires_at,
+  s.family_id,s.profile AS hub_profile,s.mode AS hub_mode,
+  s.areas AS hub_areas,
+  to_jsonb(s)->'allowed_servers' AS selected_servers,
+  to_jsonb(s)->'service_profile_policy' AS profile_policy,
+  to_jsonb(s)->'service_area_policy' AS area_policy,
+  h.prefix,h.state AS registry_state
+  FROM hub_oauth_sessions s
+  JOIN hub_upstream_oauth_connections c ON c.owner_id=s.owner_id
+    AND c.caller_family=s.family_id
+  JOIN hub_servers h ON h.owner_id=c.owner_id AND h.name=c.service_name
+    AND h.origin=c.origin
+  WHERE s.id=$1 AND s.owner_id=$2 AND s.revoked_at IS NULL
+    AND s.access_expires_at>now() AND s.refresh_expires_at>now()
+    AND s.mode=$3 AND s.profile=$4 AND 'gateway'=ANY(s.areas)
+    AND c.revoked_at IS NULL AND c.mode=s.mode AND c.profile=s.profile
+    AND h.state='active'
+    AND NOT EXISTS (SELECT 1 FROM hub_oauth_sessions broken
+     WHERE broken.family_id=s.family_id AND broken.revoked_at IS NOT NULL)
+  ORDER BY c.service_name LIMIT 100`,
+ [actor.id,actor.ownerId,actor.mode,actor.profile]);
+ return rows.filter(x=>
+    (!Array.isArray(actor.serverNames)||actor.serverNames.includes(x.service_name))&&
+    (!Array.isArray(x.selected_servers)||x.selected_servers.includes(x.service_name))&&
+    x.profile_policy?.[x.service_name]!=='disabled')
+  .map(x=>{
+   const narrowed=x.area_policy?.[x.service_name];
+   const areas=Array.isArray(narrowed)?
+    x.allowed_areas.filter(a=>narrowed.includes(a)):x.allowed_areas;
+   return {id:x.id,name:x.service_name,prefix:x.prefix,
+    mode:x.mode,profile:x.profile,areas,origin:x.origin,
+    expiresAt:x.access_expires_at,
+    family:x.family_id};
+  }).filter(x=>x.areas.length>0);
+}
+export async function withActorUpstreamOauth(db,settings,{actor,id},work,
+ {post=pinnedMcpRequest}={}){
+ if(!eligibleHubActor(actor)||typeof work!=='function'||
+   !/^[-0-9a-f]{36}$/i.test(id??''))throw Error('MCP delegated caller invalid');
+ let authorized=(await listActorUpstreamOauth(db,actor)).find(x=>x.id===id);
+ if(!authorized)throw Error('MCP connection is not delegated to this caller');
+ // Reuse the existing issuer refresh/row-lock lifecycle before any provider
+ // request; no synthetic hub_server_grant or reusable service TEST pass.
+ await remoteConnectionRead(db,settings,{ownerId:actor.ownerId,id},
+  {post,list:async()=>[]});
+ authorized=(await listActorUpstreamOauth(db,actor)).find(x=>x.id===id);
+ if(!authorized)throw Error('MCP connection authorization changed');
+ const {rows}=await db.query(`SELECT * FROM hub_upstream_oauth_connections
+  WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL
+  AND access_expires_at>now()+interval '30 seconds'`,[id,actor.ownerId]);
+ const row=rows[0];
+ if(!row||row.caller_family!==authorized.family||row.resource!==
+   authorized.origin+'/api/mcp')throw Error('MCP OAuth audience changed');
+ const values=open(row,connectionAAD(row),settings);
+ const result=await work({...authorized,resource:row.resource,
+  accessToken:values.accessToken},post);
+ const after=(await listActorUpstreamOauth(db,actor)).find(x=>x.id===id);
+ if(!after||after.mode!==authorized.mode||after.profile!==authorized.profile||
+   after.areas.join('|')!==authorized.areas.join('|'))
+  throw Error('MCP connection was revoked or narrowed during request');
+ return result;
+}
