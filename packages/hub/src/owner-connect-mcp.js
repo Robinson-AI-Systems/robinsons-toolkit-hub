@@ -127,6 +127,7 @@ export async function handleOwnerConnectMcp(req,res,{withDb,env=process.env,
  let hubOrigin;try{hubOrigin=publicHubOrigin(env);}
  catch{return res.status(503).send(shell('Hub setup is not configured'));}
  if(req.method==='GET')return res.status(200).send(form());
+ if(req.headers?.origin!==hubOrigin)return res.status(403).send('Same-origin owner authorization required');
  if(!String(req.headers?.['content-type']||'').startsWith('application/x-www-form-urlencoded'))
   return res.status(415).send('Unsupported content type');
  const fields=formFields(req),parsed=validateAction(fields);
@@ -180,7 +181,8 @@ export async function handleOwnerMcpCallback(req,res,{withDb,env=process.env,
   'Max-Age=0; HttpOnly; Secure; SameSite=Lax');
  try{
   const result=await withDb((db,settings)=>finish(db,settings,{
-   ownerId:env.HUB_OWNER_ID,hubOrigin,state:query.state,browser,code:query.code}));
+   ownerId:env.HUB_OWNER_ID,hubOrigin,state:query.state,browser,code:query.code,
+   issuer:query.iss??null}));
   return res.status(200).send(shell('<h2>Connected '+esc(result.server)+'</h2>'+
    '<p>Provider OAuth authorization and real authenticated MCP tool discovery '+
    'succeeded. Tools discovered: '+esc(result.tools)+'. '+
