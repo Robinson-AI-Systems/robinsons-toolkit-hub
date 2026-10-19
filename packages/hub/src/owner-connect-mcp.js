@@ -17,7 +17,7 @@ const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 function shell(body){
  return '<!doctype html><html lang="en"><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-  '<title>Connect an MCP server to Hub</title><main>'+
+  '<title>Connect MCP — Robinson&#39;s Toolkit Hub by Robinson AI Systems</title><main>'+
   '<h1>Connect an MCP server</h1>'+
   '<p>Hub initiates discovery and a standard OAuth consent flow at your MCP server. '+
   'Each server works independently. No manual TEST passes are required here.</p>'+
