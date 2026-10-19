@@ -74,6 +74,13 @@ export async function readOwnerDashboard(db,ownerId,settings,selection,
      const r=await readiness(db,ownerId,settings);
      return {tab,state:'readable',readiness:{
        schemaReady:Boolean(r.schemaReady),installedTables:Number(r.installedTables),
+       liveGrantSchemaReady:r.liveGrantSchemaReady===true,
+       oauthWriteSchemaReady:r.oauthWriteSchemaReady===true,
+       modes:Object.fromEntries(['test','live'].map(mode=>[mode,
+         Object.fromEntries(['unexpiredGrants','verifiedGrants','registeredServices'].map(key=>{
+           const n=r.modes?.[mode]?.[key];
+           return [key,Number.isSafeInteger(n)&&n>=0?n:null];
+         }))])),
        grantsKeyReady:Boolean(r.grantsKeyReady),resultsKeyReady:Boolean(r.resultsKeyReady),
        servers:Number(r.servers),stagedGrants:Number(r.stagedGrants),
        activeServers:Number(r.activeServers),verifiedGrants:Number(r.verifiedGrants),

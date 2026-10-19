@@ -2,6 +2,8 @@ import {beforeAll,afterAll,it,expect} from 'vitest';
 import pg from 'pg';
 import {readFile,readdir} from 'node:fs/promises';
 import {randomBytes,randomUUID} from 'node:crypto';
+import {readOwnerDashboard} from '../../src/owner-dashboard-data.js';
+import {renderOwnerDashboard} from '../../src/owner-dashboard.js';
 import {summarizeHubReadiness,handleOwnerReadiness} from '../../src/owner-readiness.js';
 const owner='readiness-owner';
 const settings={grantsKey:randomBytes(32).toString('base64url'),
@@ -106,4 +108,17 @@ it('disabled registration cannot satisfy configuration, without changing stored 
   expect(state.modes.test).toEqual({unexpiredGrants:2,verifiedGrants:2,registeredServices:0});
   expect(state.modes.live.registeredServices).toBe(0);
  }finally{await db.query('ROLLBACK');}
+});
+
+it('preserves actual SQL readiness through dashboard projection and final HTML',async()=>{
+ const state=await readOwnerDashboard(db,owner,settings,{tab:'readiness',page:0});
+ expect(state.readiness).toMatchObject({schemaReady:true,liveGrantSchemaReady:true,
+  oauthWriteSchemaReady:true,modes:{live:{registeredServices:1},test:{registeredServices:1}}});
+ const html=renderOwnerDashboard(state);
+ expect(html).toContain('LIVE read configuration preflight: ready');
+ expect(html).toContain('TEST read configuration preflight: ready');
+ expect(html).toContain('Two-service TEST routing preflight: not ready');
+ expect(html).toContain('Verified TEST grants: <strong>2');
+ expect(html).not.toContain('readiness-caller-');
+ expect(html).toContain('UNVERIFIED');
 });
