@@ -1,6 +1,6 @@
 import {it,expect,vi} from 'vitest';
 import {handleMcp,mcpFederatedReply} from '../src/http-door.js';
-import {checkModernMcp} from '../src/mcp-modern.js';
+
 const actor={id:'test-actor',ownerId:'owner-a',mode:'live',profile:'read_only',
  areas:['gateway'],allowWrites:false};
 const meta={'io.modelcontextprotocol/protocolVersion':'2026-07-28',
@@ -102,9 +102,16 @@ it('modern direct MCP still authenticates OAuth principal and refuses unauthoriz
   ...actor,areas:['files']}}))});
  expect(outOfScope.res.statusCode).toBe(403);
  expect(outOfScope.federate).not.toHaveBeenCalled();
- const noOrigin=await send(req,{...h,origin:'https://untrusted.invalid'});
- expect(noOrigin.res.statusCode).toBe(403);
- expect(noOrigin.withDb).not.toHaveBeenCalled();
+ const oldOrigin=process.env.HUB_PUBLIC_ORIGIN;
+ process.env.HUB_PUBLIC_ORIGIN='https://hub.example.test';
+ try {
+  const noOrigin=await send(req,{...h,origin:'https://untrusted.invalid'});
+  expect(noOrigin.res.statusCode).toBe(403);
+  expect(noOrigin.withDb).not.toHaveBeenCalled();
+ }finally{
+  if(oldOrigin===undefined)delete process.env.HUB_PUBLIC_ORIGIN;
+  else process.env.HUB_PUBLIC_ORIGIN=oldOrigin;
+ }
 });
 it('legacy clients still initialize and list without modern headers or per-request metadata',async()=>{
  const legacy={jsonrpc:'2.0',id:1,method:'initialize',
