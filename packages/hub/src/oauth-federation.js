@@ -7,6 +7,8 @@ import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit} from './rtc-read-audit.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
 import {validProviderPage} from './provider-cursor.js';
+import {storeOauthResult,readOauthResult} from './oauth-results.js';
+import {storeRtcResult,readRtcResult} from './rtc-results.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
@@ -170,6 +172,22 @@ export function genericFederationDependencies({actor,db,settings},{
    return {ok:true,result};
   });
  };
+ const storeResult=async(_db,_actor,grantId,server,value,config)=>{
+  const oauth=(await active()).find(x=>x.id===grantId&&x.name===server);
+  return oauth?storeOauthResult(db,actor,grantId,server,value,config):
+   storeRtcResult(db,actor,grantId,server,value,config);
+ };
+ const readResult=async(_db,_actor,handle,page,config)=>{
+  if(!actor?.clientId)return readRtcResult(db,actor,handle,page,config);
+  let saved=null;
+  try{saved=await readOauthResult(db,actor,handle,page,config);}
+  catch(error){
+   // Optional migration not yet deployed: legacy RTC pass result pages
+   // remain accessible. Never swallow ciphertext/authorization errors.
+   if(error?.code!=='42P01')throw error;
+  }
+  return saved??readRtcResult(db,actor,handle,page,config);
+ };
  const audit=async(client,{actor:caller,grantId,service,tool,
   correlationId,phase,outcome,upstreamLogId=null})=>{
   const c=(await active()).find(x=>x.id===grantId&&x.name===service);
@@ -193,5 +211,5 @@ export function genericFederationDependencies({actor,db,settings},{
   if(saved.rows.length!==1)throw Error('Durable OAuth read audit unavailable');
   return saved.rows[0].id;
  };
- return {list:targets,resolve,search,describe,read,audit};
+ return {list:targets,resolve,search,describe,read,audit,storeResult,readResult};
 }
