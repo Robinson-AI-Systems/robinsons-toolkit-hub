@@ -1,3 +1,7 @@
+## October 19 — LIVE RTC HTTP result retrieval (source only)
+
+Tracing actual H-1/H-3 doors found a missed integration: large LIVE reads can store encrypted grant-bound RTC handles, but `/api/results/{handle}` imposed the older H-1 TEST/no-write rule before selecting the RTC store. The shared HTTP handler now applies the existing TEST/LIVE gateway/profile policy only to RTC handles and still calls the original SQL grant-revalidating reader. Legacy H-1 handles retain their prior TEST/read-only restriction and separate storage. No write, provider retry, encryption/TTL/schema or permission changes. Existing API wrapper is thin; OpenAPI describes existing TEST/LIVE read support and the real result route. Handler and disposable SQL flow/regression evidence must pass final gates; actual hosted normal connection and large-result acceptance stay OPEN. Zero whole subsections/bundles; no RTC1 declaration or release.
+
 PR238 follow-up review found the dashboard's explicit data projection dropped the new readiness fields, so the standalone page worked but dashboard counts were unavailable. PR239 carries the H-2 correction with the H-1 identity metadata fix: project only the two new schema booleans and six bounded TEST/LIVE counters. Unit and actual PostgreSQL→dashboard-data→HTML regressions now test the complete consumer path; no broad object spread or private-state pass-through. Source/CI proof and hosted acceptance remain separate.
 
 ## October 19 — HTTP identity parity (source only)
