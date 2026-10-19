@@ -6,6 +6,7 @@ import {searchPinnedRtcTools,describePinnedRtcTool} from './pinned-tools.js';
 import {pinnedRtcReadCall} from './pinned-read-call.js';
 import {appendRtcReadAudit} from './rtc-read-audit.js';
 import {ownsRtcToolName} from './rtc-prefix.js';
+import {validProviderPage} from './provider-cursor.js';
 
 const namePattern=/^[a-z][a-z0-9_]{2,119}$/;
 const areaPattern=/^[a-z][a-z0-9_]{0,59}$/;
@@ -52,6 +53,40 @@ function grantTarget(c){
   claimedCounts:c.claimedCounts??{tools:0,writes:0,money:0},mode:c.mode,
   effectiveProfile:c.profile,readOnlyGrant:c.profile==='read_only',kind:'oauth'};
 }
+// Same RTC1 continuation grammar as the fixed H-3 broker. Providers may
+// expose a number offset (Workspace), page string, or opaque cursor.
+// Never throw away nextOffset just because another provider calls it next.
+function nextRtcPage(result) {
+ const supplied=['next','nextOffset','nextPage','nextCursor'].filter(k=>
+  result[k]!==undefined&&result[k]!==null);
+ if(supplied.length>1)throw Error('Ambiguous provider continuation');
+ if(!supplied.length)return null;
+ const key=supplied[0],raw=result[key];
+ let next;
+ if(key==='nextOffset'){
+  if(!Number.isSafeInteger(raw))throw Error('Invalid provider offset');
+  next={kind:'offset',value:String(raw)};
+ }else if(key==='nextPage'){
+  if(typeof raw!=='string')throw Error('Invalid provider page');
+  next={kind:'page',value:raw};
+ }else if(key==='nextCursor'){
+  if(typeof raw!=='string')throw Error('Invalid provider cursor');
+  next={kind:'cursor',value:raw};
+ }else if(Number.isSafeInteger(raw)){
+  next={kind:'offset',value:String(raw)};
+ }else if(typeof raw==='string'){
+  next={kind:/^[1-9][0-9]{0,5}$/.test(raw)?'page':'cursor',value:raw};
+ }else throw Error('Invalid provider continuation');
+ if(!validProviderPage(next))throw Error('Out-of-bounds provider continuation');
+ return next;
+}
+function rtcSearchPage(cursor){
+ if(cursor===undefined)return {};
+ if(!validProviderPage(cursor))throw Error('Invalid scoped provider page');
+ if(cursor.kind==='offset')return {offset:Number(cursor.value)};
+ if(cursor.kind==='page')return {page:cursor.value};
+ return {cursor:cursor.value};
+}
 function serviceGrant(c){
  return {kind:'oauth',grantId:c.id,server:c.name,mode:c.mode,
   profile:c.profile,prefix:c.prefix,origin:c.origin,areas:c.areas};
@@ -91,7 +126,7 @@ export function genericFederationDependencies({actor,db,settings},{
    const result=await callMcp(service,post,'search_tools',{
     query:request.query??'',limit:Math.min(request.limit??10,20),
     ...(request.area?{area:request.area}:{}),
-    ...(request.cursor?{cursor:request.cursor}:{})},8192);
+    ...rtcSearchPage(request.cursor)},8192);
    if(!Array.isArray(result.tools)||result.tools.length>(request.limit??10)||
     result.tools.length>20)throw Error('Unbounded provider search refused');
    const tools=result.tools.filter(x=>validRead(x,grant)).map(t=>({
@@ -99,8 +134,8 @@ export function genericFederationDependencies({actor,db,settings},{
     area:t.area,profiles:[grant.profile],writes:false,money:false,
     destructive:false,annotations:{readOnlyHint:true},
     ...(t.audience?{audience:t.audience}:{})}));
-   return {tools,next:result.next??null,
-    incomplete:result.incomplete===true||result.next!=null};
+   const next=nextRtcPage(result);
+   return {tools,next,incomplete:result.incomplete===true||next!==null};
   });
  };
  const describe=async(grant,name)=>{
