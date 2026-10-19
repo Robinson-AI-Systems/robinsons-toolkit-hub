@@ -1,4 +1,5 @@
 import {it,expect,vi} from 'vitest';
+import {htmlForm} from '../src/owner-login.js';
 import {registerDeveloperClient,developerHandoff,developerClientValid,ownerSetup,checkedClientRedirect} from '../src/developer-handoff.js';
 const env={HUB_PUBLIC_ORIGIN:'https://hub.example',HUB_OWNER_ID:'synthetic-owner',HUB_TOKEN_PEPPER:'synthetic-test-only-pepper-for-unit-tests'};
 it('rejects invalid registration metadata and malformed handoffs before database access',async()=>{
@@ -67,4 +68,19 @@ it('preserves registered confidential MCP coding client with its own HTTPS callb
   expect((await registerDeveloperClient(db,candidate,{env})).status).toBe(400);
   expect(db.query.mock.calls).toHaveLength(before);
  }
+});
+
+it('owner approval page identifies the exact external client callback, never a hidden client identity',()=>{
+ const rendered=htmlForm('/api/oauth/authorize',{
+  client_id:'synthetic1234',redirect_uri:'https://agent.example.org/authorize/callback?platform=mobile',
+  code_challenge:'a'.repeat(43),state:'state-synthetic'});
+ expect(rendered).toContain('Unverified external OAuth client callback');
+ expect(rendered).toContain('https://agent.example.org/authorize/callback?platform=mobile');
+ expect(rendered).toContain('delegation_mode');
+ expect(rendered).toContain('delegation_writes');
+ expect(rendered).not.toContain('client_secret');
+ const unsafe=htmlForm('/api/oauth/authorize',{
+  redirect_uri:'https://agent.example.org/?x=<script>alert(1)</script>'});
+ expect(unsafe).not.toContain('<script>');
+ expect(unsafe).toContain('&lt;script&gt;');
 });
