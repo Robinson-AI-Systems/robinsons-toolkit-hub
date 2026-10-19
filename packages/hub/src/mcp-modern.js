@@ -22,7 +22,8 @@ export function checkModernMcp(body,headers={}){
  const header=headers['mcp-protocol-version'];
  const modernRequest=body?.method==='server/discover'||
    header===modern||requested===modern||
-   typeof requested==='string'&&!supported.includes(requested);
+   typeof requested==='string'&&!supported.includes(requested)||
+   typeof header==='string'&&!supported.includes(header);
  if(!modernRequest)return {modern:false};
  if(body?.jsonrpc!=='2.0'||!Number.isSafeInteger(body.id)&&
    (typeof body?.id!=='string'||!body.id)||
@@ -69,7 +70,7 @@ export async function modernMcpReply(body,actor,db,settings,federate){
    instructions:'Discover and access independently authorized tools through one fixed Hub MCP menu.'
   },true))};
  }
- // Statelss core has no legacy initialize/ping/initialized notifications.
+ // Stateless core has no legacy initialize/ping/initialized notifications.
  if(!['tools/list','tools/call'].includes(body.method))
   return {status:404,body:jsonError(body.id,-32601,'Method not found')};
  const sanitized={...body,params:{...body.params}};
