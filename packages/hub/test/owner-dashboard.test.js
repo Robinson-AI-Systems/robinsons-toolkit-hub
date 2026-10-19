@@ -138,3 +138,30 @@ it('grants visibility and local readiness never certify provider TEST acceptance
  expect(html).toContain('LIVE read configuration preflight: not ready');
  expect(html).not.toContain('provider accepted');
 });
+
+it('projects new TEST/LIVE schema and counts through the real dashboard data boundary',async()=>{
+ const state=await readOwnerDashboard({},'owner-a',{},{tab:'readiness',page:0},{
+  readiness:async()=>({schemaReady:true,installedTables:4,grantsKeyReady:true,resultsKeyReady:true,
+   liveGrantSchemaReady:true,oauthWriteSchemaReady:true,servers:3,activeServers:3,
+   modes:{test:{unexpiredGrants:4,verifiedGrants:3,registeredServices:2,private:'do-not-project'},
+    live:{unexpiredGrants:1,verifiedGrants:1,registeredServices:1}},private:'do-not-project'})});
+ expect(state.readiness.liveGrantSchemaReady).toBe(true);
+ expect(state.readiness.oauthWriteSchemaReady).toBe(true);
+ expect(state.readiness.modes.test).toEqual({unexpiredGrants:4,verifiedGrants:3,registeredServices:2});
+ expect(JSON.stringify(state)).not.toContain('do-not-project');
+ const html=renderOwnerDashboard(state);
+ expect(html).toContain('TEST read configuration preflight: ready');
+ expect(html).toContain('LIVE read configuration preflight: ready');
+ expect(html).toContain('Two-service TEST routing preflight: ready');
+ expect(html).toContain('Verified LIVE grants: <strong>1');
+ expect(html).toContain('UNVERIFIED');
+});
+it('missing or invalid dashboard counters stay unavailable and cannot satisfy a preflight',async()=>{
+ const state=await readOwnerDashboard({},'owner-a',{},{tab:'readiness',page:0},{
+  readiness:async()=>({schemaReady:true,installedTables:4,grantsKeyReady:true,resultsKeyReady:true,
+   liveGrantSchemaReady:'true',modes:{test:{registeredServices:-1},live:{registeredServices:'private'}}})});
+ expect(state.readiness.liveGrantSchemaReady).toBe(false);
+ const html=renderOwnerDashboard(state);
+ expect(html).toContain('Verified LIVE grants: <strong>unavailable');
+ expect(html).toContain('LIVE read configuration preflight: not ready');
+});
