@@ -33,7 +33,11 @@ function binding(caller,c){
 }
 async function current(db,actor,id){
  const rows=await listActorUpstreamOauth(db,actor);
- return rows.find(c=>c.id===id)??null;
+ const found=rows.find(c=>c.id===id)??null;
+ // An expired original provider credential cannot authorize disclosure of
+ // an already-stored page. Refresh or re-consent through the normal issuer.
+ return found&&Number.isFinite(new Date(found.expiresAt).getTime())&&
+   new Date(found.expiresAt).getTime()>Date.now()?found:null;
 }
 export async function pruneExpiredOauthResults(db,{limit=100}={}){
  if(!Number.isInteger(limit)||limit<1||limit>100)
