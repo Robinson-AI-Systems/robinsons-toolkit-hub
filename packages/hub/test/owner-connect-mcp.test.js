@@ -3,6 +3,7 @@ import {handleOwnerConnectMcp,handleOwnerMcpCallback}
  from '../src/owner-connect-mcp.js';
 const env={HUB_PUBLIC_ORIGIN:'https://hub.example.org',HUB_OWNER_ID:'test_owner'};
 const nonce='A'.repeat(43),state='B'.repeat(43);
+const chosenFamily='11111111-2222-4333-8444-555555555555';
 const origin='https://provider.example.org';
 const metadata={origin,name:'independent-mcp',prefix:'independent',
  areas:['mail','files'],profiles:['read_only','everyday','full'],
@@ -15,6 +16,8 @@ function fixtures(){
  return {env,withDb:cb=>cb({},{}),
   verify:vi.fn(async(_db,_req,pwd)=>({approved:pwd==='good-passphrase'})),
   discover:vi.fn(async()=>metadata),
+  eligible:vi.fn(async()=>[{family:chosenFamily,mode:'live',
+   profile:'full',eligibleProfiles:['read_only','everyday','full']}]),
   begin:vi.fn(async()=>({authorizeUrl:'https://provider.example.org/api/oauth/authorize',
    browserNonce:nonce})),
   finish:vi.fn(async()=>({server:'independent-mcp',state:'connected',
@@ -47,8 +50,32 @@ it('checks owner password BEFORE calling remote issuer or creating a connection'
  expect(allowed.res.code).toBe(200);
  expect(allowed.res.body).toContain('independent-mcp');
  expect(allowed.res.body).toContain('mail');
+ expect(allowed.res.body).toContain('name="family"');
+ expect(allowed.res.body).toContain(chosenFamily);
  expect(allowed.res.body).not.toContain('Bearer');
  expect(allowed.deps.discover).toHaveBeenCalledWith(origin);
+});
+it('explains absent Hub caller without attempting provider registration',async()=>{
+ const output=await invoke('POST',{action:'inspect',origin,password:'good-passphrase'},
+  {deps:{eligible:vi.fn(async()=>[])}});
+ expect(output.res.code).toBe(200);
+ expect(output.res.body).toContain('Discovery succeeded');
+ expect(output.res.body).toContain('no current Hub OAuth agent connection');
+ expect(output.res.body).not.toContain('Continue to provider OAuth consent');
+ expect(output.deps.begin).not.toHaveBeenCalled();
+});
+it('forces explicit caller selection when multiple authorized Hub OAuth families exist',async()=>{
+ const other='66666666-7777-4888-9999-aaaaaaaaaaaa';
+ const output=await invoke('POST',{action:'inspect',origin,password:'good-passphrase'},{
+  deps:{eligible:vi.fn(async()=>[
+   {family:chosenFamily,mode:'live',profile:'full',eligibleProfiles:['read_only']},
+   {family:other,mode:'test',profile:'read_only',eligibleProfiles:['read_only']}
+  ])}});
+ expect(output.res.code).toBe(200);
+ expect(output.res.body).toContain('select name="family" required');
+ expect(output.res.body).toContain(chosenFamily);
+ expect(output.res.body).toContain(other);
+ expect(output.res.body).not.toContain('service_pass');
 });
 it('starts live scoped consent only with explicit risk acknowledgment',async()=>{
  const body={action:'start',origin,password:'good-passphrase',
