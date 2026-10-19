@@ -119,7 +119,7 @@ function validateAction(fields){
 }
 export async function handleOwnerConnectMcp(req,res,{withDb,env=process.env,
  verify=verifyOwnerLogin,discover=discoverMcpOAuth,
- begin=beginUpstreamOauth,finish=finishUpstreamOauth,
+ begin=beginUpstreamOauth,
  list=listUpstreamOauthConnections,tools=remoteConnectionRead,
  disconnect=disconnectUpstreamOauth}={}){
  htmlHeaders(res);res.setHeader('Pragma','no-cache');
