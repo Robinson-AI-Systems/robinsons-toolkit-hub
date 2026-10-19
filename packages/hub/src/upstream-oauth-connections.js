@@ -274,8 +274,8 @@ export async function listUpstreamOauthConnections(db,ownerId){
    x.refresh_available?'renewal_available':'reconnect_required':'connected'}));
 }
 
-export async function remoteConnectionRead(db,settings,{ownerId,id},
- {post=pinnedMcpRequest,list=issuerMcpTools}={}){
+async function checkedConnectionAccess(db,settings,{ownerId,id},
+ {post=pinnedMcpRequest}={}){
  if(!isOwner(ownerId)||!/^[-0-9a-f]{36}$/i.test(id||''))
    throw Error('Invalid owner connection selection');
  const opened=await db.query(`SELECT * FROM hub_upstream_oauth_connections
@@ -335,7 +335,13 @@ export async function remoteConnectionRead(db,settings,{ownerId,id},
   [ownerId,current.service_name]);
  if(service.rows.length!==1||service.rows[0].state!=='active'||
    service.rows[0].origin!==current.origin)throw Error('MCP service disabled or changed');
- const tools=await list(current.resource,credentials.accessToken,service.rows[0].prefix,post);
+ return {current,credentials,prefix:service.rows[0].prefix};
+}
+export async function remoteConnectionRead(db,settings,{ownerId,id},
+ {post=pinnedMcpRequest,list=issuerMcpTools}={}){
+ const {current,credentials,prefix}=await checkedConnectionAccess(
+  db,settings,{ownerId,id},{post});
+ const tools=await list(current.resource,credentials.accessToken,prefix,post);
  // Only independently authenticated metadata, bounded at the receiving API.
  return {server:current.service_name,mode:current.mode,profile:current.profile,
   tools:tools.slice(0,30).map(t=>({name:t.name,
@@ -408,8 +414,10 @@ export async function withActorUpstreamOauth(db,settings,{actor,id},work,
  if(!authorized)throw Error('MCP connection is not delegated to this caller');
  // Reuse the existing issuer refresh/row-lock lifecycle before any provider
  // request; no synthetic hub_server_grant or reusable service TEST pass.
- await remoteConnectionRead(db,settings,{ownerId:actor.ownerId,id},
-  {post,list:async()=>[]});
+ // Refresh/check credentials without an eager extra provider metadata read.
+ // The actual selected search/describe/read below owns the ONE on-demand call.
+ const {credentials}=await checkedConnectionAccess(
+  db,settings,{ownerId:actor.ownerId,id},{post});
  authorized=(await listActorUpstreamOauth(db,actor)).find(x=>x.id===id);
  if(!authorized)throw Error('MCP connection authorization changed');
  const {rows}=await db.query(`SELECT * FROM hub_upstream_oauth_connections
@@ -418,7 +426,11 @@ export async function withActorUpstreamOauth(db,settings,{actor,id},work,
  const row=rows[0];
  if(!row||row.caller_family!==authorized.family||row.resource!==
    authorized.origin+'/api/mcp')throw Error('MCP OAuth audience changed');
+ // A concurrent refresh may rotate the bearer after our checked read.
+ // Use the latest sealed value in the current owner row.
  const values=open(row,connectionAAD(row),settings);
+ if(!credentials.accessToken||!values.accessToken)
+  throw Error('MCP bearer no longer available');
  const result=await work({...authorized,resource:row.resource,
   accessToken:values.accessToken},post);
  const after=(await listActorUpstreamOauth(db,actor)).find(x=>x.id===id);
