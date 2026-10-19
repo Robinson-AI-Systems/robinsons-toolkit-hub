@@ -81,6 +81,12 @@ export async function readOwnerDashboard(db,ownerId,settings,selection,
            const n=r.modes?.[mode]?.[key];
            return [key,Number.isSafeInteger(n)&&n>=0?n:null];
          }))])),
+       oauthSchemaReady:r.oauthSchemaReady===true,
+       oauth:r.oauthSchemaReady===true?Object.fromEntries(
+        ['test','live','renewable','expiresSoon','reconnectRequired'].map(key=>{
+         const value=r.oauth?.[key];
+         return [key,Number.isSafeInteger(value)&&value>=0?value:null];
+        })):null,
        grantsKeyReady:Boolean(r.grantsKeyReady),resultsKeyReady:Boolean(r.resultsKeyReady),
        servers:Number(r.servers),stagedGrants:Number(r.stagedGrants),
        activeServers:Number(r.activeServers),verifiedGrants:Number(r.verifiedGrants),
