@@ -167,9 +167,10 @@ it('continues actual Workspace RTC1 offset pagination without losing later tools
  const second=await f.deps.search(grant,{query:'',limit:1,cursor:first.next});
  expect(second.tools).toHaveLength(1);
  expect(second.next).toEqual({kind:'offset',value:'2'});
- expect(f.sent.map(x=>x.args)).toMatchObject([{query:'',limit:1},
-  {query:'',limit:1,offset:1}]);
- expect(f.sent[1].args).not.toHaveProperty('cursor');
+ expect(f.post.mock.calls.map(([,options])=>options.body.params.arguments))
+  .toMatchObject([{query:'',limit:1},{query:'',limit:1,offset:1}]);
+ expect(f.post.mock.calls[1][1].body.params.arguments)
+  .not.toHaveProperty('cursor');
 });
 it('supports original RTC1 page and opaque continuation without guessing provider identity',async()=>{
  const f=fixture(roster.slice(0,1));
@@ -186,9 +187,8 @@ it('supports original RTC1 page and opaque continuation without guessing provide
    result:{structuredContent:{tools:[metadata('workspace')],next:null}}});
   const resumed=await f.deps.search(grant,{query:'',limit:1,cursor:page.next});
   expect(resumed.next).toBe(null);
-  const sent=f.sent.at(-1).args;
-  expect(sent[expected.kind]).toBe(expected.kind==='page'?
-   expected.value:expected.value);
+  const sent=f.post.mock.calls.at(-1)[1].body.params.arguments;
+  expect(sent[expected.kind]).toBe(expected.value);
  }
 });
 it('refuses ambiguous or malicious provider pages instead of unsafe replay',async()=>{
