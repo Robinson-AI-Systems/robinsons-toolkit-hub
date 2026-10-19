@@ -153,3 +153,24 @@ export async function probeStagedRtcContract(origin,identity,transport={}) {
     throw new TypeError('Invalid expected RTC service identity');
   return assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);
 }
+
+// Origin-first discovery for owner setup. No provider name, prefix, area list or
+// secret is built in. Claims are never usable authorization or source attestation.
+export async function discoverRtcService(origin,transport={}) {
+  const manifest=await pinnedRtcJsonGet(origin,'/api/contract',transport);
+  const name=manifest?.server,prefix=manifest?.prefix;
+  if(!serverNamePattern.test(name||'')||name==='hub'||
+    !/^[a-z][a-z0-9_]{1,59}$/.test(prefix||'')||prefix==='hub')
+    throw new Error('Unsupported RTC service identity');
+  const checked=assertManifest(manifest,{name,prefix});
+  if(manifest.modes.length>2||new Set(manifest.modes).size!==manifest.modes.length||
+    manifest.modes.some(m=>!['test','live'].includes(m))||
+    manifest.profiles.length>3||new Set(manifest.profiles).size!==manifest.profiles.length||
+    manifest.profiles.some(p=>!['read_only','everyday','full'].includes(p))||
+    !Array.isArray(manifest.areas)||manifest.areas.length<1||manifest.areas.length>32||
+    new Set(manifest.areas).size!==manifest.areas.length||
+    manifest.areas.some(a=>typeof a!=='string'||!/^[a-z][a-z0-9_]{0,59}$/.test(a)))
+    throw new Error('Unsupported RTC service policies');
+  return {...checked,origin,modes:[...manifest.modes],
+    profiles:[...manifest.profiles],areas:[...manifest.areas]};
+}

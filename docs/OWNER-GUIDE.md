@@ -1,3 +1,11 @@
+## Normal service discovery and connection (source repair; not released)
+
+Use **Connect a service** in the protected Hub control center. Enter the independent service's canonical HTTPS origin and authenticate with the Hub owner passphrase. The Hub reads that service's RTC manifest, prepares a pending public registry entry and displays the discovered identity and advertised choices. This does not grant access or prove the service's deployed source revision.
+
+Choose one current Hub agent connection, matching TEST or LIVE mode, service-issued profile and allowed areas. Obtain a separate scoped RTC pass directly from that service and enter it only in the protected connection form, never chat. Approve again with the Hub owner passphrase. The Hub verifies the provider's exact identity/policy and encrypts its credential for that selected caller; it cannot issue or broaden provider authority. Non-read-only selection requires explicit write acknowledgment plus independently entitled original credentials; provider safeguards still apply. If no current connection is listed, first connect an agent to the Hub selecting the newly registered service and mode, then repeat discovery. Expired OAuth sessions must refresh through their original agent, not by copying a rotating checkpoint.
+
+Existing active/staged grants are preserved. Use the existing grant renewal or staged-grant recovery screen for a replacement. A failed activation may leave one noncallable staged grant; inspect it before retrying. The older Workspace-only TEST shortcut remains compatibility-only. This source repair needs checked release and genuine normal-flow acceptance; a forced TEST route or synthetic provider cannot prove it works in production.
+
 # Owner guide — what you can ask for
 
 ## Workflow plan, confirmation, status and undo — C-1 reviewed source only

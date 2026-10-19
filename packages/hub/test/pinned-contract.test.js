@@ -1,6 +1,6 @@
 import {EventEmitter} from 'node:events';
 import {it,expect,vi} from 'vitest';
-import {publicIpv4,choosePublicIpv4,pinnedRtcSocketLookup,probeStagedRtcContract} from '../src/pinned-contract.js';
+import {publicIpv4,choosePublicIpv4,pinnedRtcSocketLookup,probeStagedRtcContract,discoverRtcService} from '../src/pinned-contract.js';
 
 const origin='https://stripe-mcp-psi.vercel.app';
 const identity={name:'stripe',prefix:'stripe'};
@@ -136,4 +136,22 @@ it('honors the hostname binding and rejects DNS resolver errors',async()=>{
   const failed=pinnedRtcSocketLookup('rtc.example.com',(_host,_opts,callback)=>callback(new Error('dns failed')));
   const failure=vi.fn();failed('rtc.example.com',{all:true},failure);
   expect(failure).toHaveBeenCalledWith(expect.any(Error));
+});
+
+
+it('discovers identities and policies for independent providers without authorization headers',async()=>{
+ for(const [server,prefix] of [['google-workspace-mcp','workspace'],['independent-reports','reports']]){
+  const body={...manifest,server,prefix,modes:['test','live'],profiles:['read_only','full'],areas:['reports']};
+  const t=simulatedTransport({body});const found=await discoverRtcService(origin,t);
+  expect(found).toMatchObject({server,prefix,areas:['reports'],modes:['test','live'],callable:false});
+  expect(t.observations.options.headers.authorization).toBeUndefined();
+  expect(t.observations.options.path).toBe('/api/contract');
+ }
+});
+it('discovery rejects unsupported, unbounded and reserved manifest policy claims',async()=>{
+ for(const change of [{rtc:2},{server:'hub'},{prefix:'hub'},{modes:['test','unreviewed']},
+  {profiles:['read_only','unreviewed']},{areas:['reports','reports']},{areas:[]},
+  {areas:['wrong/path']},{areas:Array.from({length:33},(_,i)=>'area'+i)}]){
+  await expect(discoverRtcService(origin,simulatedTransport({body:{...manifest,areas:['reports'],...change}}))).rejects.toThrow();
+ }
 });

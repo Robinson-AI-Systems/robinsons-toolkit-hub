@@ -1,3 +1,7 @@
+## Generic RTC onboarding boundary — October18 source repair
+
+The protected control-center link now uses `api/owner/connect-service.js` -> `owner-connect-service.js`. Origin-first `discoverRtcService` reuses DNS-pinned, no-redirect `pinnedRtcJsonGet` to read only public `/api/contract`; validated provider metadata goes into the existing pending registry. After separate same-origin owner approval, explicit current caller/mode/profile/area selection and independently issued RTC pass go through original encrypted H-4 staging and pinned identity activation. Current SQL remains authoritative, no Hub token is forwarded and normal setup refuses replacement slots across OAuth generations. No provider tool call occurs during onboarding. Legacy Workspace hardcoding is isolated to the compatibility route; no provider-specific code is added to the generic flow. Hosted deployment/credential/real normal-flow proof remain separate and OPEN.
+
 # ARCHITECTURE — runtime facts, as built
 
 ## October 17 — C-1 public workflow engineering assembled in PR #232 (source verification, not live acceptance)
