@@ -26,7 +26,7 @@ function fixtures(){
 async function invoke(method,body,opts={}){
  const res=response(),deps={...fixtures(),...(opts.deps??{})};
  await handleOwnerConnectMcp({method,body,headers:{
-  'content-type':opts.contentType??'application/x-www-form-urlencoded'},
+  'content-type':opts.contentType??'application/x-www-form-urlencoded',origin:env.HUB_PUBLIC_ORIGIN},
   socket:{remoteAddress:'127.0.0.1'}},res,deps);
  return {res,deps};
 }
@@ -91,7 +91,7 @@ it('callback demands browser-bound one-time state, never owner password or stati
  expect(res.headers['Set-Cookie']).toContain('Max-Age=0');
  expect(deps.finish).toHaveBeenCalledWith({}, {},{
   ownerId:'test_owner',hubOrigin:env.HUB_PUBLIC_ORIGIN,
-  state,browser:nonce,code:'synthetic-authorization-code'});
+  state,browser:nonce,code:'synthetic-authorization-code',issuer:null});
  const noCookie=response();
  await handleOwnerMcpCallback({method:'GET',query,headers:{}},noCookie,deps);
  expect(noCookie.code).toBe(400);
