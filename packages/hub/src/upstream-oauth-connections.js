@@ -83,25 +83,40 @@ async function issuerToken(metadata,client,grantParams,post=pinnedMcpRequest){
    method:'POST',body,headers:{'content-type':'application/x-www-form-urlencoded',
     accept:'application/json'},timeoutMs:10000,maxBytes:8192}));
 }
-function validToolList(value,prefix){
- const tools=value?.result?.tools;
- if(value?.jsonrpc!=='2.0'||!Array.isArray(tools)||tools.length>1000||
-   tools.some(t=>typeof t.name!=='string'||!t.name.startsWith(prefix+'_')||
-     t.name.length>120||!t.inputSchema||typeof t.inputSchema!=='object'))
-   throw Error('Issuer did not return a safe MCP tool catalog');
+// RTC1 already supplies fixed search/describe meta-tools. Never request
+// an entire remote tools/list to authorize one provider: that would reload
+// hundreds/thousands of tools and defeat Hub's fixed-context architecture.
+const rtcTool=(prefix,leaf)=>prefix+(prefix.endsWith('_')?'':'_')+leaf;
+function validSearchPreview(value,prefix){
+ if(value?.jsonrpc!=='2.0'||value?.error||value?.result?.isError===true)
+  throw Error('Issuer search metadata unavailable');
+ let details=value.result?.structuredContent;
+ if(!details&&Array.isArray(value.result?.content)){
+  const raw=value.result.content.find(x=>x.type==='text')?.text;
+  if(typeof raw==='string'&&raw.length<=5000)
+   try{details=JSON.parse(raw);}catch{}
+ }
+ const tools=details?.result?.tools??details?.tools;
+ if(!Array.isArray(tools)||tools.length>1||
+   tools.some(t=>!t||typeof t.name!=='string'||
+     !t.name.startsWith(prefix.endsWith('_')?prefix:prefix+'_')||
+     t.name.length>120||!t.name.includes('_')))
+  throw Error('Issuer ignored bounded RTC1 search or returned invalid tool metadata');
  return tools;
 }
 export async function issuerMcpTools(resource,access,prefix,post=pinnedMcpRequest){
  const response=await post(resource,{method:'POST',
-  body:{jsonrpc:'2.0',id:1,method:'tools/list',params:{}},
+  body:{jsonrpc:'2.0',id:1,method:'tools/call',
+   params:{name:rtcTool(prefix,'search_tools'),
+    arguments:{query:'',limit:1}}},
   bearer:access,headers:{'mcp-protocol-version':'2025-11-25'},
-  maxBytes:65536,timeoutMs:10000});
- return validToolList(response,prefix);
+  maxBytes:8192,timeoutMs:10000});
+ return validSearchPreview(response,prefix);
 }
 export async function issuerMcpWhoami(resource,access,prefix,expected,post=pinnedMcpRequest){
  const body=await post(resource,{method:'POST',
   body:{jsonrpc:'2.0',id:2,method:'tools/call',
-   params:{name:prefix+'_whoami',arguments:{}}},bearer:access,
+   params:{name:rtcTool(prefix,'whoami'),arguments:{}}},bearer:access,
   headers:{'mcp-protocol-version':'2025-11-25'},timeoutMs:10000,maxBytes:16384});
  if(body?.error||body?.result?.isError===true)
   throw Error('MCP provider identity verification refused');
