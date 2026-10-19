@@ -37,7 +37,12 @@ const post=vi.fn(async(url,options)=>{
   return {access_token:'initial-provider-access',refresh_token:'initial-provider-refresh',
    token_type:'Bearer',expires_in:3600};
  }
- if(url===remote.resource)return {jsonrpc:'2.0',id:1,result:{tools:[tool]}};
+ if(url===remote.resource) {
+  if(options.body?.method==='tools/call')return {jsonrpc:'2.0',id:2,
+   result:{structuredContent:{mode:'live',profile:'read_only',
+    areas:['files','calendar'],allowWrites:false}}};
+  return {jsonrpc:'2.0',id:1,result:{tools:[tool]}};
+ }
  if(url===origin+'/api/contract')return {
   rtc:1,server:remote.name,prefix:remote.prefix,
   areas:remote.areas,profiles:remote.profiles,modes:remote.modes,
