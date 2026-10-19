@@ -14,6 +14,7 @@ function frame(title,body){
   '<p>Verified-owner TEST management only. Source metadata is not a real '+
   'RTC provider read, hosted deployment check or financial authorization.</p>'+
   '<nav aria-label="Owner actions">'+
+  link('/api/owner/connect-mcp','Connect any compatible MCP (OAuth)')+' | '+
   link('/api/owner/connect-workspace','Connect Google Workspace')+' | '+
   link('/api/owner/passes','Manage Hub passes')+' | '+
   link('/api/owner/oauth','Manage OAuth families')+' | '+
