@@ -1,6 +1,7 @@
 import {brokerCatalog,runBroker} from './broker.js';
 import {runFederatedBroker} from './federation.js';
 import {dispatchWorkflow,workflowTools} from './workflow-door.js';
+import {publicHubOrigin} from './owner-login.js';
 export {brokerCatalog} from './broker.js';
 const supported=new Set(['2025-11-25','2025-06-18','2025-03-26']);
 export function mcpReply(request,actor) {
@@ -17,7 +18,8 @@ export function mcpReply(request,actor) {
       return {...base,error:{code:-32602,message:'Unsupported protocol version'}};
     return {...base,result:{protocolVersion:request.params.protocolVersion,
       capabilities:{tools:{listChanged:false}},
-      serverInfo:{name:'robinsons-toolkit-hub',version:'0.1.0'}}};
+      serverInfo:{name:'robinsons-toolkit-hub',
+        title:"Robinson's Toolkit Hub by Robinson AI Systems",version:'0.1.0'}}};
   }
   if (request.method==='ping') return {...base,result:{}};
   if (request.method==='tools/list') {
@@ -77,6 +79,16 @@ export async function handleMcp(req,res,{withDb,authorize,
   federate=mcpFederatedReply}) {
   res.setHeader('Cache-Control','no-store');
   res.setHeader('X-Content-Type-Options','nosniff');
+  // Streamable HTTP clients may be native/CLI without an Origin header.
+  // Browsers must originate from the exact owner-configured HTTPS host,
+  // independently of bearer authentication and before touching the DB.
+  if(req.headers && Object.hasOwn(req.headers,'origin')){
+    let expected;
+    try{expected=publicHubOrigin();}
+    catch{return res.status(503).json({error:'hub_unavailable'});}
+    if(typeof req.headers.origin!=='string'||req.headers.origin!==expected)
+      return res.status(403).json({error:'invalid_origin'});
+  }
   if (req.method!=='POST') {
     res.setHeader('Allow','POST');
     return res.status(405).json({error:'method_not_allowed'});

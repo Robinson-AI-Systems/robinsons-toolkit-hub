@@ -101,7 +101,7 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
     !passPattern.test(pass||'')||!Number.isInteger(ttlSeconds)||
     ttlSeconds<60||ttlSeconds>30*86400||
     !['read_only','everyday','full'].includes(profile)||!['test','live'].includes(mode))
-    throw new TypeError('Invalid separately scoped TEST grant');
+    throw new TypeError('Invalid separately scoped provider grant');
   const secret=key(settings);
   await checkCaller(db,{ownerId,callerKind,callerId,serverName,profile,mode});
   const host=await db.query(`SELECT state FROM hub_servers
@@ -111,7 +111,7 @@ export async function stageCallerGrant(db,input,{ownerVerified=false,settings}={
   if(host.rows[0].state==='active') {
     // An existing caller may renew only to the same or narrower effective
     // provider areas. Another caller can independently receive its own
-    // separately issued TEST/read_only pass on an already active service.
+    // separately issued provider pass with exact selected mode/profile on an active service.
     const {rows}=await db.query(`SELECT areas,profile,mode,
       to_jsonb(hub_server_grants)->'area_ceiling' AS area_ceiling
       FROM hub_server_grants WHERE owner_id=$1 AND server_name=$2

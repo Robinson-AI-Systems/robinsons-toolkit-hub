@@ -206,7 +206,7 @@ export async function beginUpstreamOauth(db,settings,{ownerId,origin,
    {ownerVerified:true});
  }
  const redirectUri=hubOrigin+'/api/owner/connect-mcp-callback';
- const payload={client_name:'Robinson Toolkit Hub',
+ const payload={client_name:"Robinson's Toolkit Hub by Robinson AI Systems",
    redirect_uris:[redirectUri],grant_types:['authorization_code','refresh_token'],
    response_types:['code'],token_endpoint_auth_method:'client_secret_post'};
  const registeredClient=validateRegistration(await post(remote.registrationEndpoint,{

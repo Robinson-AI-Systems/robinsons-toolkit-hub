@@ -81,8 +81,8 @@ export function htmlForm(action,fields) {
   const hidden=Object.entries(fields).map(([key,value])=>
     '<input type="hidden" name="'+escapeHtml(key)+'" value="'+escapeHtml(value)+'">').join('');
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
-    '<title>Robinson Toolkit Hub owner approval</title><main>'+
-    '<h1>Authorize a scoped Toolkit Hub connection</h1>'+
+    '<title>Robinson&#39;s Toolkit Hub by Robinson AI Systems — owner approval</title><main>'+
+    '<h1>Authorize Robinson&#39;s Toolkit Hub by Robinson AI Systems</h1>'+
     '<p>Requested profile: '+escapeHtml(fields.profile||'read_only')+'</p>'+
     '<p>Only this Hub is authorized. Upstream provider access requires separate scoped grants.</p>'+
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
@@ -94,7 +94,7 @@ export function htmlForm(action,fields) {
     '<label>Optional per-service RTC areas (stripe:billing|reports,workspace:drive) '+
     '<input name="service_areas" maxlength="2048"></label>'+
     '<p>Disabled services are unavailable from first authorization, and '+
-    'all others remain limited by independently issued TEST/read_only grants.</p>'+
+    'each provider remains limited by its own independently issued, scoped credentials.</p>'+
     '<label>Connection profile <select name="delegation_profile">'+
     '<option value="read_only">Read only (default)</option>'+
     '<option value="everyday">Everyday</option><option value="full">Full</option>'+

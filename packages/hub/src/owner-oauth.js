@@ -13,10 +13,11 @@ import {escapeHtml,formFields,htmlHeaders,publicHubOrigin,
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 function page(content) {
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
-    '<title>Toolkit Hub OAuth connections</title>'+
+    '<title>Robinson&#39;s Toolkit Hub by Robinson AI Systems — OAuth connections</title>'+
     '<main><h1>Owner OAuth connection families</h1>'+
-    '<p>TEST, read-only Hub connections only. Each upstream provider still '+
-    'requires its own independently issued RTC TEST grant.</p>'+ 
+    '<p>These Hub connection families may have TEST or LIVE mode and owner-selected '+
+    'delegation. Every upstream provider independently authorizes its own '+
+    'credentials and actions; this view does not verify live tool access.</p>'+ 
     '<p><a href="/api/owner/dashboard">Open private owner control center</a></p>'+content+
     '</main></html>';
 }
@@ -68,7 +69,8 @@ function form() {
     '<option value="disabled">Permanently disable service</option></select></label>'+
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
     '<p>Every OAuth refresh generation inherits this one-way reduction; '+
-    'reconnection requires fresh owner-approved PKCE and upstream TEST grant.</p>'+
+    'reconnection requires fresh owner-approved PKCE and a newly authorized '+
+    'upstream connection where needed.</p>'+
     '<button type="submit">Permanently restrict entire OAuth family</button></form>'+
     '<form method="POST" action="/api/owner/oauth">'+
     '<input type="hidden" name="action" value="inspect_service">'+
