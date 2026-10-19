@@ -13,7 +13,7 @@ const area=/^[a-z][a-z0-9_]{0,59}$/;
 const rtcPass=/^rtc_pass_[A-Za-z0-9_-]{43}$/;
 function page(body) {
   return '<!doctype html><html lang="en"><meta charset="utf-8">'+
-    '<title>Toolkit Hub RTC grants</title><main><h1>Independently delegated RTC upstream grants</h1>'+
+    '<title>Robinson&#39;s Toolkit Hub by Robinson AI Systems — RTC grants</title><main><h1>Independently delegated RTC upstream grants</h1>'+
     '<p>Only independently issued, correctly scoped service passes belong here. '+
     'No grant can call a pending server. Never place a pass in chat or tickets.</p>'+
     body+'</main></html>';
@@ -63,7 +63,7 @@ function form() {
     '<input type="hidden" name="action" value="cancel_staged">'+
     '<label>Unverified staged grant ID <input name="id" maxlength="36" required></label>'+
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
-    '<p>Cancel a never-activated TEST pass; currently working passes cannot '+
+    '<p>Cancel a never-activated staged provider pass; currently working passes cannot '+
     'be canceled here. Verification of a replacement must happen separately.</p>'+
     '<button type="submit">Cancel staged grant</button></form>'+
     '<form method="POST" action="/api/owner/grants">'+
@@ -77,7 +77,7 @@ function form() {
     '<form method="POST" action="/api/owner/grants">'+
     '<input type="hidden" name="action" value="reclaim_expired">'+
     '<label>Owner passphrase <input type="password" name="password" required></label>'+
-    '<p>Reclaim at most 30 expired never-verified TEST grants. Does not '+
+    '<p>Reclaim at most 30 expired never-verified staged provider grants. Does not '+
     'revoke, reverify, refresh or interrupt any verified provider credential.</p>'+
     '<button type="submit">Reclaim expired staged grants</button></form>');
 }
