@@ -51,7 +51,7 @@ function eligible(actor) {
 // Search touches at most three upstreams per request; every target re-resolves
 // its own sealed grant immediately before a socket-pinned request.
 export async function runFederatedBroker(name,args,actor,db,settings,deps={}) {
- if(!eligible(actor))return fail('outside_scope','Hub TEST gateway access required');
+ if(!eligible(actor))return fail('outside_scope','Current Hub gateway delegation required');
  if(!plain(args))return fail('invalid_args','Invalid Hub arguments');
  const tools={
   list:listEligibleRtcTargets,resolve:resolveActiveCallerGrant,
