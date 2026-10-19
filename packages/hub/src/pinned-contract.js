@@ -1,3 +1,4 @@
+import {rtcModes} from './rtc-mode.js';
 import {serverNamePattern} from './server-name.js';
 import {lookup as systemLookup} from 'node:dns';
 import {request as httpsRequest} from 'node:https';
@@ -73,15 +74,15 @@ function safeToolReadRoute(route) {
 function assertManifest(manifest,{name,prefix}) {
   if (!manifest || typeof manifest!=='object'||Array.isArray(manifest)||
     manifest.rtc!==1||manifest.server!==name||manifest.prefix!==prefix||
-    !Array.isArray(manifest.modes)||!manifest.modes.includes('test')||
+    !Array.isArray(manifest.modes)||rtcModes(manifest.modes).length===0||
     !Array.isArray(manifest.profiles)||!manifest.profiles.includes('read_only')||
     !manifest.counts||!['tools','writes','money'].every(k=>
       Number.isSafeInteger(manifest.counts[k])&&manifest.counts[k]>=0&&
       manifest.counts[k]<=1000000))
     throw new Error('RTC 1 manifest identity or scope mismatch');
-  return {server:name,prefix,rtc:1,tools:manifest.counts.tools,
+  return {server:name,prefix,rtc:1,modes:rtcModes(manifest.modes),tools:manifest.counts.tools,
     writes:manifest.counts.writes,money:manifest.counts.money,
-    mode:'test',profile:'read_only',networkVerified:true,callable:false};
+    mode:rtcModes(manifest.modes).includes('test')?'test':'live',profile:'read_only',networkVerified:true,callable:false};
 }
 
 // This probe neither activates a registry row nor forwards an upstream pass.
@@ -151,5 +152,30 @@ export async function probeStagedRtcContract(origin,identity,transport={}) {
   if (!identity||!serverNamePattern.test(identity.name||'')||
     !/^[a-z][a-z0-9_]{1,59}$/.test(identity.prefix||''))
     throw new TypeError('Invalid expected RTC service identity');
-  return assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);
+  const mode=identity.mode??'test';
+  if(!['test','live'].includes(mode))throw new TypeError('Invalid requested RTC environment');
+  const checked=assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);
+  if(!checked.modes.includes(mode))throw new Error('Requested RTC environment is not advertised');
+  return checked;
+}
+
+// Origin-first discovery for owner setup. No provider name, prefix, area list or
+// secret is built in. Claims are never usable authorization or source attestation.
+export async function discoverRtcService(origin,transport={}) {
+  const manifest=await pinnedRtcJsonGet(origin,'/api/contract',transport);
+  const name=manifest?.server,prefix=manifest?.prefix;
+  if(!serverNamePattern.test(name||'')||name==='hub'||
+    !/^[a-z][a-z0-9_]{1,59}$/.test(prefix||'')||prefix==='hub')
+    throw new Error('Unsupported RTC service identity');
+  const checked=assertManifest(manifest,{name,prefix});
+  if(manifest.modes.length>2||new Set(manifest.modes).size!==manifest.modes.length||
+    rtcModes(manifest.modes).length===0||
+    manifest.profiles.length>3||new Set(manifest.profiles).size!==manifest.profiles.length||
+    manifest.profiles.some(p=>!['read_only','everyday','full'].includes(p))||
+    !Array.isArray(manifest.areas)||manifest.areas.length<1||manifest.areas.length>32||
+    new Set(manifest.areas).size!==manifest.areas.length||
+    manifest.areas.some(a=>typeof a!=='string'||!/^[a-z][a-z0-9_]{0,59}$/.test(a)))
+    throw new Error('Unsupported RTC service policies');
+  return {...checked,origin,modes:rtcModes(manifest.modes),providerModes:[...manifest.modes],
+    profiles:[...manifest.profiles],areas:[...manifest.areas]};
 }

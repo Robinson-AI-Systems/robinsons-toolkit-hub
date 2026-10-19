@@ -1,3 +1,4 @@
+import {rtcModes} from './rtc-mode.js';
 import {serverNamePattern} from './server-name.js';
 import {isIP} from 'node:net';
 
@@ -26,7 +27,7 @@ export function validateStagedOrigin(origin) {
 function manifestMetadata(manifest,name,prefix) {
   if (!manifest || typeof manifest!=='object' || Array.isArray(manifest) ||
     manifest.rtc!==1 || manifest.server!==name || manifest.prefix!==prefix ||
-    !Array.isArray(manifest.modes) || !manifest.modes.includes('test') ||
+    !Array.isArray(manifest.modes) || rtcModes(manifest.modes).length===0 ||
     !Array.isArray(manifest.profiles) || !manifest.profiles.includes('read_only') ||
     !manifest.counts || !['tools','writes','money'].every(k=>
       Number.isSafeInteger(manifest.counts[k]) && manifest.counts[k]>=0))
