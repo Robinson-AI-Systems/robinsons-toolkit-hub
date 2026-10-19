@@ -152,7 +152,11 @@ export async function probeStagedRtcContract(origin,identity,transport={}) {
   if (!identity||!serverNamePattern.test(identity.name||'')||
     !/^[a-z][a-z0-9_]{1,59}$/.test(identity.prefix||''))
     throw new TypeError('Invalid expected RTC service identity');
-  return assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);
+  const mode=identity.mode??'test';
+  if(!['test','live'].includes(mode))throw new TypeError('Invalid requested RTC environment');
+  const checked=assertManifest(await pinnedRtcJsonGet(origin,'/api/contract',transport),identity);
+  if(!checked.modes.includes(mode))throw new Error('Requested RTC environment is not advertised');
+  return checked;
 }
 
 // Origin-first discovery for owner setup. No provider name, prefix, area list or

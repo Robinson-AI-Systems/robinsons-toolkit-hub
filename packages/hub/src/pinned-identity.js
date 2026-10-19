@@ -19,7 +19,7 @@ export async function inspectScopedRtcIdentity(input,transport={}) {
     throw new TypeError('Invalid scoped RTC credential inspection inputs');
   // Public contract is uncredentialed; the provider whoami is from the exact
   // independently issued credential. No mutation or provider tool call.
-  const contract=await probeStagedRtcContract(origin,{name,prefix},transport);
+  const contract=await probeStagedRtcContract(origin,{name,prefix,mode},transport);
   if(!contract.modes.includes(mode))throw Error('RTC environment is not advertised');
   const value=await pinnedRtcJsonGet(origin,'/api/whoami',{...transport,pass});
   const who=value?.result;

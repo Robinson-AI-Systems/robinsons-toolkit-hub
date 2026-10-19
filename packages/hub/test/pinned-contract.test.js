@@ -168,3 +168,12 @@ it('normalizes preview/production manifests at public discovery without changing
   await expect(discoverRtcService(origin,simulatedTransport({body:{...manifest,modes,areas:['reports']}}))).rejects.toThrow();
  }
 });
+
+it('legacy TEST probes refuse production-only manifests while explicit LIVE identity inspection is supported',async()=>{
+ const body={...manifest,modes:['production']};
+ const legacy=simulatedTransport({body});
+ await expect(probeStagedRtcContract(origin,identity,legacy)).rejects.toThrow(/environment/);
+ expect(legacy.observations.options.headers.authorization).toBeUndefined();
+ const live=await probeStagedRtcContract(origin,{...identity,mode:'live'},simulatedTransport({body}));
+ expect(live).toMatchObject({mode:'live',modes:['live'],callable:false});
+});
