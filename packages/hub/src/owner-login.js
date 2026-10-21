@@ -84,6 +84,7 @@ export function htmlForm(action,fields) {
     '<title>Robinson&#39;s Toolkit Hub by Robinson AI Systems — owner approval</title><main>'+
     '<h1>Authorize Robinson&#39;s Toolkit Hub by Robinson AI Systems</h1>'+
     '<p>Requested profile: '+escapeHtml(fields.profile||'read_only')+'</p>'+
+    '<p>Unverified external OAuth client callback (verify the destination before approval): <code>'+escapeHtml(fields.redirect_uri||'unavailable')+'</code>.</p>'+
     '<p>Only this Hub is authorized. Upstream provider access requires separate scoped grants.</p>'+
     '<form method="POST" action="'+escapeHtml(action)+'">'+hidden+
     '<label>Authorized RTC servers (registered names, comma separated) '+
@@ -157,6 +158,12 @@ export async function authorizeOwnerConnection(db, req, input, {env=process.env,
     ...(profiles?{serviceProfiles:profiles}:{}),
     ...(serviceAreas?{serviceAreas}:{})},
   {pepper:env.HUB_TOKEN_PEPPER,ownerVerified:true});
+  // A dynamic client initially has a short registration lifetime. Keep it
+  // only after independently verified owner consent, so refresh is durable.
+  // Legacy pre-registered clients have no row here and are unchanged.
+  await db.query(`UPDATE hub_developer_clients
+    SET expires_at='infinity'::timestamptz
+    WHERE client_id=$1 AND expires_at>now()`,[request.clientId]);
   const destination=new URL(request.redirectUri);
   destination.searchParams.set('code',code);
   destination.searchParams.set('state',request.state);

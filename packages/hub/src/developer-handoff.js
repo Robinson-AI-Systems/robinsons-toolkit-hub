@@ -1,5 +1,6 @@
 import {randomBytes,createHash,createPublicKey,publicEncrypt,constants,timingSafeEqual,scryptSync} from 'node:crypto';
 import {digestPass} from './identity.js';
+import {isIP} from 'node:net';
 import {takeBudget} from './limits.js';
 import {publicHubOrigin,verifyOwnerLogin,escapeHtml} from './owner-login.js';
 import {issueOAuthCode} from './oauth.js';
@@ -11,26 +12,79 @@ const pattern=/^[A-Za-z0-9_-]{43}$/;
 const profiles=new Set(['read_only','everyday','full']);
 const digest=v=>createHash('sha256').update(v).digest('hex');
 const text=(status,message)=>({status,html:'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><h1>Developer connection</h1><p>'+escapeHtml(message)+'</p></html>'});
+// The protected-resource Hub is a real OAuth issuer. Dynamic registration
+// must accept clients' own redirects, never just the old developer-handoff
+// redirect. Registration ALONE grants zero authority: each connection still
+// requires an original owner password, exact PKCE proof, and chosen scope.
+export function checkedClientRedirect(uri){
+ if(typeof uri!=='string'||uri.length<12||uri.length>512||uri.trim()!==uri)
+  return null;
+ let u;try{u=new URL(uri);}catch{return null;}
+ if(u.href!==uri||u.username||u.password||u.hash||u.pathname.length>350)
+  return null;
+ if(u.protocol==='http:')
+  return ['127.0.0.1','[::1]'].includes(u.hostname)&&
+   u.port.length>0?uri:null;
+ if(u.protocol!=='https:'||!u.hostname.includes('.')||
+    isIP(u.hostname)!==0||u.hostname==='localhost'||
+    /\.(?:local|internal|localhost)$/i.test(u.hostname))return null;
+ return uri;
+}
+function registrationRequest(input){
+ if(!input||typeof input!=='object'||Array.isArray(input)||
+    Object.keys(input).length>12||JSON.stringify(input).length>4096||
+    !Array.isArray(input.redirect_uris)||input.redirect_uris.length!==1)return null;
+ const redirect=checkedClientRedirect(input.redirect_uris[0]);
+ if(!redirect)return null;
+ const method=input.token_endpoint_auth_method??'none';
+ if(!['none','client_secret_post'].includes(method)||
+    input.response_types!==undefined&&
+      JSON.stringify(input.response_types)!==JSON.stringify(['code']))return null;
+ const grants=input.grant_types??['authorization_code','refresh_token'];
+ if(!Array.isArray(grants)||!grants.includes('authorization_code')||
+    grants.length>2||new Set(grants).size!==grants.length||
+    grants.some(x=>!['authorization_code','refresh_token'].includes(x)))return null;
+ if(input.client_name!==undefined&&(typeof input.client_name!=='string'||
+    input.client_name.length>120))return null;
+ return {redirect,method,grants};
+}
 export async function registerDeveloperClient(db,input,{env=process.env}={}){
- const origin=publicHubOrigin(env),callback=origin+'/api/developer/connect';
- if(!input||input.token_endpoint_auth_method!=='client_secret_post'||
-  !Array.isArray(input.redirect_uris)||input.redirect_uris.length!==1||input.redirect_uris[0]!==callback||
-  JSON.stringify(input.grant_types)!==JSON.stringify(['authorization_code','refresh_token'])||
-  JSON.stringify(input.response_types)!==JSON.stringify(['code']))return {status:400,json:{error:'invalid_client_metadata'}};
+ publicHubOrigin(env);
+ const request=registrationRequest(input);
+ if(!request)return {status:400,json:{error:'invalid_client_metadata'}};
  const clientId=token(),secret=token();
- // Dynamic clients have only a fixed server-owned callback. Owner consent still
- // issues every grant; registration by itself grants no account/Hub authority.
+ // Existing developer clients remain confidential; public native clients
+ // use an unreturned random digest to satisfy the historical NOT NULL row,
+ // plus the explicit method column. Never interpret the digest as authority.
+ const secretDigest=digestPass(secret,env.HUB_TOKEN_PEPPER);
  await db.query('BEGIN');try{
-  await db.query('INSERT INTO hub_oauth_clients(client_id,owner_id,redirect_uri) VALUES($1,$2,$3)',[clientId,env.HUB_OWNER_ID,callback]);
-  await db.query("INSERT INTO hub_developer_clients(client_id,secret_digest,expires_at) VALUES($1,$2,now()+interval '30 days')",[clientId,digestPass(secret,env.HUB_TOKEN_PEPPER)]);
+  await db.query('INSERT INTO hub_oauth_clients(client_id,owner_id,redirect_uri) VALUES($1,$2,$3)',
+   [clientId,env.HUB_OWNER_ID,request.redirect]);
+  await db.query(`INSERT INTO hub_developer_clients
+   (client_id,secret_digest,expires_at,token_endpoint_auth_method)
+   VALUES($1,$2,now()+interval '30 days',$3)`,
+   [clientId,secretDigest,request.method]);
   await db.query('COMMIT');
  }catch(error){await db.query('ROLLBACK');throw error;}
- return {status:201,json:{client_id:clientId,client_secret:secret,token_endpoint_auth_method:'client_secret_post'}};
+ return {status:201,json:{client_id:clientId,
+  ...(request.method==='client_secret_post'?{client_secret:secret}:{}),
+  client_id_issued_at:Math.floor(Date.now()/1000),
+  token_endpoint_auth_method:request.method,
+  redirect_uris:[request.redirect],
+  grant_types:request.grants,response_types:['code'],
+  ...(input.client_name?{client_name:input.client_name}:{})}};
 }
 export async function developerClientValid(db,clientId,secret,{env=process.env}={}){
- if(!pattern.test(clientId||'')||!pattern.test(secret||''))return false;
- const r=await db.query('SELECT 1 FROM hub_developer_clients WHERE client_id=$1 AND secret_digest=$2 AND expires_at>now()',[clientId,digestPass(secret,env.HUB_TOKEN_PEPPER)]);
- return r.rows.length===1;
+ if(!pattern.test(clientId||''))return false;
+ const {rows}=await db.query(`SELECT token_endpoint_auth_method,secret_digest
+ FROM hub_developer_clients WHERE client_id=$1 AND expires_at>now()`,[clientId]);
+ if(rows.length!==1)return false;
+ const {token_endpoint_auth_method:method,secret_digest:recorded}=rows[0];
+ if(method==='none')return secret===null||secret===undefined;
+ if(method!=='client_secret_post'||!pattern.test(secret||'')||
+    !/^[a-f0-9]{64}$/.test(recorded||''))return false;
+ const supplied=Buffer.from(digestPass(secret,env.HUB_TOKEN_PEPPER),'hex');
+ return timingSafeEqual(supplied,Buffer.from(recorded,'hex'));
 }
 export async function developerHandoff(db,req,{env=process.env}={}){
  const origin=publicHubOrigin(env),callback=origin+'/api/developer/connect';
@@ -40,7 +94,7 @@ export async function developerHandoff(db,req,{env=process.env}={}){
    !pattern.test(p.client_id||'')||!pattern.test(p.challenge||'')||!/^[a-f0-9]{64}$/.test(p.poll_hash||'')||
    !profiles.has(p.profile)||typeof p.public_key!=='string'||p.public_key.length>1000)return {status:400,json:{error:'invalid_request'}};
   let key;try{key=createPublicKey(p.public_key);if(key.asymmetricKeyType!=='rsa'||key.asymmetricKeyDetails?.modulusLength!==2048)throw Error();}catch{return {status:400,json:{error:'invalid_request'}};}
-  const found=await db.query('SELECT 1 FROM hub_developer_clients WHERE client_id=$1 AND expires_at>now()',[p.client_id]);
+  const found=await db.query(`SELECT 1 FROM hub_developer_clients d JOIN hub_oauth_clients c USING(client_id) WHERE d.client_id=$1 AND d.expires_at>now() AND d.token_endpoint_auth_method='client_secret_post' AND c.redirect_uri=$2`,[p.client_id,callback]);
   if(found.rows.length!==1)return {status:400,json:{error:'invalid_client'}};
   const state=token();
   const added=await db.query(`INSERT INTO hub_developer_handoffs(state,client_id,challenge,poll_hash,public_key,profile,expires_at)
@@ -78,7 +132,7 @@ export async function developerHandoff(db,req,{env=process.env}={}){
 }
 export async function developerConsent(db,req,input,{env=process.env}={}){
  const row=(await db.query(`SELECT h.* FROM hub_developer_handoffs h JOIN hub_developer_clients d USING(client_id)
-  WHERE h.client_id=$1 AND h.state=$2 AND d.expires_at>now()`,[input.client_id,input.state])).rows[0];
+  WHERE d.token_endpoint_auth_method='client_secret_post' AND h.client_id=$1 AND h.state=$2 AND d.expires_at>now()`,[input.client_id,input.state])).rows[0];
  if(!row)return null;
  if(row.status!=='pending'||new Date(row.expires_at).getTime()<=Date.now())return {status:410};
  const origin=publicHubOrigin(env),callback=origin+'/api/developer/connect';

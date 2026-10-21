@@ -4,12 +4,23 @@ const mocks=vi.hoisted(()=>({query:vi.fn(),exchange:vi.fn(),rotate:vi.fn()}));
 vi.mock('../src/runtime.js',()=>({withHubDb:fn=>fn({query:mocks.query},{pepper:process.env.HUB_TOKEN_PEPPER})}));
 vi.mock('../src/oauth.js',()=>({exchangeOAuthCode:mocks.exchange,rotateOAuthRefresh:mocks.rotate}));
 import handler from '../../../api/oauth/token.js';
-const client='c'.repeat(43),secret='s'.repeat(43),origin='https://hub.example';let previous;
+const client='c'.repeat(43),pub='p'.repeat(43),secret='s'.repeat(43),origin='https://hub.example';let previous;
 const response=()=>({statusCode:0,setHeader(){},status(n){this.statusCode=n;return this;},json(value){this.value=value;return this;}});
 beforeEach(()=>{
  previous={HUB_TOKEN_PEPPER:process.env.HUB_TOKEN_PEPPER,HUB_PUBLIC_ORIGIN:process.env.HUB_PUBLIC_ORIGIN};
  process.env.HUB_TOKEN_PEPPER='synthetic-token-route-pepper-never-live';process.env.HUB_PUBLIC_ORIGIN=origin;
- mocks.query.mockImplementation(async(sql,args)=>({rows:sql.includes('secret_digest')?(args[1]===createHmac('sha256',process.env.HUB_TOKEN_PEPPER).update(secret).digest('hex')?[{}]:[]):sql.includes('hub_developer_clients')?(args[0]===client?[{}]:[]):[{hits:1}]}));
+ mocks.query.mockImplementation(async(sql,args)=>{
+  if(sql.includes('SELECT token_endpoint_auth_method,secret_digest')){
+   if(args[0]===client)return {rows:[{token_endpoint_auth_method:'client_secret_post',
+    secret_digest:createHmac('sha256',process.env.HUB_TOKEN_PEPPER).update(secret).digest('hex')}]};
+   if(args[0]===pub)return {rows:[{token_endpoint_auth_method:'none',
+    secret_digest:'0'.repeat(64)}]};
+   return {rows:[]};
+  }
+  if(sql.includes('hub_developer_clients'))
+   return {rows:[client,pub].includes(args[0])?[{}]:[]};
+  return {rows:[{hits:1}]};
+ });
  mocks.rotate.mockReset().mockResolvedValue({access_token:'FAKE_ACCESS_TOKEN',refresh_token:'FAKE_REFRESH_TOKEN',token_type:'Bearer',expires_in:3600});
  mocks.exchange.mockReset();
 });
@@ -23,6 +34,23 @@ it('requires dynamic client authentication for both JSON and form refresh reques
 it('accepts the exact dynamic client and resource without breaking public-client form OAuth',async()=>{
  for(const [id,extra]of [[client,{client_secret:secret,resource:origin+'/api/mcp'}],['legacy-public-client',{}]]){
   const res=response();await handler({method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:{grant_type:'refresh_token',client_id:id,refresh_token:'FAKE_REFRESH',...extra}},res);expect(res.statusCode).toBe(200);
+ }
+ expect(mocks.rotate).toHaveBeenCalledTimes(2);
+});
+
+it('supports registered public native MCP client with no client_secret, exact resource and rotating PKCE grant',async()=>{
+ for(const type of ['application/json','application/x-www-form-urlencoded']){
+  const body={grant_type:'refresh_token',client_id:pub,
+   refresh_token:'FAKE_REFRESH',resource:origin+'/api/mcp'};
+  const res=response();
+  await handler({method:'POST',headers:{'content-type':type},body},res);
+  expect(res.statusCode).toBe(200);
+  for(const extra of [{client_secret:'unrequested-secret'},{resource:'https://attacker.example.org/api/mcp'}]){
+   const denied=response();
+   await handler({method:'POST',headers:{'content-type':type},
+    body:{...body,...extra}},denied);
+   expect([400,401]).toContain(denied.statusCode);
+  }
  }
  expect(mocks.rotate).toHaveBeenCalledTimes(2);
 });
