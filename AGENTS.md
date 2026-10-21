@@ -1,5 +1,9 @@
 # AGENTS.md — the rules. Read this first, every session.
 
+## Remaining universal permissions and identity implementation
+
+Owner-requested Sol 5.6 preparation (2026-10-21): read [the concrete implementation handoff](docs/UNIVERSAL-IDENTITY-HANDOFF.md) with the existing session workflow and selected cards. It maps remaining code, storage/migration contracts, regression fixtures, dependencies and source-versus-live acceptance to existing units. Reuse merged work; this documentation update implements no runtime feature and changes no release/security approval.
+
 ## End-user capability authority — owner clarification 2026-10-16
 
 Read [docs/END-USER-AUTHORITY.md](docs/END-USER-AUTHORITY.md) as a governing product-intent decision. Developer-agent $0 spending, TEST/preview, production activation, protected-fixture and owner-confirmation restrictions govern **our implementation and acceptance activities**, not what a fully authorized end user or their delegated coding agent can ultimately do through the service. Provide the full feasible provider capability; for sensitive actions disclose impact and cost uncertainty and respect the **end user's own** permissions and delegation/approval policy. Do not turn developer restrictions into permanent tool denials or guided-only substitutes. This directive does not itself authorize the current developer agent to spend, mutate live accounts or bypass existing CI/release safeguards.

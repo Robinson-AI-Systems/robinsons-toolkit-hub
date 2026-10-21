@@ -143,3 +143,7 @@ evidence, not a claim that this plan audited every endpoint; recheck per operati
 References checked 2026-10-21:
 - https://github.com/Robinson-AI-Systems/robinsons-toolkit-hub/blob/41f796126f53173004f95d58cc81956f43055d6c/docs/HUB-CONNECTION-SPEC.md
 - https://github.com/Robinson-AI-Systems/robinsons-toolkit-hub/blob/41f796126f53173004f95d58cc81956f43055d6c/docs/CONTRACT.md
+
+## Sol 5.6 implementation entry — owner 2026-10-21
+
+The [concrete implementation handoff](../UNIVERSAL-IDENTITY-HANDOFF.md) maps these existing units to current files, migration boundaries, negative/positive fixtures and exact verification families. Use it with the original cards; no units, approval states or acceptance results change. Independent user/tenant/role/grant implementation is eligible engineering, not a live-provider prerequisite. Reconcile original unfinished work before dependent expansion.
