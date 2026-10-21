@@ -1,3 +1,16 @@
+## 2026-10-21 — original OAuth continuity before native-client migration 028
+
+Source review found new auth-method column reads would break original confidential client
+validation, fixed developer handoff and owner consent before separately approved migration 028.
+These three reads now retain the original secret-authenticated behavior only when PostgreSQL
+specifically reports undefined-column 42703; unknown DB errors remain closed. New native client
+registration still requires 028 and its transaction rolls back fully if absent. No customer
+principal, provider grant, production migration or release is created by this compatibility fix.
+See [H-1 regression card](pr-cards/H-1-LEGACY-SCHEMA-CONTINUITY.md). Focused synthetic tests pass;
+full CI/disposable original-schema proof and review remain required before merge. Actual native
+client/migration/tenant acceptance and CAP engineering remain OPEN. Deployed Hub whoami returned
+TEST/full gateway scope with writes disabled; that is existing connection scope evidence only.
+
 ## 2026-10-21 — universal authorization directive: reconcile PR #245
 
 Reconciled existing source with newer reviewed main, preserving maximum-authority scope and

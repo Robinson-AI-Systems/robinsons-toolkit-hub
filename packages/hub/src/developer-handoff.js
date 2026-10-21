@@ -12,6 +12,16 @@ const pattern=/^[A-Za-z0-9_-]{43}$/;
 const profiles=new Set(['read_only','everyday','full']);
 const digest=v=>createHash('sha256').update(v).digest('hex');
 const text=(status,message)=>({status,html:'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><h1>Developer connection</h1><p>'+escapeHtml(message)+'</p></html>'});
+// Migration 028 is independently installed. Preserve the original confidential
+// clients on the old schema; only a proven undefined-column error permits this
+// legacy query. Unknown storage failures never become authentication success.
+async function nativeOrLegacyQuery(db,query,values,legacyQuery){
+ try{return await db.query(query,values);}
+ catch(error){
+  if(error?.code!=='42703')throw error;
+  return db.query(legacyQuery,values);
+ }
+}
 // The protected-resource Hub is a real OAuth issuer. Dynamic registration
 // must accept clients' own redirects, never just the old developer-handoff
 // redirect. Registration ALONE grants zero authority: each connection still
@@ -76,8 +86,10 @@ export async function registerDeveloperClient(db,input,{env=process.env}={}){
 }
 export async function developerClientValid(db,clientId,secret,{env=process.env}={}){
  if(!pattern.test(clientId||''))return false;
- const {rows}=await db.query(`SELECT token_endpoint_auth_method,secret_digest
- FROM hub_developer_clients WHERE client_id=$1 AND expires_at>now()`,[clientId]);
+ const {rows}=await nativeOrLegacyQuery(db,`SELECT token_endpoint_auth_method,secret_digest
+ FROM hub_developer_clients WHERE client_id=$1 AND expires_at>now()`,[clientId],
+ `SELECT 'client_secret_post' AS token_endpoint_auth_method,secret_digest
+ FROM hub_developer_clients WHERE client_id=$1 AND expires_at>now()`);
  if(rows.length!==1)return false;
  const {token_endpoint_auth_method:method,secret_digest:recorded}=rows[0];
  if(method==='none')return secret===null||secret===undefined;
@@ -94,7 +106,8 @@ export async function developerHandoff(db,req,{env=process.env}={}){
    !pattern.test(p.client_id||'')||!pattern.test(p.challenge||'')||!/^[a-f0-9]{64}$/.test(p.poll_hash||'')||
    !profiles.has(p.profile)||typeof p.public_key!=='string'||p.public_key.length>1000)return {status:400,json:{error:'invalid_request'}};
   let key;try{key=createPublicKey(p.public_key);if(key.asymmetricKeyType!=='rsa'||key.asymmetricKeyDetails?.modulusLength!==2048)throw Error();}catch{return {status:400,json:{error:'invalid_request'}};}
-  const found=await db.query(`SELECT 1 FROM hub_developer_clients d JOIN hub_oauth_clients c USING(client_id) WHERE d.client_id=$1 AND d.expires_at>now() AND d.token_endpoint_auth_method='client_secret_post' AND c.redirect_uri=$2`,[p.client_id,callback]);
+  const found=await nativeOrLegacyQuery(db,`SELECT 1 FROM hub_developer_clients d JOIN hub_oauth_clients c USING(client_id) WHERE d.client_id=$1 AND d.expires_at>now() AND d.token_endpoint_auth_method='client_secret_post' AND c.redirect_uri=$2`,[p.client_id,callback],
+   `SELECT 1 FROM hub_developer_clients d JOIN hub_oauth_clients c USING(client_id) WHERE d.client_id=$1 AND d.expires_at>now() AND c.redirect_uri=$2`);
   if(found.rows.length!==1)return {status:400,json:{error:'invalid_client'}};
   const state=token();
   const added=await db.query(`INSERT INTO hub_developer_handoffs(state,client_id,challenge,poll_hash,public_key,profile,expires_at)
@@ -131,8 +144,10 @@ export async function developerHandoff(db,req,{env=process.env}={}){
  return {status:200,json:{status:'authorized',sealed_code:row.sealed_code}};
 }
 export async function developerConsent(db,req,input,{env=process.env}={}){
- const row=(await db.query(`SELECT h.* FROM hub_developer_handoffs h JOIN hub_developer_clients d USING(client_id)
-  WHERE d.token_endpoint_auth_method='client_secret_post' AND h.client_id=$1 AND h.state=$2 AND d.expires_at>now()`,[input.client_id,input.state])).rows[0];
+ const row=(await nativeOrLegacyQuery(db,`SELECT h.* FROM hub_developer_handoffs h JOIN hub_developer_clients d USING(client_id)
+  WHERE d.token_endpoint_auth_method='client_secret_post' AND h.client_id=$1 AND h.state=$2 AND d.expires_at>now()`,[input.client_id,input.state],
+  `SELECT h.* FROM hub_developer_handoffs h JOIN hub_developer_clients d USING(client_id)
+  WHERE h.client_id=$1 AND h.state=$2 AND d.expires_at>now()`)).rows[0];
  if(!row)return null;
  if(row.status!=='pending'||new Date(row.expires_at).getTime()<=Date.now())return {status:410};
  const origin=publicHubOrigin(env),callback=origin+'/api/developer/connect';
