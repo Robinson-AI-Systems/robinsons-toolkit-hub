@@ -1,3 +1,31 @@
+## 2026-10-21 — universal authorization directive: reconcile PR #245
+
+Reconciled existing source with newer reviewed main, preserving maximum-authority scope and
+original acceptance. Documentation/index conflicts resolved; exact-head checks and review
+remain mandatory. No deployment or real-client proof follows from this reconciliation.
+
+The owner requires distinct development, explicitly scoped product-administrator and ordinary
+production-user contexts, including Robinson AI Systems as a legitimate production tenant.
+Email/domain or organization membership alone grants neither administration nor a development
+restriction. Current owner-centered login still needs independent customer enrollment and tenant
+isolation. Native client OAuth is useful source progress, not that completed architecture.
+CAP-2/CAP-3/CAP-5 retain implementation and two-user/two-tenant/provider lifecycle acceptance.
+No developer credential fallback, default grant expansion or live migration is authorized here.
+
+## 2026-10-21 — owner-requested maximum-authority planning (source only)
+
+Inspected main `41f796126f53173004f95d58cc81956f43055d6c` and existing open work before editing. Added
+[MAXIMUM-AUTHORITY](designs/MAXIMUM-AUTHORITY.md) and indexed CAP-1..CAP-5 as
+APPROVED / NOT IMPLEMENTED. Existing provider acceptance evidence is unchanged;
+no new live pass, deployment, paid action, credential, grant or production effect.
+This is explicitly requested planning maintenance: zero production lines and zero
+completed implementation subsections. Ordinary supported authorization gets every
+operation it can perform; God Mode only simplifies genuinely necessary additional
+authority. Separate developer/operator/customer contexts explicitly. Existing original
+unfinished cards keep ownership; no work is counted twice. Next: existing eligible
+acceptance/implementation first, then CAP-1 inventory and its dependency-ordered work.
+Exact-head checks/self-review and any existing reviews remain mandatory before merge.
+
 ## October 19 — independent native coding-agent OAuth DCR (source only, release gated)
 
 **Actual client-compatibility defect:** Hub's LIVE at `41f796126f53173004f95d58cc81956f43055d6c` advertises `/api/oauth/register` as a standard dynamic OAuth registration endpoint, but until this branch it only accepts `/api/developer/connect` as a callback and confidential clients. Standard independent coding-agent MCP clients (desktop/mobile, including remote PKCE public clients) cannot register their own redirect and hence cannot create a user-approved LIVE Hub family through native OAuth. This defect was discovered during genuine first Workspace continuity preflight; it is **not** a Workspace provider code defect. The old Hub developer-handoff remains supported.

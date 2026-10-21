@@ -1,5 +1,14 @@
 # PLAN — remaining scope and acceptance
 
+## Maximum legitimate authority — owner-approved 2026-10-21
+
+[MAXIMUM-AUTHORITY](designs/MAXIMUM-AUTHORITY.md) adds five indexed APPROVED,
+NOT IMPLEMENTED units CAP-1..CAP-5: operation inventory; ordinary fullest authority;
+secure additional credential lifecycle; advanced functional gaps; independent proof.
+Existing acceptance and unfinished original cards retain priority. Named-tool counts
+do not establish provider API coverage. No runtime grant or release change is implied.
+
+
 ## Current Workspace integration acceptance — October 17, 2026 UTC
 
 D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.
@@ -51,3 +60,11 @@ Use [the finite recovery matrix](audits/2026-10-12-gateway-architecture-recovery
 - [ ] Two independent services used through one actual agent MCP connection; each still works directly.
 - [ ] Genuine harmless TEST reads, denial and same-pass revocation; source/fake/deployed proof kept separate.
 Full fleet, package publication and optional adoption are separate acceptance, not prerequisite proof.
+
+## Maximum-authority acceptance (all open)
+
+- [ ] **CAP-1:** Operation and credential coverage inventory; full criteria in MAXIMUM-AUTHORITY.
+- [ ] **CAP-2:** Standard fullest authorization and effective-access recovery; full criteria in MAXIMUM-AUTHORITY.
+- [ ] **CAP-3:** Guided additional authority lifecycle; full criteria in MAXIMUM-AUTHORITY.
+- [ ] **CAP-4:** Advanced functional workflow gap closure; full criteria in MAXIMUM-AUTHORITY.
+- [ ] **CAP-5:** Independent authority acceptance and coverage reporting; full criteria in MAXIMUM-AUTHORITY.

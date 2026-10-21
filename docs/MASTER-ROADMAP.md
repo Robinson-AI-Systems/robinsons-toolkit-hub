@@ -1,5 +1,14 @@
 # MASTER ROADMAP — the one handoff
 
+## Maximum legitimate authority — owner-approved 2026-10-21
+
+[MAXIMUM-AUTHORITY](designs/MAXIMUM-AUTHORITY.md) adds five indexed APPROVED,
+NOT IMPLEMENTED units CAP-1..CAP-5: operation inventory; ordinary fullest authority;
+secure additional credential lifecycle; advanced functional gaps; independent proof.
+Existing acceptance and unfinished original cards retain priority. Named-tool counts
+do not establish provider API coverage. No runtime grant or release change is implied.
+
+
 ## Current Workspace integration acceptance — October 17, 2026 UTC
 
 D-4 is complete for the independent Workspace RTC service: original separate local direct, GitHub-only encrypted relay and Vercel Sandbox direct runners passed; native audited Hub read, TEST/read-only refusal, same-pass issuer revocation and all temporary cleanup are verified. See [D-4](pr-cards/D-4.md) and [the exact sanitized receipt](audits/2026-10-17-d4-final-route-acceptance.json). Other Hub fleet/service, optional core publication and remaining roadmap obligations stay separately open in STATUS; this does not declare the whole Hub project complete.
