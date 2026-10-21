@@ -84,3 +84,19 @@ it('owner approval page identifies the exact external client callback, never a h
  expect(unsafe).not.toContain('<script>');
  expect(unsafe).toContain('&lt;script&gt;');
 });
+
+it('preserves original confidential authentication only for proven pre-028 schema, never unknown DB failures',async()=>{
+ const {digestPass}=await import('../src/identity.js');
+ const client='l'.repeat(43),secret='s'.repeat(43);
+ const db={query:vi.fn(async(sql)=>{
+  if(sql.startsWith('SELECT token_endpoint_auth_method'))throw Object.assign(Error('missing optional column'),{code:'42703'});
+  expect(sql).toContain("'client_secret_post' AS token_endpoint_auth_method");
+  return {rows:[{token_endpoint_auth_method:'client_secret_post',secret_digest:digestPass(secret,env.HUB_TOKEN_PEPPER)}]};
+ })};
+ expect(await developerClientValid(db,client,secret,{env})).toBe(true);
+ expect(await developerClientValid(db,client,'w'.repeat(43),{env})).toBe(false);
+ expect(await developerClientValid(db,client,undefined,{env})).toBe(false);
+ const denied={query:vi.fn(async()=>{throw Object.assign(Error('storage unavailable'),{code:'08006'});})};
+ await expect(developerClientValid(denied,client,secret,{env})).rejects.toThrow('storage unavailable');
+ expect(denied.query).toHaveBeenCalledTimes(1);
+});

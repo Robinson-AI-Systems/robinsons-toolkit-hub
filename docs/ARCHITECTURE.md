@@ -1,3 +1,12 @@
+## 2026-10-21 source: optional native-client schema continuity
+
+Migration 028 remains separately installed. Until then, PostgreSQL undefined-column 42703 on
+client validation/handoff/consent invokes only the original confidential-secret query and exact
+server-callback checks. It never treats an old row as a public client or authorizes a DB error.
+New DCR registration remains unavailable until the new column exists; failed insertion rolls
+back without leaving a client. Other database failures remain fail-closed. No schema is modified
+by these reads. Deployed behavior and real supported-client acceptance remain independent.
+
 ## Generic RTC onboarding boundary — October18 source repair
 
 The protected control-center link now uses `api/owner/connect-service.js` -> `owner-connect-service.js`. Origin-first `discoverRtcService` reuses DNS-pinned, no-redirect `pinnedRtcJsonGet` to read only public `/api/contract`; validated provider metadata goes into the existing pending registry. After separate same-origin owner approval, explicit current caller/mode/profile/area selection and independently issued RTC pass go through original encrypted H-4 staging and pinned identity activation. Current SQL remains authoritative, no Hub token is forwarded and normal setup refuses replacement slots across OAuth generations. No provider tool call occurs during onboarding. Legacy Workspace hardcoding is isolated to the compatibility route; no provider-specific code is added to the generic flow. Hosted deployment/credential/real normal-flow proof remain separate and OPEN.

@@ -108,3 +108,36 @@ it('issues separately consented LIVE native PKCE public-client credentials with 
  expect(await developerClientValid(db,other.json.client_id,null,{env})).toBe(false);
  expect(await developerClientValid(db,other.json.client_id,'q'.repeat(43),{env})).toBe(false);
 });
+
+it('keeps the original confidential owner flow usable before migration 028 and refuses partial native registration',async()=>{
+ const oldSchema='hub_legacy_'+process.pid;
+ await db.query('CREATE SCHEMA "'+oldSchema+'"');
+ try{
+  await db.query('SET search_path TO "'+oldSchema+'"');
+  for(const f of ['001-hub-foundation.sql','002-hub-oauth.sql','007-hub-developer.sql'])
+   await db.query(await readFile(new URL('../../migrations/'+f,import.meta.url),'utf8'));
+  const {digestPass}=await import('../../src/identity.js');
+  const client='l'.repeat(43),secret='s'.repeat(43),callback=origin+'/api/developer/connect';
+  await db.query('INSERT INTO hub_oauth_clients(client_id,owner_id,redirect_uri) VALUES($1,$2,$3)',[client,env.HUB_OWNER_ID,callback]);
+  await db.query("INSERT INTO hub_developer_clients(client_id,secret_digest,expires_at) VALUES($1,$2,now()+interval '1 day')",[client,digestPass(secret,env.HUB_TOKEN_PEPPER)]);
+  expect(await developerClientValid(db,client,secret,{env})).toBe(true);
+  expect(await developerClientValid(db,client,'w'.repeat(43),{env})).toBe(false);
+  expect(await developerClientValid(db,client,undefined,{env})).toBe(false);
+  await ownerSetup(db,{method:'POST',body:{setup_token:setup,password,confirmation:password}},{env});
+  const keys=generateKeyPairSync('rsa',{modulusLength:2048}),verifier=randomBytes(32).toString('base64url');
+  const begun=await developerHandoff(db,{method:'POST',body:{client_id:client,
+   challenge:createHash('sha256').update(verifier).digest('base64url'),poll_hash:'f'.repeat(64),
+   public_key:keys.publicKey.export({type:'spki',format:'pem'}),profile:'full'}},{env});
+  expect(begun.status).toBe(201);
+  const fields=Object.fromEntries(new URL(begun.json.authorization_url).searchParams);
+  const consent=await developerConsent(db,{method:'POST',socket:{remoteAddress:'127.0.0.9'}},{...fields,password},{env});
+  expect(consent.status).toBe(303);
+  const before=(await db.query('SELECT count(*)::int AS n FROM hub_oauth_clients')).rows[0].n;
+  await expect(registerDeveloperClient(db,{redirect_uris:['https://native.example.test/callback'],
+   token_endpoint_auth_method:'none'},{env})).rejects.toMatchObject({code:'42703'});
+  expect((await db.query('SELECT count(*)::int AS n FROM hub_oauth_clients')).rows[0].n).toBe(before);
+ }finally{
+  await db.query('SET search_path TO "'+schema+'"');
+  await db.query('DROP SCHEMA "'+oldSchema+'" CASCADE');
+ }
+});
