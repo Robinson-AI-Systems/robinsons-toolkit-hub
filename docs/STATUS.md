@@ -1,3 +1,17 @@
+## 2026-10-21 — owner-requested maximum-authority planning (source only)
+
+Inspected main `41f796126f53173004f95d58cc81956f43055d6c` and existing open work before editing. Added
+[MAXIMUM-AUTHORITY](designs/MAXIMUM-AUTHORITY.md) and indexed CAP-1..CAP-5 as
+APPROVED / NOT IMPLEMENTED. Existing provider acceptance evidence is unchanged;
+no new live pass, deployment, paid action, credential, grant or production effect.
+This is explicitly requested planning maintenance: zero production lines and zero
+completed implementation subsections. Ordinary supported authorization gets every
+operation it can perform; God Mode only simplifies genuinely necessary additional
+authority. Separate developer/operator/customer contexts explicitly. Existing original
+unfinished cards keep ownership; no work is counted twice. Next: existing eligible
+acceptance/implementation first, then CAP-1 inventory and its dependency-ordered work.
+Exact-head checks/self-review and any existing reviews remain mandatory before merge.
+
 ## October 19 — 2026-07-28 native MCP stateless compatibility (source PR; hosted acceptance OPEN)
 
 The published MCP protocol includes a breaking 2026-07-28 stateless Streamable HTTP revision. Hub previously supported only initialize-based 2025-03-26/06-18/11-25 request handling. This branch adds a **dual-era** authenticated `/api/mcp` door: modern per-request `_meta` version+client capabilities with exact HTTP `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` mirroring, required `server/discover`, `resultType:complete`, deterministic bounded existing `tools/list`, private caching hints and preserved Hub server identity. Existing legacy handshake and Hub-owned H-3 federation remain unchanged. Error handling refuses mismatched/unknown versions and client capability shapes **before** entering provider dispatch. The same authenticated Hub actor and original issuer-scoped service grants remain the only authority.

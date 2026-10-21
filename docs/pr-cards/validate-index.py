@@ -17,9 +17,10 @@ CARDS = DATA['cards']
 BY_ID = {c['id']: c for c in CARDS}
 errors = []
 
-REQUIRED_BATCHES = ['K', 'D', 'H', 'C', 'L', 'S']
+REQUIRED_BATCHES = ['K', 'D', 'H', 'C', 'L', 'S', 'CAP']
 REQUIRED_UNITS = set("""
 K-0 K-1 K-2 K-2b K-3 K-4 D-1a D-1b D-1c D-1 D-2 D-3a D-3b D-3 D-4a D-4 H-1 H-2 H-3 H-4 H-5 C-1 C-2 C-3 L-1 L-2 L-3 L-4 S-vercel S-neon S-github S-messaging
+CAP-1 CAP-2 CAP-3 CAP-4 CAP-5
 """.split())
 
 if len(BY_ID) != len(CARDS):
