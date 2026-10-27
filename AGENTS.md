@@ -1,5 +1,14 @@
 # AGENTS.md — the rules. Read this first, every session.
 
+## ⚠ FIRST — owner findings 2026-10-27 (read before every other section)
+
+Read [docs/audits/2026-10-27-hub-intention-and-capability-findings.md](docs/audits/2026-10-27-hub-intention-and-capability-findings.md) before starting any work. It records, at the owner's direction:
+
+1. **The intention.** This hub is the owner's one front door to his service servers — power with no friction; every server usable alone, the hub combining them. When any clause below and that intention disagree, the intention governs and the clause is a bug to fix, not a constraint to route around.
+2. **The drift.** Work here drifted into process artifacts (checkpoints, probes, conformance paperwork) while the hub's normal flow — discovering, authorizing and connecting a real service — was never certified with a real upstream. A checkpoint is not a connection. Prefer the smallest change that makes a real agent do a real thing through the real hub.
+3. **The git gap is not solved here.** The finished hub adds composition across servers, not git-protocol capability inside one. Real git belongs in the GitHub server or a git-worker it calls — never grow it in this repo.
+4. **RTC 1 §2/§6/§7 conflict with the owner's 2026-10-27 principle** (the server is a tool, never a second authority: no manufactured confirmations, caller-sized results, no fleet-wide $0 or writes-off defaults presented as product protections; builder rules live in agent documents, never in runtime code). **Do not build new member servers to those clauses as written.** The contract amendment in the findings document is the next contract work, ahead of new servers.
+
 ## Remaining universal permissions and identity implementation
 
 Owner-requested Sol 5.6 preparation (2026-10-21): read [the concrete implementation handoff](docs/UNIVERSAL-IDENTITY-HANDOFF.md) with the existing session workflow and selected cards. It maps remaining code, storage/migration contracts, regression fixtures, dependencies and source-versus-live acceptance to existing units. Reuse merged work; this documentation update implements no runtime feature and changes no release/security approval.
