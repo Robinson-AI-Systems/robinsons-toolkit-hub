@@ -1,3 +1,7 @@
+## 2026-10-31 — RTC 2 adopted by owner decision; the RTC 1 freeze holds
+
+Owner ruled all five RTC 2 decisions (D1–D5) as recommended; the dated decision is recorded in [DECISIONS.md](DECISIONS.md). The RTC 1 freeze holds — R-3 completes against the frozen pin suite and no shipped dialect is amended to chase the unversioned post-freeze suite drift — and RTC 2 is adopted as RTC 1's §9 successor. The adopted spec text files separately; server adoptions proceed through each server's own card (RTC 2 §12). Decision only: no runtime, suite or server behavior changes here.
+
 ## 2026-10-21 — Sol 5.6 remaining identity/permissions implementation contract
 
 Owner requested repo-specific preparation for the next implementer. See [concrete handoff](UNIVERSAL-IDENTITY-HANDOFF.md) for actual source/test paths, mapped original units, migration and ownership invariants, two-user/role fixtures, required checks and separate external prerequisites. The merged fixes listed there are source evidence; full tenant/role/capability work remains OPEN. This docs-only update changes no runtime, provider grant, deployment or acceptance result. Follow current original cards/queue and do not restart completed work.

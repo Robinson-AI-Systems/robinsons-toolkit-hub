@@ -1,3 +1,17 @@
+## 2026-10-31 — RTC 2 adopted as RTC 1's §9 successor; the RTC 1 freeze holds (R-3 disposition)
+
+Owner ruling (Chris, 2026-10-31). All five open decisions in the RTC 2 draft are ruled as recommended:
+
+- **D1 — Result recovery = content pages.** RTC 2 §7 stands as written: recovery serves byte-exact content pages over the canonical result serialization, 1-based, scope-bound, 24-hour handles.
+- **D2 — OAuth is optional-but-specified in RTC 2.** Passes remain the required baseline transport (§4.2); a server that offers the OAuth transport follows §4.3 exactly and declares it in its manifest.
+- **D3 — Handle lifetime = 24 hours**, carried from RTC 1 (`handleTtlSeconds: 86400`).
+- **D4 — The health path is included in the advertisement** as a SHOULD-level manifest field (§2.1).
+- **D5 — The R-3 disposition is the composite.** The RTC 1 freeze HOLDS (option (b): no shipped dialect is amended to chase the unversioned post-freeze suite), AND RTC 2 is adopted by this dated decision as RTC 1's §9 successor.
+
+Why the freeze holds: after the RTC 1 freeze (2026-10-11), the hub conformance suite drifted at HEAD (`e6cfb98`) from the frozen reviewed pin (`e76b1f8`) — its catalog probes demand `page=N` walks where shipped servers paginate by cursor, and its result-recovery probes demand a shape the frozen text never pinned — with no new RTC version and no dated decision, which RTC 1 §9 requires for any post-freeze incompatible change. Ratifying that drift inside RTC 1 (option (a)) is declined: it would teach every future suite that the freeze is negotiable. R-3 therefore completes against the frozen pin suite, with the divergence recorded (RTC 2 §11 rule 6 states the disposition; each server records it in its own docs as it executes).
+
+RTC 2 (`docs/RTC-2-SPEC.md`, filed as adopted alongside this entry) is the successor version §9 always required before the dialects could legitimately move: the drift's sound ideas — server-declared fixtures, content-page recovery — enter as RTC 2 text under a new version, and the conformance suite is re-derived from that text, never normative over it (RTC 2 §11). RTC 1 remains frozen and valid until each server migrates by its own card. Adoption of RTC 2 by the other servers (Workspace, GitHub, Dokploy) happens through their own cards per RTC 2 §12 — noted here, not executed by this entry. Vercel MCP's R-3 card completes against the frozen RTC 1 checks; its RTC 2 adoption is a separate follow-on card.
+
 ## 2026-10-21 — approved maximum-authority expansion
 
 Owner requested adapting the completed GitHub planning job to all active custom MCPs.
