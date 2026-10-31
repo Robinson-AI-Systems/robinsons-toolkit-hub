@@ -1,3 +1,7 @@
+## 2026-10-31 — RTC 2 specification filed as adopted
+
+[RTC-2-SPEC.md](RTC-2-SPEC.md) is filed as the adopted contract document, per the owner's 2026-10-31 decision in [DECISIONS.md](DECISIONS.md): the header is marked ADOPTED and §13 now records D1–D5 as ruled. The body stands as drafted — the text is normative and the conformance suite is derived from it, never the reverse (RTC 2 §11). RTC 1 ([CONTRACT.md](CONTRACT.md)) remains frozen and valid until each server migrates by its own card (§12).
+
 ## 2026-10-31 — RTC 2 adopted by owner decision; the RTC 1 freeze holds
 
 Owner ruled all five RTC 2 decisions (D1–D5) as recommended; the dated decision is recorded in [DECISIONS.md](DECISIONS.md). The RTC 1 freeze holds — R-3 completes against the frozen pin suite and no shipped dialect is amended to chase the unversioned post-freeze suite drift — and RTC 2 is adopted as RTC 1's §9 successor. The adopted spec text files separately; server adoptions proceed through each server's own card (RTC 2 §12). Decision only: no runtime, suite or server behavior changes here.
